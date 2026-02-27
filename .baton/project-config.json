@@ -1,0 +1,19 @@
+{
+  "stack": "",
+  "commands": {
+    "compile": "",
+    "test_unit": "",
+    "test_integration": null,
+    "lint": null
+  },
+  "constraints": {
+    "stable_contracts": [],
+    "require_review_for": []
+  },
+  "regression": {
+    "suites": [],
+    "always_run": ["compile", "lint"],
+    "scope_match_strategy": "glob"
+  },
+  "agents_md_extra": ""
+}

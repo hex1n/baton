@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.baton/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|CreateFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.baton/hooks/phase-lock.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
