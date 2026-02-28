@@ -1,115 +1,71 @@
-# Baton v2.1
+# Baton
 
-**Plan-first workflow for AI-assisted development.**
+**Minimal plan-first workflow for AI-assisted development.**
 
-Baton enforces a structured workflow — research → plan → annotate → approve → slice → implement → verify → review — so AI coding agents produce reliable, auditable results.
+Inspired by [Boris Tane's approach](https://boristane.com/blog/how-i-use-claude-code/): read deeply, write a plan, annotate until it's right, then let AI execute.
 
-## Architecture
+Baton adds one thing Boris can't do with words alone: **a code-level write lock** that prevents AI from writing source code until your plan is ready.
+
+## How It Works
 
 ```
-Layer 0: Standalone skills (always available, zero setup)
-Layer 1: Task workflow (baton new-task, adds phase-lock + gates)
-Layer 2: Project governance (baton init, adds constraints + regression)
+research.md  →  plan.md  →  [annotate]  →  <!-- GO -->  →  implement
+   (read)        (design)    (human review)    (unlock)      (execute)
 ```
 
-Each layer adds structure without breaking the one below it.
+1. AI reads code deeply, writes `research.md`
+2. AI writes `plan.md` with file changes and code snippets
+3. You annotate `plan.md` in your editor — AI addresses notes, repeats
+4. You add `<!-- GO -->` to `plan.md` — source code writes unlock
+5. AI implements the plan, checks off items, runs tests
 
-## Quick Start
+**The write lock is the only enforcement.** Everything else is guidance in your CLAUDE.md.
+
+## Install
 
 ```bash
-# Install globally
-baton install
-export PATH="$HOME/.baton/bin:$PATH"
+# In any project:
+bash /path/to/baton/setup.sh
 
-# Initialize in a project
-cd your-project
-baton init
-
-# Start a task
-baton new-task fix-auth-bug
-baton next                    # Shows what to do next
+# Or specify a target:
+bash /path/to/baton/setup.sh /path/to/your/project
 ```
 
-## Skills
+This copies `write-lock.sh` into your project and adds workflow instructions to your `CLAUDE.md`.
 
-| Skill                | Phase        | Purpose                                     |
-|----------------------|--------------|---------------------------------------------|
-| plan-first-research  | research     | Deep-read code before planning              |
-| plan-first-plan      | plan/approved| Design solution + generate todo checklist    |
-| annotation-cycle     | annotation   | Process human annotations on the plan        |
-| context-slice        | slice        | Generate per-item context packages           |
-| plan-first-implement | implement    | Execute todo items mechanically              |
-| verification-gate    | verify       | Run build/test/lint and record evidence      |
-| code-reviewer        | review       | Review changes against plan + constraints    |
-| using-baton          | (meta)       | Orchestrate: determine which skill to load   |
-
-## v2.1 Key Improvements
-
-- **Workflow Protocol**: Single source of truth (`workflow-protocol.md`) for all inter-skill relationships
-- **9-phase state machine**: Added approved, slice, review phases to `detect_phase`
-- **Responsibility deconfliction**: Todo generation is solely plan-first-plan's job
-- **Layer 0 independence**: Standalone skills never block on missing workflow artifacts
-- **Blocking scope checks**: Slice scope violations are blocking by default (was advisory)
-- **Action-oriented session start**: Concrete `cat` command instead of skill mapping table
-
-See [CHANGELOG.md](CHANGELOG.md) for full details.
-
-## CLI Commands
+## What Gets Installed
 
 ```
-Global:
-    baton install          Install/update global layer to ~/.baton/
-    baton version          Show version
-
-Project:
-    baton init             Initialize project layer (Layer 2)
-    baton doctor           Health check
-    baton new-task <id>    Create task scaffold (--quick for fast path)
-    baton active [<id>]    Show/switch active task (--clear to unset)
-    baton next             Show the next step for the active task
-    baton abandon <id>     Mark task as abandoned
-    baton reset-task <id>  Reset task to fresh state
-    baton generate         Generate platform files (AGENTS.md, etc.)
-    baton constraints      Show hard constraints status
-
-Layer 0 (standalone):
-    baton research <scope>    Deep-read code
-    baton plan                Design solution
-    baton annotate <file>     Process annotations
-    baton slice <file>        Generate context slices
-    baton implement <file>    Execute approved plan
-    baton verify              Run verification
-    baton review [--diff]     Review changes
+your-project/
+├── .claude/
+│   ├── settings.json      ← Hook configuration
+│   └── write-lock.sh      ← The write lock (~60 lines)
+└── CLAUDE.md              ← Workflow instructions appended (~30 lines)
 ```
 
-## Supported Platforms
+## The Write Lock
 
-- **Claude Code**: Full support via SessionStart hook + PreToolUse phase-lock
-- **Cursor**: Self-enforcement via `.cursor/rules/baton.md` (generated by `baton generate`)
-- **Codex / OpenCode**: Via bootstrap scripts (see `hooks/`)
+- **Blocks** source code writes when `plan.md` doesn't exist or lacks `<!-- GO -->`
+- **Allows** markdown files (*.md) at all times — research and planning are never blocked
+- **Unlocks** when `plan.md` contains `<!-- GO -->` anywhere in the file
+- **Re-locks** if you remove `<!-- GO -->` (e.g., to go back to planning)
+- **Bypass** for emergencies: `BATON_BYPASS=1` environment variable skips the lock entirely
+- **If AI adds `<!-- GO -->` itself**: remove it immediately, return to annotation phase
 
-## File Structure
+## Uninstall
 
-```
-~/.baton/                     # Global layer (baton install)
-  bin/baton                   # CLI
-  skills/                     # 8 skill files
-  hooks/                      # session-start.sh, phase-lock.sh
-  workflow-protocol.md        # v2.1: single source of truth
-  prompts/                    # Subagent prompt templates
+Delete `.claude/write-lock.sh` and remove the `## AI Workflow` section from your `CLAUDE.md`.
 
-<project>/.baton/             # Project layer (baton init)
-  project-config.json         # Build/test/lint commands
-  governance/
-    hard-constraints.md       # Non-negotiable rules
-  review-checklists.md        # Project-specific review items
-  tasks/                      # Task artifacts
-    <task-id>/
-      research.md             # Research findings
-      plan.md                 # Design + todo + slices
-      verification.md         # Test evidence
-      review.md               # Code review findings
-```
+## Philosophy
+
+Boris Tane's workflow succeeds because the human stays in the loop at every critical point. Baton preserves that:
+
+- **No state machine** — you know what phase you're in
+- **No CLI commands** — just files and a hook
+- **No skill files** — workflow instructions live in CLAUDE.md, always in context
+- **~1,000 tokens overhead** — versus ~26,000 for a full skill system
+
+The only thing automated is the one thing humans can't reliably enforce with words: preventing AI from writing code before the plan is approved.
 
 ## License
 
