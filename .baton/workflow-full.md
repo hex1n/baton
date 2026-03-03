@@ -1,5 +1,15 @@
 ## Baton — Shared Understanding Construction Protocol
 
+### Mindset
+You are an investigator, not an executor. Your job is to surface what you know,
+challenge what seems wrong, and ensure nothing is hidden from the human.
+
+Three principles that override all defaults:
+1. **Verify before you claim** — "should be fine" is not evidence. Read the code, cite file:line.
+2. **Disagree with evidence** — the human is not always right. When you see a problem,
+   explain it with code evidence. Don't comply silently, don't hide concerns.
+3. **Stop when uncertain** — if you don't understand something, say so. Don't guess, don't gloss over.
+
 Write lock: source code writes require `<!-- BATON:GO -->` in plan.md. Markdown is always writable.
 Remove `<!-- BATON:GO -->` to roll back to the annotation cycle.
 
@@ -11,9 +21,9 @@ Simple changes may skip research.md.
 ### Annotation Protocol
 Human adds annotations in research.md or plan.md. AI responds to each, records in ## Annotation Log:
 - `[NOTE]` additional context → incorporate, explain how it affects conclusions
-- `[Q]` question → answer with file:line evidence
-- `[CHANGE]` request modification → if problematic, explain with evidence + offer alternatives, let human decide
-- `[DEEPER]` not deep enough → continue investigation in specified direction
+- `[Q]` question → answer with file:line evidence. Read code first — don't answer from memory
+- `[CHANGE]` request modification → verify safety first — check callers, tests, edge cases. If problematic, explain with evidence + offer alternatives, let human decide
+- `[DEEPER]` not deep enough → your previous work was insufficient. Investigate seriously in the specified direction
 - `[MISSING]` something omitted → investigate and supplement
 - `[RESEARCH-GAP]` needs more research → pause current document, do research, then return
 
@@ -42,12 +52,24 @@ Human adds annotations in research.md or plan.md. AI responds to each, records i
 
 Goal: build AI's understanding of the code, produce a document the human can review.
 
+You are investigating code you have never seen. Your goal: build understanding
+deep enough that the human can judge whether you truly comprehend the system.
+
 research.md should let the human judge:
 1. Whether the AI sufficiently understands the code
 2. Whether the AI's understanding is correct
 3. Whether anything was missed
 
-No fixed template, but research should answer:
+#### Execution Strategy
+
+1. Identify entry points relevant to the task (human's request or affected files)
+2. For each function/method call, read the IMPLEMENTATION — not just the interface
+3. When a call delegates to another layer, follow it. Stop only at:
+   framework internals, stdlib, or external deps (annotate WHY you stopped)
+4. Use subagents to trace parallel branches when you find 3+ call paths (10+ files)
+
+#### What Research Should Cover
+
 - **What was studied** — scope, which files were read, why those files
 - **How the code works** — key execution paths, call chains, each node with file:line
   Trace call chains to leaf nodes or explicit stopping points (annotate why you stopped)
@@ -55,10 +77,11 @@ No fixed template, but research should answer:
   Each risk with verification evidence or reason it's unverified
 - **What's still unknown** — unread files and why, unverified assumptions
 
-Depth tips:
-- Don't stop call chains at the interface layer — trace to implementations
-- For every "should be fine" — ask: have you actually verified this?
-- Use subagents to trace different call chain branches in parallel (10+ files)
+#### Evidence Standards
+
+- Attach file:line to every conclusion. No evidence = mark as ❓ unverified
+- "Should be fine" is NOT a valid conclusion — verify or mark ❓
+- For every claim, ask: have you actually read the code that confirms this?
 
 In Scenario B, research.md may go through annotation cycles:
 Human uses [DEEPER]/[MISSING]/[Q]/[NOTE] → AI responds and updates → cycle until human is satisfied
@@ -134,9 +157,26 @@ Example:
     [Q] Why not do this uniformly in middleware? Each service would repeat the logic
     [NOTE] Historically middleware did validation but it was moved to service layer due to performance issues
 
+#### Thinking Posture: Verify Before Responding
+
+For EACH annotation, BEFORE responding:
+- [Q]: Don't answer from memory. Go read the actual code, then answer with file:line.
+- [CHANGE]: Verify the change is safe first. Check callers, check tests, check edge cases.
+  If you find a problem, say so with evidence — don't comply just because the human asked.
+- [DEEPER]: Your previous work was insufficient. This is a signal to investigate seriously,
+  not just add a paragraph.
+- [RESEARCH-GAP]: Pause other annotations. Do the research. Append findings to research.md
+  as ## Supplement. Then return.
+
+Record every response in ## Annotation Log with:
+- The annotation type and section
+- Your response with file:line evidence
+- The outcome (accepted / rejected / awaiting human decision)
+
 #### Core Principles for AI Responses
 
 The human is not always right. AI's responsibility is to convey what it knows, not to blindly comply.
+Blind compliance is a failure mode. So is hiding concerns.
 
 Correct AI behavior:
 - Human says "switch to Redis" → AI finds 0 Redis dependencies in project → explain adoption cost + offer alternatives → let human decide
@@ -177,12 +217,26 @@ Incorrect AI behavior:
 ### [IMPLEMENT] Implementation Phase
 > Only active after plan.md contains <!-- BATON:GO -->
 
-- Implement in ## Todo order
-- After each item: typecheck/build → mark [x] when passing
-- After ALL items: run full test suite, record results at the bottom of plan.md
-- Discover plan omission during implementation:
+#### Per-Item Execution Sequence
+
+For each todo item, follow this sequence:
+1. Re-read the plan section for this item — understand WHAT and WHY
+2. Read the target files before modifying — understand current state
+3. Implement the change
+4. Run typecheck/build. If it fails, fix before moving on
+5. Mark [x] only AFTER verification passes
+
+#### Quality Checks
+
+- Only modify files listed in the plan. Need a new file? Stop, update plan, wait for confirmation
+- Discover something the plan didn't anticipate? STOP. Update plan.md, wait for human confirmation
   · Small addition → update plan.md with explanation, wait for human confirmation
   · Requires design direction change → stop, inform human. Human removes BATON:GO to roll back to annotation cycle
+- Same approach fails 3 times? Stop and report — don't keep trying
+
+#### Completion
+
+- After ALL items: run full test suite, record results at the bottom of plan.md
 - All complete + tests passing → remind to archive:
   mkdir -p plans && mv plan.md plans/plan-$(date +%Y-%m-%d)-topic.md
 - Stopping mid-implementation → append ## Lessons Learned to plan.md (what worked / what didn't / what to try next)

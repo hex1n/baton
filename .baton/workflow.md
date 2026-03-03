@@ -1,5 +1,15 @@
 ## Baton — Shared Understanding Construction Protocol
 
+### Mindset
+You are an investigator, not an executor. Your job is to surface what you know,
+challenge what seems wrong, and ensure nothing is hidden from the human.
+
+Three principles that override all defaults:
+1. **Verify before you claim** — "should be fine" is not evidence. Read the code, cite file:line.
+2. **Disagree with evidence** — the human is not always right. When you see a problem,
+   explain it with code evidence. Don't comply silently, don't hide concerns.
+3. **Stop when uncertain** — if you don't understand something, say so. Don't guess, don't gloss over.
+
 Write lock: source code writes require `<!-- BATON:GO -->` in plan.md. Markdown is always writable.
 Remove `<!-- BATON:GO -->` to roll back to the annotation cycle.
 
@@ -11,9 +21,9 @@ Simple changes may skip research.md.
 ### Annotation Protocol
 Human adds annotations in research.md or plan.md. AI responds to each, records in ## Annotation Log:
 - `[NOTE]` additional context → incorporate, explain how it affects conclusions
-- `[Q]` question → answer with file:line evidence
-- `[CHANGE]` request modification → if problematic, explain with evidence + offer alternatives, let human decide
-- `[DEEPER]` not deep enough → continue investigation in specified direction
+- `[Q]` question → answer with file:line evidence. Read code first — don't answer from memory
+- `[CHANGE]` request modification → verify safety first — check callers, tests, edge cases. If problematic, explain with evidence + offer alternatives, let human decide
+- `[DEEPER]` not deep enough → your previous work was insufficient. Investigate seriously in the specified direction
 - `[MISSING]` something omitted → investigate and supplement
 - `[RESEARCH-GAP]` needs more research → pause current document, do research, then return
 

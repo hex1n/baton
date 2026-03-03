@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-phase-guide.sh — Tests for phase-guide.sh v3 (SessionStart hook)
+# test-phase-guide.sh — Tests for phase-guide.sh v3.1 (SessionStart hook)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,9 +63,11 @@ echo "=== Test 1: No files → RESEARCH phase guidance ==="
 d="$tmp/t1" && mkdir -p "$d"
 assert_output_contains "$d" "RESEARCH" "outputs RESEARCH phase label"
 assert_output_contains "$d" "research.md" "mentions research.md"
-assert_output_contains "$d" "call chain" "mentions call chain tracing"
+assert_output_contains "$d" "IMPLEMENTATION" "mentions reading implementations"
 assert_output_contains "$d" "file:line" "mentions file:line evidence"
 assert_output_contains "$d" "plan.md" "mentions option to skip to plan.md"
+assert_output_contains "$d" "Mindset" "RESEARCH phase shows Mindset reminder"
+assert_output_contains "$d" "subagent" "RESEARCH phase mentions subagents"
 assert_exit_zero "$d" "always exit 0 (no files)"
 
 # ============================================================
@@ -77,6 +79,8 @@ assert_output_contains "$d" "PLAN" "outputs PLAN phase label"
 assert_output_contains "$d" "research" "mentions research reference"
 assert_output_contains "$d" "todolist" "mentions not writing todolist"
 assert_output_contains "$d" "approach" "mentions approach analysis"
+assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
+assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
 assert_exit_zero "$d" "always exit 0 (research, no plan)"
 
 # ============================================================
@@ -90,6 +94,8 @@ assert_output_contains "$d" "\[Q\]" "mentions Q annotation"
 assert_output_contains "$d" "\[CHANGE\]" "mentions CHANGE annotation"
 assert_output_contains "$d" "file:line" "mentions evidence-based response"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO unlock"
+assert_output_contains "$d" "Mindset" "ANNOTATION phase shows Mindset reminder"
+assert_output_contains "$d" "Blind compliance" "ANNOTATION phase mentions blind compliance"
 assert_exit_zero "$d" "always exit 0 (plan, no GO)"
 
 # ============================================================
@@ -104,6 +110,9 @@ EOF
 assert_output_contains "$d" "IMPLEMENT" "outputs IMPLEMENT phase label"
 assert_output_contains "$d" "typecheck" "mentions typecheck"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO"
+assert_output_contains "$d" "Mindset" "IMPLEMENT phase shows Mindset reminder"
+assert_output_contains "$d" "Re-read the plan" "IMPLEMENT phase mentions re-reading plan"
+assert_output_contains "$d" "3 times" "IMPLEMENT phase mentions 3-times-stop rule"
 assert_exit_zero "$d" "always exit 0 (implement)"
 
 # ============================================================
@@ -121,6 +130,7 @@ assert_output_contains "$d" "All tasks complete" "detects all tasks completed"
 assert_output_contains "$d" "archiving" "suggests archiving"
 assert_output_contains "$d" "plans/" "mentions plans/ directory"
 assert_output_contains "$d" "Annotation Log" "mentions Annotation Log value"
+assert_output_contains "$d" "Mindset" "ARCHIVE phase shows Mindset reminder"
 assert_exit_zero "$d" "always exit 0 (archive)"
 
 # ============================================================
@@ -162,7 +172,7 @@ echo ""
 echo "=== Test 9: Phase guidance mutually exclusive ==="
 d="$tmp/t9" && mkdir -p "$d"
 # RESEARCH phase should not mention IMPLEMENT or ANNOTATION keywords
-assert_output_not_contains "$d" "IMPLEMENT" "RESEARCH phase does not mention IMPLEMENT"
+assert_output_not_contains "$d" "IMPLEMENT phase" "RESEARCH phase does not mention IMPLEMENT phase"
 assert_output_not_contains "$d" "ANNOTATION" "RESEARCH phase does not mention ANNOTATION"
 
 # ============================================================
