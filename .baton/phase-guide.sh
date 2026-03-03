@@ -1,13 +1,15 @@
 #!/bin/sh
 # phase-guide.sh — Detect current phase, output phase-specific guidance
-# Version: 2.0
+# Version: 3.0
 # Hook: SessionStart
-# Also handles: stale plan archival detection
+# States: RESEARCH → PLAN → ANNOTATION → IMPLEMENT → ARCHIVE
 
 # --- Fail-open on unexpected errors ---
 trap 'echo "⚠️ BATON phase-guide: unexpected error, skipping guidance" >&2; exit 0' HUP INT TERM
 
 PLAN_NAME="${BATON_PLAN:-plan.md}"
+RESEARCH_NAME="research.md"
+
 # SYNCED: find_plan — same algorithm in write-lock.sh, stop-guard.sh, bash-guard.sh
 PLAN=""
 d="$(pwd)"
@@ -18,55 +20,68 @@ while true; do
     d="$p"
 done
 
-# --- Archival detection (only when NOT in implement phase) ---
-if [ -n "$PLAN" ] && grep -q '\[x\]' "$PLAN" 2>/dev/null \
-   && ! grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
-    echo "📋 Stale $PLAN_NAME with completed tasks. Archive before new task:" >&2
-    echo "   mkdir -p plans && mv $PLAN_NAME plans/\${PLAN_NAME%.md}-\$(date +%Y-%m-%d)-topic.md" >&2
-    echo "   mv research.md plans/research-\$(date +%Y-%m-%d)-topic.md" >&2
-    echo "   💡 Tip: keep \"## Lessons Learned\" section in archived plans for future reference" >&2
-    echo "" >&2
+# Find research.md in same directory as plan (or cwd)
+PLAN_DIR="${PLAN%/*}"
+[ -z "$PLAN_DIR" ] && PLAN_DIR="$(pwd)"
+RESEARCH=""
+[ -f "$PLAN_DIR/$RESEARCH_NAME" ] && RESEARCH="$PLAN_DIR/$RESEARCH_NAME"
+
+# --- State detection (priority high → low) ---
+
+# State 1: ARCHIVE — all todos done
+if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
+    TOTAL=$(grep -c '^\- \[' "$PLAN" 2>/dev/null) || TOTAL=0
+    DONE=$(grep -c '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
+    if [ "$TOTAL" -gt 0 ] && [ "$TOTAL" -eq "$DONE" ]; then
+        cat >&2 << 'EOF'
+📋 All tasks complete. Consider archiving:
+   mkdir -p plans && mv plan.md plans/plan-$(date +%Y-%m-%d)-topic.md
+   mv research.md plans/research-$(date +%Y-%m-%d)-topic.md
+💡 The Annotation Log records design decision rationale — valuable long-term reference.
+EOF
+        exit 0
+    fi
 fi
 
-# --- Phase-specific guidance ---
-if [ -z "$PLAN" ]; then
+# State 2: IMPLEMENT — plan + GO
+if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     cat >&2 << 'EOF'
-📍 RESEARCH / PLAN phase — create plan.md when ready
-Research (3+ files or unfamiliar area):
-  Scope | Architecture (file:line refs) | Constraints | Patterns | Risks | Key files | Coverage (N/M files read)
-Bug fix shortcut:
-  Error | Reproduction | Root Cause | Fix Scope | Regression Risk
-Context: 10+ files → use subagents, write findings to research.md
-Evidence: file:line for every claim. Inferences as "Inference:". Unknowns as "Open Questions:"
-When research is sufficient, write plan.md (research findings can go directly into it).
+📍 IMPLEMENT phase — <!-- BATON:GO --> is set
+Implement in Todo order. After each item: typecheck → mark [x].
+After all items: run full test suite. Discover omission → stop, update plan, wait for confirmation.
 EOF
-elif grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
-    cat >&2 << 'EOF'
-📍 IMPLEMENT phase active — keep <!-- BATON:GO --> at top of plan.md (moving/deleting it re-locks)
-- Consider /compact before starting (clear research context from window)
-- 10+ file changes → start fresh session (plan.md = handoff doc)
-- After each item: typecheck/build → mark [x] ✅
-- After ALL items: full test suite, note result at bottom
-- Stopping early? Append "## Lessons Learned" to plan.md (what worked / didn't / next)
-- Rollback: checkpoints first, git revert for permanent
-EOF
-else
-    cat >&2 << 'EOF'
-📍 PLAN phase active
-- Declare scope: files to modify + importers to verify
-- Verification: concrete test cases (input → expected output), not "run tests"
-  Specify WHICH tests and WHY they cover the change
-- Self-review before human annotation:
-  "3 biggest risks?" / "Files outside scope that could break?" / "What would a senior engineer question?"
-  → Add ## Risks section to plan.md
-- Annotation exit checklist:
-  ✓ Every modified file has acceptance criteria?
-  ✓ Impact scope (importers/callers) declared?
-  ✓ Risks + rollback strategy written in plan?
-- Suggested plan.md structure: Goal | Scope | Approach | Risks | Verification
-- Do NOT add todo checklist — wait for human review
-- Review cycle: read plan → add inline comments → AI addresses → repeat → <!-- BATON:GO -->
-EOF
+    exit 0
 fi
+
+# State 3: ANNOTATION — plan exists, no GO
+if [ -n "$PLAN" ]; then
+    cat >&2 << 'EOF'
+📍 ANNOTATION cycle — plan.md awaiting approval
+Human may add annotations: [NOTE] [Q] [CHANGE] [DEEPER] [MISSING] [RESEARCH-GAP]
+Respond to each annotation, record in Annotation Log.
+Human annotations may not always be correct — explain issues with file:line evidence, offer alternatives.
+Human will say "generate todolist" or add <!-- BATON:GO --> when satisfied.
+EOF
+    exit 0
+fi
+
+# State 4: PLAN — research exists, no plan
+if [ -n "$RESEARCH" ]; then
+    cat >&2 << 'EOF'
+📍 PLAN phase — produce plan.md (based on research.md + requirements)
+Include: what (referencing research), why, impact scope, risk mitigation.
+Approach analysis: extract constraints → derive 2-3 approaches (feasibility + pros/cons) → recommend + reasoning.
+Do NOT write todolist — generate only after human approves.
+EOF
+    exit 0
+fi
+
+# State 5: RESEARCH — nothing exists
+cat >&2 << 'EOF'
+📍 RESEARCH phase — produce research.md
+Read code deeply, trace call chains to implementations (don't stop at interfaces).
+Mark risks: ✅ confirmed safe / ❌ problem found / ❓ unverified. Attach file:line to every conclusion.
+Simple changes may skip research and go straight to plan.md.
+EOF
 
 exit 0

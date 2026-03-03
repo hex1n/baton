@@ -1,6 +1,6 @@
 #!/bin/sh
 # write-lock.sh — Block source code writes until plan file contains <!-- BATON:GO -->
-# Version: 2.0
+# Version: 3.0
 #
 # Hook: PreToolUse (Edit|Write|MultiEdit|CreateFile)
 # Unlock: Add <!-- BATON:GO --> anywhere in plan file
@@ -77,7 +77,7 @@ PLAN="$(find_plan)"
 # --- No plan → block + research phase guidance ---
 if [ -z "$PLAN" ]; then
     echo "🔒 Blocked: no $PLAN_NAME found." >&2
-    echo "📍 Write research.md first (Scope | Architecture | Constraints | Patterns | Risks | Key files | Coverage)" >&2
+    echo "📍 Complete research (research.md) first, then write plan (plan.md). Simple changes may skip straight to plan.md." >&2
     exit 1
 fi
 
@@ -87,6 +87,6 @@ if grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
 fi
 
 # --- Plan exists, no GO → block + plan phase guidance ---
-echo "🔒 Blocked: $PLAN_NAME not unlocked." >&2
-echo "📍 Refine plan: declare scope, concrete verification, self-review risks, wait for <!-- BATON:GO -->" >&2
+echo "🔒 Blocked: $PLAN_NAME not approved." >&2
+echo "📍 Annotation cycle in progress. Add <!-- BATON:GO --> after approval to unlock." >&2
 exit 1

@@ -8,7 +8,7 @@
 #   1. Detects IDE and platform
 #   2. Creates .baton/ directory with write-lock, phase-guide, workflow
 #   3. Configures IDE-specific hooks and workflow injection
-#   4. Handles v1 → v2 migration automatically
+#   4. Handles v1 → v2 → v3 migration automatically
 set -eu
 
 BATON_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -134,7 +134,7 @@ ide_has_session_start() {
 IDE="$(detect_ide)"
 SOURCE_VERSION="$(get_version "$BATON_DIR/.baton/write-lock.sh")"
 
-echo "Installing baton v${SOURCE_VERSION:-2.0} into: $PROJECT_DIR"
+echo "Installing baton v${SOURCE_VERSION:-3.0} into: $PROJECT_DIR"
 echo "  Detected IDE: $IDE"
 
 # --- 0. v1 → v2 migration ---
@@ -340,16 +340,19 @@ case "$IDE" in
 esac
 
 echo ""
-echo "Done. Your project now uses the plan-first workflow."
+echo "Done. Your project now uses the Baton workflow."
 echo ""
 echo "  How it works:"
 echo "  1. Start your AI coding session"
-echo "     → Baton guides the AI to research first (code writes are blocked)"
+echo "     → Baton guides the AI to research deeply first (code writes are blocked)"
 echo ""
 echo "  2. Tell the AI what you want to build or fix"
-echo "     → The AI writes plan.md with research findings and proposed changes"
+echo "     → The AI writes research.md, then plan.md with proposed changes"
 echo ""
-echo "  3. Review plan.md. When satisfied, add this line at the top:"
+echo "  3. Annotate plan.md with [NOTE] [Q] [CHANGE] [DEEPER] [MISSING]"
+echo "     → AI responds to each annotation, cycle until satisfied"
+echo ""
+echo "  4. When satisfied, add this line to plan.md:"
 echo "     <!-- BATON:GO -->"
 echo "     → Now the AI can write code"
 echo ""

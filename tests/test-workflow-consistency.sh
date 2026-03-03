@@ -8,10 +8,10 @@ FULL="$SCRIPT_DIR/../.baton/workflow-full.md"
 FAIL=0
 
 extract_section() {
-    awk -v sect="### $2" 'BEGIN{f=0} $0==sect{f=1} f && /^### / && $0!=sect{exit} f{print}' "$1"
+    awk -v sect="### $2" 'BEGIN{f=0} $0==sect{f=1} f && /^---$/{exit} f && /^### / && $0!=sect{exit} f{print}' "$1"
 }
 
-for section in "Rules" "Session handoff" "Parallel sessions"; do
+for section in "Rules" "Session handoff" "Parallel sessions (optional)"; do
     A="$(extract_section "$SLIM" "$section")"
     B="$(extract_section "$FULL" "$section")"
     if [ "$A" != "$B" ]; then
@@ -21,6 +21,18 @@ for section in "Rules" "Session handoff" "Parallel sessions"; do
         echo "OK: '$section' is consistent"
     fi
 done
+
+# --- Shared header consistency: first block (up to first ---) should match ---
+echo ""
+echo "Checking shared header (before first ---)..."
+HEAD_SLIM="$(awk '/^---$/{exit} {print}' "$SLIM")"
+HEAD_FULL="$(awk '/^---$/{exit} {print}' "$FULL")"
+if [ "$HEAD_SLIM" != "$HEAD_FULL" ]; then
+    echo "DRIFT: header block differs between workflow.md and workflow-full.md"
+    FAIL=1
+else
+    echo "OK: header block is consistent"
+fi
 
 # --- find_plan consistency: all 4 scripts must find plan.md the same way ---
 echo ""

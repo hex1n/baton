@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-phase-guide.sh — Tests for phase-guide.sh (SessionStart hook)
+# test-phase-guide.sh — Tests for phase-guide.sh v3 (SessionStart hook)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,12 +17,6 @@ run_guide() {
     (cd "$dir" && sh "$GUIDE" 2>&1 1>/dev/null)
 }
 
-run_guide_exit() {
-    # Run phase-guide.sh and return exit code
-    local dir="$1"
-    (cd "$dir" && sh "$GUIDE" 2>/dev/null); echo $?
-}
-
 assert_output_contains() {
     local dir="$1" pattern="$2" desc="$3"
     TOTAL=$((TOTAL + 1))
@@ -33,6 +27,7 @@ assert_output_contains() {
         PASS=$((PASS + 1))
     else
         echo "  FAIL: $desc (expected '$pattern' in output)"
+        echo "    got: $output"
         FAIL=$((FAIL + 1))
     fi
 }
@@ -64,74 +59,83 @@ assert_exit_zero() {
 }
 
 # ============================================================
-echo "=== Test 1: No plan.md → RESEARCH phase guidance ==="
+echo "=== Test 1: No files → RESEARCH phase guidance ==="
 d="$tmp/t1" && mkdir -p "$d"
 assert_output_contains "$d" "RESEARCH" "outputs RESEARCH phase label"
 assert_output_contains "$d" "research.md" "mentions research.md"
-assert_output_contains "$d" "Scope" "mentions Scope section"
-assert_output_contains "$d" "Bug fix" "mentions bug fix shortcut"
-assert_output_contains "$d" "subagent" "mentions subagent strategy"
-assert_exit_zero "$d" "always exit 0 (no plan)"
+assert_output_contains "$d" "call chain" "mentions call chain tracing"
+assert_output_contains "$d" "file:line" "mentions file:line evidence"
+assert_output_contains "$d" "plan.md" "mentions option to skip to plan.md"
+assert_exit_zero "$d" "always exit 0 (no files)"
 
 # ============================================================
 echo ""
-echo "=== Test 2: plan.md without GO → PLAN phase guidance ==="
+echo "=== Test 2: research.md exists, no plan.md → PLAN phase guidance ==="
 d="$tmp/t2" && mkdir -p "$d"
-echo "# Plan" > "$d/plan.md"
+echo "# Research findings" > "$d/research.md"
 assert_output_contains "$d" "PLAN" "outputs PLAN phase label"
-assert_output_contains "$d" "scope" "mentions scope declaration"
-assert_output_contains "$d" "Verification" "mentions verification"
-assert_output_contains "$d" "Self-review" "mentions self-review"
-assert_output_contains "$d" "acceptance criteria" "mentions annotation exit checklist"
-assert_output_contains "$d" "Goal.*Scope.*Approach" "mentions suggested plan structure"
+assert_output_contains "$d" "research" "mentions research reference"
+assert_output_contains "$d" "todolist" "mentions not writing todolist"
+assert_output_contains "$d" "approach" "mentions approach analysis"
+assert_exit_zero "$d" "always exit 0 (research, no plan)"
+
+# ============================================================
+echo ""
+echo "=== Test 3: plan.md without GO → ANNOTATION phase guidance ==="
+d="$tmp/t3" && mkdir -p "$d"
+echo "# Plan" > "$d/plan.md"
+assert_output_contains "$d" "ANNOTATION" "outputs ANNOTATION cycle label"
+assert_output_contains "$d" "\[NOTE\]" "mentions NOTE annotation"
+assert_output_contains "$d" "\[Q\]" "mentions Q annotation"
+assert_output_contains "$d" "\[CHANGE\]" "mentions CHANGE annotation"
+assert_output_contains "$d" "file:line" "mentions evidence-based response"
+assert_output_contains "$d" "BATON:GO" "mentions BATON:GO unlock"
 assert_exit_zero "$d" "always exit 0 (plan, no GO)"
 
 # ============================================================
 echo ""
-echo "=== Test 3: plan.md with GO → IMPLEMENT phase guidance ==="
-d="$tmp/t3" && mkdir -p "$d"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
+echo "=== Test 4: plan.md with GO → IMPLEMENT phase guidance ==="
+d="$tmp/t4" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+EOF
 assert_output_contains "$d" "IMPLEMENT" "outputs IMPLEMENT phase label"
-assert_output_contains "$d" "compact" "mentions /compact"
-assert_output_contains "$d" "test suite" "mentions test suite"
-assert_output_contains "$d" "Rollback" "mentions rollback strategy"
+assert_output_contains "$d" "typecheck" "mentions typecheck"
+assert_output_contains "$d" "BATON:GO" "mentions BATON:GO"
 assert_exit_zero "$d" "always exit 0 (implement)"
 
 # ============================================================
 echo ""
-echo "=== Test 4: plan.md with [x] completed tasks → archival reminder ==="
-d="$tmp/t4" && mkdir -p "$d"
+echo "=== Test 5: plan.md + GO + all todos done → ARCHIVE reminder ==="
+d="$tmp/t5" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
-# Plan
+<!-- BATON:GO -->
+## Todo
 - [x] Step 1: Done
-- [ ] Step 2: Not done
+- [x] Step 2: Done
+- [x] Step 3: Done
 EOF
-assert_output_contains "$d" "Stale" "detects stale plan with completed tasks"
-assert_output_contains "$d" "Archive" "suggests archival"
-assert_output_contains "$d" "plans/" "suggests plans/ directory"
-assert_output_contains "$d" "Lessons Learned" "suggests keeping Lessons Learned section"
-# Should still show PLAN phase guidance (no GO)
-assert_output_contains "$d" "PLAN" "still shows phase guidance after archival notice"
-assert_exit_zero "$d" "always exit 0 (archival detection)"
+assert_output_contains "$d" "All tasks complete" "detects all tasks completed"
+assert_output_contains "$d" "archiving" "suggests archiving"
+assert_output_contains "$d" "plans/" "mentions plans/ directory"
+assert_output_contains "$d" "Annotation Log" "mentions Annotation Log value"
+assert_exit_zero "$d" "always exit 0 (archive)"
 
 # ============================================================
 echo ""
-echo "=== Test 5: plan.md with GO and [x] → NO archival (active implementation) ==="
-d="$tmp/t5" && mkdir -p "$d"
-cat > "$d/plan.md" << 'EOF'
-# Plan
-<!-- BATON:GO -->
-- [x] Step 1: Done
-- [ ] Step 2: Not done
-EOF
-assert_output_not_contains "$d" "Stale" "no archival during active implementation"
-assert_output_contains "$d" "IMPLEMENT" "shows IMPLEMENT phase"
+echo "=== Test 6: No research.md + plan.md → ANNOTATION (simple change) ==="
+d="$tmp/t6" && mkdir -p "$d"
+echo "# Simple change plan" > "$d/plan.md"
+# No research.md — plan was created directly (simple change scenario)
+assert_output_contains "$d" "ANNOTATION" "annotation cycle for direct plan"
 assert_exit_zero "$d" "always exit 0"
 
 # ============================================================
 echo ""
-echo "=== Test 6: BATON_PLAN custom plan file name ==="
-d="$tmp/t6" && mkdir -p "$d"
+echo "=== Test 7: BATON_PLAN custom plan file name ==="
+d="$tmp/t7" && mkdir -p "$d"
 echo "<!-- BATON:GO -->" > "$d/custom.md"
 # Default → no plan found → RESEARCH
 assert_output_contains "$d" "RESEARCH" "default plan name → RESEARCH (no plan.md)"
@@ -148,17 +152,31 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 7: Walk-up plan discovery ==="
-d="$tmp/t7" && mkdir -p "$d/project/src/components"
+echo "=== Test 8: Walk-up plan discovery ==="
+d="$tmp/t8" && mkdir -p "$d/project/src/components"
 echo "# Plan" > "$d/project/plan.md"
-assert_output_contains "$d/project/src/components" "PLAN" "walk-up finds plan.md in parent"
+assert_output_contains "$d/project/src/components" "ANNOTATION" "walk-up finds plan.md in parent"
 
 # ============================================================
 echo ""
-echo "=== Test 8: Phase guidance mutually exclusive ==="
-d="$tmp/t8" && mkdir -p "$d"
-# RESEARCH phase should not mention IMPLEMENT or PLAN keywords from other phases
+echo "=== Test 9: Phase guidance mutually exclusive ==="
+d="$tmp/t9" && mkdir -p "$d"
+# RESEARCH phase should not mention IMPLEMENT or ANNOTATION keywords
 assert_output_not_contains "$d" "IMPLEMENT" "RESEARCH phase does not mention IMPLEMENT"
+assert_output_not_contains "$d" "ANNOTATION" "RESEARCH phase does not mention ANNOTATION"
+
+# ============================================================
+echo ""
+echo "=== Test 10: plan + GO + mixed todos → IMPLEMENT (not archive) ==="
+d="$tmp/t10" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] Step 1: Done
+- [ ] Step 2: Not done
+EOF
+assert_output_contains "$d" "IMPLEMENT" "partial completion → IMPLEMENT phase"
+assert_output_not_contains "$d" "All tasks complete" "partial completion → not archive"
 
 # ============================================================
 echo ""

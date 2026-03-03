@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-stop-guard.sh — Tests for stop-guard.sh (Stop hook)
+# test-stop-guard.sh — Tests for stop-guard.sh v3 (Stop hook)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -119,7 +119,7 @@ assert_exit_zero "$d" "exit 0 even with remaining items"
 
 # ============================================================
 echo ""
-echo "=== Test 5: plan + GO, all done → silent exit 0 ==="
+echo "=== Test 5: plan + GO, all done → archival reminder ==="
 d="$tmp/t5" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 # Plan
@@ -128,7 +128,9 @@ cat > "$d/plan.md" << 'EOF'
 - [x] Step 2: Done
 - [x] Step 3: Done
 EOF
-assert_output_empty "$d" "no output when all TODOs complete"
+assert_output_contains "$d" "todo items complete" "shows completion message"
+assert_output_contains "$d" "archiving" "suggests archiving"
+assert_output_contains "$d" "Annotation Log" "mentions Annotation Log value"
 assert_exit_zero "$d" "exit 0 when all complete"
 
 # ============================================================

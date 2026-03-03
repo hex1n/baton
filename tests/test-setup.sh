@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-setup.sh — Tests for setup.sh v2
+# test-setup.sh — Tests for setup.sh v3
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -110,7 +110,7 @@ d="$tmp/t2" && mkdir -p "$d"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDE: claude"
 # Claude Code gets slim workflow (SessionStart support)
-assert_file_contains "$d/.baton/workflow.md" "Phase-specific guidance is provided automatically"
+assert_file_contains "$d/.baton/workflow.md" "Shared Understanding Construction Protocol"
 
 # ============================================================
 echo ""
@@ -187,7 +187,7 @@ else
     FAIL=$((FAIL + 1))
 fi
 assert_file_exists "$d/.baton/write-lock.sh"
-assert_file_contains "$d/.baton/write-lock.sh" "Version: 2.0"
+assert_file_contains "$d/.baton/write-lock.sh" "Version: 3.0"
 
 # ============================================================
 echo ""
@@ -256,7 +256,7 @@ chmod +x "$d/.baton/write-lock.sh"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "v0.1"
 assert_output_contains "$OUTPUT" "Updated write-lock.sh"
-assert_file_contains "$d/.baton/write-lock.sh" "Version: 2.0"
+assert_file_contains "$d/.baton/write-lock.sh" "Version: 3.0"
 
 # ============================================================
 echo ""

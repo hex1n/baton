@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-write-lock.sh — Tests for write-lock.sh v2
+# test-write-lock.sh — Tests for write-lock.sh v3
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -257,15 +257,15 @@ else
     echo "  FAIL: no plan blocking message should mention research.md"
     FAIL=$((FAIL + 1))
 fi
-# Plan without GO → plan guidance
+# Plan without GO → annotation cycle guidance
 echo "# Plan" > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 STDERR="$(run_lock_stderr "$d" "src/app.ts")"
-if echo "$STDERR" | grep -q "scope"; then
-    echo "  pass: plan without GO → blocking message mentions scope"
+if echo "$STDERR" | grep -q "Annotation cycle"; then
+    echo "  pass: plan without GO → blocking message mentions annotation cycle"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: plan without GO blocking message should mention scope"
+    echo "  FAIL: plan without GO blocking message should mention annotation cycle"
     FAIL=$((FAIL + 1))
 fi
 # ============================================================
