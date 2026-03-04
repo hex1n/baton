@@ -7,7 +7,13 @@
 # --- Fail-open on unexpected errors ---
 trap 'echo "⚠️ BATON bash-guard: unexpected error, skipping check" >&2; exit 0' HUP INT TERM
 
-PLAN_NAME="${BATON_PLAN:-plan.md}"
+# SYNCED: plan-name-resolution — same in all baton scripts
+if [ -n "$BATON_PLAN" ]; then
+    PLAN_NAME="$BATON_PLAN"
+else
+    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
+    PLAN_NAME="${_candidate:-plan.md}"
+fi
 # SYNCED: find_plan — same algorithm in write-lock.sh, phase-guide.sh, stop-guard.sh
 PLAN=""
 d="$(pwd)"

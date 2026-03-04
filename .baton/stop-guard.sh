@@ -12,7 +12,13 @@
 # --- Fail-open on unexpected errors ---
 trap 'echo "⚠️ BATON stop-guard: unexpected error, skipping reminder" >&2; exit 0' HUP INT TERM
 
-PLAN_NAME="${BATON_PLAN:-plan.md}"
+# SYNCED: plan-name-resolution — same in all baton scripts
+if [ -n "$BATON_PLAN" ]; then
+    PLAN_NAME="$BATON_PLAN"
+else
+    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
+    PLAN_NAME="${_candidate:-plan.md}"
+fi
 # SYNCED: find_plan — same algorithm in write-lock.sh, phase-guide.sh, bash-guard.sh
 PLAN=""
 d="$(pwd)"
@@ -29,14 +35,15 @@ grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null || exit 0
 
 # Count TODO items
 TOTAL=$(grep -c '^\- \[' "$PLAN" 2>/dev/null) || TOTAL=0
-DONE=$(grep -c '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
+DONE=$(grep -ci '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
 REMAINING=$((TOTAL - DONE))
 
 if [ "$TOTAL" -gt 0 ] && [ "$REMAINING" -eq 0 ]; then
-    # All done — archival reminder
+    # All done — retrospective + archival reminder
     echo "" >&2
     echo "✅ All todo items complete." >&2
-    echo "📋 Consider archiving: mkdir -p plans && mv $PLAN_NAME plans/\${PLAN_NAME%.md}-\$(date +%Y-%m-%d)-topic.md" >&2
+    echo "📋 Before archiving, append ## Retrospective to $PLAN_NAME: what did the plan get wrong?" >&2
+    echo "   Then: mkdir -p plans && mv $PLAN_NAME plans/\${PLAN_NAME%.md}-\$(date +%Y-%m-%d)-topic.md" >&2
     echo "💡 The Annotation Log records design decision rationale — valuable long-term reference." >&2
 elif [ "$REMAINING" -gt 0 ]; then
     # In progress — progress reminder

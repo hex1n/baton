@@ -108,35 +108,42 @@ echo ""
 echo "=== Test 2: Default IDE detection (claude) ==="
 d="$tmp/t2" && mkdir -p "$d"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDE: claude"
+assert_output_contains "$OUTPUT" "Detected IDEs: claude"
 # Claude Code gets slim workflow (SessionStart support)
 assert_file_contains "$d/.baton/workflow.md" "Shared Understanding Construction Protocol"
 
 # ============================================================
 echo ""
-echo "=== Test 3: Cursor IDE detection → full workflow ==="
+echo "=== Test 3: Cursor IDE detection → slim workflow + hooks ==="
 d="$tmp/t3" && mkdir -p "$d/.cursor"
-OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDE: cursor"
-# Cursor gets full workflow (no SessionStart support)
-assert_file_contains "$d/.baton/workflow.md" "RESEARCH"
+(cd "$d" && git init -q)
+OUTPUT="$(BATON_SKIP=pre-commit bash "$SETUP" "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Detected IDEs: cursor"
+# Cursor now has SessionStart hook support → slim workflow
+assert_file_exists "$d/.baton/workflow.md"
 assert_file_exists "$d/.cursor/rules/baton.mdc"
 assert_file_contains "$d/.cursor/rules/baton.mdc" "alwaysApply"
+assert_file_exists "$d/.cursor/hooks.json"
+assert_file_contains "$d/.cursor/hooks.json" "adapter-cursor"
 
 # ============================================================
 echo ""
-echo "=== Test 4: Windsurf IDE detection ==="
+echo "=== Test 4: Windsurf IDE detection → hooks + rules ==="
 d="$tmp/t4" && mkdir -p "$d/.windsurf"
-OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDE: windsurf"
+(cd "$d" && git init -q)
+OUTPUT="$(BATON_SKIP=pre-commit bash "$SETUP" "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Detected IDEs: windsurf"
 assert_file_exists "$d/.windsurf/rules/baton-workflow.md"
+assert_file_exists "$d/.windsurf/hooks.json"
+assert_file_contains "$d/.windsurf/hooks.json" "write-lock"
 
 # ============================================================
 echo ""
 echo "=== Test 5: Cline IDE detection → adapter installed ==="
 d="$tmp/t5" && mkdir -p "$d/.clinerules"
-OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDE: cline"
+(cd "$d" && git init -q)
+OUTPUT="$(BATON_SKIP=pre-commit bash "$SETUP" "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Detected IDEs: cline"
 assert_file_exists "$d/.baton/adapters/adapter-cline.sh"
 assert_file_executable "$d/.baton/adapters/adapter-cline.sh"
 assert_file_exists "$d/.clinerules/baton-workflow.md"

@@ -1,0 +1,49 @@
+#!/bin/sh
+# pre-commit — baton plan-first enforcement (git pre-commit hook)
+# Blocks source code commits unless plan.md contains <!-- BATON:GO -->
+# baton:pre-commit
+
+# Emergency bypass
+[ "${BATON_BYPASS:-}" = "1" ] && exit 0
+
+# Check staged files: if all are markdown, allow
+HAS_SOURCE=0
+for f in $(git diff --cached --name-only --diff-filter=ACM); do
+    case "$f" in
+        *.md|*.MD|*.markdown|*.mdx) ;;
+        *) HAS_SOURCE=1; break ;;
+    esac
+done
+[ "$HAS_SOURCE" -eq 0 ] && exit 0
+
+# Walk-up to find plan file
+# SYNCED: plan-name-resolution — same in all baton scripts
+if [ -n "$BATON_PLAN" ]; then
+    PLAN_NAME="$BATON_PLAN"
+else
+    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
+    PLAN_NAME="${_candidate:-plan.md}"
+fi
+PLAN=""
+d="$(pwd)"
+while true; do
+    [ -f "$d/$PLAN_NAME" ] && { PLAN="$d/$PLAN_NAME"; break; }
+    p="$(dirname "$d")"
+    [ "$p" = "$d" ] && break
+    d="$p"
+done
+
+# Check BATON:GO
+if [ -z "$PLAN" ]; then
+    echo "🔒 baton: No plan.md found. Create a plan before committing source code." >&2
+    echo "   Bypass: BATON_BYPASS=1 git commit" >&2
+    exit 1
+fi
+
+if ! grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
+    echo "🔒 baton: plan.md exists but not approved. Add <!-- BATON:GO --> first." >&2
+    echo "   Bypass: BATON_BYPASS=1 git commit" >&2
+    exit 1
+fi
+
+exit 0

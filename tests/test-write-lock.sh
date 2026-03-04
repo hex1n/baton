@@ -108,7 +108,7 @@ assert_allowed "$d" "plan.md"
 echo ""
 echo "=== Test 4: Re-lock by removing GO marker ==="
 d="$tmp/t4" && mkdir -p "$d"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 assert_allowed "$d" "app.js"
 # Remove GO marker
 echo "# Plan (revised)" > "$d/plan.md"
@@ -118,7 +118,7 @@ assert_blocked "$d" "app.js"
 echo ""
 echo "=== Test 5: GO marker in subdirectory plan.md (walk-up) ==="
 d="$tmp/t5" && mkdir -p "$d/src/components"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 assert_allowed "$d/src/components" "Button.tsx"
 
 # ============================================================
@@ -184,8 +184,8 @@ echo "# Plan" > "$d/plan.md"
 # Simulate PreToolUse stdin JSON — should block (no GO marker)
 JSON='{"tool_input":{"file_path":"src/app.ts","content":"hello"}}'
 assert_blocked_stdin "$d" "$JSON"
-# Now add GO — should allow
-echo "<!-- BATON:GO -->" >> "$d/plan.md"
+# Now add GO + Todo — should allow
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' >> "$d/plan.md"
 assert_allowed_stdin "$d" "$JSON"
 # stdin JSON with markdown target — always allowed
 JSON_MD='{"tool_input":{"file_path":"research.md","content":"findings"}}'
@@ -196,7 +196,7 @@ echo ""
 echo "=== Test 10: BATON_PLAN custom plan file name ==="
 d="$tmp/t10" && mkdir -p "$d"
 # No plan.md, but custom-plan.md with GO marker
-echo "<!-- BATON:GO -->" > "$d/custom-plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/custom-plan.md"
 # Default plan name → blocked (no plan.md)
 assert_blocked "$d" "src/app.ts"
 # Custom plan name → allowed (custom-plan.md has GO)
@@ -270,9 +270,16 @@ else
 fi
 # ============================================================
 echo ""
+echo "=== Test 19: GO marker without ## Todo → allow (write-lock is minimal) ==="
+d="$tmp/t19" && mkdir -p "$d"
+echo "<!-- BATON:GO -->" > "$d/plan.md"
+assert_allowed "$d" "src/app.ts"
+
+# ============================================================
+echo ""
 echo "=== Test 16: JSON cwd field for plan discovery ==="
 d="$tmp/t16" && mkdir -p "$d/project/src"
-echo "<!-- BATON:GO -->" > "$d/project/plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/project/plan.md"
 # stdin JSON with cwd pointing to project/src → should find plan.md in project/
 TOTAL=$((TOTAL + 1))
 JSON="{\"tool_input\":{\"file_path\":\"src/app.ts\"},\"cwd\":\"$d/project/src\"}"
@@ -288,7 +295,7 @@ fi
 echo ""
 echo "=== Test 17: awk fallback (hide jq) ==="
 d="$tmp/t17" && mkdir -p "$d"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
 # Build a PATH that excludes the real jq binary
@@ -311,7 +318,7 @@ fi
 echo ""
 echo "=== Test 18: Performance benchmark (write-lock latency) ==="
 d="$tmp/t18" && mkdir -p "$d"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 START_NS=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
 for i in $(seq 1 100); do

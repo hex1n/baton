@@ -58,7 +58,13 @@ case "$TARGET" in
 esac
 
 # --- Find plan file (from JSON cwd, then shell cwd) ---
-PLAN_NAME="${BATON_PLAN:-plan.md}"
+# SYNCED: plan-name-resolution — same in all baton scripts
+if [ -n "$BATON_PLAN" ]; then
+    PLAN_NAME="$BATON_PLAN"
+else
+    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
+    PLAN_NAME="${_candidate:-plan.md}"
+fi
 
 # SYNCED: find_plan — same algorithm in phase-guide.sh, stop-guard.sh, bash-guard.sh
 # Changes here must be mirrored. Validated by test-workflow-consistency.sh

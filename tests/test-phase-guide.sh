@@ -68,6 +68,11 @@ assert_output_contains "$d" "file:line" "mentions file:line evidence"
 assert_output_contains "$d" "plan.md" "mentions option to skip to plan.md"
 assert_output_contains "$d" "Mindset" "RESEARCH phase shows Mindset reminder"
 assert_output_contains "$d" "subagent" "RESEARCH phase mentions subagents"
+assert_output_contains "$d" "批注区" "RESEARCH phase mentions 批注区"
+assert_output_contains "$d" "documentation retrieval" "RESEARCH phase mentions doc retrieval tools"
+assert_output_contains "$d" "Self-Review" "RESEARCH phase mentions self-review"
+assert_output_contains "$d" "Calibrate depth" "RESEARCH phase mentions complexity calibration"
+assert_output_contains "$d" "spike" "RESEARCH phase mentions spike/exploratory coding"
 assert_exit_zero "$d" "always exit 0 (no files)"
 
 # ============================================================
@@ -81,6 +86,9 @@ assert_output_contains "$d" "todolist" "mentions not writing todolist"
 assert_output_contains "$d" "approach" "mentions approach analysis"
 assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
 assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
+assert_output_contains "$d" "批注区" "PLAN phase mentions 批注区"
+assert_output_contains "$d" "Self-Review" "PLAN phase mentions self-review"
+assert_output_contains "$d" "Calibrate depth" "PLAN phase mentions complexity calibration"
 assert_exit_zero "$d" "always exit 0 (research, no plan)"
 
 # ============================================================
@@ -146,7 +154,11 @@ assert_exit_zero "$d" "always exit 0"
 echo ""
 echo "=== Test 7: BATON_PLAN custom plan file name ==="
 d="$tmp/t7" && mkdir -p "$d"
-echo "<!-- BATON:GO -->" > "$d/custom.md"
+cat > "$d/custom.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+EOF
 # Default → no plan found → RESEARCH
 assert_output_contains "$d" "RESEARCH" "default plan name → RESEARCH (no plan.md)"
 # Custom plan → IMPLEMENT
@@ -187,6 +199,21 @@ cat > "$d/plan.md" << 'EOF'
 EOF
 assert_output_contains "$d" "IMPLEMENT" "partial completion → IMPLEMENT phase"
 assert_output_not_contains "$d" "All tasks complete" "partial completion → not archive"
+
+# ============================================================
+echo ""
+echo "=== Test 11: plan + GO but no ## Todo → AWAITING_TODO ==="
+d="$tmp/t11" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+# My Plan
+<!-- BATON:GO -->
+Some content but no todo section
+EOF
+assert_output_contains "$d" "no ## Todo found" "GO without Todo → awaiting todolist reminder"
+assert_output_not_contains "$d" "IMPLEMENT phase" "GO without Todo → not IMPLEMENT"
+assert_output_contains "$d" "generate todolist" "reminds to generate todolist"
+assert_output_contains "$d" "Mindset" "AWAITING_TODO phase shows Mindset reminder"
+assert_exit_zero "$d" "always exit 0 (awaiting todo)"
 
 # ============================================================
 echo ""

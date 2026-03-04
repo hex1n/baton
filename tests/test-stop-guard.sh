@@ -129,6 +129,7 @@ cat > "$d/plan.md" << 'EOF'
 - [x] Step 3: Done
 EOF
 assert_output_contains "$d" "todo items complete" "shows completion message"
+assert_output_contains "$d" "Retrospective" "suggests writing Retrospective before archiving"
 assert_output_contains "$d" "archiving" "suggests archiving"
 assert_output_contains "$d" "Annotation Log" "mentions Annotation Log value"
 assert_exit_zero "$d" "exit 0 when all complete"
