@@ -13,9 +13,9 @@ trap 'rm -rf $tmp' EXIT
 
 # Helper: set up a test directory with write-lock.sh
 setup_dir() {
-    d="$tmp/$1" && mkdir -p "$d/.baton/adapters"
-    cp "$SCRIPT_DIR/../.baton/write-lock.sh" "$d/.baton/write-lock.sh"
-    chmod +x "$d/.baton/write-lock.sh"
+    d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
+    cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
+    chmod +x "$d/.baton/hooks/write-lock.sh"
     # Copy the adapter under test
     if [ -n "${2:-}" ] && [ -f "$ADAPTERS/$2" ]; then
         cp "$ADAPTERS/$2" "$d/.baton/adapters/$2"

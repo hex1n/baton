@@ -14,13 +14,13 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
       - name: Lint write-lock.sh
-        run: shellcheck .baton/write-lock.sh
+        run: shellcheck .baton/hooks/write-lock.sh
       - name: Lint phase-guide.sh
-        run: shellcheck .baton/phase-guide.sh
+        run: shellcheck .baton/hooks/phase-guide.sh
       - name: Lint bash-guard.sh
-        run: shellcheck .baton/bash-guard.sh
+        run: shellcheck .baton/hooks/bash-guard.sh
       - name: Lint stop-guard.sh
-        run: shellcheck .baton/stop-guard.sh
+        run: shellcheck .baton/hooks/stop-guard.sh
       - name: Lint adapters
         run: shellcheck .baton/adapters/adapter-cline.sh .baton/adapters/adapter-windsurf.sh
       - name: Lint setup.sh

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GUARD="$SCRIPT_DIR/../.baton/stop-guard.sh"
+GUARD="$SCRIPT_DIR/../.baton/hooks/stop-guard.sh"
 PASS=0
 FAIL=0
 TOTAL=0

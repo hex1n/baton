@@ -114,8 +114,8 @@ should_skip() {
 
 install_versioned_script() {
     _ivs_name="$1"
-    _ivs_src="$BATON_DIR/.baton/$_ivs_name"
-    _ivs_dst="$PROJECT_DIR/.baton/$_ivs_name"
+    _ivs_src="$BATON_DIR/.baton/hooks/$_ivs_name"
+    _ivs_dst="$PROJECT_DIR/.baton/hooks/$_ivs_name"
     _ivs_skip="${_ivs_name%.sh}"
 
     [ ! -f "$_ivs_src" ] && return
@@ -197,42 +197,42 @@ configure_claude() {
     SETTINGS="$PROJECT_DIR/.claude/settings.json"
     if [ -f "$SETTINGS" ]; then
         NEEDS_UPDATE=0
-        if ! grep -q '.baton/write-lock' "$SETTINGS" 2>/dev/null; then
+        if ! grep -q '.baton/hooks/write-lock' "$SETTINGS" 2>/dev/null; then
             NEEDS_UPDATE=1
         fi
         if grep -q '.claude/write-lock' "$SETTINGS" 2>/dev/null; then
-            sed -i.bak 's|\.claude/write-lock\.sh|.baton/write-lock.sh|g' "$SETTINGS"
+            sed -i.bak 's|\.claude/write-lock\.sh|.baton/hooks/write-lock.sh|g' "$SETTINGS"
             rm -f "$SETTINGS.bak"
             echo "  ✓ Updated write-lock path in settings.json (.claude/ → .baton/)"
             NEEDS_UPDATE=0
         fi
         if [ "$NEEDS_UPDATE" = "1" ]; then
             echo "  ⚠ .claude/settings.json exists but may need write-lock hook."
-            echo "    See .baton/write-lock.sh for hook config."
+            echo "    See .baton/hooks/write-lock.sh for hook config."
         fi
         if ! grep -q 'phase-guide' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ SessionStart hook for phase-guide.sh not found in settings.json."
-            echo "    Add SessionStart hook: sh .baton/phase-guide.sh"
+            echo "    Add SessionStart hook: sh .baton/hooks/phase-guide.sh"
         fi
         if ! grep -q 'stop-guard' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ Stop hook for stop-guard.sh not found in settings.json."
-            echo "    Add Stop hook: sh .baton/stop-guard.sh"
+            echo "    Add Stop hook: sh .baton/hooks/stop-guard.sh"
         fi
         if ! grep -q 'post-write-tracker' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ PostToolUse hook for post-write-tracker.sh not found in settings.json."
-            echo "    Add PostToolUse hook: sh .baton/post-write-tracker.sh"
+            echo "    Add PostToolUse hook: sh .baton/hooks/post-write-tracker.sh"
         fi
         if ! grep -q 'subagent-context' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ SubagentStart hook for subagent-context.sh not found in settings.json."
-            echo "    Add SubagentStart hook: sh .baton/subagent-context.sh"
+            echo "    Add SubagentStart hook: sh .baton/hooks/subagent-context.sh"
         fi
         if ! grep -q 'completion-check' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ TaskCompleted hook for completion-check.sh not found in settings.json."
-            echo "    Add TaskCompleted hook: sh .baton/completion-check.sh"
+            echo "    Add TaskCompleted hook: sh .baton/hooks/completion-check.sh"
         fi
         if ! grep -q 'pre-compact' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ PreCompact hook for pre-compact.sh not found in settings.json."
-            echo "    Add PreCompact hook: sh .baton/pre-compact.sh"
+            echo "    Add PreCompact hook: sh .baton/hooks/pre-compact.sh"
         fi
     else
         cat > "$SETTINGS" << 'JSON'
@@ -244,7 +244,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/phase-guide.sh"
+            "command": "sh .baton/hooks/phase-guide.sh"
           }
         ]
       }
@@ -255,7 +255,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/write-lock.sh"
+            "command": "sh .baton/hooks/write-lock.sh"
           }
         ]
       }
@@ -266,7 +266,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/post-write-tracker.sh"
+            "command": "sh .baton/hooks/post-write-tracker.sh"
           }
         ]
       }
@@ -277,7 +277,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/stop-guard.sh"
+            "command": "sh .baton/hooks/stop-guard.sh"
           }
         ]
       }
@@ -288,7 +288,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/subagent-context.sh"
+            "command": "sh .baton/hooks/subagent-context.sh"
           }
         ]
       }
@@ -299,7 +299,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/completion-check.sh"
+            "command": "sh .baton/hooks/completion-check.sh"
           }
         ]
       }
@@ -310,7 +310,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/pre-compact.sh"
+            "command": "sh .baton/hooks/pre-compact.sh"
           }
         ]
       }
@@ -363,7 +363,7 @@ MDC
   "hooks": {
     "sessionStart": [
       {
-        "command": "sh .baton/phase-guide.sh",
+        "command": "sh .baton/hooks/phase-guide.sh",
         "timeout": 10
       }
     ],
@@ -405,7 +405,7 @@ configure_windsurf() {
   "hooks": {
     "pre_write_code": [
       {
-        "command": "sh .baton/write-lock.sh",
+        "command": "sh .baton/hooks/write-lock.sh",
         "show_output": true
       }
     ]
@@ -441,7 +441,7 @@ configure_cline() {
 # ==========================================
 
 IDES="$(detect_ides)"
-SOURCE_VERSION="$(get_version "$BATON_DIR/.baton/write-lock.sh")"
+SOURCE_VERSION="$(get_version "$BATON_DIR/.baton/hooks/write-lock.sh")"
 
 echo "Installing baton v${SOURCE_VERSION:-3.0} into: $PROJECT_DIR"
 echo "  Detected IDEs: $IDES"
@@ -450,8 +450,9 @@ echo "  Detected IDEs: $IDES"
 if [ -f "$PROJECT_DIR/.claude/write-lock.sh" ] && [ ! -d "$PROJECT_DIR/.baton" ]; then
     echo "  ⬆ Migrating from v1 layout..."
     mkdir -p "$PROJECT_DIR/.baton"
-    mv "$PROJECT_DIR/.claude/write-lock.sh" "$PROJECT_DIR/.baton/write-lock.sh"
-    echo "  ✓ Moved write-lock.sh to .baton/"
+    mkdir -p "$PROJECT_DIR/.baton/hooks"
+    mv "$PROJECT_DIR/.claude/write-lock.sh" "$PROJECT_DIR/.baton/hooks/write-lock.sh"
+    echo "  ✓ Moved write-lock.sh to .baton/hooks/"
 fi
 
 # Detect legacy workflow in CLAUDE.md
@@ -463,7 +464,7 @@ if [ -f "$CLAUDE_MD" ] && grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null && \
 fi
 
 # --- 1. Install .baton/ directory ---
-mkdir -p "$PROJECT_DIR/.baton/adapters"
+mkdir -p "$PROJECT_DIR/.baton/hooks" "$PROJECT_DIR/.baton/adapters"
 
 # Install scripts (versioned + skippable)
 install_versioned_script "write-lock.sh"
@@ -516,7 +517,7 @@ if ! should_skip "pre-commit"; then
         mkdir -p "$HOOK_DIR"
         PRE_COMMIT="$HOOK_DIR/pre-commit"
         if [ ! -f "$PRE_COMMIT" ]; then
-            cp "$BATON_DIR/hooks/pre-commit" "$PRE_COMMIT"
+            cp "$BATON_DIR/.baton/git-hooks/pre-commit" "$PRE_COMMIT"
             chmod +x "$PRE_COMMIT"
             echo "  ✓ Installed git pre-commit hook"
         elif grep -q 'baton:pre-commit' "$PRE_COMMIT" 2>/dev/null; then
@@ -525,7 +526,7 @@ if ! should_skip "pre-commit"; then
             # Append baton section to existing hook
             printf '\n# baton:pre-commit:start\n' >> "$PRE_COMMIT"
             # Source the baton pre-commit logic
-            cat "$BATON_DIR/hooks/pre-commit" | grep -v '^#!/bin/sh' | grep -v '^# pre-commit' >> "$PRE_COMMIT"
+            cat "$BATON_DIR/.baton/git-hooks/pre-commit" | grep -v '^#!/bin/sh' | grep -v '^# pre-commit' >> "$PRE_COMMIT"
             printf '# baton:pre-commit:end\n' >> "$PRE_COMMIT"
             echo "  ✓ Appended baton section to existing git pre-commit hook"
         fi

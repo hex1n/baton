@@ -13,9 +13,9 @@ trap 'rm -rf $tmp' EXIT
 
 # Helper: set up test directory with write-lock and adapter
 setup_cline() {
-    d="$tmp/$1" && mkdir -p "$d/.baton/adapters"
-    cp "$SCRIPT_DIR/../.baton/write-lock.sh" "$d/.baton/write-lock.sh"
-    chmod +x "$d/.baton/write-lock.sh"
+    d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
+    cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
+    chmod +x "$d/.baton/hooks/write-lock.sh"
     cp "$ADAPTERS/adapter-cline.sh" "$d/.baton/adapters/adapter-cline.sh"
     chmod +x "$d/.baton/adapters/adapter-cline.sh"
     echo "$d"

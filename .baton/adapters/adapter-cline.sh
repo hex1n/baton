@@ -8,7 +8,7 @@ TOOL=$(printf '%s' "$INPUT" | grep -o '"tool":"[^"]*"' | head -1 | cut -d'"' -f4
 
 case "$TOOL" in
     write_to_file|replace_in_file|insert_content)
-        RESULT=$(printf '%s' "$INPUT" | sh "$(dirname "$0")/../write-lock.sh" 2>&1)
+        RESULT=$(printf '%s' "$INPUT" | sh "$(dirname "$0")/../hooks/write-lock.sh" 2>&1)
         EXIT_CODE=$?
         if [ $EXIT_CODE -eq 0 ]; then
             printf '{"cancel":false}\n'

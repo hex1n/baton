@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOCK="$SCRIPT_DIR/../.baton/write-lock.sh"
+LOCK="$SCRIPT_DIR/../.baton/hooks/write-lock.sh"
 PASS=0
 FAIL=0
 TOTAL=0

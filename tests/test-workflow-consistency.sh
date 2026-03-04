@@ -44,10 +44,10 @@ extract_walk_up() {
     sed -n '/while true/,/done/p' "$1" | sed 's/#.*//' | sed '/^$/d' | sed 's/^[[:space:]]*//'
 }
 
-WL="$(extract_walk_up "$SCRIPT_DIR/../.baton/write-lock.sh")"
-PG="$(extract_walk_up "$SCRIPT_DIR/../.baton/phase-guide.sh")"
-SG="$(extract_walk_up "$SCRIPT_DIR/../.baton/stop-guard.sh")"
-BG="$(extract_walk_up "$SCRIPT_DIR/../.baton/bash-guard.sh")"
+WL="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/write-lock.sh")"
+PG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/phase-guide.sh")"
+SG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/stop-guard.sh")"
+BG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/bash-guard.sh")"
 
 # phase-guide and stop-guard should be identical (both inline, same structure)
 if [ "$PG" != "$SG" ]; then
@@ -59,7 +59,7 @@ fi
 
 # All must contain the core algorithm elements
 for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh; do
-    path="$SCRIPT_DIR/../.baton/$script"
+    path="$SCRIPT_DIR/../.baton/hooks/$script"
     body="$(extract_walk_up "$path")"
     # Must have: while loop, file test, dirname, parent==dir termination
     missing=""
@@ -77,7 +77,7 @@ done
 # --- Flow line consistency: Scenario A and B must match ---
 echo ""
 echo "Checking Flow line consistency..."
-GUIDE="$SCRIPT_DIR/../.baton/phase-guide.sh"
+GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
 
 for scenario in "Scenario A" "Scenario B"; do
     LINE_SLIM="$(grep -m1 "$scenario" "$SLIM" 2>/dev/null || true)"
@@ -168,7 +168,7 @@ fi
 # --- Retrospective keyword consistency ---
 echo ""
 echo "Checking Retrospective keyword consistency..."
-STOP="$SCRIPT_DIR/../.baton/stop-guard.sh"
+STOP="$SCRIPT_DIR/../.baton/hooks/stop-guard.sh"
 if grep -q "Retrospective" "$FULL" && grep -q "Retrospective" "$STOP"; then
     echo "OK: Retrospective in both workflow-full.md and stop-guard.sh"
 else

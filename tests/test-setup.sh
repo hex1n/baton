@@ -85,15 +85,15 @@ echo "=== Test 1: Fresh install into empty directory ==="
 d="$tmp/t1" && mkdir -p "$d"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 # .baton/ directory structure
-assert_file_exists "$d/.baton/write-lock.sh"
-assert_file_executable "$d/.baton/write-lock.sh"
-assert_file_exists "$d/.baton/phase-guide.sh"
-assert_file_executable "$d/.baton/phase-guide.sh"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
+assert_file_executable "$d/.baton/hooks/write-lock.sh"
+assert_file_exists "$d/.baton/hooks/phase-guide.sh"
+assert_file_executable "$d/.baton/hooks/phase-guide.sh"
 assert_file_exists "$d/.baton/workflow.md"
 assert_file_exists "$d/.baton/workflow-full.md"
 # .claude/ settings
 assert_file_exists "$d/.claude/settings.json"
-assert_file_contains "$d/.claude/settings.json" ".baton/write-lock"
+assert_file_contains "$d/.claude/settings.json" ".baton/hooks/write-lock"
 assert_file_contains "$d/.claude/settings.json" "PreToolUse"
 assert_file_contains "$d/.claude/settings.json" "SessionStart"
 assert_file_contains "$d/.claude/settings.json" "phase-guide"
@@ -162,11 +162,11 @@ assert_output_contains "$OUTPUT" "write-lock hook"
 # ============================================================
 echo ""
 echo "=== Test 7: Existing settings.json with v2 hook ==="
-d="$tmp/t7" && mkdir -p "$d/.claude" "$d/.baton"
-echo '{"hooks":{"PreToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"sh .baton/write-lock.sh"}]}]}}' > "$d/.claude/settings.json"
+d="$tmp/t7" && mkdir -p "$d/.claude" "$d/.baton/hooks"
+echo '{"hooks":{"PreToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"sh .baton/hooks/write-lock.sh"}]}]}}' > "$d/.claude/settings.json"
 # Pre-install matching write-lock.sh so version check says "up to date"
-cp "$SCRIPT_DIR/../.baton/write-lock.sh" "$d/.baton/write-lock.sh"
-chmod +x "$d/.baton/write-lock.sh"
+cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
+chmod +x "$d/.baton/hooks/write-lock.sh"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 # Should detect the v2 path and report up to date
 assert_output_contains "$OUTPUT" "up to date"
@@ -184,7 +184,7 @@ EOF
 chmod +x "$d/.claude/write-lock.sh"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Migrating from v1"
-# v1 file should be gone, v2 should be in .baton/
+# v1 file should be gone, v2 should be in .baton/hooks/
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/write-lock.sh" ]; then
     echo "  pass: v1 write-lock.sh removed from .claude/"
@@ -193,8 +193,8 @@ else
     echo "  FAIL: v1 write-lock.sh should be removed from .claude/"
     FAIL=$((FAIL + 1))
 fi
-assert_file_exists "$d/.baton/write-lock.sh"
-assert_file_contains "$d/.baton/write-lock.sh" "Version: 3.0"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
+assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: 3.0"
 
 # ============================================================
 echo ""
@@ -210,7 +210,7 @@ cat > "$d/.claude/write-lock.sh" << 'EOF'
 EOF
 chmod +x "$d/.claude/write-lock.sh"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
-assert_file_contains "$d/.claude/settings.json" ".baton/write-lock"
+assert_file_contains "$d/.claude/settings.json" ".baton/hooks/write-lock"
 assert_file_not_contains "$d/.claude/settings.json" ".claude/write-lock"
 assert_output_contains "$OUTPUT" ".claude/ → .baton/"
 
@@ -253,17 +253,17 @@ fi
 # ============================================================
 echo ""
 echo "=== Test 13: Upgrade from outdated version ==="
-d="$tmp/t13" && mkdir -p "$d/.baton"
-cat > "$d/.baton/write-lock.sh" << 'EOF'
+d="$tmp/t13" && mkdir -p "$d/.baton/hooks"
+cat > "$d/.baton/hooks/write-lock.sh" << 'EOF'
 #!/bin/sh
 # Version: 0.1
 echo "old version"
 EOF
-chmod +x "$d/.baton/write-lock.sh"
+chmod +x "$d/.baton/hooks/write-lock.sh"
 OUTPUT="$(bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "v0.1"
 assert_output_contains "$OUTPUT" "Updated write-lock.sh"
-assert_file_contains "$d/.baton/write-lock.sh" "Version: 3.0"
+assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: 3.0"
 
 # ============================================================
 echo ""
@@ -279,11 +279,11 @@ echo "=== Test 15: BATON_SKIP skips single component ==="
 d="$tmp/t15" && mkdir -p "$d"
 OUTPUT="$(BATON_SKIP="bash-guard" bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Skipped bash-guard.sh"
-assert_file_exists "$d/.baton/write-lock.sh"
-assert_file_exists "$d/.baton/phase-guide.sh"
-assert_file_exists "$d/.baton/stop-guard.sh"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
+assert_file_exists "$d/.baton/hooks/phase-guide.sh"
+assert_file_exists "$d/.baton/hooks/stop-guard.sh"
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$d/.baton/bash-guard.sh" ]; then
+if [ ! -f "$d/.baton/hooks/bash-guard.sh" ]; then
     echo "  pass: bash-guard.sh not installed when skipped"
     PASS=$((PASS + 1))
 else
@@ -298,10 +298,10 @@ d="$tmp/t16" && mkdir -p "$d"
 OUTPUT="$(BATON_SKIP="stop-guard,bash-guard" bash "$SETUP" "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Skipped stop-guard.sh"
 assert_output_contains "$OUTPUT" "Skipped bash-guard.sh"
-assert_file_exists "$d/.baton/write-lock.sh"
-assert_file_exists "$d/.baton/phase-guide.sh"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
+assert_file_exists "$d/.baton/hooks/phase-guide.sh"
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$d/.baton/stop-guard.sh" ]; then
+if [ ! -f "$d/.baton/hooks/stop-guard.sh" ]; then
     echo "  pass: stop-guard.sh not installed when skipped"
     PASS=$((PASS + 1))
 else
@@ -309,7 +309,7 @@ else
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$d/.baton/bash-guard.sh" ]; then
+if [ ! -f "$d/.baton/hooks/bash-guard.sh" ]; then
     echo "  pass: bash-guard.sh not installed when skipped"
     PASS=$((PASS + 1))
 else
@@ -323,7 +323,7 @@ echo "=== Test 17: --uninstall removes baton ==="
 d="$tmp/t17" && mkdir -p "$d/.claude"
 # First install
 bash "$SETUP" "$d" > /dev/null 2>&1
-assert_file_exists "$d/.baton/write-lock.sh"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
 assert_file_exists "$d/CLAUDE.md"
 # Now uninstall
 OUTPUT="$(bash "$SETUP" --uninstall "$d" 2>&1)"

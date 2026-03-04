@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GUIDE="$SCRIPT_DIR/../.baton/phase-guide.sh"
+GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
 PASS=0
 FAIL=0
 TOTAL=0

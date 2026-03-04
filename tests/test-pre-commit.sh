@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../hooks/pre-commit"
+HOOK="$SCRIPT_DIR/../.baton/git-hooks/pre-commit"
 PASS=0
 FAIL=0
 TOTAL=0
