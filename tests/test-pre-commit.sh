@@ -154,6 +154,40 @@ fi
 
 # ============================================================
 echo ""
+echo "=== Test 9: Filename with spaces → still detects source code ==="
+d="$(setup_repo t9)"
+printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+(cd "$d" && git add plan.md && git commit -q -m "add plan")
+echo "hello" > "$d/my file with spaces.ts"
+(cd "$d" && git add "my file with spaces.ts")
+TOTAL=$((TOTAL + 1))
+if (cd "$d" && git commit -m "test" 2>/dev/null); then
+    echo "  pass: allowed commit with spaces in filename (plan has GO)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: should allow commit — plan has BATON:GO, spaces in filename shouldn't break it"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 10: Filename with spaces — no GO → block ==="
+d="$(setup_repo t10)"
+echo "# Plan" > "$d/plan.md"
+(cd "$d" && git add plan.md && git commit -q -m "add plan")
+echo "hello" > "$d/my file with spaces.ts"
+(cd "$d" && git add "my file with spaces.ts")
+TOTAL=$((TOTAL + 1))
+if (cd "$d" && git commit -m "test" 2>/dev/null); then
+    echo "  FAIL: should block — file with spaces detected as source, no GO"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: blocked commit — source file with spaces detected, no GO"
+    PASS=$((PASS + 1))
+fi
+
+# ============================================================
+echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then

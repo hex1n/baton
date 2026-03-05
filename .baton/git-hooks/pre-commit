@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # pre-commit — baton plan-first enforcement (git pre-commit hook)
 # Blocks source code commits unless plan.md contains <!-- BATON:GO -->
 # baton:pre-commit
@@ -8,12 +8,12 @@
 
 # Check staged files: if all are markdown, allow
 HAS_SOURCE=0
-for f in $(git diff --cached --name-only --diff-filter=ACM); do
+while IFS= read -r -d '' f; do
     case "$f" in
         *.md|*.MD|*.markdown|*.mdx) ;;
         *) HAS_SOURCE=1; break ;;
     esac
-done
+done < <(git diff --cached --name-only -z --diff-filter=ACM)
 [ "$HAS_SOURCE" -eq 0 ] && exit 0
 
 # Walk-up to find plan file

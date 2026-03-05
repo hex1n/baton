@@ -27,9 +27,9 @@ if [ "${1:-}" = "--uninstall" ]; then
     echo "  ✓ Removed .baton/ directory"
     # Clean CLAUDE.md @import
     if [ -f "$PROJECT_DIR/CLAUDE.md" ]; then
-        sed -i.bak '/@\.baton\/workflow\.md/d' "$PROJECT_DIR/CLAUDE.md"
+        sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$PROJECT_DIR/CLAUDE.md"
         rm -f "$PROJECT_DIR/CLAUDE.md.bak"
-        echo "  ✓ Removed @.baton/workflow.md from CLAUDE.md"
+        echo "  ✓ Removed @.baton/workflow*.md from CLAUDE.md"
     fi
     # Warn about settings.json
     if [ -f "$PROJECT_DIR/.claude/settings.json" ] && grep -q 'baton' "$PROJECT_DIR/.claude/settings.json" 2>/dev/null; then
@@ -55,6 +55,50 @@ if [ "${1:-}" = "--uninstall" ]; then
     if [ -f "$PROJECT_DIR/.clinerules/baton-workflow.md" ]; then
         rm -f "$PROJECT_DIR/.clinerules/baton-workflow.md"
         echo "  ✓ Removed .clinerules/baton-workflow.md"
+    fi
+    for _hook in PreToolUse TaskComplete; do
+        if [ -f "$PROJECT_DIR/.clinerules/hooks/$_hook" ] && \
+           grep -q 'baton' "$PROJECT_DIR/.clinerules/hooks/$_hook" 2>/dev/null; then
+            rm -f "$PROJECT_DIR/.clinerules/hooks/$_hook"
+            echo "  ✓ Removed .clinerules/hooks/$_hook"
+        fi
+    done
+    # Clean Augment
+    if [ -f "$PROJECT_DIR/.augment/rules/baton-workflow.md" ]; then
+        rm -f "$PROJECT_DIR/.augment/rules/baton-workflow.md"
+        echo "  ✓ Removed .augment/rules/baton-workflow.md"
+    fi
+    if [ -f "$PROJECT_DIR/.augment/settings.json" ] && grep -q 'baton' "$PROJECT_DIR/.augment/settings.json" 2>/dev/null; then
+        echo "  ⚠ .augment/settings.json may still contain baton hooks — review manually"
+    fi
+    # Clean Kiro / Amazon Q
+    if [ -f "$PROJECT_DIR/.amazonq/rules/baton-workflow.md" ]; then
+        rm -f "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
+        echo "  ✓ Removed .amazonq/rules/baton-workflow.md"
+    fi
+    if [ -f "$PROJECT_DIR/.amazonq/hooks.json" ] && grep -q 'baton' "$PROJECT_DIR/.amazonq/hooks.json" 2>/dev/null; then
+        echo "  ⚠ .amazonq/hooks.json may still contain baton hooks — review manually"
+    fi
+    # Clean Copilot
+    if [ -f "$PROJECT_DIR/.github/hooks/baton.json" ]; then
+        rm -f "$PROJECT_DIR/.github/hooks/baton.json"
+        echo "  ✓ Removed .github/hooks/baton.json"
+    fi
+    if [ -f "$PROJECT_DIR/.github/copilot-instructions.md" ] && grep -q 'baton' "$PROJECT_DIR/.github/copilot-instructions.md" 2>/dev/null; then
+        echo "  ⚠ .github/copilot-instructions.md may still contain baton references — review manually"
+    fi
+    # Clean Roo Code
+    if [ -f "$PROJECT_DIR/.roo/rules/baton-workflow.md" ]; then
+        rm -f "$PROJECT_DIR/.roo/rules/baton-workflow.md"
+        echo "  ✓ Removed .roo/rules/baton-workflow.md"
+    fi
+    # Clean Codex (AGENTS.md)
+    if [ -f "$PROJECT_DIR/AGENTS.md" ] && grep -q 'baton' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
+        echo "  ⚠ AGENTS.md may still contain baton references — review manually"
+    fi
+    # Clean Zed (.rules)
+    if [ -f "$PROJECT_DIR/.rules" ] && grep -q 'baton' "$PROJECT_DIR/.rules" 2>/dev/null; then
+        echo "  ⚠ .rules may still contain baton references — review manually"
     fi
     # Clean git pre-commit hook
     if [ -f "$PROJECT_DIR/.git/hooks/pre-commit" ] && grep -q 'baton:pre-commit' "$PROJECT_DIR/.git/hooks/pre-commit" 2>/dev/null; then
@@ -97,6 +141,14 @@ detect_ides() {
     [ -d "$PROJECT_DIR/.windsurf" ]   && _ides="$_ides windsurf"
     [ -d "$PROJECT_DIR/.factory" ]    && _ides="$_ides factory"
     [ -d "$PROJECT_DIR/.clinerules" ] && _ides="$_ides cline"
+    [ -d "$PROJECT_DIR/.augment" ]    && _ides="$_ides augment"
+    [ -d "$PROJECT_DIR/.amazonq" ]    && _ides="$_ides kiro"
+    # Copilot: require copilot-specific files, not just .github/
+    { [ -f "$PROJECT_DIR/.github/copilot-instructions.md" ] || \
+      [ -f "$PROJECT_DIR/.github/hooks/baton.json" ]; } && _ides="$_ides copilot"
+    [ -f "$PROJECT_DIR/AGENTS.md" ]   && _ides="$_ides codex"
+    [ -f "$PROJECT_DIR/.rules" ]      && _ides="$_ides zed"
+    [ -d "$PROJECT_DIR/.roo" ]        && _ides="$_ides roo"
     # Trim leading space
     _ides="$(echo "$_ides" | sed 's/^ //')"
     [ -z "$_ides" ] && _ides="claude"
@@ -163,7 +215,7 @@ install_versioned_script() {
 # IDEs that support SessionStart hook get slim workflow; others get full
 ide_has_session_start() {
     case "$1" in
-        claude|factory|cursor) return 0 ;;
+        claude|factory|cursor|cline|augment|kiro|copilot) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -212,27 +264,27 @@ configure_claude() {
         fi
         if ! grep -q 'phase-guide' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ SessionStart hook for phase-guide.sh not found in settings.json."
-            echo "    Add SessionStart hook: sh .baton/hooks/phase-guide.sh"
+            echo "    Add SessionStart hook: bash .baton/hooks/phase-guide.sh"
         fi
         if ! grep -q 'stop-guard' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ Stop hook for stop-guard.sh not found in settings.json."
-            echo "    Add Stop hook: sh .baton/hooks/stop-guard.sh"
+            echo "    Add Stop hook: bash .baton/hooks/stop-guard.sh"
         fi
         if ! grep -q 'post-write-tracker' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ PostToolUse hook for post-write-tracker.sh not found in settings.json."
-            echo "    Add PostToolUse hook: sh .baton/hooks/post-write-tracker.sh"
+            echo "    Add PostToolUse hook: bash .baton/hooks/post-write-tracker.sh"
         fi
         if ! grep -q 'subagent-context' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ SubagentStart hook for subagent-context.sh not found in settings.json."
-            echo "    Add SubagentStart hook: sh .baton/hooks/subagent-context.sh"
+            echo "    Add SubagentStart hook: bash .baton/hooks/subagent-context.sh"
         fi
         if ! grep -q 'completion-check' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ TaskCompleted hook for completion-check.sh not found in settings.json."
-            echo "    Add TaskCompleted hook: sh .baton/hooks/completion-check.sh"
+            echo "    Add TaskCompleted hook: bash .baton/hooks/completion-check.sh"
         fi
         if ! grep -q 'pre-compact' "$SETTINGS" 2>/dev/null; then
             echo "  ⚠ PreCompact hook for pre-compact.sh not found in settings.json."
-            echo "    Add PreCompact hook: sh .baton/hooks/pre-compact.sh"
+            echo "    Add PreCompact hook: bash .baton/hooks/pre-compact.sh"
         fi
     else
         cat > "$SETTINGS" << 'JSON'
@@ -244,7 +296,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/phase-guide.sh"
+            "command": "bash .baton/hooks/phase-guide.sh"
           }
         ]
       }
@@ -255,7 +307,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/write-lock.sh"
+            "command": "bash .baton/hooks/write-lock.sh"
           }
         ]
       }
@@ -266,7 +318,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/post-write-tracker.sh"
+            "command": "bash .baton/hooks/post-write-tracker.sh"
           }
         ]
       }
@@ -277,7 +329,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/stop-guard.sh"
+            "command": "bash .baton/hooks/stop-guard.sh"
           }
         ]
       }
@@ -288,7 +340,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/subagent-context.sh"
+            "command": "bash .baton/hooks/subagent-context.sh"
           }
         ]
       }
@@ -299,7 +351,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/completion-check.sh"
+            "command": "bash .baton/hooks/completion-check.sh"
           }
         ]
       }
@@ -310,7 +362,7 @@ configure_claude() {
         "hooks": [
           {
             "type": "command",
-            "command": "sh .baton/hooks/pre-compact.sh"
+            "command": "bash .baton/hooks/pre-compact.sh"
           }
         ]
       }
@@ -322,16 +374,24 @@ JSON
     fi
     # Inject workflow reference into CLAUDE.md
     CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
-    if [ -f "$CLAUDE_MD" ] && grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null; then
-        echo "  ✓ Workflow @import already in CLAUDE.md"
+    if [ -f "$CLAUDE_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
+        # Upgrade old @workflow.md → @workflow-full.md if needed
+        if grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null && \
+           ! grep -q '@\.baton/workflow-full\.md' "$CLAUDE_MD" 2>/dev/null; then
+            sed -i.bak 's|@\.baton/workflow\.md|@.baton/workflow-full.md|g' "$CLAUDE_MD"
+            rm -f "$CLAUDE_MD.bak"
+            echo "  ✓ Upgraded CLAUDE.md @import: workflow.md → workflow-full.md"
+        else
+            echo "  ✓ Workflow @import already in CLAUDE.md"
+        fi
     elif [ -f "$CLAUDE_MD" ]; then
         if ! grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null; then
-            printf '\n@.baton/workflow.md\n' >> "$CLAUDE_MD"
-            echo "  ✓ Added @.baton/workflow.md to CLAUDE.md"
+            printf '\n@.baton/workflow-full.md\n' >> "$CLAUDE_MD"
+            echo "  ✓ Added @.baton/workflow-full.md to CLAUDE.md"
         fi
     else
-        printf '@.baton/workflow.md\n' > "$CLAUDE_MD"
-        echo "  ✓ Created CLAUDE.md with @.baton/workflow.md"
+        printf '@.baton/workflow-full.md\n' > "$CLAUDE_MD"
+        echo "  ✓ Created CLAUDE.md with @.baton/workflow-full.md"
     fi
 }
 
@@ -344,17 +404,17 @@ configure_factory() {
 configure_cursor() {
     echo "  --- Cursor ---"
     mkdir -p "$PROJECT_DIR/.cursor/rules"
-    # Rules file
-    cat > "$PROJECT_DIR/.cursor/rules/baton.mdc" << 'MDC'
----
-description: Baton plan-first workflow enforcer
-alwaysApply: true
----
-
-Read .baton/workflow.md for the complete plan-first workflow rules.
-Source writes are blocked by hooks until plan.md contains <!-- BATON:GO -->.
-MDC
-    echo "  ✓ Created .cursor/rules/baton.mdc"
+    # Rules file — embed full workflow content (not just a reference)
+    # so it persists as alwaysApply rule and survives context compression
+    {
+        printf '%s\n' '---'
+        printf '%s\n' 'description: Baton plan-first workflow enforcer'
+        printf '%s\n' 'alwaysApply: true'
+        printf '%s\n' '---'
+        printf '\n'
+        cat "$BATON_DIR/.baton/workflow-full.md"
+    } > "$PROJECT_DIR/.cursor/rules/baton.mdc"
+    echo "  ✓ Created .cursor/rules/baton.mdc (full workflow embedded)"
     # Hooks
     if [ ! -f "$PROJECT_DIR/.cursor/hooks.json" ]; then
         cat > "$PROJECT_DIR/.cursor/hooks.json" << 'HOOKJSON'
@@ -363,21 +423,33 @@ MDC
   "hooks": {
     "sessionStart": [
       {
-        "command": "sh .baton/hooks/phase-guide.sh",
+        "command": "bash .baton/hooks/phase-guide.sh",
         "timeout": 10
       }
     ],
     "preToolUse": [
       {
-        "command": "sh .baton/adapters/adapter-cursor.sh",
+        "command": "bash .baton/adapters/adapter-cursor.sh",
         "matcher": "Write",
+        "timeout": 10
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "bash .baton/hooks/subagent-context.sh",
+        "timeout": 10
+      }
+    ],
+    "preCompact": [
+      {
+        "command": "bash .baton/hooks/pre-compact.sh",
         "timeout": 10
       }
     ]
   }
 }
 HOOKJSON
-        echo "  ✓ Created .cursor/hooks.json"
+        echo "  ✓ Created .cursor/hooks.json (4 hooks)"
     else
         if grep -q 'baton' "$PROJECT_DIR/.cursor/hooks.json" 2>/dev/null; then
             echo "  ✓ Hooks already configured in .cursor/hooks.json"
@@ -392,11 +464,7 @@ configure_windsurf() {
     echo "  --- Windsurf ---"
     mkdir -p "$PROJECT_DIR/.windsurf/rules"
     # Rules file
-    if ide_has_session_start "windsurf"; then
-        cp "$PROJECT_DIR/.baton/workflow.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
-    else
-        cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
-    fi
+    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
     echo "  ✓ Copied workflow to .windsurf/rules/"
     # Native hooks (pre_write_code supports exit code 2)
     if [ ! -f "$PROJECT_DIR/.windsurf/hooks.json" ]; then
@@ -405,14 +473,26 @@ configure_windsurf() {
   "hooks": {
     "pre_write_code": [
       {
-        "command": "sh .baton/hooks/write-lock.sh",
+        "command": "bash .baton/hooks/write-lock.sh",
+        "show_output": true
+      }
+    ],
+    "pre_run_command": [
+      {
+        "command": "bash .baton/hooks/bash-guard.sh",
+        "show_output": true
+      }
+    ],
+    "post_write_code": [
+      {
+        "command": "bash .baton/hooks/post-write-tracker.sh",
         "show_output": true
       }
     ]
   }
 }
 HOOKJSON
-        echo "  ✓ Created .windsurf/hooks.json"
+        echo "  ✓ Created .windsurf/hooks.json (3 hooks)"
     else
         if grep -q 'baton' "$PROJECT_DIR/.windsurf/hooks.json" 2>/dev/null; then
             echo "  ✓ Hooks already configured in .windsurf/hooks.json"
@@ -434,6 +514,157 @@ configure_cline() {
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.clinerules/baton-workflow.md"
     echo "  ✓ Copied workflow (full) to .clinerules/"
     install_adapter "adapter-cline.sh"
+    # Create hook wiring files — Cline discovers hooks via .clinerules/hooks/<EventName>
+    mkdir -p "$PROJECT_DIR/.clinerules/hooks"
+    if [ ! -f "$PROJECT_DIR/.clinerules/hooks/PreToolUse" ]; then
+        cat > "$PROJECT_DIR/.clinerules/hooks/PreToolUse" << 'HOOK'
+#!/bin/sh
+exec bash "$(dirname "$0")/../../.baton/adapters/adapter-cline.sh"
+HOOK
+        chmod +x "$PROJECT_DIR/.clinerules/hooks/PreToolUse"
+        echo "  ✓ Created .clinerules/hooks/PreToolUse → adapter-cline.sh"
+    else
+        echo "  ✓ .clinerules/hooks/PreToolUse already exists"
+    fi
+    if [ ! -f "$PROJECT_DIR/.clinerules/hooks/TaskComplete" ]; then
+        cat > "$PROJECT_DIR/.clinerules/hooks/TaskComplete" << 'HOOK'
+#!/bin/sh
+exec bash "$(dirname "$0")/../../.baton/hooks/completion-check.sh"
+HOOK
+        chmod +x "$PROJECT_DIR/.clinerules/hooks/TaskComplete"
+        echo "  ✓ Created .clinerules/hooks/TaskComplete → completion-check.sh"
+    else
+        echo "  ✓ .clinerules/hooks/TaskComplete already exists"
+    fi
+}
+
+configure_augment() {
+    echo "  --- Augment Code ---"
+    mkdir -p "$PROJECT_DIR/.augment/rules"
+    # Rules: embed full workflow
+    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.augment/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (full) to .augment/rules/"
+    # Hooks: A-class (exit code 2, no adapter needed)
+    if [ ! -f "$PROJECT_DIR/.augment/settings.json" ]; then
+        cat > "$PROJECT_DIR/.augment/settings.json" << 'JSON'
+{
+  "hooks": {
+    "SessionStart": [
+      {"matcher": "", "hooks": [{"type": "command", "command": "bash .baton/hooks/phase-guide.sh"}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "str-replace-editor|save-file", "hooks": [{"type": "command", "command": "bash .baton/hooks/write-lock.sh", "timeout": 5000}]}
+    ]
+  }
+}
+JSON
+        echo "  ✓ Created .augment/settings.json (2 hooks)"
+    else
+        if grep -q 'baton' "$PROJECT_DIR/.augment/settings.json" 2>/dev/null; then
+            echo "  ✓ Hooks already configured in .augment/settings.json"
+        else
+            echo "  ⚠ .augment/settings.json exists but has no baton hooks — merge manually"
+        fi
+    fi
+}
+
+configure_kiro() {
+    echo "  --- Amazon Q / Kiro ---"
+    mkdir -p "$PROJECT_DIR/.amazonq/rules"
+    # Rules: embed full workflow
+    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (full) to .amazonq/rules/"
+    # Hooks: A-class (exit code 2)
+    if [ ! -f "$PROJECT_DIR/.amazonq/hooks.json" ]; then
+        cat > "$PROJECT_DIR/.amazonq/hooks.json" << 'JSON'
+{
+  "hooks": {
+    "preToolUse": [
+      {"matcher": "fs_write", "command": "bash .baton/hooks/write-lock.sh", "timeout_ms": 10000}
+    ]
+  }
+}
+JSON
+        echo "  ✓ Created .amazonq/hooks.json"
+    else
+        if grep -q 'baton' "$PROJECT_DIR/.amazonq/hooks.json" 2>/dev/null; then
+            echo "  ✓ Hooks already configured"
+        else
+            echo "  ⚠ .amazonq/hooks.json exists but has no baton hooks — merge manually"
+        fi
+    fi
+}
+
+configure_copilot() {
+    echo "  --- GitHub Copilot ---"
+    mkdir -p "$PROJECT_DIR/.github/hooks"
+    # Hooks: B-class (needs adapter for JSON response)
+    if [ ! -f "$PROJECT_DIR/.github/hooks/baton.json" ]; then
+        cat > "$PROJECT_DIR/.github/hooks/baton.json" << 'JSON'
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {"type": "command", "bash": "bash .baton/hooks/phase-guide.sh", "timeoutSec": 10}
+    ],
+    "preToolUse": [
+      {"type": "command", "bash": "bash .baton/adapters/adapter-copilot.sh", "timeoutSec": 10}
+    ]
+  }
+}
+JSON
+        echo "  ✓ Created .github/hooks/baton.json"
+    else
+        if grep -q 'baton' "$PROJECT_DIR/.github/hooks/baton.json" 2>/dev/null; then
+            echo "  ✓ Hooks already configured in .github/hooks/baton.json"
+        else
+            echo "  ⚠ .github/hooks/baton.json exists but has no baton hooks — merge manually"
+        fi
+    fi
+    install_adapter "adapter-copilot.sh"
+    # Rules: append to copilot-instructions.md
+    COPILOT_MD="$PROJECT_DIR/.github/copilot-instructions.md"
+    if [ -f "$COPILOT_MD" ] && grep -q 'baton' "$COPILOT_MD" 2>/dev/null; then
+        echo "  ✓ Workflow reference already in copilot-instructions.md"
+    elif [ -f "$COPILOT_MD" ]; then
+        printf '\n## Workflow\n\nFollow the plan-first workflow in .baton/workflow-full.md\n' >> "$COPILOT_MD"
+        echo "  ✓ Added workflow reference to copilot-instructions.md"
+    else
+        printf '## Workflow\n\nFollow the plan-first workflow in .baton/workflow-full.md\n' > "$COPILOT_MD"
+        echo "  ✓ Created copilot-instructions.md with workflow reference"
+    fi
+}
+
+configure_codex() {
+    echo "  --- Codex CLI ---"
+    # No hooks — rules injection only
+    AGENTS_MD="$PROJECT_DIR/AGENTS.md"
+    if [ -f "$AGENTS_MD" ] && grep -q 'baton' "$AGENTS_MD" 2>/dev/null; then
+        echo "  ✓ Workflow reference already in AGENTS.md"
+    elif [ -f "$AGENTS_MD" ]; then
+        printf '\n@.baton/workflow-full.md\n' >> "$AGENTS_MD"
+        echo "  ✓ Added @.baton/workflow-full.md to AGENTS.md"
+    fi
+}
+
+configure_zed() {
+    echo "  --- Zed AI ---"
+    # No hooks — rules injection only
+    RULES_FILE="$PROJECT_DIR/.rules"
+    if [ -f "$RULES_FILE" ] && grep -q 'baton' "$RULES_FILE" 2>/dev/null; then
+        echo "  ✓ Workflow reference already in .rules"
+    elif [ -f "$RULES_FILE" ]; then
+        printf '\n# Baton workflow\nFollow the plan-first workflow in .baton/workflow-full.md\n' >> "$RULES_FILE"
+        echo "  ✓ Added workflow reference to .rules"
+    fi
+}
+
+configure_roo() {
+    echo "  --- Roo Code ---"
+    mkdir -p "$PROJECT_DIR/.roo/rules"
+    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.roo/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (full) to .roo/rules/"
+    echo "  💡 Roo Code hooks are in development — rules-only for now"
 }
 
 # ==========================================
@@ -458,9 +689,9 @@ fi
 # Detect legacy workflow in CLAUDE.md
 CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
 if [ -f "$CLAUDE_MD" ] && grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null && \
-   ! grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null; then
+   ! grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
     echo "  ⚠ Legacy workflow detected in CLAUDE.md."
-    echo "    Remove the '## AI Workflow' section and add: @.baton/workflow.md"
+    echo "    Remove the '## AI Workflow' section and add: @.baton/workflow-full.md"
 fi
 
 # --- 1. Install .baton/ directory ---
@@ -497,6 +728,12 @@ for ide in $IDES; do
         cursor)   configure_cursor ;;
         windsurf) configure_windsurf ;;
         cline)    configure_cline ;;
+        augment)  configure_augment ;;
+        kiro)     configure_kiro ;;
+        copilot)  configure_copilot ;;
+        codex)    configure_codex ;;
+        zed)      configure_zed ;;
+        roo)      configure_roo ;;
         *)        echo "  ⚠ Unknown IDE: $ide (skipped)" ;;
     esac
 done
@@ -526,7 +763,7 @@ if ! should_skip "pre-commit"; then
             # Append baton section to existing hook
             printf '\n# baton:pre-commit:start\n' >> "$PRE_COMMIT"
             # Source the baton pre-commit logic
-            cat "$BATON_DIR/.baton/git-hooks/pre-commit" | grep -v '^#!/bin/sh' | grep -v '^# pre-commit' >> "$PRE_COMMIT"
+            cat "$BATON_DIR/.baton/git-hooks/pre-commit" | grep -v '^#!' | grep -v '^# pre-commit' >> "$PRE_COMMIT"
             printf '# baton:pre-commit:end\n' >> "$PRE_COMMIT"
             echo "  ✓ Appended baton section to existing git pre-commit hook"
         fi
