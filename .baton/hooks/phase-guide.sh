@@ -1,13 +1,44 @@
 #!/bin/sh
 # phase-guide.sh — Detect current phase, output phase-specific guidance
-# Version: 3.1
+# Version: 4.0
 # Hook: SessionStart
-# NOTE: Guidance text intentionally duplicates workflow-full.md sections.
-# When updating, sync both files. See tests/test-annotation-protocol.sh.
+# Dynamic extraction: reads phase-specific sections from workflow-full.md
+# Fallback: hardcoded summaries if workflow-full.md is unavailable
 # States: RESEARCH → PLAN → ANNOTATION → AWAITING_TODO → IMPLEMENT → ARCHIVE
 
 # --- Fail-open on unexpected errors ---
 trap 'echo "⚠️ BATON phase-guide: unexpected error, skipping guidance" >&2; exit 0' HUP INT TERM
+
+# --- Locate workflow-full.md ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+WORKFLOW_FULL="${SCRIPT_DIR:+$SCRIPT_DIR/../workflow-full.md}"
+
+# extract_section SEC [NEXT_SEC]
+# Extracts from ### [SEC] to ### [NEXT_SEC] (exclusive).
+# If NEXT_SEC is empty, extracts to end of file.
+# Returns 1 if extraction fails or is empty.
+extract_section() {
+    [ -z "$WORKFLOW_FULL" ] || [ ! -f "$WORKFLOW_FULL" ] && return 1
+    _es_sec="$1"
+    _es_next="${2:-}"
+    if [ -n "$_es_next" ]; then
+        _es_out="$(awk -v sec="$_es_sec" -v nxt="$_es_next" '
+            $0 ~ "^### \\[" sec "\\]" {found=1}
+            found && $0 ~ "^### \\[" nxt "\\]" {exit}
+            found {print}
+        ' "$WORKFLOW_FULL" 2>/dev/null)"
+    else
+        _es_out="$(awk -v sec="$_es_sec" '
+            $0 ~ "^### \\[" sec "\\]" {found=1}
+            found {print}
+        ' "$WORKFLOW_FULL" 2>/dev/null)"
+    fi
+    [ -z "$_es_out" ] && return 1
+    printf '%s\n' "$_es_out"
+    return 0
+}
+
+MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain"
 
 # SYNCED: plan-name-resolution — same in all baton scripts
 if [ -n "$BATON_PLAN" ]; then
@@ -42,7 +73,7 @@ if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     DONE=$(grep -ci '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
     if [ "$TOTAL" -gt 0 ] && [ "$TOTAL" -eq "$DONE" ]; then
         cat >&2 <<EOF
-⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
+$MINDSET_LINE
 📋 All tasks complete. Consider archiving:
    mkdir -p plans && mv $PLAN_NAME plans/plan-\$(date +%Y-%m-%d)-topic.md
    mv $RESEARCH_NAME plans/research-\$(date +%Y-%m-%d)-topic.md
@@ -65,12 +96,16 @@ EOF
     fi
 fi
 
-# State 3: IMPLEMENT — plan + GO (+ optional Todo)
+# State 3: IMPLEMENT — plan + GO (+ Todo exists)
 if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
-    cat >&2 <<EOF
-⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
-📍 IMPLEMENT phase — <!-- BATON:GO --> is set
-
+    echo "$MINDSET_LINE" >&2
+    echo "📍 IMPLEMENT phase — <!-- BATON:GO --> is set" >&2
+    echo "" >&2
+    if extract_section "IMPLEMENT" "" >&2; then
+        exit 0
+    fi
+    # Fallback
+    cat >&2 <<'EOF'
 For each todo item, follow this sequence:
 1. Re-read the plan section for this item — understand WHAT and WHY
 2. Read the target files before modifying — understand current state
@@ -84,18 +119,20 @@ Quality checks:
 - Same approach fails 3 times? Stop and report — don't keep trying
 
 After ALL items complete: run full test suite, record results at bottom of the plan.
-Todo items with dependencies: execute sequentially. Independent items: may run in parallel.
 EOF
     exit 0
 fi
 
 # State 4: ANNOTATION — plan exists, no GO
-# (was previously mislabeled as State 3)
 if [ -n "$PLAN" ]; then
+    echo "$MINDSET_LINE" >&2
+    echo "📍 ANNOTATION cycle — $PLAN_NAME awaiting approval" >&2
+    echo "" >&2
+    if extract_section "ANNOTATION" "IMPLEMENT" >&2; then
+        exit 0
+    fi
+    # Fallback
     cat >&2 <<EOF
-⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
-📍 ANNOTATION cycle — $PLAN_NAME awaiting approval
-
 Read the document carefully. Look for new annotations:
 [NOTE] [Q] [CHANGE] [DEEPER] [MISSING] [RESEARCH-GAP]
 
@@ -124,11 +161,15 @@ fi
 
 # State 5: PLAN — research exists, no plan
 if [ -n "$RESEARCH" ]; then
+    echo "$MINDSET_LINE" >&2
+    echo "📍 PLAN phase — name the plan to match research: if research is $RESEARCH_NAME, produce ${PLAN_NAME}." >&2
+    echo "   Use plan.md only for simple/generic tasks." >&2
+    echo "" >&2
+    if extract_section "PLAN" "ANNOTATION" >&2; then
+        exit 0
+    fi
+    # Fallback
     cat >&2 <<EOF
-⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
-📍 PLAN phase — name the plan to match research: if research is $RESEARCH_NAME, produce ${PLAN_NAME}.
-   Use plan.md only for simple/generic tasks.
-
 Don't jump to "how to do it". Derive your approach from research findings:
 1. Extract hard constraints from $RESEARCH_NAME (architecture limits, dependencies,
    backward compatibility, performance, team conventions)
@@ -153,11 +194,15 @@ EOF
 fi
 
 # State 6: RESEARCH — nothing exists
+echo "$MINDSET_LINE" >&2
+echo "📍 RESEARCH phase — name the file by topic: research-<topic>.md (e.g., research-hooks.md)." >&2
+echo "   Use research.md only for simple/generic tasks." >&2
+echo "" >&2
+if extract_section "RESEARCH" "PLAN" >&2; then
+    exit 0
+fi
+# Fallback
 cat >&2 <<EOF
-⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
-📍 RESEARCH phase — name the file by topic: research-<topic>.md (e.g., research-hooks.md).
-   Use research.md only for simple/generic tasks.
-
 You are investigating code you have never seen. Your goal: build understanding
 deep enough that the human can judge whether you truly comprehend the system.
 

@@ -2,3 +2,4 @@
 .idea/
 .claude/*
 !.claude/settings.json
+*.stackdump

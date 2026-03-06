@@ -372,26 +372,25 @@ configure_claude() {
 JSON
         echo "  ✓ Created .claude/settings.json with 7 hooks (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact)"
     fi
-    # Inject workflow reference into CLAUDE.md
+    # Inject workflow reference into CLAUDE.md (slim — phase-guide provides details)
     CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
     if [ -f "$CLAUDE_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
-        # Upgrade old @workflow.md → @workflow-full.md if needed
-        if grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null && \
-           ! grep -q '@\.baton/workflow-full\.md' "$CLAUDE_MD" 2>/dev/null; then
-            sed -i.bak 's|@\.baton/workflow\.md|@.baton/workflow-full.md|g' "$CLAUDE_MD"
+        # Migrate old @workflow-full.md → @workflow.md (slim)
+        if grep -q '@\.baton/workflow-full\.md' "$CLAUDE_MD" 2>/dev/null; then
+            sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$CLAUDE_MD"
             rm -f "$CLAUDE_MD.bak"
-            echo "  ✓ Upgraded CLAUDE.md @import: workflow.md → workflow-full.md"
+            echo "  ✓ Migrated CLAUDE.md @import: workflow-full.md → workflow.md (slim)"
         else
             echo "  ✓ Workflow @import already in CLAUDE.md"
         fi
     elif [ -f "$CLAUDE_MD" ]; then
         if ! grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null; then
-            printf '\n@.baton/workflow-full.md\n' >> "$CLAUDE_MD"
-            echo "  ✓ Added @.baton/workflow-full.md to CLAUDE.md"
+            printf '\n@.baton/workflow.md\n' >> "$CLAUDE_MD"
+            echo "  ✓ Added @.baton/workflow.md to CLAUDE.md"
         fi
     else
-        printf '@.baton/workflow-full.md\n' > "$CLAUDE_MD"
-        echo "  ✓ Created CLAUDE.md with @.baton/workflow-full.md"
+        printf '@.baton/workflow.md\n' > "$CLAUDE_MD"
+        echo "  ✓ Created CLAUDE.md with @.baton/workflow.md"
     fi
 }
 
@@ -404,17 +403,16 @@ configure_factory() {
 configure_cursor() {
     echo "  --- Cursor ---"
     mkdir -p "$PROJECT_DIR/.cursor/rules"
-    # Rules file — embed full workflow content (not just a reference)
-    # so it persists as alwaysApply rule and survives context compression
+    # Rules file — embed slim workflow (phase-guide.sh provides phase-specific details)
     {
         printf '%s\n' '---'
         printf '%s\n' 'description: Baton plan-first workflow enforcer'
         printf '%s\n' 'alwaysApply: true'
         printf '%s\n' '---'
         printf '\n'
-        cat "$BATON_DIR/.baton/workflow-full.md"
+        cat "$BATON_DIR/.baton/workflow.md"
     } > "$PROJECT_DIR/.cursor/rules/baton.mdc"
-    echo "  ✓ Created .cursor/rules/baton.mdc (full workflow embedded)"
+    echo "  ✓ Created .cursor/rules/baton.mdc (slim workflow + phase-guide provides details)"
     # Hooks
     if [ ! -f "$PROJECT_DIR/.cursor/hooks.json" ]; then
         cat > "$PROJECT_DIR/.cursor/hooks.json" << 'HOOKJSON'
@@ -541,9 +539,9 @@ HOOK
 configure_augment() {
     echo "  --- Augment Code ---"
     mkdir -p "$PROJECT_DIR/.augment/rules"
-    # Rules: embed full workflow
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.augment/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (full) to .augment/rules/"
+    # Rules: embed slim workflow (phase-guide.sh provides phase-specific details)
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.augment/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (slim) to .augment/rules/"
     # Hooks: A-class (exit code 2, no adapter needed)
     if [ ! -f "$PROJECT_DIR/.augment/settings.json" ]; then
         cat > "$PROJECT_DIR/.augment/settings.json" << 'JSON'
@@ -627,10 +625,10 @@ JSON
     if [ -f "$COPILOT_MD" ] && grep -q 'baton' "$COPILOT_MD" 2>/dev/null; then
         echo "  ✓ Workflow reference already in copilot-instructions.md"
     elif [ -f "$COPILOT_MD" ]; then
-        printf '\n## Workflow\n\nFollow the plan-first workflow in .baton/workflow-full.md\n' >> "$COPILOT_MD"
+        printf '\n## Workflow\n\nFollow the plan-first workflow in .baton/workflow.md\n' >> "$COPILOT_MD"
         echo "  ✓ Added workflow reference to copilot-instructions.md"
     else
-        printf '## Workflow\n\nFollow the plan-first workflow in .baton/workflow-full.md\n' > "$COPILOT_MD"
+        printf '## Workflow\n\nFollow the plan-first workflow in .baton/workflow.md\n' > "$COPILOT_MD"
         echo "  ✓ Created copilot-instructions.md with workflow reference"
     fi
 }

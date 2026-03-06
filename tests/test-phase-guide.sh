@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-phase-guide.sh — Tests for phase-guide.sh v3.1 (SessionStart hook)
+# test-phase-guide.sh — Tests for phase-guide.sh v4.0 (SessionStart hook, dynamic extraction)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,16 +63,15 @@ echo "=== Test 1: No files → RESEARCH phase guidance ==="
 d="$tmp/t1" && mkdir -p "$d"
 assert_output_contains "$d" "RESEARCH" "outputs RESEARCH phase label"
 assert_output_contains "$d" "research.md" "mentions research.md"
-assert_output_contains "$d" "IMPLEMENTATION" "mentions reading implementations"
+assert_output_contains "$d" "implementations" "mentions reading implementations"
 assert_output_contains "$d" "file:line" "mentions file:line evidence"
-assert_output_contains "$d" "plan.md" "mentions option to skip to plan.md"
+assert_output_contains "$d" "entry points" "mentions starting from entry points"
 assert_output_contains "$d" "Mindset" "RESEARCH phase shows Mindset reminder"
 assert_output_contains "$d" "subagent" "RESEARCH phase mentions subagents"
 assert_output_contains "$d" "批注区" "RESEARCH phase mentions 批注区"
 assert_output_contains "$d" "documentation retrieval" "RESEARCH phase mentions doc retrieval tools"
 assert_output_contains "$d" "Self-Review" "RESEARCH phase mentions self-review"
-assert_output_contains "$d" "Calibrate depth" "RESEARCH phase mentions complexity calibration"
-assert_output_contains "$d" "spike" "RESEARCH phase mentions spike/exploratory coding"
+assert_output_contains "$d" "Spike" "RESEARCH phase mentions spike/exploratory coding"
 assert_exit_zero "$d" "always exit 0 (no files)"
 
 # ============================================================
@@ -88,7 +87,7 @@ assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
 assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
 assert_output_contains "$d" "批注区" "PLAN phase mentions 批注区"
 assert_output_contains "$d" "Self-Review" "PLAN phase mentions self-review"
-assert_output_contains "$d" "Calibrate depth" "PLAN phase mentions complexity calibration"
+assert_output_contains "$d" "Approach Analysis" "PLAN phase mentions approach analysis method"
 assert_exit_zero "$d" "always exit 0 (research, no plan)"
 
 # ============================================================
@@ -103,7 +102,7 @@ assert_output_contains "$d" "\[CHANGE\]" "mentions CHANGE annotation"
 assert_output_contains "$d" "file:line" "mentions evidence-based response"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO unlock"
 assert_output_contains "$d" "Mindset" "ANNOTATION phase shows Mindset reminder"
-assert_output_contains "$d" "Blind compliance" "ANNOTATION phase mentions blind compliance"
+assert_output_contains "$d" "blind compliance" "ANNOTATION phase mentions blind compliance"
 assert_exit_zero "$d" "always exit 0 (plan, no GO)"
 
 # ============================================================
@@ -119,8 +118,8 @@ assert_output_contains "$d" "IMPLEMENT" "outputs IMPLEMENT phase label"
 assert_output_contains "$d" "typecheck" "mentions typecheck"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO"
 assert_output_contains "$d" "Mindset" "IMPLEMENT phase shows Mindset reminder"
-assert_output_contains "$d" "Re-read the plan" "IMPLEMENT phase mentions re-reading plan"
-assert_output_contains "$d" "3 times" "IMPLEMENT phase mentions 3-times-stop rule"
+assert_output_contains "$d" "re-read the modified code" "IMPLEMENT phase mentions re-reading code"
+assert_output_contains "$d" "3x" "IMPLEMENT phase mentions 3x-stop rule"
 assert_exit_zero "$d" "always exit 0 (implement)"
 
 # ============================================================

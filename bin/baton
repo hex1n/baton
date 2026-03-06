@@ -1,0 +1,298 @@
+#!/bin/sh
+# baton — CLI entry point for baton plan-first workflow
+# Version: 1.0
+set -eu
+
+BATON_HOME="${BATON_HOME:-$HOME/.baton}"
+SETUP="$BATON_HOME/setup.sh"
+REGISTRY="$BATON_HOME/projects.list"
+
+# --- Registry management ---
+
+registry_add() {
+    _dir="$(cd "$1" && pwd)"
+    touch "$REGISTRY"
+    if grep -qxF "$_dir" "$REGISTRY" 2>/dev/null; then
+        return 0
+    fi
+    echo "$_dir" >> "$REGISTRY"
+}
+
+registry_remove() {
+    _dir="$(cd "$1" && pwd)" 2>/dev/null || _dir="$1"
+    [ ! -f "$REGISTRY" ] && return 0
+    _tmp="$REGISTRY.tmp"
+    grep -vxF "$_dir" "$REGISTRY" > "$_tmp" 2>/dev/null || true
+    mv "$_tmp" "$REGISTRY"
+}
+
+registry_list() {
+    if [ ! -f "$REGISTRY" ] || [ ! -s "$REGISTRY" ]; then
+        echo "No projects registered. Run 'baton init' in a project."
+        return 0
+    fi
+    echo "Registered projects:"
+    while IFS= read -r _dir; do
+        [ -z "$_dir" ] && continue
+        if [ -d "$_dir" ]; then
+            _ver=""
+            if [ -f "$_dir/.baton/hooks/write-lock.sh" ]; then
+                _ver="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/write-lock.sh" 2>/dev/null)"
+            fi
+            _ides=""
+            [ -d "$_dir/.claude" ]     && _ides="${_ides} claude"
+            [ -d "$_dir/.cursor" ]     && _ides="${_ides} cursor"
+            [ -d "$_dir/.windsurf" ]   && _ides="${_ides} windsurf"
+            [ -d "$_dir/.factory" ]    && _ides="${_ides} factory"
+            [ -d "$_dir/.clinerules" ] && _ides="${_ides} cline"
+            [ -d "$_dir/.augment" ]    && _ides="${_ides} augment"
+            [ -d "$_dir/.amazonq" ]    && _ides="${_ides} kiro"
+            { [ -f "$_dir/.github/copilot-instructions.md" ] || \
+              [ -f "$_dir/.github/hooks/baton.json" ]; } && _ides="${_ides} copilot"
+            [ -f "$_dir/AGENTS.md" ]   && _ides="${_ides} codex"
+            [ -f "$_dir/.rules" ]      && _ides="${_ides} zed"
+            [ -d "$_dir/.roo" ]        && _ides="${_ides} roo"
+            _ides="$(echo "$_ides" | sed 's/^ //')"
+            printf "  %-50s v%-6s [%s]\n" "$_dir" "${_ver:-?}" "${_ides:-none}"
+        else
+            printf "  %-50s (not found)\n" "$_dir"
+        fi
+    done < "$REGISTRY"
+}
+
+# --- Doctor ---
+
+doctor() {
+    _dir="${1:-.}"
+    _dir="$(cd "$_dir" && pwd)"
+    _issues=0
+
+    echo "Checking baton installation in $_dir..."
+    echo ""
+
+    # Scripts
+    echo "  Scripts:"
+    for _script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh; do
+        if [ -f "$_dir/.baton/hooks/$_script" ]; then
+            _pv="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/$_script" 2>/dev/null)"
+            _sv=""
+            if [ -f "$BATON_HOME/.baton/hooks/$_script" ]; then
+                _sv="$(sed -n 's/^# Version: *//p' "$BATON_HOME/.baton/hooks/$_script" 2>/dev/null)"
+            fi
+            if [ -n "$_pv" ] && [ -n "$_sv" ] && [ "$_pv" != "$_sv" ]; then
+                printf "  ⚠ %-20s v%s (latest: v%s)\n" "$_script" "$_pv" "$_sv"
+                _issues=$((_issues + 1))
+            else
+                printf "  ✓ %-20s v%s\n" "$_script" "${_pv:-?}"
+            fi
+        else
+            printf "  ✗ %-20s missing\n" "$_script"
+            _issues=$((_issues + 1))
+        fi
+    done
+    echo ""
+
+    # IDE configs
+    echo "  IDE configuration:"
+    [ -d "$_dir/.claude" ]     && { _check_ide_config "$_dir" "claude" ".claude/settings.json" "baton"; }
+    [ -d "$_dir/.cursor" ]     && { _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "baton"; }
+    [ -d "$_dir/.windsurf" ]   && { _check_ide_config "$_dir" "windsurf" ".windsurf/hooks.json" "baton"; }
+    [ -d "$_dir/.clinerules" ] && { _check_ide_config "$_dir" "cline" ".clinerules/hooks/PreToolUse" "baton"; }
+    [ -d "$_dir/.factory" ]    && { _check_ide_config "$_dir" "factory" ".claude/settings.json" "baton"; }
+    [ -d "$_dir/.augment" ]    && { _check_ide_config "$_dir" "augment" ".augment/settings.json" "baton"; }
+    [ -d "$_dir/.amazonq" ]    && { _check_ide_config "$_dir" "kiro" ".amazonq/hooks.json" "baton"; }
+    { [ -f "$_dir/.github/copilot-instructions.md" ] || [ -f "$_dir/.github/hooks/baton.json" ]; } && \
+        { _check_ide_config "$_dir" "copilot" ".github/hooks/baton.json" "baton"; }
+    [ -f "$_dir/AGENTS.md" ]   && { _check_ide_config "$_dir" "codex" "AGENTS.md" "baton"; }
+    [ -f "$_dir/.rules" ]      && { _check_ide_config "$_dir" "zed" ".rules" "baton"; }
+    [ -d "$_dir/.roo" ]        && { _check_ide_config "$_dir" "roo" ".roo/rules/baton-workflow.md" "baton"; }
+    echo ""
+
+    # Rules injection
+    echo "  Rules injection:"
+    if [ -f "$_dir/CLAUDE.md" ]; then
+        if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+            echo "  ✓ CLAUDE.md contains @.baton/workflow*.md"
+        else
+            echo "  ⚠ CLAUDE.md exists but no @.baton/workflow*.md"
+            _issues=$((_issues + 1))
+        fi
+    fi
+    echo ""
+
+    # Git hook
+    echo "  Git hook:"
+    if [ -d "$_dir/.git" ]; then
+        _ghdir="$(cd "$_dir" && git rev-parse --git-dir 2>/dev/null)"
+        case "$_ghdir" in /*) ;; *) _ghdir="$_dir/$_ghdir" ;; esac
+        if [ -f "$_ghdir/hooks/pre-commit" ] && grep -q 'baton' "$_ghdir/hooks/pre-commit" 2>/dev/null; then
+            echo "  ✓ git pre-commit hook installed"
+        else
+            echo "  ⚠ git pre-commit hook not installed"
+            _issues=$((_issues + 1))
+        fi
+    else
+        echo "  - not a git repository"
+    fi
+    echo ""
+
+    if [ "$_issues" -gt 0 ]; then
+        echo "  Result: $_issues issue(s) found. Run 'baton init' to auto-fix."
+    else
+        echo "  Result: all checks passed."
+    fi
+}
+
+_check_ide_config() {
+    _cdir="$1" _cide="$2" _cfile="$3" _cpattern="$4"
+    if [ -f "$_cdir/$_cfile" ] && grep -q "$_cpattern" "$_cdir/$_cfile" 2>/dev/null; then
+        printf "  ✓ %-12s hooks configured\n" "$_cide"
+    elif [ -f "$_cdir/$_cfile" ]; then
+        printf "  ⚠ %-12s config exists but no baton hooks\n" "$_cide"
+    else
+        printf "  ⚠ %-12s directory exists but no hook config\n" "$_cide"
+    fi
+}
+
+# --- Status ---
+
+status() {
+    _dir="${1:-.}"
+    _dir="$(cd "$_dir" && pwd)"
+
+    # Find plan file
+    if [ -n "${BATON_PLAN:-}" ]; then
+        _pname="$BATON_PLAN"
+    else
+        _pname="$(ls -t "$_dir"/plan.md "$_dir"/plan-*.md 2>/dev/null | head -1)"
+        _pname="${_pname##*/}"
+        _pname="${_pname:-plan.md}"
+    fi
+    _rname="${_pname/plan/research}"
+
+    # Detect phase
+    _plan=""
+    [ -f "$_dir/$_pname" ] && _plan="$_dir/$_pname"
+    _research=""
+    [ -f "$_dir/$_rname" ] && _research="$_dir/$_rname"
+
+    _phase="RESEARCH"
+    _plan_status="not found"
+    _research_status="not found"
+    _todos="0/0"
+
+    if [ -n "$_research" ]; then
+        _research_status="exists"
+    fi
+
+    if [ -n "$_plan" ]; then
+        _plan_status="exists, no BATON:GO"
+        _phase="ANNOTATION"
+
+        if grep -q '<!-- BATON:GO -->' "$_plan" 2>/dev/null; then
+            _plan_status="approved (BATON:GO)"
+            _phase="IMPLEMENT"
+
+            _total=$(grep -c '^\- \[' "$_plan" 2>/dev/null) || _total=0
+            _done=$(grep -c '^\- \[x\]' "$_plan" 2>/dev/null) || _done=0
+            _todos="$_done/$_total"
+
+            if [ "$_total" -gt 0 ] && [ "$_total" -eq "$_done" ]; then
+                _phase="ARCHIVE"
+            fi
+
+            if ! grep -qi '^## Todo$' "$_plan" 2>/dev/null; then
+                _phase="AWAITING_TODO"
+            fi
+        fi
+    fi
+
+    echo "📍 Phase: $_phase"
+    echo "   Plan:     $_pname ($_plan_status)"
+    echo "   Research: $_rname ($_research_status)"
+    echo "   Todos:    $_todos"
+}
+
+# --- Usage ---
+
+usage() {
+    cat << 'EOF'
+baton — plan-first workflow for AI coding assistants
+
+Usage:
+  baton init [dir]         Install baton into a project
+  baton update [dir]       Update baton in a project
+  baton update --all       Update all registered projects
+  baton uninstall [dir]    Remove baton from a project
+  baton self-update        Update baton itself
+  baton list               List registered projects
+  baton doctor [dir]       Check installation health
+  baton status [dir]       Show workflow phase and progress
+  baton help               Show this help
+
+Environment:
+  BATON_HOME               Override baton home directory (~/.baton)
+  BATON_PLAN               Override plan filename
+  BATON_BYPASS=1           Skip pre-commit check
+  BATON_SKIP=hook1,hook2   Skip specific hooks during install
+EOF
+}
+
+# --- Main ---
+
+case "${1:-help}" in
+    init)
+        _target="${2:-.}"
+        if [ ! -d "$_target" ]; then
+            echo "Error: $_target is not a directory" >&2
+            exit 1
+        fi
+        bash "$SETUP" "$_target" && registry_add "$_target"
+        ;;
+    update)
+        if [ "${2:-}" = "--all" ]; then
+            if [ ! -f "$REGISTRY" ] || [ ! -s "$REGISTRY" ]; then
+                echo "No projects registered. Run 'baton init' first."
+                exit 0
+            fi
+            while IFS= read -r _dir; do
+                [ -z "$_dir" ] && continue
+                if [ -d "$_dir" ]; then
+                    echo "=== Updating: $_dir ==="
+                    bash "$SETUP" "$_dir"
+                    echo ""
+                else
+                    echo "=== Skipping: $_dir (not found) ==="
+                fi
+            done < "$REGISTRY"
+        else
+            _target="${2:-.}"
+            bash "$SETUP" "$_target"
+        fi
+        ;;
+    uninstall)
+        _target="${2:-.}"
+        bash "$SETUP" --uninstall "$_target" && registry_remove "$_target"
+        ;;
+    self-update)
+        echo "Updating baton..."
+        if git -C "$BATON_HOME" pull --ff-only; then
+            echo "✓ Updated to latest"
+        else
+            echo "⚠ Update failed. Check for local changes in $BATON_HOME"
+            exit 1
+        fi
+        ;;
+    list)
+        registry_list
+        ;;
+    doctor)
+        doctor "${2:-.}"
+        ;;
+    status)
+        status "${2:-.}"
+        ;;
+    help|--help|-h|*)
+        usage
+        ;;
+esac
