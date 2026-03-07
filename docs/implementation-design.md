@@ -57,7 +57,7 @@ project/
 
 ## 二、workflow.md（核心规则，始终加载）
 
-**设计约束**：~400 tokens。只包含 AI 必须始终遵守的规则。详细说明和示例放在 workflow-full.md 中。
+**设计约束**：~400 tokens。只包含 AI 必须始终遵守的规则。详细说明和示例放在 workflow-full.md 中。对于支持 skills 但不支持 SessionStart 的 IDE，始终加载的入口也应保持为这个 slim 文件，避免把 phase methodology 常驻进上下文。
 
 ```markdown
 ## Baton — 共同理解构建协议
@@ -66,8 +66,8 @@ project/
 删除 `<!-- BATON:GO -->` 可回退到标注循环。
 
 ### 流程
-场景 A（目标明确）: research.md → 人提需求 → plan.md → 标注循环 → 生成 todo → BATON:GO → 实现
-场景 B（需要探索）: research.md ← 标注循环 → plan.md ← 标注循环 → 生成 todo → BATON:GO → 实现
+场景 A（目标明确）: research.md → 人提需求 → plan.md → 标注循环 → BATON:GO → 生成 todolist → 实现
+场景 B（需要探索）: research.md ← 标注循环 → plan.md ← 标注循环 → BATON:GO → 生成 todolist → 实现
 简单改动可跳过 research.md。
 
 ### 标注协议
@@ -97,7 +97,7 @@ project/
 
 ## 三、workflow-full.md（完整参考）
 
-包含 workflow.md 的所有内容 + 以下扩展段落：
+包含 workflow.md 的所有内容 + 以下扩展段落。该文件主要作为 rules-only IDE 的 fallback 参考，以及无 skill 时的提取源：
 
 ### [RESEARCH] 研究阶段引导
 
@@ -210,7 +210,7 @@ AI 必须**诚实呈现**，而不是在有问题的基础上硬做方案：
    - 如果人说的有问题 → 用证据说明，给替代方案，让人决定
 5. 所有回应记录到 ## Annotation Log
 6. 人看 AI 回应，可能继续标注 → 回到步骤 3
-7. 人满意 → 退出标注循环（说"生成 todolist" / "开始实现" / 加 BATON:GO）
+7. 人满意 → 添加 BATON:GO → 说"生成 todolist" → 进入实现阶段
 
 #### 标注格式
 人直接在文档中相关位置写标注，格式：

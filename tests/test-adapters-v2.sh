@@ -16,6 +16,8 @@ setup_dir() {
     d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
+    cp "$SCRIPT_DIR/../.baton/hooks/completion-check.sh" "$d/.baton/hooks/completion-check.sh"
+    chmod +x "$d/.baton/hooks/completion-check.sh"
     # Copy the adapter under test
     if [ -n "${2:-}" ] && [ -f "$ADAPTERS/$2" ]; then
         cp "$ADAPTERS/$2" "$d/.baton/adapters/$2"
@@ -168,6 +170,50 @@ if echo "$OUTPUT" | grep -q '"cancel":true'; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL: expected cancel:true for insert_content, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Cline TaskComplete Adapter ==="
+echo ""
+
+echo "--- Test 9: Cline TaskComplete adapter — blocks when retrospective missing ---"
+d="$(setup_dir t9 adapter-cline-taskcomplete.sh)"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] one
+EOF
+JSON='{"taskComplete":{"success":true}}'
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline-taskcomplete.sh" 2>/dev/null)" || true
+if echo "$OUTPUT" | grep -q '"cancel":true'; then
+    echo "  pass: missing retrospective blocked → cancel:true"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected cancel:true when retrospective missing, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "--- Test 10: Cline TaskComplete adapter — allows when retrospective exists ---"
+d="$(setup_dir t10 adapter-cline-taskcomplete.sh)"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] one
+## Retrospective
+done
+EOF
+JSON='{"taskComplete":{"success":true}}'
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline-taskcomplete.sh" 2>/dev/null)" || true
+if echo "$OUTPUT" | grep -q '"cancel":false'; then
+    echo "  pass: retrospective present → cancel:false"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected cancel:false when retrospective exists, got: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 

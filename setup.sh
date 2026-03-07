@@ -2,64 +2,434 @@
 # setup.sh — Install or upgrade baton plan-first workflow into a project
 # Version: 3.0
 #
-# Usage: bash /path/to/baton/setup.sh [project_dir]
+# Usage: bash /path/to/baton/setup.sh [--ide ide[,ide...]] [--choose] [project_dir]
 #
 # What it does:
-#   1. Detects all IDEs in the project (multi-IDE support)
-#   2. Creates .baton/ directory with write-lock, phase-guide, workflow
-#   3. Configures IDE-specific hooks and workflow injection for each detected IDE
-#   4. Installs git pre-commit hook as universal safety net
-#   5. Handles v1 → v2 → v3 migration automatically
+#   1. Detects available IDEs in the project
+#   2. Lets the user select which IDEs to configure (via --ide / --choose)
+#   3. Creates .baton/ directory with write-lock, phase-guide, workflow
+#   4. Configures IDE-specific hooks and workflow injection for each selected IDE
+#   5. Installs git pre-commit hook as universal safety net
+#   6. Handles v1 → v2 → v3 migration automatically
 set -eu
 
+usage() {
+    cat <<'EOF'
+Usage: bash /path/to/baton/setup.sh [--ide ide[,ide...]] [project_dir]
+       bash /path/to/baton/setup.sh --choose [project_dir]
+       bash /path/to/baton/setup.sh --uninstall [project_dir]
+
+Examples:
+  bash /path/to/baton/setup.sh
+  bash /path/to/baton/setup.sh /path/to/project
+  bash /path/to/baton/setup.sh --ide cursor,codex /path/to/project
+  bash /path/to/baton/setup.sh --ide kiro /path/to/project
+  bash /path/to/baton/setup.sh --ide codex /path/to/project
+  bash /path/to/baton/setup.sh --choose /path/to/project
+
+Scope notes:
+  cursor = Cursor IDE
+  kiro = current .amazonq compatibility surface
+  roo = rules guidance only in Baton
+EOF
+}
+
 BATON_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="${1:-$(pwd)}"
+PROJECT_DIR="$(pwd)"
+UNINSTALL=0
+REQUESTED_IDES="${BATON_IDE:-}"
+REQUESTED_IDES_SOURCE=""
+CHOOSE_IDES=0
+CHOOSE_IDES_SOURCE=""
+POSITIONAL_COUNT=0
+
+[ -n "$REQUESTED_IDES" ] && REQUESTED_IDES_SOURCE="BATON_IDE"
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --uninstall)
+            UNINSTALL=1
+            shift
+            ;;
+        --ide)
+            if [ "$#" -lt 2 ]; then
+                echo "Error: --ide requires a value" >&2
+                usage >&2
+                exit 1
+            fi
+            REQUESTED_IDES="$2"
+            REQUESTED_IDES_SOURCE="--ide"
+            shift 2
+            ;;
+        --ide=*)
+            REQUESTED_IDES="${1#--ide=}"
+            REQUESTED_IDES_SOURCE="--ide"
+            shift
+            ;;
+        --choose)
+            CHOOSE_IDES=1
+            CHOOSE_IDES_SOURCE="--choose"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            while [ "$#" -gt 0 ]; do
+                POSITIONAL_COUNT=$((POSITIONAL_COUNT + 1))
+                if [ "$POSITIONAL_COUNT" -gt 1 ]; then
+                    echo "Error: unexpected argument '$1'" >&2
+                    usage >&2
+                    exit 1
+                fi
+                PROJECT_DIR="$1"
+                shift
+            done
+            ;;
+        -*)
+            echo "Error: unknown option '$1'" >&2
+            usage >&2
+            exit 1
+            ;;
+        *)
+            POSITIONAL_COUNT=$((POSITIONAL_COUNT + 1))
+            if [ "$POSITIONAL_COUNT" -gt 1 ]; then
+                echo "Error: unexpected argument '$1'" >&2
+                usage >&2
+                exit 1
+            fi
+            PROJECT_DIR="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ "$CHOOSE_IDES" = "1" ] && [ -n "$REQUESTED_IDES_SOURCE" ]; then
+    echo "Error: cannot combine --choose with $REQUESTED_IDES_SOURCE" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ "$UNINSTALL" = "0" ] && [ "$CHOOSE_IDES" = "0" ] && [ -z "$REQUESTED_IDES" ]; then
+    if [ "${BATON_ASSUME_INTERACTIVE:-0}" = "1" ] || { [ -t 0 ] && [ -t 1 ]; }; then
+        CHOOSE_IDES=1
+        CHOOSE_IDES_SOURCE="interactive default"
+    fi
+fi
+
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "Error: $PROJECT_DIR is not a directory" >&2
+    exit 1
+fi
+
+# Resolve to absolute path early so uninstall can distinguish self-install safely.
+PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
+
+# Self-install detection: source and target are the same directory.
+SELF_INSTALL=0
+[ "$BATON_DIR" = "$PROJECT_DIR" ] && SELF_INSTALL=1
+
+json_edit_with_jq() {
+    _jej_file="$1"
+    _jej_filter="$2"
+    shift 2
+    if ! command -v jq >/dev/null 2>&1; then
+        return 2
+    fi
+    if ! jq empty "$_jej_file" >/dev/null 2>&1; then
+        return 3
+    fi
+    _jej_tmp="$_jej_file.baton.tmp"
+    if ! jq "$@" "$_jej_filter" "$_jej_file" > "$_jej_tmp"; then
+        rm -f "$_jej_tmp"
+        return 4
+    fi
+    if cmp -s "$_jej_file" "$_jej_tmp"; then
+        rm -f "$_jej_tmp"
+        return 1
+    fi
+    mv "$_jej_tmp" "$_jej_file"
+    return 0
+}
+
+baton_json_command_allowlist() {
+    cat <<'JSON'
+[
+  "bash .baton/hooks/phase-guide.sh",
+  "sh .baton/hooks/phase-guide.sh",
+  "bash .baton/hooks/write-lock.sh",
+  "sh .baton/hooks/write-lock.sh",
+  "bash .baton/hooks/post-write-tracker.sh",
+  "sh .baton/hooks/post-write-tracker.sh",
+  "bash .baton/hooks/stop-guard.sh",
+  "sh .baton/hooks/stop-guard.sh",
+  "bash .baton/hooks/subagent-context.sh",
+  "sh .baton/hooks/subagent-context.sh",
+  "bash .baton/hooks/completion-check.sh",
+  "sh .baton/hooks/completion-check.sh",
+  "bash .baton/hooks/pre-compact.sh",
+  "sh .baton/hooks/pre-compact.sh",
+  "bash .baton/hooks/bash-guard.sh",
+  "sh .baton/hooks/bash-guard.sh",
+  "bash .baton/adapters/adapter-cursor.sh",
+  "sh .baton/adapters/adapter-cursor.sh",
+  "bash .baton/adapters/adapter-copilot.sh",
+  "sh .baton/adapters/adapter-copilot.sh",
+  "bash .claude/write-lock.sh",
+  "sh .claude/write-lock.sh"
+]
+JSON
+}
+
+baton_hook_count_in_json_file() {
+    _bhcj_file="$1"
+    _bhcj_allowlist="$(baton_json_command_allowlist)"
+    if ! command -v jq >/dev/null 2>&1; then
+        return 2
+    fi
+    if ! jq empty "$_bhcj_file" >/dev/null 2>&1; then
+        return 3
+    fi
+    jq -r --argjson baton_commands "$_bhcj_allowlist" '
+        def hook_command:
+            ((.command? // .bash? // "") | tostring);
+        def baton_ref:
+            hook_command as $cmd
+            | ($baton_commands | index($cmd)) != null;
+        def event_entries:
+            (.hooks // {})
+            | if type == "object" then .[] else empty end
+            | if type == "array" then .[] else empty end;
+        [
+            event_entries
+            | if type != "object" then
+                empty
+              elif ((.hooks? // null) | type) == "array" then
+                (.hooks[]? | select(type == "object" and baton_ref))
+              elif baton_ref then
+                .
+              else
+                empty
+              end
+        ]
+        | length
+    ' "$_bhcj_file"
+}
+
+json_dot_baton_path_ref_count() {
+    _jdbpr_file="$1"
+    if ! command -v jq >/dev/null 2>&1; then
+        return 2
+    fi
+    if ! jq empty "$_jdbpr_file" >/dev/null 2>&1; then
+        return 3
+    fi
+    jq -r '
+        def hook_command:
+            ((.command? // .bash? // "") | tostring);
+        def dot_baton_ref:
+            hook_command | contains(".baton/");
+        def event_entries:
+            (.hooks // {})
+            | if type == "object" then .[] else empty end
+            | if type == "array" then .[] else empty end;
+        [
+            event_entries
+            | if type != "object" then
+                empty
+              elif ((.hooks? // null) | type) == "array" then
+                (.hooks[]? | select(type == "object" and dot_baton_ref))
+              elif dot_baton_ref then
+                .
+              else
+                empty
+              end
+        ]
+        | length
+    ' "$_jdbpr_file"
+}
+
+remove_baton_hooks_from_json_file() {
+    _rbhj_file="$1"
+    _rbhj_allowlist="$(baton_json_command_allowlist)"
+    json_edit_with_jq "$_rbhj_file" '
+        def hook_command:
+            ((.command? // .bash? // "") | tostring);
+        def baton_ref:
+            hook_command as $cmd
+            | ($baton_commands | index($cmd)) != null;
+        def clean_nested:
+            if type == "object" and ((.hooks? // null) | type) == "array" then
+                .hooks |= map(select((type != "object") or (baton_ref | not)))
+            else
+                .
+            end;
+        .hooks = (
+            (.hooks // {})
+            | if type == "object" then . else {} end
+            | with_entries(
+                .value = (
+                    (.value // [])
+                    | if type == "array" then . else [] end
+                    | map(if type == "object" then clean_nested else . end)
+                    | map(select(
+                        if type != "object" then
+                            true
+                        elif ((.hooks? // null) | type) == "array" then
+                            ((.hooks | length) > 0)
+                        else
+                            (baton_ref | not)
+                        end
+                    ))
+                )
+                | select((.value | length) > 0)
+            )
+        )
+    ' --argjson baton_commands "$_rbhj_allowlist"
+}
+
+copilot_baton_file_is_empty() {
+    _cbfe_file="$1"
+    command -v jq >/dev/null 2>&1 || return 1
+    jq -e '
+        ((.hooks // {}) | type == "object" and length == 0) and
+        (((keys_unsorted - ["hooks", "version"]) | length) == 0)
+    ' "$_cbfe_file" >/dev/null 2>&1
+}
+
+cleanup_baton_json_hook_file() {
+    _cbj_file="$1"
+    _cbj_label="$2"
+    _cbj_mode="${3:-keep}"
+    [ -f "$_cbj_file" ] || return 0
+
+    _cbj_before="$(baton_hook_count_in_json_file "$_cbj_file" 2>/dev/null)"
+    _cbj_status=$?
+    case "$_cbj_status" in
+        0)
+            ;;
+        2|3)
+            echo "  ⚠ $_cbj_label exists but Baton could not inspect hooks automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+        *)
+            echo "  ⚠ $_cbj_label exists but Baton could not inspect hooks automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+    esac
+
+    if [ "${_cbj_before:-0}" -gt 0 ]; then
+        if ! remove_baton_hooks_from_json_file "$_cbj_file"; then
+            echo "  ⚠ $_cbj_label exists but Baton could not remove hooks automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+        fi
+    fi
+
+    _cbj_after="$(baton_hook_count_in_json_file "$_cbj_file" 2>/dev/null)"
+    _cbj_status=$?
+    case "$_cbj_status" in
+        0)
+            ;;
+        2|3)
+            echo "  ⚠ $_cbj_label exists but Baton could not verify hook cleanup automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+        *)
+            echo "  ⚠ $_cbj_label exists but Baton could not verify hook cleanup automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+    esac
+
+    _cbj_dot_baton_after="$(json_dot_baton_path_ref_count "$_cbj_file" 2>/dev/null)"
+    _cbj_status=$?
+    case "$_cbj_status" in
+        0)
+            ;;
+        2|3)
+            echo "  ⚠ $_cbj_label exists but Baton could not verify remaining .baton/ references automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+        *)
+            echo "  ⚠ $_cbj_label exists but Baton could not verify remaining .baton/ references automatically — review manually"
+            UNINSTALL_KEEP_BATON_DIR=1
+            return 0
+            ;;
+    esac
+
+    if [ "${_cbj_before:-0}" -gt "${_cbj_after:-0}" ]; then
+        echo "  ✓ Removed Baton hooks from $_cbj_label"
+    fi
+
+    if [ "${_cbj_after:-0}" -gt 0 ]; then
+        echo "  ⚠ $_cbj_label still references Baton — preserved .baton/ for safety"
+        UNINSTALL_KEEP_BATON_DIR=1
+        return 0
+    fi
+
+    if [ "${_cbj_dot_baton_after:-0}" -gt 0 ]; then
+        echo "  ⚠ $_cbj_label still references .baton/ — preserved .baton/ for safety"
+        UNINSTALL_KEEP_BATON_DIR=1
+        return 0
+    fi
+
+    if [ "$_cbj_mode" = "delete-if-empty" ] && [ "${_cbj_before:-0}" -gt 0 ] && copilot_baton_file_is_empty "$_cbj_file"; then
+        rm -f "$_cbj_file"
+        echo "  ✓ Removed $_cbj_label"
+    fi
+}
 
 # --- Uninstall mode ---
-if [ "${1:-}" = "--uninstall" ]; then
-    PROJECT_DIR="${2:-$(pwd)}"
-    if [ ! -d "$PROJECT_DIR" ]; then
-        echo "Error: $PROJECT_DIR is not a directory" >&2
-        exit 1
-    fi
+if [ "$UNINSTALL" = "1" ]; then
     echo "Removing baton from: $PROJECT_DIR"
-    rm -rf "$PROJECT_DIR/.baton"
-    echo "  ✓ Removed .baton/ directory"
+    UNINSTALL_KEEP_BATON_DIR=0
+    if [ "$SELF_INSTALL" = "1" ]; then
+        UNINSTALL_KEEP_BATON_DIR=1
+    fi
     # Clean CLAUDE.md @import
     if [ -f "$PROJECT_DIR/CLAUDE.md" ]; then
         sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$PROJECT_DIR/CLAUDE.md"
         rm -f "$PROJECT_DIR/CLAUDE.md.bak"
         echo "  ✓ Removed @.baton/workflow*.md from CLAUDE.md"
     fi
-    # Warn about settings.json
-    if [ -f "$PROJECT_DIR/.claude/settings.json" ] && grep -q 'baton' "$PROJECT_DIR/.claude/settings.json" 2>/dev/null; then
-        echo "  ⚠ .claude/settings.json may still contain baton hooks — review manually"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.claude/settings.json" ".claude/settings.json"
     # Clean Cursor
     if [ -f "$PROJECT_DIR/.cursor/rules/baton.mdc" ]; then
         rm -f "$PROJECT_DIR/.cursor/rules/baton.mdc"
         echo "  ✓ Removed .cursor/rules/baton.mdc"
     fi
-    if [ -f "$PROJECT_DIR/.cursor/hooks.json" ] && grep -q 'baton' "$PROJECT_DIR/.cursor/hooks.json" 2>/dev/null; then
-        echo "  ⚠ .cursor/hooks.json may still contain baton hooks — review manually"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.cursor/hooks.json" ".cursor/hooks.json"
     # Clean Windsurf
     if [ -f "$PROJECT_DIR/.windsurf/rules/baton-workflow.md" ]; then
         rm -f "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
         echo "  ✓ Removed .windsurf/rules/baton-workflow.md"
     fi
-    if [ -f "$PROJECT_DIR/.windsurf/hooks.json" ] && grep -q 'baton' "$PROJECT_DIR/.windsurf/hooks.json" 2>/dev/null; then
-        echo "  ⚠ .windsurf/hooks.json may still contain baton hooks — review manually"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.windsurf/hooks.json" ".windsurf/hooks.json"
     # Clean Cline
     if [ -f "$PROJECT_DIR/.clinerules/baton-workflow.md" ]; then
         rm -f "$PROJECT_DIR/.clinerules/baton-workflow.md"
         echo "  ✓ Removed .clinerules/baton-workflow.md"
     fi
     for _hook in PreToolUse TaskComplete; do
-        if [ -f "$PROJECT_DIR/.clinerules/hooks/$_hook" ] && \
-           grep -q 'baton' "$PROJECT_DIR/.clinerules/hooks/$_hook" 2>/dev/null; then
-            rm -f "$PROJECT_DIR/.clinerules/hooks/$_hook"
+        _hook_path="$PROJECT_DIR/.clinerules/hooks/$_hook"
+        _hook_backup="$_hook_path.baton-user"
+        if [ -f "$_hook_path" ] && grep -q 'baton-cline-wrapper' "$_hook_path" 2>/dev/null; then
+            if [ -f "$_hook_backup" ]; then
+                mv "$_hook_backup" "$_hook_path"
+                echo "  ✓ Restored original .clinerules/hooks/$_hook"
+            else
+                rm -f "$_hook_path"
+                echo "  ✓ Removed .clinerules/hooks/$_hook"
+            fi
+        elif [ -f "$_hook_path" ] && grep -q 'baton' "$_hook_path" 2>/dev/null; then
+            rm -f "$_hook_path"
             echo "  ✓ Removed .clinerules/hooks/$_hook"
         fi
     done
@@ -68,22 +438,15 @@ if [ "${1:-}" = "--uninstall" ]; then
         rm -f "$PROJECT_DIR/.augment/rules/baton-workflow.md"
         echo "  ✓ Removed .augment/rules/baton-workflow.md"
     fi
-    if [ -f "$PROJECT_DIR/.augment/settings.json" ] && grep -q 'baton' "$PROJECT_DIR/.augment/settings.json" 2>/dev/null; then
-        echo "  ⚠ .augment/settings.json may still contain baton hooks — review manually"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.augment/settings.json" ".augment/settings.json"
     # Clean Kiro / Amazon Q
     if [ -f "$PROJECT_DIR/.amazonq/rules/baton-workflow.md" ]; then
         rm -f "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
         echo "  ✓ Removed .amazonq/rules/baton-workflow.md"
     fi
-    if [ -f "$PROJECT_DIR/.amazonq/hooks.json" ] && grep -q 'baton' "$PROJECT_DIR/.amazonq/hooks.json" 2>/dev/null; then
-        echo "  ⚠ .amazonq/hooks.json may still contain baton hooks — review manually"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.amazonq/hooks.json" ".amazonq/hooks.json"
     # Clean Copilot
-    if [ -f "$PROJECT_DIR/.github/hooks/baton.json" ]; then
-        rm -f "$PROJECT_DIR/.github/hooks/baton.json"
-        echo "  ✓ Removed .github/hooks/baton.json"
-    fi
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.github/hooks/baton.json" ".github/hooks/baton.json" "delete-if-empty"
     if [ -f "$PROJECT_DIR/.github/copilot-instructions.md" ] && grep -q 'baton' "$PROJECT_DIR/.github/copilot-instructions.md" 2>/dev/null; then
         echo "  ⚠ .github/copilot-instructions.md may still contain baton references — review manually"
     fi
@@ -93,14 +456,25 @@ if [ "${1:-}" = "--uninstall" ]; then
         echo "  ✓ Removed .roo/rules/baton-workflow.md"
     fi
     # Clean Codex (AGENTS.md)
-    if [ -f "$PROJECT_DIR/AGENTS.md" ] && grep -q 'baton' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
-        echo "  ⚠ AGENTS.md may still contain baton references — review manually"
+    if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
+        if grep -qE '@\.baton/workflow(-full)?\.md' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
+            sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$PROJECT_DIR/AGENTS.md"
+            rm -f "$PROJECT_DIR/AGENTS.md.bak"
+            echo "  ✓ Removed @.baton/workflow*.md from AGENTS.md"
+        fi
+        if grep -q 'baton' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
+            echo "  ⚠ AGENTS.md may still contain baton references — review manually"
+        fi
     fi
     # Clean baton skills from all IDEs
     for _ide_dir in .claude .cursor .windsurf .cline .github .augment .roo .kiro .amazonq .agents; do
         for _skill in baton-research baton-plan baton-implement; do
-            if [ -d "$PROJECT_DIR/$_ide_dir/skills/$_skill" ]; then
-                rm -rf "$PROJECT_DIR/$_ide_dir/skills/$_skill"
+            _skill_dir="$PROJECT_DIR/$_ide_dir/skills/$_skill"
+            if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_dir" = "$BATON_DIR/.claude/skills/$_skill" ]; then
+                continue
+            fi
+            if [ -d "$_skill_dir" ]; then
+                rm -rf "$_skill_dir"
             fi
         done
     done
@@ -122,45 +496,198 @@ if [ "${1:-}" = "--uninstall" ]; then
             echo "  ✓ Removed baton section from git pre-commit hook"
         fi
     fi
+    if [ "$SELF_INSTALL" = "1" ]; then
+        echo "  ✓ Preserved source .baton/ directory (self-install)"
+    elif [ "$UNINSTALL_KEEP_BATON_DIR" = "1" ]; then
+        echo "  ⚠ Preserved .baton/ directory because some configs still reference Baton"
+    elif [ -d "$PROJECT_DIR/.baton" ]; then
+        rm -rf "$PROJECT_DIR/.baton"
+        echo "  ✓ Removed .baton/ directory"
+    fi
     echo "Done. Baton removed."
     exit 0
 fi
-
-if [ ! -d "$PROJECT_DIR" ]; then
-    echo "Error: $PROJECT_DIR is not a directory" >&2
-    exit 1
-fi
-
-# Resolve to absolute path
-PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
-
-# Self-install detection: source and target are the same directory
-SELF_INSTALL=0
-[ "$BATON_DIR" = "$PROJECT_DIR" ] && SELF_INSTALL=1
 
 # --- Helpers ---
 get_version() {
     sed -n 's/^# Version: *//p' "$1" 2>/dev/null || echo ""
 }
 
+SUPPORTED_IDES="claude codex cursor windsurf copilot augment kiro cline factory zed roo"
+
+append_ide() {
+    _append_name="$1"
+    case " ${_ides:-} " in
+        *" $_append_name "*) ;;
+        *) _ides="${_ides:+$_ides }$_append_name" ;;
+    esac
+}
+
+has_codex_env() {
+    [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SANDBOX:-}" ]
+}
+
+normalize_ide_name() {
+    _normalized="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+    case "$_normalized" in
+        amazonq|amazon-q) echo "kiro" ;;
+        claudecode|claude-code) echo "claude" ;;
+        *) echo "$_normalized" ;;
+    esac
+}
+
+is_supported_ide() {
+    case " $SUPPORTED_IDES " in
+        *" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+ide_summary() {
+    case "$1" in
+        claude)   echo "full protection, native hooks + skills" ;;
+        factory)  echo "full protection, Claude-style hooks + skills" ;;
+        cursor)   echo "full protection, Cursor IDE hooks + adapter" ;;
+        windsurf) echo "full protection, native hooks + skills" ;;
+        cline)    echo "hook protection + completion checks + skills" ;;
+        augment)  echo "full protection, hooks + skills" ;;
+        kiro)     echo "hook protection, Kiro compatibility surface (.amazonq) + skills" ;;
+        copilot)  echo "full protection, adapter + workflow.md + skills" ;;
+        codex)    echo "rules guidance via AGENTS.md + .agents/skills" ;;
+        zed)      echo "rules guidance via .rules only" ;;
+        roo)      echo "rules guidance via .roo/rules + skills (no Baton hook integration)" ;;
+        *)        echo "supported IDE" ;;
+    esac
+}
+
+parse_ide_list() {
+    _raw="$(printf '%s' "$1" | tr ',\n\t' '   ')"
+    _parsed=""
+    for _candidate in $_raw; do
+        [ -n "$_candidate" ] || continue
+        _normalized="$(normalize_ide_name "$_candidate")"
+        if ! is_supported_ide "$_normalized"; then
+            echo "Error: unsupported IDE '$_candidate'. Supported IDEs: $SUPPORTED_IDES" >&2
+            return 1
+        fi
+        case " $_parsed " in
+            *" $_normalized "*) ;;
+            *) _parsed="${_parsed:+$_parsed }$_normalized" ;;
+        esac
+    done
+    if [ -z "$_parsed" ]; then
+        echo "Error: no IDEs selected. Supported IDEs: $SUPPORTED_IDES" >&2
+        return 1
+    fi
+    echo "$_parsed"
+}
+
+ide_at_index() {
+    _target="$1"
+    _i=1
+    for _ide_name in $SUPPORTED_IDES; do
+        if [ "$_i" = "$_target" ]; then
+            echo "$_ide_name"
+            return 0
+        fi
+        _i=$((_i + 1))
+    done
+    return 1
+}
+
+parse_ide_choice() {
+    _raw_choice="$(printf '%s' "$1" | tr ',\n\t' '   ')"
+    _parsed=""
+    _max_count=0
+    for _ in $SUPPORTED_IDES; do
+        _max_count=$((_max_count + 1))
+    done
+    for _token in $_raw_choice; do
+        [ -n "$_token" ] || continue
+        case "$_token" in
+            *[!0-9]*)
+                _resolved="$(parse_ide_list "$_token")" || return 1
+                ;;
+            *)
+                _resolved=""
+                if [ "$_token" -gt "$_max_count" ] 2>/dev/null && \
+                   [ "${#_token}" -gt 1 ] && \
+                   printf '%s' "$_token" | grep -q '^[1-9][1-9]*$'; then
+                    _chars="$(printf '%s' "$_token" | sed 's/./& /g')"
+                    for _digit in $_chars; do
+                        _digit_ide="$(ide_at_index "$_digit")" || {
+                            echo "Error: unsupported IDE selection '$_digit'. Choose 1-$_max_count or use IDE names." >&2
+                            return 1
+                        }
+                        _resolved="${_resolved:+$_resolved }$_digit_ide"
+                    done
+                else
+                    _digit_ide="$(ide_at_index "$_token")" || {
+                        echo "Error: unsupported IDE selection '$_token'. Choose 1-$_max_count or use IDE names." >&2
+                        return 1
+                    }
+                    _resolved="$_digit_ide"
+                fi
+                ;;
+        esac
+        for _resolved_ide in $_resolved; do
+            case " $_parsed " in
+                *" $_resolved_ide "*) ;;
+                *) _parsed="${_parsed:+$_parsed }$_resolved_ide" ;;
+            esac
+        done
+    done
+    if [ -z "$_parsed" ]; then
+        echo "Error: no IDEs selected. Choose 1-$_max_count or use IDE names." >&2
+        return 1
+    fi
+    echo "$_parsed"
+}
+
+choose_ides() {
+    _default_ides="$1"
+    _index=1
+    for _ide_name in $SUPPORTED_IDES; do
+        _summary="$(ide_summary "$_ide_name")"
+        if printf ' %s ' "$_default_ides" | grep -q " $_ide_name "; then
+            echo "  $_index. $_ide_name - $_summary [detected]" >&2
+        else
+            echo "  $_index. $_ide_name - $_summary" >&2
+        fi
+        _index=$((_index + 1))
+    done
+    echo "  Enter IDE names, numbers like '1,3,4' or '134', 'all', or press Enter to use detected IDEs." >&2
+    echo "  Note: cursor = Cursor IDE, kiro = current .amazonq compatibility surface." >&2
+    printf "  Select IDEs [%s]: " "$_default_ides" >&2
+    if ! IFS= read -r _choice; then
+        echo "Error: --choose requires input on stdin" >&2
+        return 1
+    fi
+    _choice="$(printf '%s' "$_choice" | tr '[:upper:]' '[:lower:]')"
+    case "$_choice" in
+        ""|detected) echo "$_default_ides" ;;
+        all) echo "$SUPPORTED_IDES" ;;
+        *) parse_ide_choice "$_choice" ;;
+    esac
+}
+
 detect_ides() {
     _ides=""
-    [ -d "$PROJECT_DIR/.claude" ]     && _ides="$_ides claude"
-    [ -d "$PROJECT_DIR/.cursor" ]     && _ides="$_ides cursor"
-    [ -d "$PROJECT_DIR/.windsurf" ]   && _ides="$_ides windsurf"
-    [ -d "$PROJECT_DIR/.factory" ]    && _ides="$_ides factory"
-    { [ -d "$PROJECT_DIR/.clinerules" ] || [ -d "$PROJECT_DIR/.cline" ]; } && _ides="$_ides cline"
-    [ -d "$PROJECT_DIR/.augment" ]    && _ides="$_ides augment"
-    [ -d "$PROJECT_DIR/.amazonq" ]    && _ides="$_ides kiro"
+    [ -d "$PROJECT_DIR/.claude" ]     && append_ide "claude"
+    [ -d "$PROJECT_DIR/.cursor" ]     && append_ide "cursor"
+    [ -d "$PROJECT_DIR/.windsurf" ]   && append_ide "windsurf"
+    [ -d "$PROJECT_DIR/.factory" ]    && append_ide "factory"
+    { [ -d "$PROJECT_DIR/.clinerules" ] || [ -d "$PROJECT_DIR/.cline" ]; } && append_ide "cline"
+    [ -d "$PROJECT_DIR/.augment" ]    && append_ide "augment"
+    [ -d "$PROJECT_DIR/.amazonq" ]    && append_ide "kiro"
     # Copilot: require copilot-specific files, not just .github/
     { [ -f "$PROJECT_DIR/.github/copilot-instructions.md" ] || \
-      [ -f "$PROJECT_DIR/.github/hooks/baton.json" ]; } && _ides="$_ides copilot"
-    [ -f "$PROJECT_DIR/AGENTS.md" ]   && _ides="$_ides codex"
-    [ -f "$PROJECT_DIR/.rules" ]      && _ides="$_ides zed"
-    [ -d "$PROJECT_DIR/.roo" ]        && _ides="$_ides roo"
-    # Trim leading space
-    _ides="$(echo "$_ides" | sed 's/^ //')"
-    [ -z "$_ides" ] && _ides="claude"
+      [ -f "$PROJECT_DIR/.github/hooks/baton.json" ]; } && append_ide "copilot"
+    [ -f "$PROJECT_DIR/AGENTS.md" ]   && append_ide "codex"
+    has_codex_env                    && append_ide "codex"
+    [ -f "$PROJECT_DIR/.rules" ]      && append_ide "zed"
+    [ -d "$PROJECT_DIR/.roo" ]        && append_ide "roo"
+    [ -z "$_ides" ] && append_ide "claude"
     echo "$_ides"
 }
 
@@ -221,24 +748,6 @@ install_versioned_script() {
     echo "  ✓ Installed $_ivs_name"
 }
 
-# IDEs that support SessionStart hook get slim workflow; others get full
-ide_has_session_start() {
-    case "$1" in
-        claude|factory|cursor|cline|augment|kiro|copilot) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# Check if any IDE in the list supports SessionStart
-any_has_session_start() {
-    for _ide in $1; do
-        if ide_has_session_start "$_ide"; then
-            return 0
-        fi
-    done
-    return 1
-}
-
 install_adapter() {
     _ia_name="$1"
     _ia_src="$BATON_DIR/.baton/adapters/$_ia_name"
@@ -253,11 +762,8 @@ install_adapter() {
 # Install baton skills to each detected IDE's skill directory
 # Skills are the canonical source in .claude/skills/ within baton
 install_skills() {
-    if [ "$SELF_INSTALL" = "1" ]; then
-        echo "  ✓ Skills (self-install, skipping copy)"
-        return
-    fi
     _skill_count=0
+    _fallback_count=0
     for _skill in baton-research baton-plan baton-implement; do
         _src="$BATON_DIR/.claude/skills/$_skill/SKILL.md"
         [ -f "$_src" ] || continue
@@ -274,21 +780,181 @@ install_skills() {
                 roo)      _ide_dir="$PROJECT_DIR/.roo/skills/$_skill" ;;
                 *)        continue ;;
             esac
+            _dst="$_ide_dir/SKILL.md"
+            if [ "$_dst" = "$_src" ]; then
+                continue
+            fi
             mkdir -p "$_ide_dir"
-            cp "$_src" "$_ide_dir/SKILL.md"
+            cp "$_src" "$_dst"
             _skill_count=$((_skill_count + 1))
         done
-    done
-    # Cross-IDE fallback
-    for _skill in baton-research baton-plan baton-implement; do
-        _src="$BATON_DIR/.claude/skills/$_skill/SKILL.md"
-        [ -f "$_src" ] || continue
         mkdir -p "$PROJECT_DIR/.agents/skills/$_skill"
         cp "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
+        _fallback_count=$((_fallback_count + 1))
     done
-    if [ "$_skill_count" -gt 0 ]; then
+    if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_count" -gt 0 ]; then
+        echo "  ✓ Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
+    elif [ "$SELF_INSTALL" = "1" ] && [ "$_fallback_count" -gt 0 ]; then
+        echo "  ✓ Installed baton skills to .agents/ fallback (self-install)"
+    elif [ "$_skill_count" -gt 0 ]; then
         echo "  ✓ Installed baton skills to $(echo "$IDES" | wc -w | tr -d ' ') IDE(s) + .agents/ fallback"
+    elif [ "$_fallback_count" -gt 0 ]; then
+        echo "  ✓ Installed baton skills to .agents/ fallback"
     fi
+}
+
+merge_json_with_jq() {
+    _mj_file="$1"
+    _mj_filter="$2"
+    shift 2
+    if ! command -v jq >/dev/null 2>&1; then
+        return 2
+    fi
+    if ! jq empty "$_mj_file" >/dev/null 2>&1; then
+        return 3
+    fi
+    _mj_tmp="$_mj_file.baton.tmp"
+    if ! jq "$@" "$_mj_filter" "$_mj_file" > "$_mj_tmp"; then
+        rm -f "$_mj_tmp"
+        return 4
+    fi
+    if cmp -s "$_mj_file" "$_mj_tmp"; then
+        rm -f "$_mj_tmp"
+        return 1
+    fi
+    mv "$_mj_tmp" "$_mj_file"
+    return 0
+}
+
+merge_nested_hook_entry() {
+    _mn_file="$1"
+    _mn_event="$2"
+    _mn_command="$3"
+    _mn_entry="$4"
+    merge_json_with_jq "$_mn_file" '
+        .hooks = ((.hooks // {}) | if type == "object" then . else {} end) |
+        .hooks[$event] = ((.hooks[$event] // []) | if type == "array" then . else [] end) |
+        if any(.hooks[$event][]?; any((.hooks // [])[]?; .command == $command)) then
+            .
+        else
+            .hooks[$event] += [$entry]
+        end
+    ' --arg event "$_mn_event" --arg command "$_mn_command" --argjson entry "$_mn_entry"
+}
+
+merge_flat_hook_entry() {
+    _mf_file="$1"
+    _mf_event="$2"
+    _mf_field="$3"
+    _mf_value="$4"
+    _mf_entry="$5"
+    merge_json_with_jq "$_mf_file" '
+        .hooks = ((.hooks // {}) | if type == "object" then . else {} end) |
+        .hooks[$event] = ((.hooks[$event] // []) | if type == "array" then . else [] end) |
+        if any(.hooks[$event][]?; .[$field] == $value) then
+            .
+        else
+            .hooks[$event] += [$entry]
+        end
+    ' --arg event "$_mf_event" --arg field "$_mf_field" --arg value "$_mf_value" --argjson entry "$_mf_entry"
+}
+
+ensure_json_default() {
+    _ej_file="$1"
+    _ej_key="$2"
+    _ej_value="$3"
+    merge_json_with_jq "$_ej_file" '
+        .[$key] = (.[$key] // $value)
+    ' --arg key "$_ej_key" --argjson value "$_ej_value"
+}
+
+record_merge_status() {
+    case "$1" in
+        0) MERGE_CHANGED=1 ;;
+        1) ;;
+        *) MERGE_FAILED=1 ;;
+    esac
+}
+
+run_merge_and_record() {
+    if "$@"; then
+        _rm_status=0
+    else
+        _rm_status=$?
+    fi
+    record_merge_status "$_rm_status"
+    return 0
+}
+
+report_merge_result() {
+    _rm_path="$1"
+    if [ "${MERGE_FAILED:-0}" = "1" ]; then
+        echo "  ⚠ $_rm_path exists but Baton could not merge hooks automatically — review manually"
+    elif [ "${MERGE_CHANGED:-0}" = "1" ]; then
+        echo "  ✓ Merged missing Baton hooks into $_rm_path"
+    else
+        echo "  ✓ Hooks already configured in $_rm_path"
+    fi
+}
+
+is_legacy_cline_hook_stub() {
+    _clh_file="$1"
+    _clh_marker="$2"
+    grep -q "$_clh_marker" "$_clh_file" 2>/dev/null
+}
+
+write_cline_hook_wrapper() {
+    _wch_file="$1"
+    _wch_event="$2"
+    _wch_adapter_rel="$3"
+    cat > "$_wch_file" <<EOF
+#!/bin/sh
+# baton-cline-wrapper: $_wch_event
+INPUT=\$(cat 2>/dev/null || true)
+SELF_DIR=\$(CDPATH= cd -- "\$(dirname "\$0")" 2>/dev/null && pwd)
+USER_HOOK="\$SELF_DIR/$_wch_event.baton-user"
+BATON_OUTPUT=\$(printf '%s' "\$INPUT" | bash "\$(dirname "\$0")/../../$_wch_adapter_rel" 2>/dev/null || true)
+if printf '%s' "\$BATON_OUTPUT" | grep -q '"cancel":true'; then
+    printf '%s\n' "\$BATON_OUTPUT"
+    exit 0
+fi
+if [ -f "\$USER_HOOK" ]; then
+    printf '%s' "\$INPUT" | sh "\$USER_HOOK"
+else
+    if [ -n "\$BATON_OUTPUT" ]; then
+        printf '%s\n' "\$BATON_OUTPUT"
+    else
+        printf '{"cancel":false}\n'
+    fi
+fi
+EOF
+    chmod +x "$_wch_file"
+}
+
+install_cline_hook_wrapper() {
+    _ich_event="$1"
+    _ich_adapter_rel="$2"
+    _ich_legacy_marker="$3"
+    _ich_hook="$PROJECT_DIR/.clinerules/hooks/$_ich_event"
+    _ich_backup="$_ich_hook.baton-user"
+    if [ -f "$_ich_hook" ] && grep -q 'baton-cline-wrapper' "$_ich_hook" 2>/dev/null; then
+        echo "  ✓ .clinerules/hooks/$_ich_event already wrapped for Baton"
+        return
+    fi
+    if [ -f "$_ich_hook" ] && is_legacy_cline_hook_stub "$_ich_hook" "$_ich_legacy_marker"; then
+        rm -f "$_ich_backup"
+        write_cline_hook_wrapper "$_ich_hook" "$_ich_event" "$_ich_adapter_rel"
+        echo "  ✓ Upgraded .clinerules/hooks/$_ich_event to Baton wrapper"
+        return
+    fi
+    if [ -f "$_ich_hook" ]; then
+        mv "$_ich_hook" "$_ich_backup"
+        write_cline_hook_wrapper "$_ich_hook" "$_ich_event" "$_ich_adapter_rel"
+        echo "  ✓ Wrapped existing .clinerules/hooks/$_ich_event and preserved user hook"
+        return
+    fi
+    write_cline_hook_wrapper "$_ich_hook" "$_ich_event" "$_ich_adapter_rel"
+    echo "  ✓ Created .clinerules/hooks/$_ich_event → $_ich_adapter_rel"
 }
 
 # --- Per-IDE configuration functions ---
@@ -298,44 +964,21 @@ configure_claude() {
     mkdir -p "$PROJECT_DIR/.claude"
     SETTINGS="$PROJECT_DIR/.claude/settings.json"
     if [ -f "$SETTINGS" ]; then
-        NEEDS_UPDATE=0
-        if ! grep -q '.baton/hooks/write-lock' "$SETTINGS" 2>/dev/null; then
-            NEEDS_UPDATE=1
-        fi
         if grep -q '.claude/write-lock' "$SETTINGS" 2>/dev/null; then
             sed -i.bak 's|\.claude/write-lock\.sh|.baton/hooks/write-lock.sh|g' "$SETTINGS"
             rm -f "$SETTINGS.bak"
             echo "  ✓ Updated write-lock path in settings.json (.claude/ → .baton/)"
-            NEEDS_UPDATE=0
         fi
-        if [ "$NEEDS_UPDATE" = "1" ]; then
-            echo "  ⚠ .claude/settings.json exists but may need write-lock hook."
-            echo "    See .baton/hooks/write-lock.sh for hook config."
-        fi
-        if ! grep -q 'phase-guide' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ SessionStart hook for phase-guide.sh not found in settings.json."
-            echo "    Add SessionStart hook: bash .baton/hooks/phase-guide.sh"
-        fi
-        if ! grep -q 'stop-guard' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ Stop hook for stop-guard.sh not found in settings.json."
-            echo "    Add Stop hook: bash .baton/hooks/stop-guard.sh"
-        fi
-        if ! grep -q 'post-write-tracker' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ PostToolUse hook for post-write-tracker.sh not found in settings.json."
-            echo "    Add PostToolUse hook: bash .baton/hooks/post-write-tracker.sh"
-        fi
-        if ! grep -q 'subagent-context' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ SubagentStart hook for subagent-context.sh not found in settings.json."
-            echo "    Add SubagentStart hook: bash .baton/hooks/subagent-context.sh"
-        fi
-        if ! grep -q 'completion-check' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ TaskCompleted hook for completion-check.sh not found in settings.json."
-            echo "    Add TaskCompleted hook: bash .baton/hooks/completion-check.sh"
-        fi
-        if ! grep -q 'pre-compact' "$SETTINGS" 2>/dev/null; then
-            echo "  ⚠ PreCompact hook for pre-compact.sh not found in settings.json."
-            echo "    Add PreCompact hook: bash .baton/hooks/pre-compact.sh"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SessionStart" "bash .baton/hooks/phase-guide.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/phase-guide.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreToolUse" "bash .baton/hooks/write-lock.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"bash .baton/hooks/write-lock.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PostToolUse" "bash .baton/hooks/post-write-tracker.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile","hooks":[{"type":"command","command":"bash .baton/hooks/post-write-tracker.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "Stop" "bash .baton/hooks/stop-guard.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/stop-guard.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SubagentStart" "bash .baton/hooks/subagent-context.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/subagent-context.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "TaskCompleted" "bash .baton/hooks/completion-check.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/completion-check.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreCompact" "bash .baton/hooks/pre-compact.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/pre-compact.sh"}]}'
+        report_merge_result ".claude/settings.json"
     else
         cat > "$SETTINGS" << 'JSON'
 {
@@ -499,11 +1142,14 @@ configure_cursor() {
 HOOKJSON
         echo "  ✓ Created .cursor/hooks.json (4 hooks)"
     else
-        if grep -q 'baton' "$PROJECT_DIR/.cursor/hooks.json" 2>/dev/null; then
-            echo "  ✓ Hooks already configured in .cursor/hooks.json"
-        else
-            echo "  ⚠ .cursor/hooks.json exists but has no baton hooks — merge manually"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record ensure_json_default "$PROJECT_DIR/.cursor/hooks.json" "version" '1'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "sessionStart" "command" "bash .baton/hooks/phase-guide.sh" '{"command":"bash .baton/hooks/phase-guide.sh","timeout":10}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "preToolUse" "command" "bash .baton/adapters/adapter-cursor.sh" '{"command":"bash .baton/adapters/adapter-cursor.sh","matcher":"Write","timeout":10}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "subagentStart" "command" "bash .baton/hooks/subagent-context.sh" '{"command":"bash .baton/hooks/subagent-context.sh","timeout":10}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "preCompact" "command" "bash .baton/hooks/pre-compact.sh" '{"command":"bash .baton/hooks/pre-compact.sh","timeout":10}'
+        report_merge_result ".cursor/hooks.json"
     fi
     install_adapter "adapter-cursor.sh"
 }
@@ -511,9 +1157,9 @@ HOOKJSON
 configure_windsurf() {
     echo "  --- Windsurf ---"
     mkdir -p "$PROJECT_DIR/.windsurf/rules"
-    # Rules file
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (reference) to .windsurf/rules/ (skills are primary)"
+    # Rules file — slim workflow; detailed phase methodology lives in skills
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (slim) to .windsurf/rules/ (skills are primary)"
     # Native hooks (pre_write_code supports exit code 2)
     if [ ! -f "$PROJECT_DIR/.windsurf/hooks.json" ]; then
         cat > "$PROJECT_DIR/.windsurf/hooks.json" << 'HOOKJSON'
@@ -542,11 +1188,12 @@ configure_windsurf() {
 HOOKJSON
         echo "  ✓ Created .windsurf/hooks.json (3 hooks)"
     else
-        if grep -q 'baton' "$PROJECT_DIR/.windsurf/hooks.json" 2>/dev/null; then
-            echo "  ✓ Hooks already configured in .windsurf/hooks.json"
-        else
-            echo "  ⚠ .windsurf/hooks.json exists but has no baton hooks — merge manually"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.windsurf/hooks.json" "pre_write_code" "command" "bash .baton/hooks/write-lock.sh" '{"command":"bash .baton/hooks/write-lock.sh","show_output":true}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.windsurf/hooks.json" "pre_run_command" "command" "bash .baton/hooks/bash-guard.sh" '{"command":"bash .baton/hooks/bash-guard.sh","show_output":true}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.windsurf/hooks.json" "post_write_code" "command" "bash .baton/hooks/post-write-tracker.sh" '{"command":"bash .baton/hooks/post-write-tracker.sh","show_output":true}'
+        report_merge_result ".windsurf/hooks.json"
     fi
     # Clean up deprecated adapter
     if [ -f "$PROJECT_DIR/.baton/adapters/adapter-windsurf.sh" ]; then
@@ -558,32 +1205,15 @@ HOOKJSON
 configure_cline() {
     echo "  --- Cline ---"
     mkdir -p "$PROJECT_DIR/.clinerules"
-    # Cline supports skills (v3.48+) — workflow-full.md as reference fallback
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.clinerules/baton-workflow.md"
-    echo "  ✓ Copied workflow (reference) to .clinerules/ (skills are primary)"
+    # Cline supports skills (v3.48+) — keep always-loaded rules slim
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.clinerules/baton-workflow.md"
+    echo "  ✓ Copied workflow (slim) to .clinerules/ (skills are primary)"
     install_adapter "adapter-cline.sh"
+    install_adapter "adapter-cline-taskcomplete.sh"
     # Create hook wiring files — Cline discovers hooks via .clinerules/hooks/<EventName>
     mkdir -p "$PROJECT_DIR/.clinerules/hooks"
-    if [ ! -f "$PROJECT_DIR/.clinerules/hooks/PreToolUse" ]; then
-        cat > "$PROJECT_DIR/.clinerules/hooks/PreToolUse" << 'HOOK'
-#!/bin/sh
-exec bash "$(dirname "$0")/../../.baton/adapters/adapter-cline.sh"
-HOOK
-        chmod +x "$PROJECT_DIR/.clinerules/hooks/PreToolUse"
-        echo "  ✓ Created .clinerules/hooks/PreToolUse → adapter-cline.sh"
-    else
-        echo "  ✓ .clinerules/hooks/PreToolUse already exists"
-    fi
-    if [ ! -f "$PROJECT_DIR/.clinerules/hooks/TaskComplete" ]; then
-        cat > "$PROJECT_DIR/.clinerules/hooks/TaskComplete" << 'HOOK'
-#!/bin/sh
-exec bash "$(dirname "$0")/../../.baton/hooks/completion-check.sh"
-HOOK
-        chmod +x "$PROJECT_DIR/.clinerules/hooks/TaskComplete"
-        echo "  ✓ Created .clinerules/hooks/TaskComplete → completion-check.sh"
-    else
-        echo "  ✓ .clinerules/hooks/TaskComplete already exists"
-    fi
+    install_cline_hook_wrapper "PreToolUse" ".baton/adapters/adapter-cline.sh" 'adapter-cline\.sh'
+    install_cline_hook_wrapper "TaskComplete" ".baton/adapters/adapter-cline-taskcomplete.sh" 'completion-check\.sh\|adapter-cline-taskcomplete\.sh'
 }
 
 configure_augment() {
@@ -608,20 +1238,22 @@ configure_augment() {
 JSON
         echo "  ✓ Created .augment/settings.json (2 hooks)"
     else
-        if grep -q 'baton' "$PROJECT_DIR/.augment/settings.json" 2>/dev/null; then
-            echo "  ✓ Hooks already configured in .augment/settings.json"
-        else
-            echo "  ⚠ .augment/settings.json exists but has no baton hooks — merge manually"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record merge_nested_hook_entry "$PROJECT_DIR/.augment/settings.json" "SessionStart" "bash .baton/hooks/phase-guide.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/phase-guide.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$PROJECT_DIR/.augment/settings.json" "PreToolUse" "bash .baton/hooks/write-lock.sh" '{"matcher":"str-replace-editor|save-file","hooks":[{"type":"command","command":"bash .baton/hooks/write-lock.sh","timeout":5000}]}'
+        report_merge_result ".augment/settings.json"
     fi
 }
 
 configure_kiro() {
-    echo "  --- Amazon Q / Kiro ---"
+    echo "  --- Kiro compatibility surface (.amazonq) ---"
     mkdir -p "$PROJECT_DIR/.amazonq/rules"
-    # Kiro supports skills (2026.02+) — workflow-full.md as reference fallback
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (reference) to .amazonq/rules/ (skills are primary)"
+    # Baton currently targets the shared .amazonq project surface.
+    # Official Kiro and Amazon Q hook models differ, but this installer does not
+    # split them into separate targets yet.
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (slim) to .amazonq/rules/ (skills are primary)"
     # Hooks: A-class (exit code 2)
     if [ ! -f "$PROJECT_DIR/.amazonq/hooks.json" ]; then
         cat > "$PROJECT_DIR/.amazonq/hooks.json" << 'JSON'
@@ -635,11 +1267,10 @@ configure_kiro() {
 JSON
         echo "  ✓ Created .amazonq/hooks.json"
     else
-        if grep -q 'baton' "$PROJECT_DIR/.amazonq/hooks.json" 2>/dev/null; then
-            echo "  ✓ Hooks already configured"
-        else
-            echo "  ⚠ .amazonq/hooks.json exists but has no baton hooks — merge manually"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.amazonq/hooks.json" "preToolUse" "command" "bash .baton/hooks/write-lock.sh" '{"matcher":"fs_write","command":"bash .baton/hooks/write-lock.sh","timeout_ms":10000}'
+        report_merge_result ".amazonq/hooks.json"
     fi
 }
 
@@ -663,11 +1294,12 @@ configure_copilot() {
 JSON
         echo "  ✓ Created .github/hooks/baton.json"
     else
-        if grep -q 'baton' "$PROJECT_DIR/.github/hooks/baton.json" 2>/dev/null; then
-            echo "  ✓ Hooks already configured in .github/hooks/baton.json"
-        else
-            echo "  ⚠ .github/hooks/baton.json exists but has no baton hooks — merge manually"
-        fi
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record ensure_json_default "$PROJECT_DIR/.github/hooks/baton.json" "version" '1'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.github/hooks/baton.json" "sessionStart" "bash" "bash .baton/hooks/phase-guide.sh" '{"type":"command","bash":"bash .baton/hooks/phase-guide.sh","timeoutSec":10}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.github/hooks/baton.json" "preToolUse" "bash" "bash .baton/adapters/adapter-copilot.sh" '{"type":"command","bash":"bash .baton/adapters/adapter-copilot.sh","timeoutSec":10}'
+        report_merge_result ".github/hooks/baton.json"
     fi
     install_adapter "adapter-copilot.sh"
     # Rules: append to copilot-instructions.md
@@ -687,11 +1319,18 @@ configure_codex() {
     echo "  --- Codex CLI ---"
     # No hooks — rules injection only
     AGENTS_MD="$PROJECT_DIR/AGENTS.md"
-    if [ -f "$AGENTS_MD" ] && grep -q 'baton' "$AGENTS_MD" 2>/dev/null; then
+    if [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow\.md' "$AGENTS_MD" 2>/dev/null; then
         echo "  ✓ Workflow reference already in AGENTS.md"
+    elif [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow-full\.md' "$AGENTS_MD" 2>/dev/null; then
+        sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$AGENTS_MD"
+        rm -f "$AGENTS_MD.bak"
+        echo "  ✓ Migrated AGENTS.md @import: workflow-full.md → workflow.md"
     elif [ -f "$AGENTS_MD" ]; then
-        printf '\n@.baton/workflow-full.md\n' >> "$AGENTS_MD"
-        echo "  ✓ Added @.baton/workflow-full.md to AGENTS.md"
+        printf '\n@.baton/workflow.md\n' >> "$AGENTS_MD"
+        echo "  ✓ Added @.baton/workflow.md to AGENTS.md"
+    else
+        printf '@.baton/workflow.md\n' > "$AGENTS_MD"
+        echo "  ✓ Created AGENTS.md with @.baton/workflow.md"
     fi
 }
 
@@ -710,20 +1349,36 @@ configure_zed() {
 configure_roo() {
     echo "  --- Roo Code ---"
     mkdir -p "$PROJECT_DIR/.roo/rules"
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.roo/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (reference) to .roo/rules/ (skills are primary)"
-    echo "  💡 Roo Code hooks are in development — rules-only for now"
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.roo/rules/baton-workflow.md"
+    echo "  ✓ Copied workflow (slim) to .roo/rules/ (skills are primary)"
+    echo "  💡 Roo Code remains rules-guidance only in Baton for now"
 }
 
 # ==========================================
 # Main installation flow
 # ==========================================
 
-IDES="$(detect_ides)"
+DETECTED_IDES="$(detect_ides)"
+if [ "$CHOOSE_IDES" = "1" ]; then
+    IDES="$(choose_ides "$DETECTED_IDES")"
+elif [ -n "$REQUESTED_IDES" ]; then
+    IDES="$(parse_ide_list "$REQUESTED_IDES")"
+else
+    IDES="$DETECTED_IDES"
+fi
 SOURCE_VERSION="$(get_version "$BATON_DIR/.baton/hooks/write-lock.sh")"
 
 echo "Installing baton v${SOURCE_VERSION:-3.0} into: $PROJECT_DIR"
-echo "  Detected IDEs: $IDES"
+echo "  Detected IDEs: $DETECTED_IDES"
+if [ "$IDES" = "$DETECTED_IDES" ] && [ "$CHOOSE_IDES" = "0" ] && [ -z "$REQUESTED_IDES" ]; then
+    echo "  Selected IDEs: $IDES (auto)"
+elif [ "$CHOOSE_IDES" = "1" ]; then
+    echo "  Selected IDEs: $IDES ($CHOOSE_IDES_SOURCE)"
+elif [ -n "$REQUESTED_IDES" ]; then
+    echo "  Selected IDEs: $IDES ($REQUESTED_IDES_SOURCE)"
+else
+    echo "  Selected IDEs: $IDES"
+fi
 
 # --- 0. v1 → v2 migration ---
 if [ -f "$PROJECT_DIR/.claude/write-lock.sh" ] && [ ! -d "$PROJECT_DIR/.baton" ]; then
@@ -755,12 +1410,9 @@ install_versioned_script "bash-guard.sh"
 if [ "$SELF_INSTALL" = "1" ]; then
     echo "  ✓ workflow.md (self-install, skipping copy)"
     echo "  ✓ workflow-full.md (self-install, skipping copy)"
-elif any_has_session_start "$IDES"; then
-    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.baton/workflow.md"
-    echo "  ✓ Installed workflow.md (slim — SessionStart provides phase guidance)"
 else
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.baton/workflow.md"
-    echo "  ✓ Installed workflow.md (full — no SessionStart support)"
+    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.baton/workflow.md"
+    echo "  ✓ Installed workflow.md (slim — detailed phase guidance lives in skills)"
 fi
 
 # Always copy workflow-full.md as reference
@@ -848,7 +1500,11 @@ echo "Done. Your project now uses the Baton workflow."
 echo ""
 echo "  How it works:"
 echo "  1. Start your AI coding session"
-echo "     → Baton guides the AI to research deeply first (code writes are blocked)"
+if echo "$IDES" | grep -Eq '(^| )(claude|factory|cursor|windsurf|cline|augment|kiro|copilot)( |$)'; then
+    echo "     → Baton guides the AI to research deeply first (code writes stay blocked until approval)"
+else
+    echo "     → Baton guides the AI to research deeply first via rules (and skills where supported); no hook-based write lock in this IDE"
+fi
 echo ""
 echo "  2. Tell the AI what you want to build or fix"
 echo "     → The AI writes research.md, then plan.md with proposed changes"
@@ -858,6 +1514,11 @@ echo "     → AI responds to each annotation, cycle until satisfied"
 echo ""
 echo "  4. When satisfied, add this line to plan.md:"
 echo "     <!-- BATON:GO -->"
-echo "     → Now the AI can write code"
+echo "     → Then tell the AI \"generate todolist\" before implementation"
+echo ""
+echo "  5. Once ## Todo exists, implementation can begin"
+if echo "$IDES" | grep -q 'codex'; then
+    echo "     → Codex follows this via AGENTS.md + .agents/skills/ guidance (no hooks)"
+fi
 echo ""
 echo "  To remove: bash $BATON_DIR/setup.sh --uninstall $PROJECT_DIR"
