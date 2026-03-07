@@ -349,6 +349,61 @@ fi
 
 # ============================================================
 echo ""
+echo "=== Test: install_skills() installs SKILL.md to IDE directories ==="
+d="$tmp/tskills" && mkdir -p "$d/.claude" "$d/.cursor" "$d/.windsurf"
+(cd "$d" && git init -q)
+BATON_SKIP=pre-commit bash "$SETUP" "$d" > /dev/null 2>&1
+# Skills should be installed in all detected IDE directories
+assert_file_exists "$d/.claude/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-implement/SKILL.md"
+assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.windsurf/skills/baton-research/SKILL.md"
+# Cross-IDE fallback
+assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-implement/SKILL.md"
+# Skill content should match source
+TOTAL=$((TOTAL + 1))
+if diff -q "$SCRIPT_DIR/../.claude/skills/baton-research/SKILL.md" \
+           "$d/.claude/skills/baton-research/SKILL.md" > /dev/null 2>&1; then
+    echo "  pass: installed SKILL.md matches source"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: installed SKILL.md differs from source"
+    FAIL=$((FAIL + 1))
+fi
+# Not installed to IDEs not present
+TOTAL=$((TOTAL + 1))
+if [ ! -d "$d/.cline/skills" ]; then
+    echo "  pass: no skills in undetected IDE (.cline)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: skills installed in undetected IDE (.cline)"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test: Kiro skill installation goes to .amazonq/skills/ ==="
+d="$tmp/tkiro" && mkdir -p "$d/.amazonq"
+(cd "$d" && git init -q)
+BATON_SKIP=pre-commit bash "$SETUP" "$d" > /dev/null 2>&1
+# Skills should be in .amazonq/skills/, not .kiro/skills/
+assert_file_exists "$d/.amazonq/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.amazonq/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.amazonq/skills/baton-implement/SKILL.md"
+TOTAL=$((TOTAL + 1))
+if [ ! -d "$d/.kiro/skills" ]; then
+    echo "  pass: no stale .kiro/skills/ directory created"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: skills installed in .kiro/skills/ instead of .amazonq/skills/"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then

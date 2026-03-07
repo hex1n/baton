@@ -19,7 +19,7 @@ run_detect_ides() {
     [ -d "$PROJECT_DIR/.cursor" ]     && _ides="$_ides cursor"
     [ -d "$PROJECT_DIR/.windsurf" ]   && _ides="$_ides windsurf"
     [ -d "$PROJECT_DIR/.factory" ]    && _ides="$_ides factory"
-    [ -d "$PROJECT_DIR/.clinerules" ] && _ides="$_ides cline"
+    { [ -d "$PROJECT_DIR/.clinerules" ] || [ -d "$PROJECT_DIR/.cline" ]; } && _ides="$_ides cline"
     [ -d "$PROJECT_DIR/.augment" ]    && _ides="$_ides augment"
     [ -d "$PROJECT_DIR/.amazonq" ]    && _ides="$_ides kiro"
     # Copilot: require copilot-specific files, not just .github/
@@ -71,6 +71,34 @@ if [ "$OUTPUT" = "claude" ]; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL: expected 'claude', got: '$OUTPUT'"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 3b: .cline directory (no .clinerules) → detected as cline ==="
+d="$tmp/t3b" && mkdir -p "$d/.cline"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(run_detect_ides "$d")"
+if [ "$OUTPUT" = "cline" ]; then
+    echo "  pass: .cline-only detected as cline"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected 'cline', got: '$OUTPUT'"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 3c: .clinerules directory → detected as cline ==="
+d="$tmp/t3c" && mkdir -p "$d/.clinerules"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(run_detect_ides "$d")"
+if [ "$OUTPUT" = "cline" ]; then
+    echo "  pass: .clinerules-only detected as cline"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected 'cline', got: '$OUTPUT'"
     FAIL=$((FAIL + 1))
 fi
 
@@ -394,6 +422,23 @@ else
     echo "  FAIL: .amazonq/rules/baton-workflow.md not found"
     FAIL=$((FAIL + 1))
 fi
+# Skills should go to .amazonq/skills/, not .kiro/skills/
+TOTAL=$((TOTAL + 1))
+if [ -f "$d/.amazonq/skills/baton-research/SKILL.md" ]; then
+    echo "  pass: Kiro skills installed in .amazonq/skills/"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: Kiro skills not in .amazonq/skills/"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if [ ! -d "$d/.kiro/skills" ]; then
+    echo "  pass: no stale .kiro/skills/ created"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: stale .kiro/skills/ created alongside .amazonq"
+    FAIL=$((FAIL + 1))
+fi
 
 # ============================================================
 echo ""
@@ -453,16 +498,16 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 22: CLAUDE.md uses workflow-full.md ==="
+echo "=== Test 22: CLAUDE.md uses slim workflow.md ==="
 d="$tmp/t22" && mkdir -p "$d/.claude"
 (cd "$d" && git init -q)
 TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit bash "$SETUP" "$d" > /dev/null 2>&1
-if grep -q '@\.baton/workflow-full\.md' "$d/CLAUDE.md" 2>/dev/null; then
-    echo "  pass: CLAUDE.md references workflow-full.md"
+if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md references workflow.md (slim)"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: CLAUDE.md should reference workflow-full.md"
+    echo "  FAIL: CLAUDE.md should reference workflow.md (slim)"
     FAIL=$((FAIL + 1))
 fi
 

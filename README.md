@@ -50,7 +50,7 @@ Every annotation and response is recorded in an **Annotation Log** — creating 
 
 **Three layers of guidance:**
 - **Layer 0**: Workflow rules always in context (~400 tokens)
-- **Layer 1**: Phase-specific guidance injected at session start
+- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement) with fallback to session-start hook extraction
 - **Layer 2**: Actionable blocking messages when writes are denied
 
 ## Install
@@ -73,15 +73,16 @@ Setup auto-detects your IDE and installs the right configuration.
 your-project/
 ├── .baton/
 │   ├── workflow.md         ← Universal rules (~400 tokens)
-│   ├── workflow-full.md    ← Full reference (annotation protocol + examples)
+│   ├── workflow-full.md    ← Full reference (fallback when skills unavailable)
 │   ├── write-lock.sh       ← Write lock (~100 lines)
-│   ├── phase-guide.sh      ← Session start guidance
+│   ├── phase-guide.sh      ← Session start: detects phase, prompts skill or extracts fallback
 │   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
 │   ├── bash-guard.sh       ← Advisory bash detection
 │   └── adapters/           ← Cross-IDE adapters (Cline, Windsurf)
 ├── .claude/
-│   └── settings.json       ← Hook configuration
-└── CLAUDE.md               ← @.baton/workflow.md import
+│   ├── skills/              ← Phase methodology (baton-research, baton-plan, baton-implement)
+│   └── settings.json        ← Hook configuration
+└── CLAUDE.md                ← @.baton/workflow.md import
 ```
 
 ## Supported IDEs
@@ -90,12 +91,18 @@ your-project/
 |-----|-----------------|--------------|-------|
 | Claude Code | **Full protection** | Write-lock + phase guidance + stop guard | Automatic |
 | Factory AI | **Full protection** | Write-lock + phase guidance + stop guard | Automatic |
-| Cursor | Rules guidance | Workflow rules via .mdc (hook needs manual config for write-lock) | Automatic |
-| Windsurf | Rules guidance | Workflow rules injected, AI follows voluntarily | Automatic |
-| Cline | Rules guidance | Workflow rules injected, adapter available for manual hook setup | Automatic |
-| OpenCode | Plugin protection | JS plugin provides write-lock (no phase guidance) | Manual |
+| Cursor | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
+| Windsurf | **Full protection** | Write-lock (native hooks) + phase guidance + bash guard | Automatic |
+| Augment | **Full protection** | Write-lock + phase guidance | Automatic |
+| Amazon Q / Kiro | **Hook protection** | Write-lock only (preToolUse); phase guidance via rules | Automatic |
+| Copilot | **Full protection** | Write-lock (via adapter) + phase guidance | Automatic |
+| Cline | Hook protection | Write-lock (PreToolUse) + task completion check | Automatic |
+| Roo Code | Rules guidance | Workflow rules injected via .roo/rules/ | Automatic |
+| Codex | Rules guidance | Workflow via AGENTS.md (no hooks) | Automatic |
+| Zed | Rules guidance | Workflow via .rules (no hooks) | Automatic |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
+> **Hook protection** = write-lock via IDE-specific hook wiring, but not all hook types supported.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
 
 ## Suggested .gitignore
@@ -114,7 +121,7 @@ Some teams prefer to keep these for audit trails — it's up to you.
 bash /path/to/baton/setup.sh --uninstall /path/to/your/project
 ```
 
-Or manually: delete the `.baton/` directory and remove the `@.baton/workflow.md` line from your `CLAUDE.md`.
+Or manually: delete `.baton/`, remove baton-* skill directories from each IDE's skills folder, and remove the `@.baton/workflow.md` line from `CLAUDE.md`. Note: `setup.sh --uninstall` cleans rules files and skills automatically, but hook config files (`.claude/settings.json`, `.cursor/hooks.json`, `.augment/settings.json`, `.amazonq/hooks.json`) require manual review — the script warns about these.
 
 ## Philosophy
 
@@ -122,7 +129,7 @@ Boris Tane's workflow succeeds because the human stays in the loop at every crit
 
 - **No state machine** — you know what phase you're in
 - **No CLI commands** — just files and hooks
-- **~400 tokens total overhead** — always-loaded rules + dynamic phase guidance at session start
+- **~400 tokens total overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
 - **Annotation protocol** — structured human-AI dialogue with traceable decision records
 

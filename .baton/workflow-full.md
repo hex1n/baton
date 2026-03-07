@@ -36,6 +36,7 @@ AI proposes complexity level; human confirms.
 7. Before writing a new plan, archive existing: `mkdir -p plans && mv <plan-file> plans/plan-<date>-<topic>.md`. If paired research file exists, archive alongside with same topic.
 8. When all items complete, append `## Retrospective` to plan.md (what the plan got wrong, what surprised you, what to research differently next time), then remind to archive.
 9. All analysis tasks produce research.md. Baton workflow applies to ALL analysis.
+10. Before entering any phase, check for the corresponding baton skill (baton-research / baton-plan / baton-implement). If available, invoke it first — it contains detailed phase guidance.
 
 ### Evidence Standards
 Every claim requires file:line evidence. No evidence = mark with ❓ unverified.
@@ -94,9 +95,11 @@ When archiving, preserve Lessons Learned and Annotation Log (long-term reference
 Use git worktrees for parallel sessions. Hooks auto-discover plan files; set `BATON_PLAN` to override if multiple plans exist.
 
 ### Phase Guidance
-Four phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — have detailed execution guides.
-Guides are injected by the SessionStart hook when you enter each phase.
-This file contains cross-phase principles. Phase-specific strategies come from the hook.
+Four phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — have detailed execution guides
+available as skills (baton-research, baton-plan, baton-implement). Invoke the
+corresponding skill when entering a phase for full methodology and annotation protocol.
+If skills are not available, the SessionStart hook injects phase-specific guidance.
+This file contains cross-phase principles plus the detailed phase guides below.
 
 ---
 

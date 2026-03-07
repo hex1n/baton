@@ -96,6 +96,15 @@ if [ "${1:-}" = "--uninstall" ]; then
     if [ -f "$PROJECT_DIR/AGENTS.md" ] && grep -q 'baton' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
         echo "  ⚠ AGENTS.md may still contain baton references — review manually"
     fi
+    # Clean baton skills from all IDEs
+    for _ide_dir in .claude .cursor .windsurf .cline .github .augment .roo .kiro .amazonq .agents; do
+        for _skill in baton-research baton-plan baton-implement; do
+            if [ -d "$PROJECT_DIR/$_ide_dir/skills/$_skill" ]; then
+                rm -rf "$PROJECT_DIR/$_ide_dir/skills/$_skill"
+            fi
+        done
+    done
+    echo "  ✓ Removed baton skills from all IDE directories"
     # Clean Zed (.rules)
     if [ -f "$PROJECT_DIR/.rules" ] && grep -q 'baton' "$PROJECT_DIR/.rules" 2>/dev/null; then
         echo "  ⚠ .rules may still contain baton references — review manually"
@@ -140,7 +149,7 @@ detect_ides() {
     [ -d "$PROJECT_DIR/.cursor" ]     && _ides="$_ides cursor"
     [ -d "$PROJECT_DIR/.windsurf" ]   && _ides="$_ides windsurf"
     [ -d "$PROJECT_DIR/.factory" ]    && _ides="$_ides factory"
-    [ -d "$PROJECT_DIR/.clinerules" ] && _ides="$_ides cline"
+    { [ -d "$PROJECT_DIR/.clinerules" ] || [ -d "$PROJECT_DIR/.cline" ]; } && _ides="$_ides cline"
     [ -d "$PROJECT_DIR/.augment" ]    && _ides="$_ides augment"
     [ -d "$PROJECT_DIR/.amazonq" ]    && _ides="$_ides kiro"
     # Copilot: require copilot-specific files, not just .github/
@@ -238,6 +247,47 @@ install_adapter() {
         cp "$_ia_src" "$_ia_dst"
         chmod +x "$_ia_dst"
         echo "  ✓ Installed $_ia_name"
+    fi
+}
+
+# Install baton skills to each detected IDE's skill directory
+# Skills are the canonical source in .claude/skills/ within baton
+install_skills() {
+    if [ "$SELF_INSTALL" = "1" ]; then
+        echo "  ✓ Skills (self-install, skipping copy)"
+        return
+    fi
+    _skill_count=0
+    for _skill in baton-research baton-plan baton-implement; do
+        _src="$BATON_DIR/.claude/skills/$_skill/SKILL.md"
+        [ -f "$_src" ] || continue
+        for _ide in $IDES; do
+            case "$_ide" in
+                claude)   _ide_dir="$PROJECT_DIR/.claude/skills/$_skill" ;;
+                factory)  _ide_dir="$PROJECT_DIR/.claude/skills/$_skill" ;;
+                cursor)   _ide_dir="$PROJECT_DIR/.cursor/skills/$_skill" ;;
+                windsurf) _ide_dir="$PROJECT_DIR/.windsurf/skills/$_skill" ;;
+                cline)    _ide_dir="$PROJECT_DIR/.cline/skills/$_skill" ;;
+                augment)  _ide_dir="$PROJECT_DIR/.augment/skills/$_skill" ;;
+                kiro)     _ide_dir="$PROJECT_DIR/.amazonq/skills/$_skill" ;;
+                copilot)  _ide_dir="$PROJECT_DIR/.github/skills/$_skill" ;;
+                roo)      _ide_dir="$PROJECT_DIR/.roo/skills/$_skill" ;;
+                *)        continue ;;
+            esac
+            mkdir -p "$_ide_dir"
+            cp "$_src" "$_ide_dir/SKILL.md"
+            _skill_count=$((_skill_count + 1))
+        done
+    done
+    # Cross-IDE fallback
+    for _skill in baton-research baton-plan baton-implement; do
+        _src="$BATON_DIR/.claude/skills/$_skill/SKILL.md"
+        [ -f "$_src" ] || continue
+        mkdir -p "$PROJECT_DIR/.agents/skills/$_skill"
+        cp "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
+    done
+    if [ "$_skill_count" -gt 0 ]; then
+        echo "  ✓ Installed baton skills to $(echo "$IDES" | wc -w | tr -d ' ') IDE(s) + .agents/ fallback"
     fi
 }
 
@@ -463,7 +513,7 @@ configure_windsurf() {
     mkdir -p "$PROJECT_DIR/.windsurf/rules"
     # Rules file
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.windsurf/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow to .windsurf/rules/"
+    echo "  ✓ Copied workflow (reference) to .windsurf/rules/ (skills are primary)"
     # Native hooks (pre_write_code supports exit code 2)
     if [ ! -f "$PROJECT_DIR/.windsurf/hooks.json" ]; then
         cat > "$PROJECT_DIR/.windsurf/hooks.json" << 'HOOKJSON'
@@ -508,9 +558,9 @@ HOOKJSON
 configure_cline() {
     echo "  --- Cline ---"
     mkdir -p "$PROJECT_DIR/.clinerules"
-    # Cline has TaskStart but not full SessionStart — use full workflow
+    # Cline supports skills (v3.48+) — workflow-full.md as reference fallback
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.clinerules/baton-workflow.md"
-    echo "  ✓ Copied workflow (full) to .clinerules/"
+    echo "  ✓ Copied workflow (reference) to .clinerules/ (skills are primary)"
     install_adapter "adapter-cline.sh"
     # Create hook wiring files — Cline discovers hooks via .clinerules/hooks/<EventName>
     mkdir -p "$PROJECT_DIR/.clinerules/hooks"
@@ -569,9 +619,9 @@ JSON
 configure_kiro() {
     echo "  --- Amazon Q / Kiro ---"
     mkdir -p "$PROJECT_DIR/.amazonq/rules"
-    # Rules: embed full workflow
+    # Kiro supports skills (2026.02+) — workflow-full.md as reference fallback
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.amazonq/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (full) to .amazonq/rules/"
+    echo "  ✓ Copied workflow (reference) to .amazonq/rules/ (skills are primary)"
     # Hooks: A-class (exit code 2)
     if [ ! -f "$PROJECT_DIR/.amazonq/hooks.json" ]; then
         cat > "$PROJECT_DIR/.amazonq/hooks.json" << 'JSON'
@@ -661,7 +711,7 @@ configure_roo() {
     echo "  --- Roo Code ---"
     mkdir -p "$PROJECT_DIR/.roo/rules"
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.roo/rules/baton-workflow.md"
-    echo "  ✓ Copied workflow (full) to .roo/rules/"
+    echo "  ✓ Copied workflow (reference) to .roo/rules/ (skills are primary)"
     echo "  💡 Roo Code hooks are in development — rules-only for now"
 }
 
@@ -689,7 +739,7 @@ CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
 if [ -f "$CLAUDE_MD" ] && grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null && \
    ! grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
     echo "  ⚠ Legacy workflow detected in CLAUDE.md."
-    echo "    Remove the '## AI Workflow' section and add: @.baton/workflow-full.md"
+    echo "    Remove the '## AI Workflow' section and add: @.baton/workflow.md"
 fi
 
 # --- 1. Install .baton/ directory ---
@@ -717,6 +767,9 @@ fi
 if [ "$SELF_INSTALL" != "1" ]; then
     cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.baton/workflow-full.md"
 fi
+
+# Install baton skills to all detected IDEs
+install_skills
 
 # --- 3. Configure each detected IDE ---
 for ide in $IDES; do

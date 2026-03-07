@@ -36,6 +36,7 @@ AI proposes complexity level; human confirms.
 7. Before writing a new plan, archive existing: `mkdir -p plans && mv <plan-file> plans/plan-<date>-<topic>.md`. If paired research file exists, archive alongside with same topic.
 8. When all items complete, append `## Retrospective` to plan.md (what the plan got wrong, what surprised you, what to research differently next time), then remind to archive.
 9. All analysis tasks produce research.md. Baton workflow applies to ALL analysis.
+10. Before entering any phase, check for the corresponding baton skill (baton-research / baton-plan / baton-implement). If available, invoke it first — it contains detailed phase guidance.
 
 ### Evidence Standards
 Every claim requires file:line evidence. No evidence = mark with ❓ unverified.
@@ -44,43 +45,10 @@ Every claim requires file:line evidence. No evidence = mark with ❓ unverified.
 - `❓` unverified — with reason it remains unverified
 - "Should be fine" is never a valid conclusion.
 
-```
-✅ Good: "Token expires after 24h (auth.ts:45 — `expiresIn: '24h'`)"
-❌ Bad: "Token expiration should be fine"
-```
-
-Before starting research: inventory all available documentation retrieval tools. Attempt each at least once. Record what you used and what each returned.
-
-Metacognitive triggers:
-- Before presenting research: what would a skeptic challenge first?
-- Before marking a todo complete: re-read the code. Does it match the plan's intent, or did you drift?
-
 ### Annotation Protocol
-Human adds annotations in research.md or plan.md. When feedback comes in chat, AI identifies the annotation type and records it in Annotation Log, preserving the human's original wording.
-
-Every annotation MUST be responded to and recorded in `## Annotation Log`:
-- `[NOTE]` additional context → incorporate, explain how it affects conclusions
-- `[Q]` question → answer with file:line evidence. Read code first — don't answer from memory
-- `[CHANGE]` request modification → verify safety first — check callers, tests, edge cases. If problematic, explain with evidence + offer alternatives, let human decide
-- `[DEEPER]` not deep enough → your previous work was insufficient. Investigate seriously in the specified direction
-- `[MISSING]` something omitted → investigate and supplement
-- `[RESEARCH-GAP]` needs more research → pause current document, do research, then return
-
-Every claim requires file:line. If you can't cite evidence, investigate first — don't guess.
-
-When an annotation is accepted: (1) update the document body, (2) record in Annotation Log. Both steps are required because the document body is the source of truth that todolist generation reads — the Log alone does not update the agreed plan.
-
-If a single round has 3+ [DEEPER] or [MISSING], suggest upgrading the complexity level.
-
-The human is not always right. When there's a problem, explain with evidence, offer alternatives. Final decision is the human's — but blind compliance is a failure mode.
-
-```
-Human: "Switch to Redis for caching"
-AI: ⚠️ Project has 0 Redis dependencies (package.json:1-30).
-    Adopting requires: docker-compose + connection mgmt + serialization.
-    Alternative: add TTL to existing CacheManager (src/cache.ts:30).
-    → Your decision.
-```
+Human adds annotations in research.md or plan.md. AI responds to each and records in `## Annotation Log`.
+Types: `[NOTE]` · `[Q]` · `[CHANGE]` · `[DEEPER]` · `[MISSING]` · `[RESEARCH-GAP]`
+Every claim requires file:line. Blind compliance is a failure mode — disagree with evidence when needed.
 
 ### File Conventions
 - Todolist format: `## Todo` / `- [ ]` unchecked / `- [x]` checked (lowercase x). Hooks grep for this exact format.
@@ -94,6 +62,6 @@ When archiving, preserve Lessons Learned and Annotation Log (long-term reference
 Use git worktrees for parallel sessions. Hooks auto-discover plan files; set `BATON_PLAN` to override if multiple plans exist.
 
 ### Phase Guidance
-Four phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — have detailed execution guides.
-Guides are injected by the SessionStart hook when you enter each phase.
-This file contains cross-phase principles. Phase-specific strategies come from the hook.
+Four phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — have detailed execution guides
+available as skills (baton-research, baton-plan, baton-implement). Invoke the
+corresponding skill when entering a phase for full methodology and annotation protocol.

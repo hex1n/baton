@@ -37,8 +37,8 @@ check "$FULL" "Annotation Log" "workflow-full.md has Annotation Log section"
 check "$FULL" "Round 1" "workflow-full.md has Annotation Log example"
 check "$FULL" "Annotation Format" "workflow-full.md has annotation format section"
 check "$FULL" "Core Principles" "workflow-full.md has AI response principles"
-check "$FULL" "Correct AI behavior" "workflow-full.md has correct AI behavior examples"
-check "$FULL" "Incorrect AI behavior" "workflow-full.md has incorrect AI behavior examples"
+check "$FULL" "Correct behavior:" "workflow-full.md has correct AI behavior examples"
+check "$FULL" "Incorrect behavior:" "workflow-full.md has incorrect AI behavior examples"
 
 # ============================================================
 echo ""

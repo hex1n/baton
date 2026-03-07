@@ -216,6 +216,89 @@ assert_exit_zero "$d" "always exit 0 (awaiting todo)"
 
 # ============================================================
 echo ""
+echo "=== Test 12: RESEARCH with baton-research skill → skill invocation prompt ==="
+d="$tmp/t12" && mkdir -p "$d/.claude/skills/baton-research"
+echo "---" > "$d/.claude/skills/baton-research/SKILL.md"
+echo "name: baton-research" >> "$d/.claude/skills/baton-research/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-research/SKILL.md"
+assert_output_contains "$d" "/baton-research" "skill prompt shows /baton-research"
+assert_output_contains "$d" "invoke" "skill prompt says invoke"
+assert_output_not_contains "$d" "entry points" "fallback text suppressed when skill available"
+assert_output_not_contains "$d" "subagent" "fallback guidance not shown when skill available"
+
+# ============================================================
+echo ""
+echo "=== Test 13: PLAN with baton-plan skill → skill invocation prompt ==="
+d="$tmp/t13" && mkdir -p "$d/.claude/skills/baton-plan"
+echo "---" > "$d/.claude/skills/baton-plan/SKILL.md"
+echo "name: baton-plan" >> "$d/.claude/skills/baton-plan/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-plan/SKILL.md"
+echo "# Research findings" > "$d/research.md"
+assert_output_contains "$d" "/baton-plan" "skill prompt shows /baton-plan"
+assert_output_contains "$d" "invoke" "skill prompt says invoke"
+assert_output_not_contains "$d" "constraints" "fallback PLAN text suppressed when skill available"
+
+# ============================================================
+echo ""
+echo "=== Test 14: ANNOTATION with baton-plan skill → skill invocation prompt ==="
+d="$tmp/t14" && mkdir -p "$d/.claude/skills/baton-plan"
+echo "---" > "$d/.claude/skills/baton-plan/SKILL.md"
+echo "name: baton-plan" >> "$d/.claude/skills/baton-plan/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-plan/SKILL.md"
+echo "# Plan" > "$d/plan.md"
+assert_output_contains "$d" "ANNOTATION" "shows ANNOTATION label"
+assert_output_contains "$d" "/baton-plan" "skill prompt shows /baton-plan for annotation"
+assert_output_not_contains "$d" "\[NOTE\]" "fallback ANNOTATION text suppressed when skill available"
+
+# ============================================================
+echo ""
+echo "=== Test 15: IMPLEMENT with baton-implement skill → skill invocation prompt ==="
+d="$tmp/t15" && mkdir -p "$d/.claude/skills/baton-implement"
+echo "---" > "$d/.claude/skills/baton-implement/SKILL.md"
+echo "name: baton-implement" >> "$d/.claude/skills/baton-implement/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-implement/SKILL.md"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+EOF
+assert_output_contains "$d" "/baton-implement" "skill prompt shows /baton-implement"
+assert_output_not_contains "$d" "typecheck" "fallback IMPLEMENT text suppressed when skill available"
+
+# ============================================================
+echo ""
+echo "=== Test 16: Skill walk-up detection from subdirectory ==="
+d="$tmp/t16" && mkdir -p "$d/.claude/skills/baton-research" "$d/src/deep"
+echo "---" > "$d/.claude/skills/baton-research/SKILL.md"
+echo "name: baton-research" >> "$d/.claude/skills/baton-research/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-research/SKILL.md"
+# Run from subdirectory — skill should be found by walking up
+assert_output_contains "$d/src/deep" "/baton-research" "walk-up finds skill from subdirectory"
+
+# ============================================================
+echo ""
+echo "=== Test 17: Per-skill detection — only matching skill detected ==="
+d="$tmp/t17" && mkdir -p "$d/.claude/skills/baton-research"
+echo "---" > "$d/.claude/skills/baton-research/SKILL.md"
+echo "name: baton-research" >> "$d/.claude/skills/baton-research/SKILL.md"
+echo "---" >> "$d/.claude/skills/baton-research/SKILL.md"
+echo "# Research findings" > "$d/research.md"
+# In PLAN phase, baton-plan skill is NOT installed, so fallback should appear
+assert_output_not_contains "$d" "/baton-plan" "baton-research doesn't trigger /baton-plan"
+assert_output_contains "$d" "PLAN" "still shows PLAN phase"
+
+# ============================================================
+echo ""
+echo "=== Test 18: Skill in .amazonq directory detected (Kiro) ==="
+d="$tmp/t18" && mkdir -p "$d/.amazonq/skills/baton-research"
+echo "---" > "$d/.amazonq/skills/baton-research/SKILL.md"
+echo "name: baton-research" >> "$d/.amazonq/skills/baton-research/SKILL.md"
+echo "---" >> "$d/.amazonq/skills/baton-research/SKILL.md"
+assert_output_contains "$d" "/baton-research" "has_skill finds SKILL.md in .amazonq"
+assert_output_not_contains "$d" "entry points" "fallback suppressed when skill in .amazonq"
+
+# ============================================================
+echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then
