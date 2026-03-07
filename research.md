@@ -231,6 +231,11 @@ Several tools use a file-based planning and oversight pattern similar to Baton:
 | **API / SDK** | 可编程接口 | 只有 CLI + shell hooks，无 API | 🟡 中 |
 | **指标 / 度量** | 审批率、修改率、平均审批时间 | 无任何度量数据收集 | 🟢 低 |
 | **Rollback 机制** | 自动回滚到上一个 approved 状态 | 手动 git revert | 🟡 中 |
+| **Per-change approval** | 逐项审批高风险变更 | BATON:GO 一旦设置，所有 todo 项无需逐一审批 | 🟡 中 |
+| **Diff review gate** | 人类审阅实际代码差异 | 人类只审批 plan（意图），不审阅生成的代码（输出） | 🔴 高 |
+| **自动化验证集成** | 测试/lint 自动运行 | workflow 规则说"运行测试"但无技术强制 | 🟡 中 |
+| **时限/范围审批** | 审批可过期、可限定范围 | BATON:GO 永久有效直到手动移除 | 🟢 低 |
+| **升级策略强制** | hook 强制升级策略 | "3x 失败→停止"仅为 prompt 规则，无 hook 强制 | 🟡 中 |
 
 ### 6.3 Baton 的独特差异化
 
