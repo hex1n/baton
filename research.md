@@ -5,6 +5,44 @@
 
 ---
 
+## 0. HITL 核心概念与分类学
+
+### 0.1 三层人类参与模型
+
+| 层级 | 角色 | AI 自主度 | 人类介入时机 |
+|------|------|----------|-------------|
+| **HITL** (Human-in-the-Loop) | 主动参与每个决策 | 低 | 每个决策周期 |
+| **HOTL** (Human-on-the-Loop) | 监督者/监控者 | 高 | 异常或边缘情况 |
+| **HATL** (Human-over-the-Loop) | 战略与伦理监督 | 极高 | 设定策略或审查结果 |
+
+Baton 当前定位：**纯 HITL**（每个实现决策都需人类审批）。未来可考虑支持 HOTL 模式用于高信任场景。
+
+### 0.2 五种核心 HITL 模式
+
+1. **Approval Flows** — 预设检查点暂停，人类批准/拒绝后继续
+2. **Confidence-Based Escalation** — AI 高信心时自主行动，低于阈值时升级给人类（据报道 <10% 决策需人类干预）
+3. **Feedback Loops** — 人类修正成为训练数据，系统持续改进
+4. **Audit Trail / Passive Oversight** — 记录决策供追溯，无硬停止（HOTL 实践）
+5. **Risk-Based Frameworks** — 根据数据敏感度和错误后果校准监督级别
+
+### 0.3 Martin Fowler 的关键洞察
+
+> 人类应该 "build and manage the working loop" 而非微管理每个输出。agent 生成输出的速度远快于人类检查速度，过于紧密的参与会让人类成为瓶颈。
+
+这与 Baton 的 plan-first 理念高度一致：人类在计划层面深度参与，在实现层面给予信任。
+
+Sources: [Fowler/Thoughtworks](https://martinfowler.com/articles/exploring-gen-ai/humans-and-agents.html), [Zapier HITL Patterns](https://zapier.com/blog/human-in-the-loop/)
+
+### 0.4 监管环境
+
+- **EU AI Act Article 14**（2026.08.02 全面生效）：高风险 AI 系统必须设计为自然人可有效监督。要求：(a) 理解系统能力/局限, (b) 意识到自动化偏见, (c) 正确解读输出, (d) 可选择不使用或覆盖输出
+- **NIST AI RMF**（2025 更新）：要求维护 AI 清单，描述 HITL 期望、风险暴露、集成点
+- **US Treasury**（2026.02）：230 个控制目标，要求在定义的决策点进行文档化、验证、监控和人类审查
+
+Sources: [EU AI Act Art. 14](https://artificialintelligenceact.eu/article/14/), [NIST AI RMF](https://www.ispartnersllc.com/blog/nist-ai-rmf-2025-updates-what-you-need-to-know-about-the-latest-framework-changes/)
+
+---
+
 ## 1. Direct Competitors / Similar Tools
 
 ### 1.1 LangGraph (LangChain)
