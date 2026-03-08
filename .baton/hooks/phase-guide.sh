@@ -137,8 +137,8 @@ if [ -n "$PLAN" ]; then
     else
         echo "" >&2
         extract_section "ANNOTATION" "IMPLEMENT" >&2 || cat >&2 <<EOF
-Read the document for annotations: [NOTE] [Q] [CHANGE] [DEEPER] [MISSING] [RESEARCH-GAP]
-For each: verify with file:line before responding. Disagree with evidence when needed.
+Read the document for feedback. Free-text is the default; [PAUSE] means stop and investigate first.
+For each piece: infer intent, verify with file:line before responding, then answer with evidence.
 Record in ## Annotation Log. Human adds <!-- BATON:GO --> when satisfied.
 EOF
     fi

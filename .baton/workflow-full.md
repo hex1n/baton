@@ -57,21 +57,20 @@ Metacognitive triggers:
 - Before marking a todo complete: re-read the code. Does it match the plan's intent, or did you drift?
 
 ### Annotation Protocol
-Human adds annotations in research.md or plan.md. When feedback comes in chat, AI identifies the annotation type and records it in Annotation Log, preserving the human's original wording.
+Human adds feedback in research.md, plan.md, or chat. AI infers intent from content,
+responds with file:line evidence, and records in `## Annotation Log`.
 
-Every annotation MUST be responded to and recorded in `## Annotation Log`:
-- `[NOTE]` additional context → incorporate, explain how it affects conclusions
-- `[Q]` question → answer with file:line evidence. Read code first — don't answer from memory
-- `[CHANGE]` request modification → verify safety first — check callers, tests, edge cases. If problematic, explain with evidence + offer alternatives, let human decide
-- `[DEEPER]` not deep enough → your previous work was insufficient. Investigate seriously in the specified direction
-- `[MISSING]` something omitted → investigate and supplement
-- `[RESEARCH-GAP]` needs more research → pause current document, do research, then return
+Only explicit type: `[PAUSE]` — stop current work, investigate something else first.
 
-Every claim requires file:line. If you can't cite evidence, investigate first — don't guess.
+For each piece of feedback:
+1. Read code first — cite file:line evidence
+2. Infer intent — record inference in Annotation Log
+3. Respond with evidence — adopt if right, explain with evidence if problematic
+4. Consequence detection — did answer change direction, contradict research, or reveal contradictions? Handle immediately.
 
-When an annotation is accepted: (1) update the document body, (2) record in Annotation Log. Both steps are required because the document body is the source of truth that todolist generation reads — the Log alone does not update the agreed plan.
+When an annotation is accepted: (1) update the document body, (2) record in Annotation Log. Both steps required.
 
-If a single round has 3+ [DEEPER] or [MISSING], suggest upgrading the complexity level.
+If a single round has 3+ depth-issue annotations, suggest upgrading complexity.
 
 The human is not always right. When there's a problem, explain with evidence, offer alternatives. Final decision is the human's — but blind compliance is a failure mode.
 
@@ -84,7 +83,7 @@ AI: ⚠️ Project has 0 Redis dependencies (package.json:1-30).
 ```
 
 ### File Conventions
-- Todolist format: `## Todo` / `- [ ]` unchecked / `- [x]` checked (lowercase x). Hooks grep for this exact format.
+- Todolist format: `## Todo` / `- [ ]` unchecked / `- [x] ✅` checked (lowercase x + checkmark).
 - Documents MUST end with `## 批注区` (annotation zone for the human).
 - Name by topic: `research-<topic>.md` + `plan-<topic>.md`. Default `research.md`/`plan.md` for simple tasks.
 - Exploratory code (spikes) → Bash tool; record findings in research.md.
@@ -155,6 +154,13 @@ research.md should communicate:
 #### Self-Review (append before presenting to human)
 ```
 ## Self-Review
+
+### Internal Consistency Check (fix before presenting)
+- Do all call chain conclusions align with the evidence cited?
+- Are there sections that contradict each other?
+- If ANY contradiction found → fix it now. This is a bug, not a finding.
+
+### External Uncertainties (present to human)
 - 3 questions a critical reviewer would ask about this research
 - The weakest conclusion in this document and why
 - What would change your analysis if investigated further
@@ -173,14 +179,13 @@ research.md should communicate:
 ```
 ## 批注区
 
-> 标注类型：`[Q]` 提问 · `[DEEPER]` 不够深 · `[MISSING]` 遗漏 · `[NOTE]` 补充 · `[RESEARCH-GAP]` 需要更多调查
-> 审阅完毕后告诉 AI "出 plan" 进入计划阶段
-
-<!-- 在下方添加标注，用 § 引用章节。如：[DEEPER] § 调用链分析：EventBus listener 还没追 -->
+<!-- 写下你的反馈，AI 会判断如何处理。 -->
+<!-- 如果需要暂停当前研究方向去做其他调查，写 [PAUSE]。 -->
+<!-- 审阅完毕后告诉 AI "出 plan" 进入计划阶段 -->
 ```
 
 In Scenario B, research.md may go through annotation cycles:
-Human uses [DEEPER]/[MISSING]/[Q]/[NOTE] → AI responds and updates → cycle until human is satisfied.
+Human provides feedback → AI infers intent, responds and updates → cycle until human is satisfied.
 
 ### [PLAN] Plan Phase
 
@@ -200,7 +205,7 @@ The human should be able to read the plan and predict what the diff will look li
 #### Constraints
 - MUST derive approaches from research findings — don't jump to "how" without tracing back to "why"
 - MUST NOT include BATON:GO (only the human places it)
-- Todolist format MUST match File Conventions in header (`## Todo`, `- [ ]`, `- [x]`)
+- Todolist format MUST match File Conventions in header (`## Todo`, `- [ ]`, `- [x] ✅`)
 - Each todo item should include: specific change, files involved, verification method
 
 #### Approach Analysis
@@ -213,6 +218,8 @@ Plans should **derive** approaches from research, not jump to solutions:
    - Feasibility: ✅ feasible / ⚠️ risky / ❌ not feasible, with evidence (file:line)
    - Pros and cons analyzed against each fundamental constraint
    - Estimated impact scope (files affected, callers impacted)
+   - For Medium/Large changes: perform Surface Scan (search for all references,
+     build disposition table) before writing the change list
 
 3. **Recommend one + reasoning** — the recommendation is not preference; it's the optimal choice given the constraints. Reasoning should trace back to specific research findings.
 
@@ -229,6 +236,16 @@ If the existing design itself is problematic (architecture can't support require
 #### Self-Review (append before presenting to human)
 ```
 ## Self-Review
+
+### Internal Consistency Check (fix before presenting)
+- Does the recommendation section point to the same approach as the change list?
+- Does each change item trace back to the recommended approach?
+- Does the Self-Review below reference findings consistent with the plan body?
+- If ANY contradiction found → this is a bug, not a risk. Fix it now.
+- Does the change list cover ALL files in the Surface Scan disposition table?
+  Files marked "modify" must appear in change list. Files marked "skip" must have justification.
+
+### External Risks (present to human)
 - The biggest risk in this plan that you're least confident about
 - What could make this plan completely wrong
 - One alternative approach you considered but rejected, and why
@@ -239,21 +256,20 @@ If the existing design itself is problematic (architecture can't support require
 ```
 ## 批注区
 
-> 标注类型：`[Q]` 提问 · `[CHANGE]` 修改 · `[NOTE]` 补充 · `[DEEPER]` 不够深 · `[MISSING]` 遗漏
-> 审阅完成后添加 `<!-- BATON:GO -->`，然后告诉 AI "generate todolist"
-
-<!-- 在下方添加标注，用 § 引用章节。如：[Q] § 变更 3：为什么用 grep -i？ -->
+<!-- 写下你的反馈，AI 会判断如何处理。 -->
+<!-- 如果需要暂停当前工作去做其他调查，写 [PAUSE]。 -->
+<!-- 审阅完成后添加 BATON:GO 批准标记，然后告诉 AI "generate todolist" -->
 ```
 
 ### [ANNOTATION] Annotation Cycle
 
 **Goal**: Converge on shared understanding through structured feedback. The annotation cycle is Baton's core mechanism — it applies to both research.md and plan.md.
 
-For annotation types and core rules, see Annotation Protocol in the header. This section covers execution details unique to the annotation cycle.
+For core rules, see Annotation Protocol in the header. This section covers execution details unique to the annotation cycle.
 
 #### Annotation Methods (either works)
-- **In-document**: Human writes annotations directly in the document (structured, preferred)
-- **In-chat**: Human gives feedback in conversation → AI identifies the annotation type, quotes the human's original wording, and records it in ## Annotation Log
+- **In-document**: Human writes feedback directly in the document
+- **In-chat**: Human gives feedback in conversation → AI infers intent, quotes the human's original wording, and records it in ## Annotation Log
 
 #### Full Flow
 1. AI produces a document (research.md or plan.md)
@@ -267,23 +283,22 @@ For annotation types and core rules, see Annotation Protocol in the header. This
 7. Human is satisfied → add BATON:GO → say "generate todolist" → implement
 
 #### Annotation Format
-Human writes annotations at the relevant location in the document:
-
-    [ANNOTATION_TYPE] specific content
+Human writes feedback at the relevant location in the document, or in chat. Free-text is the default; `[PAUSE]` is the only explicit type.
 
 Example:
 
     ### Design: Use Service Layer Validation
-    [Q] Why not do this uniformly in middleware? Each service would repeat the logic
-    [NOTE] Historically middleware did validation but it was moved to service layer due to performance issues
+    Why not do this uniformly in middleware? Each service would repeat the logic
+    Historically middleware did validation but it was moved to service layer due to performance issues
 
 #### Thinking Posture: Verify Before Responding
 
-For EACH annotation, BEFORE responding:
-- **[Q]**: Before answering, ask yourself: am I about to answer from memory? Go read the actual code, then answer with file:line.
-- **[CHANGE]**: Verify the change is safe first. Check callers, check tests, check edge cases. If you find a problem, say so with evidence — don't comply just because the human asked.
-- **[DEEPER]**: Your previous work was insufficient. This is a signal to investigate seriously, not just add a paragraph.
-- **[RESEARCH-GAP]**: Pause other annotations. Do the research. Append findings to research.md as `## Supplement: <topic>`. Then return to remaining annotations.
+For EACH piece of feedback, BEFORE responding:
+1. **Infer intent** — is this a question, a change request, a note, a signal that your work was insufficient, or a request to pause and investigate something else?
+2. **Read the code** — am I about to answer from memory? Go read the actual code, then answer with file:line.
+3. **Verify safety** — if the feedback implies a change, check callers, tests, edge cases. If you find a problem, say so with evidence.
+4. **Consequence detection** — does this feedback change direction, contradict research, or reveal contradictions in the current document? If so, handle the consequences immediately rather than treating the feedback in isolation.
+5. **`[PAUSE]`** — if present, pause other annotations. Do the research. Append findings to research.md as `## Supplement: <topic>`. Then return to remaining annotations.
 
 #### Core Principles for AI Responses
 
@@ -303,28 +318,31 @@ Incorrect behavior:
 
     ### Round 1 (YYYY-MM-DD)
 
-    **[Q] § Design Approach**
+    **Question § Design Approach**
     "Why not do this uniformly in middleware?"
+    → Inferred intent: questioning design decision
     → Middleware doesn't understand business semantics, can't do field-level validation
       (evidence: src/middleware/validate.ts:30 only does JSON schema validation).
     → Result: human accepts, keeping service layer validation
 
-    **[CHANGE] § Caching Strategy**
+    **Change request § Caching Strategy**
     "Switch to Redis"
+    → Inferred intent: proposing architectural change
     → ⚠️ Entire project currently uses in-process cache (evidence: 0 Redis dependencies).
       Adopting Redis requires: (1) docker-compose config (2) connection management (3) serialization
       Alternative: add TTL to existing CacheManager (src/cache.ts:30)
+    → Consequence: would change direction from in-process to distributed caching
     → Awaiting human decision
 
-#### [RESEARCH-GAP] Handling
+#### [PAUSE] Handling
 1. Pause processing other annotations on the current document
-2. Conduct supplementary research for the gap
+2. Conduct supplementary research for the paused topic
 3. Append results to research.md (as `## Supplement: <topic>`)
 4. Return to the current document, continue processing remaining annotations
-5. Record in Annotation Log: gap content + key findings + impact on current document
+5. Record in Annotation Log: pause reason + key findings + impact on current document
 
 #### Dynamic Complexity Adjustment
-If a single annotation round contains 3+ [DEEPER] or [MISSING] annotations, suggest upgrading the complexity level:
+If a single annotation round contains 3+ depth-issue annotations (feedback indicating insufficient investigation, omissions, or need for more research), suggest upgrading the complexity level:
 > "Annotation density suggests initial complexity was underestimated.
 >  Recommend upgrading from [current] to [suggested]. This means [specific changes]."
 
@@ -342,7 +360,10 @@ Each todo item: understand its intent from the plan, implement, verify against p
 - Same approach fails 3x → MUST stop and report
 
 #### Self-Check Triggers
-- **After writing code**: re-read the modified code (not from memory). Does it match the plan's design intent, or did you drift? If implementation diverges, record whether the plan was wrong or the implementation was wrong.
+- **After writing code**: re-read the modified code (not from memory). Does it match the plan's design intent, or did you drift? If implementation diverges, record whether the plan was wrong or the implementation was wrong. Regression check: re-read surrounding context (5+ lines above/below) — did the edit break adjacent logic?
+- **After completing each todo**: run tests directly related to the modified files before moving to next todo. If tests fail → fix before proceeding.
+- **When modifying a file already changed by a prior todo**: re-read the file's CURRENT state before implementing. After implementing, re-run ALL verification steps for ALL prior todos that touched this file.
+- **After modifying any file**: who consumes/imports/calls/reads this file? Did the change affect any of those consumers?
 - **Before marking complete**: did I verify the change works (typecheck/build), or am I assuming it does?
 - **When something feels wrong**: if an implementation feels harder than the plan suggested, pause and check whether the plan missed something rather than forcing a solution.
 

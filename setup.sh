@@ -1507,10 +1507,10 @@ else
 fi
 echo ""
 echo "  2. Tell the AI what you want to build or fix"
-echo "     → The AI writes research.md, then plan.md with proposed changes"
+echo "     → The AI writes research.md and/or plan.md depending on task complexity; simple changes may skip straight to plan.md"
 echo ""
-echo "  3. Annotate plan.md with [NOTE] [Q] [CHANGE] [DEEPER] [MISSING]"
-echo "     → AI responds to each annotation, cycle until satisfied"
+echo "  3. Give feedback in research.md, plan.md, or chat. Free-text is the default; [PAUSE] means stop and investigate first"
+echo "     → AI infers intent, responds with file:line evidence, and records it in Annotation Log"
 echo ""
 echo "  4. When satisfied, add this line to plan.md:"
 echo "     <!-- BATON:GO -->"

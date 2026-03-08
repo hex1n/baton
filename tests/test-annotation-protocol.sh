@@ -21,12 +21,35 @@ check() {
     fi
 }
 
+check_not() {
+    local file="$1" pattern="$2" desc="$3"
+    TOTAL=$((TOTAL + 1))
+    if grep -q "$pattern" "$file"; then
+        echo "  FAIL: $desc (pattern '$pattern' should be absent)"
+        FAIL=$((FAIL + 1))
+    else
+        echo "  pass: $desc"
+        PASS=$((PASS + 1))
+    fi
+}
+
 # ============================================================
-echo "=== Annotation types present in both files ==="
+echo "=== Direction γ markers present in both files ==="
+
+check "$SLIM" '\[PAUSE\]' "workflow.md contains [PAUSE]"
+check "$FULL" '\[PAUSE\]' "workflow-full.md contains [PAUSE]"
+check "$SLIM" "infers intent from content" "workflow.md mentions intent inference"
+check "$FULL" "infers intent from content" "workflow-full.md mentions intent inference"
+check "$FULL" "Free-text is the default" "workflow-full.md documents free-text default"
+check "$FULL" "Consequence detection" "workflow-full.md documents consequence detection"
+
+# ============================================================
+echo ""
+echo "=== Legacy explicit annotation types removed ==="
 
 for marker in '\[NOTE\]' '\[Q\]' '\[CHANGE\]' '\[DEEPER\]' '\[MISSING\]' '\[RESEARCH-GAP\]'; do
-    check "$SLIM" "$marker" "workflow.md contains $marker"
-    check "$FULL" "$marker" "workflow-full.md contains $marker"
+    check_not "$SLIM" "$marker" "workflow.md does not contain $marker"
+    check_not "$FULL" "$marker" "workflow-full.md does not contain $marker"
 done
 
 # ============================================================
@@ -37,6 +60,7 @@ check "$FULL" "Annotation Log" "workflow-full.md has Annotation Log section"
 check "$FULL" "Round 1" "workflow-full.md has Annotation Log example"
 check "$FULL" "Annotation Format" "workflow-full.md has annotation format section"
 check "$FULL" "Core Principles" "workflow-full.md has AI response principles"
+check "$FULL" "\[PAUSE\] Handling" "workflow-full.md has [PAUSE] handling section"
 check "$FULL" "Correct behavior:" "workflow-full.md has correct AI behavior examples"
 check "$FULL" "Incorrect behavior:" "workflow-full.md has incorrect AI behavior examples"
 

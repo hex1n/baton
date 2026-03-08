@@ -23,20 +23,16 @@ Simple changes can skip research.md and go straight to plan.md.
 
 The annotation cycle is Baton's core mechanism. It applies to both research.md and plan.md.
 
-You annotate documents directly with structured markers:
+You can give feedback directly in the document or in chat. Free-text is the default.
+`[PAUSE]` is the only explicit marker: it means stop the current direction and
+investigate something else first.
 
-| Marker | Meaning | AI Response |
-|--------|---------|-------------|
-| `[NOTE]` | Additional context | Incorporate, explain impact |
-| `[Q]` | Question | Answer with file:line evidence |
-| `[CHANGE]` | Request modification | If problematic, explain with evidence + offer alternatives |
-| `[DEEPER]` | Not deep enough | Continue investigation in specified direction |
-| `[MISSING]` | Something was missed | Investigate and supplement |
-| `[RESEARCH-GAP]` | Needs more research | Pause, research, then return |
+For each piece of feedback:
+- AI infers intent from the content instead of relying on a fixed type list
+- AI answers with file:line evidence and records the result in an **Annotation Log**
+- If the response changes direction or reveals a contradiction, AI updates the document immediately
 
 **The human isn't always right.** When AI disagrees, it must explain with evidence, offer alternatives, and let the human decide. No blind compliance, no hiding concerns, no blocking decisions.
-
-Every annotation and response is recorded in an **Annotation Log** — creating a traceable record of design decisions.
 
 ### The Write Lock
 
@@ -98,13 +94,12 @@ your-project/
 │   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
 │   ├── bash-guard.sh       ← Advisory bash detection
 │   └── adapters/           ← Cross-IDE adapters (Cline, Windsurf)
-├── .agents/
-│   └── skills/             ← Cross-IDE skill fallback (Codex uses this)
 ├── .claude/
 │   ├── skills/              ← Phase methodology (baton-research, baton-plan, baton-implement)
 │   └── settings.json        ← Hook configuration
-├── AGENTS.md                ← Codex import: @.baton/workflow.md
-└── CLAUDE.md                ← @.baton/workflow.md import
+├── CLAUDE.md                ← Claude import: @.baton/workflow.md
+├── AGENTS.md                ← Generated for Codex installs: @.baton/workflow.md
+└── .agents/skills/          ← Generated Codex fallback skills
 ```
 
 ## Supported IDEs
@@ -120,7 +115,7 @@ your-project/
 | Copilot | **Full protection** | Write-lock (via adapter) + phase guidance + skills | Automatic |
 | Cline | Hook protection | Write-lock (PreToolUse) + task completion check + skills | Automatic |
 | Roo Code | Rules guidance | Workflow via .roo/rules/ + skills | Automatic |
-| Codex | Rules guidance | Workflow via AGENTS.md + .agents/skills/ (no hooks) | Automatic in Codex session, or `--ide codex` |
+| Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic in Codex session, or `--ide codex` |
 | Zed | Rules guidance | Workflow via .rules using workflow-full fallback (no hooks, no skills) | Automatic |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.

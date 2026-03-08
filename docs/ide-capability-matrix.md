@@ -20,7 +20,7 @@ For the full evidence trail, see [Hook Research 2026-03-07](/Users/hex1n/IdeaPro
 | Amazon Q Developer CLI | Yes, different model | Not modeled separately | N/A | Agent hooks exist, but they are not the same model as Kiro |
 | GitHub Copilot | Yes | `.github/hooks/` | Full protection | Coding agent / CLI hook model |
 | Cline | Yes | `.clinerules/` and `.cline/skills/` | Hook protection | Hook model exists; Baton uses adapter wiring |
-| Codex | No custom hooks found | `AGENTS.md` + `.agents/skills/` | Rules guidance | Rules, skills, sandbox, approval controls |
+| Codex | No custom hooks found | Generated `AGENTS.md` + generated `.agents/skills/` | Rules guidance | Rules, skills, sandbox, approval controls |
 | Zed | No custom hooks found | `.rules` | Rules guidance | Rules + tool permissions + MCP |
 | Roo Code | Unverified in current official docs | `.roo/rules/` + skills | Rules guidance | Baton stays conservative until stronger primary evidence appears |
 

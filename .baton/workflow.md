@@ -46,12 +46,15 @@ Every claim requires file:line evidence. No evidence = mark with ❓ unverified.
 - "Should be fine" is never a valid conclusion.
 
 ### Annotation Protocol
-Human adds annotations in research.md or plan.md. AI responds to each and records in `## Annotation Log`.
-Types: `[NOTE]` · `[Q]` · `[CHANGE]` · `[DEEPER]` · `[MISSING]` · `[RESEARCH-GAP]`
-Every claim requires file:line. Blind compliance is a failure mode — disagree with evidence when needed.
+Human adds feedback in research.md, plan.md, or chat. AI infers intent from content,
+responds with file:line evidence, and records in `## Annotation Log`.
+Only explicit type: `[PAUSE]` — stop current work, investigate something else first.
+After responding to any feedback, AI must self-check: did my answer change direction,
+contradict research, or reveal internal contradictions? If yes, handle immediately.
+Blind compliance is a failure mode — disagree with evidence when needed.
 
 ### File Conventions
-- Todolist format: `## Todo` / `- [ ]` unchecked / `- [x]` checked (lowercase x). Hooks grep for this exact format.
+- Todolist format: `## Todo` / `- [ ]` unchecked / `- [x] ✅` checked (lowercase x + checkmark).
 - Documents MUST end with `## 批注区` (annotation zone for the human).
 - Name by topic: `research-<topic>.md` + `plan-<topic>.md`. Default `research.md`/`plan.md` for simple tasks.
 - Exploratory code (spikes) → Bash tool; record findings in research.md.

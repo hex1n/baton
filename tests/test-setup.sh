@@ -130,6 +130,17 @@ assert_file_contains "$d/.claude/settings.json" "NotebookEdit"
 assert_file_exists "$d/CLAUDE.md"
 assert_file_contains "$d/CLAUDE.md" "@.baton/workflow.md"
 assert_output_contains "$OUTPUT" "Installing baton"
+assert_output_contains "$OUTPUT" "research.md, plan.md, or chat"
+assert_output_contains "$OUTPUT" "simple changes may skip straight to plan.md"
+assert_output_contains "$OUTPUT" "Free-text is the default"
+assert_output_contains "$OUTPUT" "\[PAUSE\]"
+assert_output_not_contains "$OUTPUT" "Give feedback in plan.md or chat"
+assert_output_not_contains "$OUTPUT" "Annotate plan.md with \[NOTE\]"
+assert_output_not_contains "$OUTPUT" "\[Q\]"
+assert_output_not_contains "$OUTPUT" "\[CHANGE\]"
+assert_output_not_contains "$OUTPUT" "\[DEEPER\]"
+assert_output_not_contains "$OUTPUT" "\[MISSING\]"
+assert_output_not_contains "$OUTPUT" "\[RESEARCH-GAP\]"
 
 # ============================================================
 echo ""
@@ -140,6 +151,7 @@ assert_output_contains "$OUTPUT" "Detected IDEs: claude"
 assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
 # Claude Code gets slim workflow (SessionStart support)
 assert_file_contains "$d/.baton/workflow.md" "Shared Understanding Construction Protocol"
+assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 
 # ============================================================
 echo ""
