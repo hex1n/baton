@@ -218,9 +218,6 @@ assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "1. claude - full protection"
 assert_output_contains "$OUTPUT" "2. codex - rules guidance"
 assert_output_contains "$OUTPUT" "3. cursor - full protection, Cursor IDE hooks + adapter"
-assert_output_contains "$OUTPUT" "7. kiro - hook protection, Kiro compatibility surface (.amazonq) + skills"
-assert_output_contains "$OUTPUT" "11. roo - rules guidance via .roo/rules + skills (no Baton hook integration)"
-assert_output_contains "$OUTPUT" "Note: cursor = Cursor IDE, kiro = current .amazonq compatibility surface."
 assert_output_contains "$OUTPUT" "Select IDEs"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (--choose)"
 assert_file_exists "$d/AGENTS.md"
@@ -284,28 +281,9 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 2i: amazonq alias maps to current kiro compatibility surface ==="
-d="$tmp/t2i" && mkdir -p "$d"
-OUTPUT="$(run_setup --ide amazonq "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Selected IDEs: kiro (--ide)"
-assert_output_contains "$OUTPUT" "Kiro compatibility surface (.amazonq)"
-assert_file_exists "$d/.amazonq/hooks.json"
-TOTAL=$((TOTAL + 1))
-if [ ! -d "$d/.kiro" ]; then
-    echo "  pass: amazonq alias does not create a separate .kiro target"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: amazonq alias should still target the shared .amazonq surface"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
 echo "=== Test 2j: --help documents current capability scope ==="
 OUTPUT="$(run_setup --help 2>&1)"
 assert_output_contains "$OUTPUT" "cursor = Cursor IDE"
-assert_output_contains "$OUTPUT" "kiro = current .amazonq compatibility surface"
-assert_output_contains "$OUTPUT" "roo = rules guidance only in Baton"
 
 # ============================================================
 echo ""
@@ -320,28 +298,6 @@ assert_file_exists "$d/.cursor/rules/baton.mdc"
 assert_file_contains "$d/.cursor/rules/baton.mdc" "alwaysApply"
 assert_file_exists "$d/.cursor/hooks.json"
 assert_file_contains "$d/.cursor/hooks.json" "adapter-cursor"
-
-# ============================================================
-echo ""
-echo "=== Test 4: Windsurf IDE detection → hooks + rules ==="
-d="$tmp/t4" && mkdir -p "$d/.windsurf"
-(cd "$d" && git init -q)
-OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: windsurf"
-assert_file_exists "$d/.windsurf/rules/baton-workflow.md"
-assert_file_exists "$d/.windsurf/hooks.json"
-assert_file_contains "$d/.windsurf/hooks.json" "write-lock"
-
-# ============================================================
-echo ""
-echo "=== Test 5: Cline IDE detection → adapter installed ==="
-d="$tmp/t5" && mkdir -p "$d/.clinerules"
-(cd "$d" && git init -q)
-OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: cline"
-assert_file_exists "$d/.baton/adapters/adapter-cline.sh"
-assert_file_executable "$d/.baton/adapters/adapter-cline.sh"
-assert_file_exists "$d/.clinerules/baton-workflow.md"
 
 # ============================================================
 echo ""
@@ -563,25 +519,6 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 17c: Cline uninstall restores preserved user hooks ==="
-d="$tmp/t17c" && mkdir -p "$d/.clinerules/hooks"
-cat > "$d/.clinerules/hooks/PreToolUse" << 'HOOK'
-#!/bin/sh
-echo '{"cancel":false,"contextModification":"user-pre"}'
-HOOK
-cat > "$d/.clinerules/hooks/TaskComplete" << 'HOOK'
-#!/bin/sh
-echo '{"cancel":false,"contextModification":"user-task"}'
-HOOK
-BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
-OUTPUT="$(run_setup --uninstall "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Restored original .clinerules/hooks/PreToolUse"
-assert_output_contains "$OUTPUT" "Restored original .clinerules/hooks/TaskComplete"
-assert_file_contains "$d/.clinerules/hooks/PreToolUse" "user-pre"
-assert_file_contains "$d/.clinerules/hooks/TaskComplete" "user-task"
-
-# ============================================================
-echo ""
 echo "=== Test 17d: Claude uninstall removes Baton hooks but preserves user settings ==="
 d="$tmp/t17d" && mkdir -p "$d/.claude"
 cat > "$d/.claude/settings.json" << 'JSON'
@@ -631,7 +568,7 @@ assert_file_contains "$d/.claude/settings.json" "echo keep"
 # ============================================================
 echo ""
 echo "=== Test: install_skills() installs SKILL.md to IDE directories ==="
-d="$tmp/tskills" && mkdir -p "$d/.claude" "$d/.cursor" "$d/.windsurf"
+d="$tmp/tskills" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 # Skills should be installed in all detected IDE directories
@@ -639,7 +576,6 @@ assert_file_exists "$d/.claude/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-implement/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
-assert_file_exists "$d/.windsurf/skills/baton-research/SKILL.md"
 # Cross-IDE fallback
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
@@ -652,34 +588,6 @@ if diff -q "$SCRIPT_DIR/../.claude/skills/baton-research/SKILL.md" \
     PASS=$((PASS + 1))
 else
     echo "  FAIL: installed SKILL.md differs from source"
-    FAIL=$((FAIL + 1))
-fi
-# Not installed to IDEs not present
-TOTAL=$((TOTAL + 1))
-if [ ! -d "$d/.cline/skills" ]; then
-    echo "  pass: no skills in undetected IDE (.cline)"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: skills installed in undetected IDE (.cline)"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test: Kiro skill installation goes to .amazonq/skills/ ==="
-d="$tmp/tkiro" && mkdir -p "$d/.amazonq"
-(cd "$d" && git init -q)
-BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
-# Skills should be in .amazonq/skills/, not .kiro/skills/
-assert_file_exists "$d/.amazonq/skills/baton-research/SKILL.md"
-assert_file_exists "$d/.amazonq/skills/baton-plan/SKILL.md"
-assert_file_exists "$d/.amazonq/skills/baton-implement/SKILL.md"
-TOTAL=$((TOTAL + 1))
-if [ ! -d "$d/.kiro/skills" ]; then
-    echo "  pass: no stale .kiro/skills/ directory created"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: skills installed in .kiro/skills/ instead of .amazonq/skills/"
     FAIL=$((FAIL + 1))
 fi
 
@@ -700,7 +608,7 @@ assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-implement/SKILL.md"
 assert_file_exists "$d/AGENTS.md"
 TOTAL=$((TOTAL + 1))
-if [ ! -d "$d/.cursor/skills" ] && [ ! -d "$d/.windsurf/skills" ]; then
+if [ ! -d "$d/.cursor/skills" ]; then
     echo "  pass: self-install skips unrelated IDE skill directories"
     PASS=$((PASS + 1))
 else
@@ -717,23 +625,13 @@ cp -R "$SCRIPT_DIR/../.baton" "$d/.baton"
 cp -R "$SCRIPT_DIR/../.claude/skills" "$d/.claude/skills"
 OUTPUT="$(
     cd "$d" && \
-    BATON_SKIP=pre-commit bash ./setup.sh --ide cursor,kiro,codex 2>&1
+    BATON_SKIP=pre-commit bash ./setup.sh --ide cursor,codex 2>&1
 )"
 assert_output_contains "$OUTPUT" "Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-plan/SKILL.md"
-assert_file_exists "$d/.amazonq/skills/baton-research/SKILL.md"
-assert_file_exists "$d/.amazonq/skills/baton-implement/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/AGENTS.md"
-TOTAL=$((TOTAL + 1))
-if [ ! -d "$d/.windsurf/skills" ] && [ ! -d "$d/.roo/skills" ]; then
-    echo "  pass: self-install only bootstraps the selected IDE skill directories"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: self-install should not bootstrap unselected IDE skill directories"
-    FAIL=$((FAIL + 1))
-fi
 
 # ============================================================
 echo ""

@@ -41,17 +41,9 @@ registry_list() {
             fi
             _ides=""
             [ -d "$_dir/.claude" ]     && _ides="${_ides} claude"
-            [ -d "$_dir/.cursor" ]     && _ides="${_ides} cursor"
-            [ -d "$_dir/.windsurf" ]   && _ides="${_ides} windsurf"
             [ -d "$_dir/.factory" ]    && _ides="${_ides} factory"
-            [ -d "$_dir/.clinerules" ] && _ides="${_ides} cline"
-            [ -d "$_dir/.augment" ]    && _ides="${_ides} augment"
-            [ -d "$_dir/.amazonq" ]    && _ides="${_ides} kiro"
-            { [ -f "$_dir/.github/copilot-instructions.md" ] || \
-              [ -f "$_dir/.github/hooks/baton.json" ]; } && _ides="${_ides} copilot"
+            [ -d "$_dir/.cursor" ]     && _ides="${_ides} cursor"
             [ -f "$_dir/AGENTS.md" ]   && _ides="${_ides} codex"
-            [ -f "$_dir/.rules" ]      && _ides="${_ides} zed"
-            [ -d "$_dir/.roo" ]        && _ides="${_ides} roo"
             _ides="$(echo "$_ides" | sed 's/^ //')"
             printf "  %-50s v%-6s [%s]\n" "$_dir" "${_ver:-?}" "${_ides:-none}"
         else
@@ -95,17 +87,9 @@ doctor() {
     # IDE configs
     echo "  IDE configuration:"
     [ -d "$_dir/.claude" ]     && { _check_ide_config "$_dir" "claude" ".claude/settings.json" "baton"; }
-    [ -d "$_dir/.cursor" ]     && { _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "baton"; }
-    [ -d "$_dir/.windsurf" ]   && { _check_ide_config "$_dir" "windsurf" ".windsurf/hooks.json" "baton"; }
-    [ -d "$_dir/.clinerules" ] && { _check_ide_config "$_dir" "cline" ".clinerules/hooks/PreToolUse" "baton"; }
     [ -d "$_dir/.factory" ]    && { _check_ide_config "$_dir" "factory" ".claude/settings.json" "baton"; }
-    [ -d "$_dir/.augment" ]    && { _check_ide_config "$_dir" "augment" ".augment/settings.json" "baton"; }
-    [ -d "$_dir/.amazonq" ]    && { _check_ide_config "$_dir" "kiro" ".amazonq/hooks.json" "baton"; }
-    { [ -f "$_dir/.github/copilot-instructions.md" ] || [ -f "$_dir/.github/hooks/baton.json" ]; } && \
-        { _check_ide_config "$_dir" "copilot" ".github/hooks/baton.json" "baton"; }
+    [ -d "$_dir/.cursor" ]     && { _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "baton"; }
     [ -f "$_dir/AGENTS.md" ]   && { _check_ide_config "$_dir" "codex" "AGENTS.md" "baton"; }
-    [ -f "$_dir/.rules" ]      && { _check_ide_config "$_dir" "zed" ".rules" "baton"; }
-    [ -d "$_dir/.roo" ]        && { _check_ide_config "$_dir" "roo" ".roo/rules/baton-workflow.md" "baton"; }
     echo ""
 
     # Rules injection

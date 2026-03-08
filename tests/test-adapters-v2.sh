@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-adapters-v2.sh — Tests for new/simplified adapters (Cursor, Copilot, Cline v2)
+# test-adapters-v2.sh — Tests for Cursor adapter
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,6 +14,7 @@ trap 'rm -rf $tmp' EXIT
 # Helper: set up a test directory with write-lock.sh
 setup_dir() {
     d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
+    cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/completion-check.sh" "$d/.baton/hooks/completion-check.sh"
@@ -66,157 +67,6 @@ else
     echo "  FAIL: should include reason field"
     FAIL=$((FAIL + 1))
 fi
-
-# ============================================================
-echo ""
-echo "=== Copilot Adapter ==="
-echo ""
-
-echo "--- Test 3: Copilot adapter — allowed with BATON:GO ---"
-d="$(setup_dir t3 adapter-copilot.sh)"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
-JSON='{"tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-copilot.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"permissionDecision":"allow"'; then
-    echo "  pass: returns {\"permissionDecision\":\"allow\"}"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected permissionDecision:allow, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-echo ""
-echo "--- Test 4: Copilot adapter — blocked without BATON:GO ---"
-d="$(setup_dir t4 adapter-copilot.sh)"
-echo "# Plan" > "$d/plan.md"
-JSON='{"tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-copilot.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"permissionDecision":"deny"'; then
-    echo "  pass: returns {\"permissionDecision\":\"deny\"}"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected permissionDecision:deny, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q '"permissionDecisionReason"'; then
-    echo "  pass: includes permissionDecisionReason field"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: should include permissionDecisionReason field"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Cline Adapter (v2 — with tool filtering) ==="
-echo ""
-
-echo "--- Test 5: Cline adapter — write tool blocked ---"
-d="$(setup_dir t5 adapter-cline.sh)"
-echo "# Plan" > "$d/plan.md"
-JSON='{"tool":"write_to_file","tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":true'; then
-    echo "  pass: write_to_file blocked → cancel:true"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:true for write_to_file, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-echo ""
-echo "--- Test 6: Cline adapter — write tool allowed with GO ---"
-d="$(setup_dir t6 adapter-cline.sh)"
-echo "<!-- BATON:GO -->" > "$d/plan.md"
-JSON='{"tool":"replace_in_file","tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":false'; then
-    echo "  pass: replace_in_file allowed with GO → cancel:false"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:false for replace_in_file with GO, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-echo ""
-echo "--- Test 7: Cline adapter — non-write tool always allowed ---"
-d="$(setup_dir t7 adapter-cline.sh)"
-# No plan at all — but read_file should pass through
-JSON='{"tool":"read_file","tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":false'; then
-    echo "  pass: read_file always allowed → cancel:false"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:false for non-write tool, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-echo ""
-echo "--- Test 8: Cline adapter — insert_content blocked ---"
-d="$(setup_dir t8 adapter-cline.sh)"
-echo "# Plan" > "$d/plan.md"
-JSON='{"tool":"insert_content","tool_input":{"file_path":"src/app.ts"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":true'; then
-    echo "  pass: insert_content blocked → cancel:true"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:true for insert_content, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Cline TaskComplete Adapter ==="
-echo ""
-
-echo "--- Test 9: Cline TaskComplete adapter — blocks when retrospective missing ---"
-d="$(setup_dir t9 adapter-cline-taskcomplete.sh)"
-cat > "$d/plan.md" << 'EOF'
-<!-- BATON:GO -->
-## Todo
-- [x] one
-EOF
-JSON='{"taskComplete":{"success":true}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline-taskcomplete.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":true'; then
-    echo "  pass: missing retrospective blocked → cancel:true"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:true when retrospective missing, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-echo ""
-echo "--- Test 10: Cline TaskComplete adapter — allows when retrospective exists ---"
-d="$(setup_dir t10 adapter-cline-taskcomplete.sh)"
-cat > "$d/plan.md" << 'EOF'
-<!-- BATON:GO -->
-## Todo
-- [x] one
-## Retrospective
-done
-EOF
-JSON='{"taskComplete":{"success":true}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline-taskcomplete.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":false'; then
-    echo "  pass: retrospective present → cancel:false"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected cancel:false when retrospective exists, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
 # ============================================================
 echo ""
 echo "================================"

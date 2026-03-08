@@ -4,6 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="$SCRIPT_DIR/../.baton/git-hooks/pre-commit"
+COMMON="$SCRIPT_DIR/../.baton/hooks/_common.sh"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -18,6 +19,8 @@ setup_repo() {
     (cd "$d" && git init -q && git config user.email "test@test.com" && git config user.name "test")
     cp "$HOOK" "$d/.git/hooks/pre-commit"
     chmod +x "$d/.git/hooks/pre-commit"
+    mkdir -p "$d/.baton/hooks"
+    cp "$COMMON" "$d/.baton/hooks/_common.sh"
     echo "$d"
 }
 

@@ -57,28 +57,18 @@ case "$TARGET" in
     *.md|*.MD|*.markdown|*.mdx) exit 0 ;;
 esac
 
-# --- Find plan file (from JSON cwd, then shell cwd) ---
-# SYNCED: plan-name-resolution — same in all baton scripts
-if [ -n "$BATON_PLAN" ]; then
-    PLAN_NAME="$BATON_PLAN"
+# --- Source shared functions ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+if [ -f "$SCRIPT_DIR/_common.sh" ]; then
+    . "$SCRIPT_DIR/_common.sh"
 else
-    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
-    PLAN_NAME="${_candidate:-plan.md}"
+    echo "⚠️ BATON write-lock: _common.sh not found, allowing operation (fail-open)" >&2
+    exit 0
 fi
 
-# SYNCED: find_plan — same algorithm in phase-guide.sh, stop-guard.sh, bash-guard.sh
-# Changes here must be mirrored. Validated by test-workflow-consistency.sh
-find_plan() {
-    d="${JSON_CWD:-$(pwd)}"
-    while true; do
-        [ -f "$d/$PLAN_NAME" ] && { echo "$d/$PLAN_NAME"; return; }
-        p="$(dirname "$d")"
-        [ "$p" = "$d" ] && return
-        d="$p"
-    done
-}
-
-PLAN="$(find_plan)"
+# --- Find plan file (from JSON cwd, then shell cwd) ---
+resolve_plan_name
+find_plan
 
 # --- No plan → block + research phase guidance ---
 if [ -z "$PLAN" ]; then

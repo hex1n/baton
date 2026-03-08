@@ -42,46 +42,61 @@ for concept in "Mindset" "Verify before you claim" "Disagree with evidence" "Sto
     fi
 done
 
-# --- find_plan consistency: all 4 scripts must find plan.md the same way ---
+# --- _common.sh: shared functions must exist and be sourced by all hooks ---
 echo ""
-echo "Checking find_plan consistency across hook scripts..."
+echo "Checking _common.sh shared library..."
+COMMON="$SCRIPT_DIR/../.baton/hooks/_common.sh"
 
-# Extract the plan-finding walk-up loop (identified by PLAN_NAME reference)
-extract_walk_up() {
-    # Find the while loop that references PLAN_NAME (the plan-finding loop)
-    awk '/while true/{buf=""; cap=1} cap{buf=buf $0 "\n"} cap && /done/{if(buf ~ /PLAN_NAME/) print buf; cap=0}' "$1" \
-        | sed 's/#.*//' | sed '/^$/d' | sed 's/^[[:space:]]*//'
-}
-
-WL="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/write-lock.sh")"
-PG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/phase-guide.sh")"
-SG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/stop-guard.sh")"
-BG="$(extract_walk_up "$SCRIPT_DIR/../.baton/hooks/bash-guard.sh")"
-
-# phase-guide and stop-guard should be identical (both inline, same structure)
-if [ "$PG" != "$SG" ]; then
-    echo "DRIFT: find_plan loop differs between phase-guide.sh and stop-guard.sh"
-    FAIL=1
-else
-    echo "OK: find_plan loop consistent (phase-guide.sh = stop-guard.sh)"
-fi
-
-# All must contain the core algorithm elements
-for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh; do
-    path="$SCRIPT_DIR/../.baton/hooks/$script"
-    body="$(extract_walk_up "$path")"
-    # Must have: while loop, file test, dirname, parent==dir termination
-    missing=""
-    echo "$body" | grep -q 'while true' || missing="$missing while-loop"
-    echo "$body" | grep -q 'PLAN_NAME' || missing="$missing PLAN_NAME"
-    echo "$body" | grep -q 'dirname' || missing="$missing dirname"
-    if [ -n "$missing" ]; then
-        echo "DRIFT: $script find_plan missing core elements:$missing"
-        FAIL=1
+# _common.sh must define the shared functions
+for func in resolve_plan_name find_plan has_skill; do
+    if grep -q "^${func}()" "$COMMON"; then
+        echo "OK: _common.sh defines $func"
     else
-        echo "OK: $script find_plan has all core elements"
+        echo "DRIFT: _common.sh missing function $func"
+        FAIL=1
     fi
 done
+
+# All hooks must source _common.sh
+for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
+              post-write-tracker.sh completion-check.sh pre-compact.sh subagent-context.sh; do
+    path="$SCRIPT_DIR/../.baton/hooks/$script"
+    if grep -q '_common\.sh' "$path"; then
+        echo "OK: $script sources _common.sh"
+    else
+        echo "DRIFT: $script does not source _common.sh"
+        FAIL=1
+    fi
+done
+
+# pre-commit must also source _common.sh
+PRECOMMIT="$SCRIPT_DIR/../.baton/git-hooks/pre-commit"
+if grep -q '_common\.sh' "$PRECOMMIT"; then
+    echo "OK: pre-commit sources _common.sh"
+else
+    echo "DRIFT: pre-commit does not source _common.sh"
+    FAIL=1
+fi
+
+# No hook should still have SYNCED comments (duplication eliminated)
+echo ""
+echo "Checking no residual SYNCED comments..."
+for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
+              post-write-tracker.sh completion-check.sh pre-compact.sh subagent-context.sh; do
+    path="$SCRIPT_DIR/../.baton/hooks/$script"
+    if grep -q 'SYNCED:' "$path"; then
+        echo "DRIFT: $script still has SYNCED comment"
+        FAIL=1
+    else
+        echo "OK: $script no SYNCED comments"
+    fi
+done
+if grep -q 'SYNCED:' "$PRECOMMIT"; then
+    echo "DRIFT: pre-commit still has SYNCED comment"
+    FAIL=1
+else
+    echo "OK: pre-commit no SYNCED comments"
+fi
 
 # --- Flow line consistency: Scenario A and B must match ---
 echo ""

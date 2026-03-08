@@ -292,16 +292,6 @@ assert_output_contains "$d" "PLAN" "still shows PLAN phase"
 
 # ============================================================
 echo ""
-echo "=== Test 18: Skill in .amazonq directory detected (Kiro) ==="
-d="$tmp/t18" && mkdir -p "$d/.amazonq/skills/baton-research"
-echo "---" > "$d/.amazonq/skills/baton-research/SKILL.md"
-echo "name: baton-research" >> "$d/.amazonq/skills/baton-research/SKILL.md"
-echo "---" >> "$d/.amazonq/skills/baton-research/SKILL.md"
-assert_output_contains "$d" "/baton-research" "has_skill finds SKILL.md in .amazonq"
-assert_output_not_contains "$d" "entry points" "fallback suppressed when skill in .amazonq"
-
-# ============================================================
-echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then

@@ -16,22 +16,16 @@ while IFS= read -r -d '' f; do
 done < <(git diff --cached --name-only -z --diff-filter=ACM)
 [ "$HAS_SOURCE" -eq 0 ] && exit 0
 
-# Walk-up to find plan file
-# SYNCED: plan-name-resolution — same in all baton scripts
-if [ -n "$BATON_PLAN" ]; then
-    PLAN_NAME="$BATON_PLAN"
+# Source shared functions (git runs pre-commit from repo root)
+_COMMON_SH="$(pwd)/.baton/hooks/_common.sh"
+if [ -f "$_COMMON_SH" ]; then
+    . "$_COMMON_SH"
 else
-    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
-    PLAN_NAME="${_candidate:-plan.md}"
+    echo "⚠️ baton: _common.sh not found, allowing commit (fail-open)" >&2
+    exit 0
 fi
-PLAN=""
-d="$(pwd)"
-while true; do
-    [ -f "$d/$PLAN_NAME" ] && { PLAN="$d/$PLAN_NAME"; break; }
-    p="$(dirname "$d")"
-    [ "$p" = "$d" ] && break
-    d="$p"
-done
+resolve_plan_name
+find_plan
 
 # Check BATON:GO
 if [ -z "$PLAN" ]; then

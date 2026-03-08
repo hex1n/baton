@@ -13,22 +13,15 @@ trap 'exit 0' HUP INT TERM
 
 [ "${BATON_BYPASS:-}" = "1" ] && exit 0
 
-# --- Find plan file ---
-# SYNCED: plan-name-resolution — same in all baton scripts
-if [ -n "$BATON_PLAN" ]; then
-    PLAN_NAME="$BATON_PLAN"
+# --- Source shared functions ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+if [ -f "$SCRIPT_DIR/_common.sh" ]; then
+    . "$SCRIPT_DIR/_common.sh"
 else
-    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
-    PLAN_NAME="${_candidate:-plan.md}"
+    exit 0
 fi
-PLAN=""
-d="$(pwd)"
-while true; do
-    [ -f "$d/$PLAN_NAME" ] && { PLAN="$d/$PLAN_NAME"; break; }
-    p="$(dirname "$d")"
-    [ "$p" = "$d" ] && break
-    d="$p"
-done
+resolve_plan_name
+find_plan
 
 [ -z "$PLAN" ] && exit 0
 

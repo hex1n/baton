@@ -9,70 +9,21 @@
 # --- Fail-open on unexpected errors ---
 trap 'echo "⚠️ BATON phase-guide: unexpected error, skipping guidance" >&2; exit 0' HUP INT TERM
 
-# --- Locate workflow-full.md and skills ---
+# --- Source shared functions ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+if [ -f "$SCRIPT_DIR/_common.sh" ]; then
+    . "$SCRIPT_DIR/_common.sh"
+else
+    echo "⚠️ BATON phase-guide: _common.sh not found, skipping guidance" >&2
+    exit 0
+fi
 WORKFLOW_FULL="${SCRIPT_DIR:+$SCRIPT_DIR/../workflow-full.md}"
-
-# Check if a specific baton skill is installed (walk up from cwd, like find_plan)
-has_skill() {
-    _hs_name="$1"
-    _hs_d="$(pwd)"
-    while true; do
-        for _hs_ide in .claude .cursor .windsurf .cline .github .augment .roo .kiro .amazonq .agents; do
-            [ -f "$_hs_d/$_hs_ide/skills/$_hs_name/SKILL.md" ] && return 0
-        done
-        _hs_p="$(dirname "$_hs_d")"
-        [ "$_hs_p" = "$_hs_d" ] && return 1
-        _hs_d="$_hs_p"
-    done
-    return 1
-}
-
-# extract_section SEC [NEXT_SEC]
-# Extracts from ### [SEC] to ### [NEXT_SEC] (exclusive).
-# If NEXT_SEC is empty, extracts to end of file.
-# Returns 1 if extraction fails or is empty.
-extract_section() {
-    [ -z "$WORKFLOW_FULL" ] || [ ! -f "$WORKFLOW_FULL" ] && return 1
-    _es_sec="$1"
-    _es_next="${2:-}"
-    if [ -n "$_es_next" ]; then
-        _es_out="$(awk -v sec="$_es_sec" -v nxt="$_es_next" '
-            $0 ~ "^### \\[" sec "\\]" {found=1}
-            found && $0 ~ "^### \\[" nxt "\\]" {exit}
-            found {print}
-        ' "$WORKFLOW_FULL" 2>/dev/null)"
-    else
-        _es_out="$(awk -v sec="$_es_sec" '
-            $0 ~ "^### \\[" sec "\\]" {found=1}
-            found {print}
-        ' "$WORKFLOW_FULL" 2>/dev/null)"
-    fi
-    [ -z "$_es_out" ] && return 1
-    printf '%s\n' "$_es_out"
-    return 0
-}
 
 MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain"
 
-# SYNCED: plan-name-resolution — same in all baton scripts
-if [ -n "$BATON_PLAN" ]; then
-    PLAN_NAME="$BATON_PLAN"
-else
-    _candidate="$(ls -t plan.md plan-*.md 2>/dev/null | head -1)"
-    PLAN_NAME="${_candidate:-plan.md}"
-fi
+resolve_plan_name
 RESEARCH_NAME="${PLAN_NAME/plan/research}"
-
-# SYNCED: find_plan — same algorithm in write-lock.sh, stop-guard.sh, bash-guard.sh
-PLAN=""
-d="$(pwd)"
-while true; do
-    [ -f "$d/$PLAN_NAME" ] && { PLAN="$d/$PLAN_NAME"; break; }
-    p="$(dirname "$d")"
-    [ "$p" = "$d" ] && break
-    d="$p"
-done
+find_plan
 
 # Find research.md in same directory as plan (or cwd)
 PLAN_DIR="${PLAN%/*}"

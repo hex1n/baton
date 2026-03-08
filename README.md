@@ -93,7 +93,7 @@ your-project/
 │   ├── phase-guide.sh      ← Session start: detects phase, prompts skill or extracts fallback
 │   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
 │   ├── bash-guard.sh       ← Advisory bash detection
-│   └── adapters/           ← Cross-IDE adapters (Cline, Windsurf)
+│   └── adapters/           ← Cross-IDE adapters (Cursor)
 ├── .claude/
 │   ├── skills/              ← Phase methodology (baton-research, baton-plan, baton-implement)
 │   └── settings.json        ← Hook configuration
@@ -106,31 +106,13 @@ your-project/
 
 | IDE | Protection Level | What You Get | Setup |
 |-----|-----------------|--------------|-------|
-| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard | Automatic |
-| Factory AI | **Full protection** | Write-lock + phase guidance + stop guard | Automatic |
+| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 7 hooks | Automatic |
+| Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
 | Cursor IDE | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
-| Windsurf | **Full protection** | Write-lock (native hooks) + phase guidance + bash guard + skills | Automatic |
-| Augment | **Full protection** | Write-lock + phase guidance | Automatic |
-| Kiro (`.amazonq` surface) | **Hook protection** | Write-lock only (current Baton integration) + phase guidance via workflow.md + skills | Automatic |
-| Copilot | **Full protection** | Write-lock (via adapter) + phase guidance + skills | Automatic |
-| Cline | Hook protection | Write-lock (PreToolUse) + task completion check + skills | Automatic |
-| Roo Code | Rules guidance | Workflow via .roo/rules/ + skills | Automatic |
 | Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic in Codex session, or `--ide codex` |
-| Zed | Rules guidance | Workflow via .rules using workflow-full fallback (no hooks, no skills) | Automatic |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
-> **Hook protection** = write-lock via IDE-specific hook wiring, but not all hook types supported.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
-> Skill-capable IDEs use `workflow.md` as the always-loaded entrypoint and keep detailed phase methodology in skills. `workflow-full.md` is reserved for rules-only fallback paths such as Zed.
-> Baton's `cursor` target maps to the Cursor IDE integration surface. Cursor CLI hook parity is still partial and is not modeled separately here.
-> Baton's `kiro` target currently writes to `.amazonq/`. Official Kiro and Amazon Q Developer CLI both support hooks, but their hook models now differ and Baton does not yet split them into separate installer targets.
-> Roo Code remains rules-guidance by default because Baton does not yet rely on a current official Roo hook integration.
-> Current implementation scope: Baton's current installer work covers Cursor IDE and the current Kiro `.amazonq` compatibility surface. This iteration does not add a first-class Amazon Q Developer CLI target, does not model Cursor CLI separately, and keeps Roo Code in rules-guidance mode.
-
-See also:
-
-- [IDE Capability Matrix](/Users/hex1n/IdeaProjects/baton/docs/ide-capability-matrix.md)
-- [Hook Research 2026-03-07](/Users/hex1n/IdeaProjects/baton/research-ide-hooks-2026-03-07.md)
 
 ## Suggested .gitignore
 

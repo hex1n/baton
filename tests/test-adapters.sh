@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-adapters.sh — Tests for cross-IDE adapters
+# test-adapters.sh — Tests for cross-IDE adapters (Cursor)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,113 +12,62 @@ tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
 
 # Helper: set up test directory with write-lock and adapter
-setup_cline() {
+setup_cursor() {
     d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
+    cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
-    cp "$ADAPTERS/adapter-cline.sh" "$d/.baton/adapters/adapter-cline.sh"
-    chmod +x "$d/.baton/adapters/adapter-cline.sh"
+    cp "$ADAPTERS/adapter-cursor.sh" "$d/.baton/adapters/adapter-cursor.sh"
+    chmod +x "$d/.baton/adapters/adapter-cursor.sh"
     echo "$d"
 }
 
 # ============================================================
-echo "=== Test 1: Cline adapter — allowed → JSON cancel:false ==="
-d="$(setup_cline t1)"
+echo "=== Test 1: Cursor adapter — allowed with BATON:GO ==="
+d="$(setup_cursor t1)"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
-JSON='{"tool":"write_to_file","tool_input":{"file_path":"src/app.ts"}}'
+JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)"
-if echo "$OUTPUT" | grep -q '"cancel":false'; then
-    echo "  pass: cline adapter returns cancel:false when allowed"
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)"
+if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
+    echo "  pass: cursor adapter returns allow when BATON:GO present"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: expected cancel:false, got: $OUTPUT"
+    echo "  FAIL: expected allow, got: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 2: Cline adapter — blocked → JSON cancel:true ==="
-d="$(setup_cline t2)"
+echo "=== Test 2: Cursor adapter — blocked without BATON:GO ==="
+d="$(setup_cursor t2)"
 echo "# Plan" > "$d/plan.md"
-JSON='{"tool":"write_to_file","tool_input":{"file_path":"src/app.ts"}}'
+JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":true'; then
-    echo "  pass: cline adapter returns cancel:true when blocked"
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
+    echo "  pass: cursor adapter returns deny when no BATON:GO"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: expected cancel:true, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-# Verify error message is included
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q 'errorMessage'; then
-    echo "  pass: cline adapter includes errorMessage"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: cline adapter should include errorMessage"
+    echo "  FAIL: expected deny, got: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 3: Cline adapter — no plan → JSON cancel:true ==="
-d="$(setup_cline t3)"
-JSON='{"tool":"write_to_file","tool_input":{"file_path":"src/app.ts"}}'
+echo "=== Test 3: Cursor adapter — no plan → denied ==="
+d="$(setup_cursor t3)"
+JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)" || true
-if echo "$OUTPUT" | grep -q '"cancel":true'; then
-    echo "  pass: cline adapter blocks when no plan"
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
+    echo "  pass: cursor adapter blocks when no plan"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: expected cancel:true when no plan, got: $OUTPUT"
+    echo "  FAIL: expected deny when no plan, got: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
-# ============================================================
-echo ""
-echo "=== Test 4: Cline adapter — markdown → JSON cancel:false ==="
-d="$(setup_cline t4)"
-# No plan.md — but markdown should always be allowed
-JSON='{"tool":"write_to_file","tool_input":{"file_path":"research.md"}}'
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cline.sh" 2>/dev/null)"
-if echo "$OUTPUT" | grep -q '"cancel":false'; then
-    echo "  pass: cline adapter allows markdown files"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: cline adapter should allow markdown, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 5: OpenCode plugin — file exists and has correct structure ==="
-TOTAL=$((TOTAL + 1))
-if [ -f "$SCRIPT_DIR/../.baton/adapters/opencode-plugin.mjs" ]; then
-    echo "  pass: opencode-plugin.mjs exists"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: opencode-plugin.mjs not found"
-    FAIL=$((FAIL + 1))
-fi
-TOTAL=$((TOTAL + 1))
-if grep -q 'BatonPlugin' "$SCRIPT_DIR/../.baton/adapters/opencode-plugin.mjs"; then
-    echo "  pass: opencode-plugin.mjs exports BatonPlugin"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: opencode-plugin.mjs should export BatonPlugin"
-    FAIL=$((FAIL + 1))
-fi
-TOTAL=$((TOTAL + 1))
-if grep -q 'BATON:GO' "$SCRIPT_DIR/../.baton/adapters/opencode-plugin.mjs"; then
-    echo "  pass: opencode-plugin.mjs checks BATON:GO marker"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: opencode-plugin.mjs should check BATON:GO marker"
-    FAIL=$((FAIL + 1))
-fi
 # ============================================================
 echo ""
 echo "================================"

@@ -1,0 +1,1 @@
+plans/plan-2026-03-06-skill-conflicts.md
