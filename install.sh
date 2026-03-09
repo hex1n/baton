@@ -18,15 +18,33 @@ if [ -d "$BATON_HOME/.git" ]; then
     else
         echo "  ⚠ Could not auto-update (local changes?). Run: git -C $BATON_HOME pull --ff-only"
     fi
+    # Convert full clone to sparse if not already
+    if [ "$(git -C "$BATON_HOME" config core.sparseCheckout 2>/dev/null)" != "true" ]; then
+        _git_ver="$(git --version | sed 's/[^0-9]*\([0-9]*\)\.\([0-9]*\).*/\1 \2/')"
+        _git_major="${_git_ver%% *}"
+        _git_minor="${_git_ver##* }"
+        if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
+            MSYS_NO_PATHCONV=1 git -C "$BATON_HOME" sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore
+            echo "  ✓ Converted to sparse checkout"
+        fi
+    fi
 elif [ -d "$BATON_HOME" ]; then
     echo "  ⚠ $BATON_HOME exists but is not a git repository"
     echo "  Remove it first: rm -rf $BATON_HOME"
     exit 1
 else
     echo "  Cloning baton to $BATON_HOME..."
-    git clone --depth 1 --filter=blob:none --sparse "$BATON_REPO" "$BATON_HOME"
-    git -C "$BATON_HOME" sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore
-    echo "  ✓ Cloned baton (sparse: only essential files)"
+    _git_ver="$(git --version | sed 's/[^0-9]*\([0-9]*\)\.\([0-9]*\).*/\1 \2/')"
+    _git_major="${_git_ver%% *}"
+    _git_minor="${_git_ver##* }"
+    if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
+        git clone --depth 1 --filter=blob:none --sparse "$BATON_REPO" "$BATON_HOME"
+        MSYS_NO_PATHCONV=1 git -C "$BATON_HOME" sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore
+        echo "  ✓ Cloned baton (sparse: only essential files)"
+    else
+        git clone --depth 1 "$BATON_REPO" "$BATON_HOME"
+        echo "  ✓ Cloned baton (shallow — upgrade git to 2.25+ for sparse checkout)"
+    fi
 fi
 
 # 2. Create bin/baton executable
@@ -75,11 +93,12 @@ echo ""
 echo "Done! Baton installed to $BATON_HOME"
 echo ""
 
-if bash "$BATON_HOME/setup.sh" "$(pwd)" 2>/dev/null; then
+if bash "$BATON_HOME/setup.sh" "$(pwd)"; then
     echo ""
     echo "  ✓ Initialized baton in current directory"
 else
-    echo "  To initialize a project:"
+    echo ""
+    echo "  ⚠ Auto-init failed. To initialize manually:"
     echo "    cd /path/to/project && baton init"
 fi
 
