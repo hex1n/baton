@@ -121,6 +121,9 @@ Reasoning should trace back to specific research findings.
 - **Does the change list cover ALL files in the Surface Scan disposition table?**
   Files marked "modify" must appear in change list. Files marked "skip" must have justification.
   If no Surface Scan was done → execute one now before presenting.
+- **Are all premises verified?** Every assumption the plan depends on — file locations,
+  naming conventions, tool capabilities, project structure, API behavior — must be
+  directly verified in this session, not assumed from memory or prior sessions.
 
 ### External Risks (present to human)
 - The biggest risk in this plan that you're least confident about

@@ -1,18 +1,21 @@
 ---
 name: baton-research
 description: >
-  This skill MUST be used when the user asks to "research", "analyze",
-  "investigate", "trace", "explore", "understand how this works", or whenever
-  starting any task that touches unfamiliar code — even if the task seems simple.
-  Also use when receiving feedback requesting deeper analysis or [PAUSE] annotations.
-  Produces research.md with file:line evidence for human review.
+  Use for initial code research on Medium/Large tasks: cross-module behavior
+  tracing, ambiguous or contradictory requirements, multi-surface consistency
+  checks, or root-cause analysis across multiple execution paths. Also use
+  for [PAUSE] supplementary investigations and when user explicitly says
+  "research". Do NOT trigger for lightweight annotation responses or quick
+  single-file lookups — those belong in the main conversation.
 user-invocable: true
+context: fork
+agent: Explore
 ---
 
 ## Iron Law
 
 ```
-NO CONCLUSIONS WITHOUT FILE:LINE EVIDENCE
+NO CONCLUSIONS WITHOUT EXPLICIT EVIDENCE
 NO SOURCE CODE CHANGES DURING RESEARCH — INVESTIGATE ONLY
 ```
 
@@ -22,23 +25,37 @@ source code writes are blocked until BATON:GO exists in the plan.
 
 ## When to Use
 
-- Starting analysis of unfamiliar code or a new feature area
-- When the user asks to research, analyze, explore, understand, or investigate
-- When a task's complexity is Medium or Large (see workflow.md Complexity Calibration)
-- When you need to understand existing behavior before proposing changes
+- Medium/Large tasks requiring cross-module behavior tracing
+- Ambiguous or contradictory requirements that need evidence-backed clarification
+- Multi-surface consistency checks (e.g., N IDEs, N API endpoints, N config formats)
+- Root-cause analysis across multiple execution paths
+- When the user explicitly says "research" or "deep research"
 - After receiving a `[PAUSE]` annotation during plan review
 
-**When NOT to use**: Trivial/Small tasks where the scope is already clear and you can
-go directly to planning.
+**When NOT to use**: Quick lookups, single-file explanations, tasks where scope is
+already clear, or Trivial/Small tasks that can go directly to planning.
 
 ## The Process
 
 ### Step 0: Tool Inventory
 
-Before any code investigation, inventory all available documentation retrieval and
-search tools (Context7, WebSearch, WebFetch, Grep, Glob, MCP servers). Attempt each
-relevant one during research. Record what you used and what each returned — the human
-judges search thoroughness.
+Use at least 2 distinct search methods beyond Read (e.g., Grep + Glob,
+Grep + Context7, Glob + subagent). Record what you used, what each
+returned, and why these methods are sufficient for the current investigation
+— the human judges search thoroughness.
+
+### Step 0.5: Frame the Investigation
+
+Before diving into code, define at the top of research.md:
+
+- **Question**: what exactly is being investigated
+- **Why it matters**: what later decision (plan/implementation) this research supports
+- **Scope**: what is included
+- **Out of scope**: what is intentionally excluded
+- **Known constraints**: repo, platform, compatibility, or tooling constraints
+
+If the user's request is vague, resolve it into a concrete research question first.
+This framing anchors the entire investigation — without it, research drifts.
 
 ### Step 1: Start from Entry Points
 
@@ -128,16 +145,37 @@ Before presenting to the human, append:
 
 ## Evidence Standards
 
-Every claim requires file:line evidence. No exceptions.
+Every claim requires explicit evidence. Label by type:
+
+- `[CODE]` repo file:line — for code behavior claims
+- `[DOC]` authoritative external docs — for dependency/framework behavior
+- `[RUNTIME]` command output — for observed runtime behavior
+- `[HUMAN]` chat-stated requirements — for user direction and constraints
+
+Code-behavior conclusions without `[CODE]` evidence are not valid.
+No-evidence claims must be marked ❓ unverified.
 
 - `✅` confirmed safe — with verification evidence
 - `❌` problem found — with evidence of the problem
 - `❓` unverified — with reason it remains unverified
 
 ```
-✅ Good: "Token expires after 24h (auth.ts:45 — `expiresIn: '24h'`)"
+✅ Good: "Token expires after 24h [CODE] auth.ts:45 — `expiresIn: '24h'`"
+✅ Good: "Redis SCAN is O(1) per call [DOC] redis.io/commands/scan"
+✅ Good: "Sparse-checkout requires git 2.25+ [RUNTIME] `git sparse-checkout` fails on 2.24"
 ❌ Bad: "Token expiration should be fine"
 ```
+
+### Layering: Facts, Inferences, Judgments
+
+In research.md, keep these distinct:
+
+- **Facts**: directly evidenced statements (cite [CODE]/[DOC]/[RUNTIME]/[HUMAN])
+- **Inferences**: reasoned conclusions drawn from facts (mark as inference)
+- **Judgments**: recommendations or tradeoff assessments (mark as judgment)
+
+Do not blur them. The human needs to know which conclusions they can trust
+directly vs. which require their own judgment.
 
 ## Red Flags — STOP
 
@@ -210,8 +248,12 @@ Before transitioning to plan phase, consolidate the research conclusions:
    conclusion was revised by a later section (Supplement or otherwise), mark
    the original with a note: "-> Revised in [later section]".
 2. **Write `## Final Conclusions`** — a short section at the end listing ONLY
-   the currently-valid conclusions. Each must reference its evidence location
-   in the document body.
+   the currently-valid conclusions. Each must include:
+   - conclusion statement
+   - confidence: high / medium / low
+   - supporting evidence reference (location in document body)
+   - main uncertainty, if any
+   - implication for planning or implementation
 3. **Chat requirements capture** — if the human stated requirements or
    direction in chat (not in the document), record them in Final Conclusions
    with attribution: "Human requirement (chat): ..."
@@ -245,6 +287,17 @@ Research is sufficient when all three conditions are met:
 3. **Human judgment questions extracted** — decisions that require domain knowledge are in `## Questions for Human Judgment`, not buried in prose
 
 If any condition is unmet, continue research. If all are met, tell the human research is ready for review.
+
+## Escalation Guidance
+
+If the investigation expands beyond the original question:
+- Finish the current research question cleanly first
+- Note adjacent unresolved areas in a separate section
+- State whether each is a blocker, a risk, or follow-on research
+- Do not silently broaden scope — the human needs to approve scope changes
+
+If runtime validation is impossible, say exactly why.
+If evidence is mixed, say so directly — do not force a neat conclusion.
 
 ## Metacognitive Triggers
 
