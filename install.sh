@@ -24,8 +24,9 @@ elif [ -d "$BATON_HOME" ]; then
     exit 1
 else
     echo "  Cloning baton to $BATON_HOME..."
-    git clone "$BATON_REPO" "$BATON_HOME"
-    echo "  ✓ Cloned baton"
+    git clone --depth 1 --filter=blob:none --sparse "$BATON_REPO" "$BATON_HOME"
+    git -C "$BATON_HOME" sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore
+    echo "  ✓ Cloned baton (sparse: only essential files)"
 fi
 
 # 2. Create bin/baton executable
@@ -67,11 +68,21 @@ if [ "$ADDED_PATH" = "0" ]; then
     add_to_profile "$HOME/.bashrc" "create"
 fi
 
+# 4. Auto-init current directory
+export PATH="$BATON_BIN:$PATH"
+
 echo ""
 echo "Done! Baton installed to $BATON_HOME"
 echo ""
+
+if bash "$BATON_HOME/setup.sh" "$(pwd)" 2>/dev/null; then
+    echo ""
+    echo "  ✓ Initialized baton in current directory"
+else
+    echo "  To initialize a project:"
+    echo "    cd /path/to/project && baton init"
+fi
+
+echo ""
 echo "  Restart your shell or run:"
 echo "    export PATH=\"$BATON_BIN:\$PATH\""
-echo ""
-echo "  Then initialize a project:"
-echo "    cd /path/to/project && baton init"

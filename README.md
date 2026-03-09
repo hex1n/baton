@@ -56,14 +56,12 @@ For each piece of feedback:
 ### Remote install (recommended)
 
 ```bash
+# Run from your project directory — installs baton globally and initializes the current project in one step:
+cd /path/to/project
 curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash
 ```
 
-This clones baton to `~/.baton` and adds the `baton` CLI to your PATH. Then initialize any project:
-
-```bash
-cd /path/to/project && baton init
-```
+This installs the `baton` CLI to `~/.baton` (sparse clone, only essential files) and automatically runs `baton init` in the current directory.
 
 ### Local install
 
