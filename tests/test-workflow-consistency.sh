@@ -258,7 +258,7 @@ else
     FAIL=1
 fi
 
-if grep -q "Derived artifact changed" "$IMPL_SKILL" && grep -q "No global exemption" "$IMPL_SKILL"; then
+if grep -q "pre-authorized exceptions to Iron Law" "$IMPL_SKILL" && grep -q "No global exemption" "$IMPL_SKILL"; then
     echo "OK: baton-implement treats derived artifacts as explicit, not implicit"
 else
     echo "DRIFT: baton-implement missing derived artifact execution guardrail"

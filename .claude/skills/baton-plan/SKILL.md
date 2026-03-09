@@ -29,8 +29,19 @@ it ensures the human has read and agreed to the approach.
 - When requirements are understood and a structured proposal is needed
 - For tasks of any complexity that involve code changes
 
-**When NOT to use**: Pure research tasks (use baton-research), or trivial changes
-where a 3-5 line plan summary suffices.
+**When NOT to use**: Pure research tasks (use baton-research). Trivial changes
+usually do not require this skill; if used, produce only a 3-5 line summary.
+
+### Complexity-Based Scope
+
+- **Trivial**: 3-5 line summary. Skip Surface Scan, skip Self-Review template.
+- **Small**: Requirements + recommendation + L1 scan. Skip full alternatives comparison unless tradeoffs are material.
+- **Medium**: Full process through L2. Skip L3 unless cross-cutting.
+- **Large**: Full process including L3 + disposition table + full annotation governance.
+
+Complexity level is proposed by AI, confirmed by human (per workflow.md).
+If the task reveals broader impact during planning, upgrade complexity and follow
+the higher-scope rules.
 
 ## The Process
 
@@ -101,7 +112,6 @@ Build the disposition table from ALL levels and include in plan.md as `## Surfac
 
 Default disposition is "modify" — "skip" requires explicit justification.
 Self-check: for each "skip" file — if not updated, will users encounter old behavior?
-For Trivial/Small changes, Level 1 alone is sufficient.
 
 ### Step 4: Recommend with Reasoning
 
@@ -121,9 +131,11 @@ Reasoning should trace back to specific research findings.
 - **Does the change list cover ALL files in the Surface Scan disposition table?**
   Files marked "modify" must appear in change list. Files marked "skip" must have justification.
   If no Surface Scan was done → execute one now before presenting.
-- **Are all premises verified?** Every assumption the plan depends on — file locations,
-  naming conventions, tool capabilities, project structure, API behavior — must be
-  directly verified in this session, not assumed from memory or prior sessions.
+- **Are critical premises verified?** Key assumptions (file locations, naming
+  conventions, project structure, API behavior) must be directly verified in
+  this session, not assumed from memory or prior sessions. Non-critical assumptions
+  may be stated as working assumptions if explicitly marked:
+  "Assumption: [statement] — not verified this session."
 
 ### External Risks (present to human)
 - The biggest risk in this plan that you're least confident about
@@ -170,15 +182,9 @@ After the human says "generate todolist" and BATON:GO is present:
 - [ ] 2. Change: description | Files: c.ts | Verify: type-check | Deps: #1 | Artifacts: lockfile
 ```
 
-Each todo item should include:
-- **Change**: specific change description
-- **Files**: files involved and write set (which files this item modifies)
-- **Verification**: how to verify correctness
-- **Dependencies**: which earlier items must complete first, or "none" if independent
-- **Derived artifacts**: lockfiles, generated types, snapshots expected to change (or "none")
-
-Independent items (no dependency, non-overlapping write sets) can be parallelized during
-implementation. Making this explicit here saves the implementer from re-analyzing the plan.
+Field definitions (Change, Files, Verification, Dependencies, Derived artifacts) are
+specified in baton-implement. Independent items (no dependency, non-overlapping write
+sets) can be parallelized during implementation.
 
 Use `- [ ]` unchecked, `- [x] ✅` checked (lowercase x + checkmark). Hooks grep the
 `- [x]` prefix, so keep that exact prefix when marking an item done.
@@ -255,6 +261,9 @@ Inference categories: question, change-request, context, depth-issue, gap, pause
 The category is AI's best judgment — human can correct if wrong.
 
 ### Pre-Exit Checklist
+
+Apply to the extent required by the current complexity scope.
+For Trivial/Small changes, only the checks relevant to the selected scope apply.
 
 Before presenting plan.md to the human, verify:
 

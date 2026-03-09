@@ -2,9 +2,9 @@
 name: baton-implement
 description: >
   This skill MUST be used when plan.md contains BATON:GO and the user says
-  "implement", "generate todolist", "start building", "实施", or "开始".
-  Also use when resuming implementation mid-session. Without this skill,
-  source code changes will be blocked by the write-lock hook.
+  "implement", "generate todolist", "start building", "实施", "开始实施",
+  or "开始开发". Also use when resuming implementation mid-session. Without
+  this skill, source code changes will be blocked by the write-lock hook.
 user-invocable: true
 ---
 
@@ -12,9 +12,16 @@ user-invocable: true
 
 ```
 NO CODE CHANGES WITHOUT BATON:GO IN PLAN.MD
-ONLY MODIFY FILES LISTED IN THE PLAN
+ONLY MODIFY FILES IN THE APPROVED WRITE SET (SEE UNEXPECTED DISCOVERIES FOR SCOPE)
 STOP ON UNEXPECTED DISCOVERIES — UPDATE PLAN FIRST
 ```
+
+**Section hierarchy**: Iron Law = hard gates (violation = stop) · Process = execution
+protocol · Self-Check = drift detection · Red Flags = pattern recognition (if you
+think this, stop).
+
+Approved write set = files listed in the plan/todo + A/B-level additions recorded
+during implementation (see Unexpected Discoveries).
 
 The plan is the contract. Every change must trace back to a todo item. The write-lock
 hook enforces BATON:GO at the filesystem level — this is not just a guideline.
@@ -24,6 +31,10 @@ hook enforces BATON:GO at the filesystem level — this is not just a guideline.
 - When plan.md has `<!-- BATON:GO -->` and the user says to implement
 - When the user says "generate todolist" (after BATON:GO is present)
 - After the annotation cycle is complete and the human has approved
+- **Resuming**: when plan.md contains BATON:GO and any of:
+  - unchecked todo items exist (`- [ ]`)
+  - `## Lessons Learned` indicates a prior session stopped mid-work
+  - the user explicitly asks to continue implementation
 
 **When NOT to use**: When there's no plan, when BATON:GO is missing, or during
 research/planning phases.
@@ -54,7 +65,9 @@ For each item:
 3. **Self-check** — re-read the modified code (not from memory). Does it match the
    plan's design intent, or did you drift?
 4. **Verify** — run the verification method specified in the todo
-5. **Mark complete** — only after steps 3 and 4 pass
+5. **Mark complete** — only after steps 3 and 4 pass.
+   For Medium/Large tasks, record a completion note per item:
+   `Files: ... | Verified: <command> → <result> | Deviations: none or <what changed>`
 
 ### Step 3: Handle Dependencies
 
@@ -69,12 +82,16 @@ For each item:
 
 After ALL items are done:
 
-1. Run full test suite, record results in plan.md
+1. Run tiered verification and record results in plan.md:
+   - **Required**: all todo-specified verifications + tests for affected files
+   - **If available**: package/module-level test suite
+   - **If runnable**: full project test suite
+   - **If not runnable**: record why and list uncovered risk areas
 2. Append `## Retrospective`:
    - What did the plan get wrong? (predictions vs reality)
    - What surprised you during implementation?
    - What would you research differently next time?
-3. Remind the human to archive
+3. Remind the human to archive (per workflow.md: `mkdir -p plans && mv <plan-file> plans/plan-<date>-<topic>.md`)
 
 ## Self-Check Triggers
 
@@ -125,7 +142,7 @@ Run these checks automatically — they catch drift before it becomes a problem.
 
 | Thought | Reality |
 |---------|---------|
-| "Let me also fix this nearby code while I'm here" | Only modify files listed in the plan. Propose additions first. |
+| "Let me also fix this nearby code while I'm here" | Only modify files in the approved write set (see Unexpected Discoveries for scope). Propose additions first. |
 | "This small change doesn't need to be in the plan" | If it's not in the plan, update the plan and wait for confirmation. |
 | "I'll mark this done and verify later" | Verify BEFORE marking complete. No exceptions. |
 | "The plan said X but Y is clearly better" | Stop. Update plan.md. Wait for human confirmation. |
@@ -144,29 +161,39 @@ Run these checks automatically — they catch drift before it becomes a problem.
 
 ## Unexpected Discoveries
 
-These WILL happen. Handle them by severity:
+Levels A and B are pre-authorized exceptions to Iron Law #2. Levels C and D require
+stopping. This is the approved write set scope definition.
 
-- **Small addition** (new utility function, extra test case):
-  Update plan.md with explanation, wait for human confirmation
+These WILL happen. Handle them by impact level:
 
-- **Derived artifact changed** (lockfile, generated types, snapshot):
-  If it was explicitly expected in the todo item, verify it and record it in the
-  Retrospective. If it was NOT explicitly expected, stop, update plan.md, wait for
-  human confirmation
+**A. Local completion aid** — e.g. private helper function, small test fixture.
+Condition: does not change public contract, does not add cross-module dependencies.
+→ If within an already-approved file: continue, record in todo completion notes.
+→ If requires a new file: continue only when the file is narrowly scoped to the approved change, does not create a new public entrypoint or public contract, and does not introduce cross-module dependencies beyond this todo. Append the file to the todo’s write set and note the reason.
 
-- **Design direction change** (wrong assumption, better approach found):
-  Stop. Inform human. Human removes BATON:GO to roll back to annotation cycle.
+**B. Adjacent integration change** — e.g. barrel export, route registration, fixture index update.
+Condition: required to complete the planned change, not a new feature.
+→ Continue. Append the file to the todo's write set and note the reason.
 
-- **Stopping mid-implementation** (end of session, blocked):
-  Append `## Lessons Learned` to plan.md — what worked, what didn't, what to try next
+**C. Scope extension** — e.g. fixing a related bug, covering an adjacent module.
+Condition: goes beyond what the plan approved.
+→ Stop. Update plan.md with the proposed addition. Wait for human confirmation.
+
+**D. Design change** — e.g. wrong assumption discovered, approach fundamentally flawed.
+→ Stop. Inform human. Human removes BATON:GO to roll back to annotation cycle.
+
+### Session Handoff
+
+When stopping mid-implementation (end of session, blocked, or waiting on human):
+Append `## Lessons Learned` to plan.md — what worked, what didn't, what to try next.
 
 ## Action Boundaries Reminder
 
 These rules are enforced by hooks and cannot be bypassed:
 
 1. Source code writes require `<!-- BATON:GO -->` in plan.md (write-lock.sh)
-2. Only modify files listed in the plan
-3. Same approach fails 3x → MUST stop and report
-4. Discover omission → MUST stop, update plan, wait for confirmation
-5. Derived artifacts are allowed only when explicitly listed in the approved plan/todo
-6. Markdown is always writable (research.md, plan.md updates are never blocked)
+2. Only modify files in the approved write set (plan files + Unexpected Discoveries A/B scope)
+3. Same approach fails 3x → MUST stop and report.
+   Same root cause = same chain; only a fundamentally different strategy counts as new.
+4. Discover scope omission beyond A/B → MUST stop, update plan, wait for confirmation
+5. Markdown is always writable (research.md, plan.md updates are never blocked)

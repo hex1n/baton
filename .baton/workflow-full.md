@@ -38,6 +38,9 @@ AI proposes complexity level; human confirms.
 3. Todolist required before implementation. Append `## Todo` only after human says "generate todolist".
 4. Only modify files listed in the plan. Need additions? Propose in plan first (file + reason).
 5. Same approach fails 3x → MUST stop and report to human.
+   Failure chain definition: same root cause = same chain. Parameter tweaks or minor
+   path adjustments do not count as a new approach. Only a fundamentally different
+   strategy (different algorithm, different API, different architecture) counts as new.
 6. Discover omission during implementation → MUST stop, update plan.md, wait for human confirmation.
 7. Before writing a new plan, archive existing: `mkdir -p plans && mv <plan-file> plans/plan-<date>-<topic>.md`. If paired research file exists, archive alongside with same topic.
 8. When all items complete, append `## Retrospective` to plan.md (what the plan got wrong, what surprised you, what to research differently next time), then remind to archive.

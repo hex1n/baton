@@ -77,19 +77,15 @@ _date_fmt() {
 # Strips fractional seconds, trailing Z, and UTC offset before parsing
 _iso_to_epoch() {
     local iso=$1
-    local clean="${iso%%.*}"   # strip .917768+00:00
-    clean="${clean%Z}"         # strip trailing Z
-    clean="${clean%+*}"        # strip +00:00
-    clean="${clean%-*}"        # strip -00:00 (but keep date dashes)
-    # Reconstruct: only strip timezone suffix, keep YYYY-MM-DDTHH:MM:SS
-    clean="${iso%%.*}"
+    # Strip fractional seconds (also strips +offset after the dot)
+    local clean="${iso%%.*}"
+    # Strip trailing Z
     clean="${clean%Z}"
-    # Remove trailing +HH:MM or -HH:MM timezone offset (last 6 chars if matches pattern)
+    # Strip trailing +HH:MM or -HH:MM timezone offset
     if echo "$clean" | grep -qE '[+-][0-9]{2}:[0-9]{2}$'; then
         clean="${clean%[+-]*:*}"
     fi
 
-    # Parse as UTC
     local epoch
     epoch=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "$clean" "+%s" 2>/dev/null)
     if [[ -z "$epoch" ]]; then
@@ -111,21 +107,7 @@ format_reset_time() {
     if [[ "$style" == "time" ]]; then
         _date_fmt "$epoch" "%H:%M"
     else
-        local result
-        result=$(_date_fmt "$epoch" "%-m/%-d %H:%M")
-        echo "$result"
-    fi
-}
-
-# Format number as K/M
-fmt_k() {
-    local n=$1
-    if [[ $n -ge 1000000 ]]; then
-        awk "BEGIN{printf \"%.1fM\", $n/1000000}"
-    elif [[ $n -ge 1000 ]]; then
-        awk "BEGIN{printf \"%.1fK\", $n/1000}"
-    else
-        echo "$n"
+        _date_fmt "$epoch" "%-m/%-d %H:%M"
     fi
 }
 
@@ -178,7 +160,7 @@ _get_oauth_token() {
         fi
     fi
 
-    # 6. Credential file fallback (Linux/macOS + Windows AppData)
+    # 5. Credential file fallback (Linux/macOS + Windows AppData)
     local cred_file
     for cred_file in \
         "$HOME/.claude/.credentials.json" \
@@ -321,29 +303,34 @@ if [[ -n "$transcript_path" && -f "$transcript_path" ]]; then
     fi
 fi
 
-# Fetch OAuth usage data (current/weekly) with 60s cache
+# Fetch OAuth usage data (current/weekly) with 10min cache
+# Concurrency: touch cache immediately on expiry to claim the refresh.
+# Other sessions see fresh mtime and skip. No lock file needed.
 usage_line=""
 usage_cache_dir="/tmp/claude"
 usage_cache_file="${usage_cache_dir}/statusline-usage-cache.json"
-usage_cache_ttl=60
+usage_cache_ttl=600
 
 fetch_usage_data() {
     local token
     token=$(_get_oauth_token) || return 1
 
+    mkdir -p "$usage_cache_dir"
+
     if [[ -f "$usage_cache_file" ]]; then
-        local cache_mtime
+        local cache_mtime cache_age
         cache_mtime=$(stat -f %m "$usage_cache_file" 2>/dev/null || stat -c %Y "$usage_cache_file" 2>/dev/null)
-        if [[ -n "$cache_mtime" ]]; then
-            local cache_age=$(( $(date +%s) - cache_mtime ))
-            if [[ $cache_age -lt $usage_cache_ttl ]]; then
-                cat "$usage_cache_file"
-                return 0
-            fi
+        cache_age=$(( $(date +%s) - ${cache_mtime:-0} ))
+
+        if [[ $cache_age -lt $usage_cache_ttl ]]; then
+            cat "$usage_cache_file"
+            return 0
         fi
+
+        # Expired — touch immediately to claim refresh (other sessions see fresh mtime and skip)
+        touch "$usage_cache_file"
     fi
 
-    mkdir -p "$usage_cache_dir"
     local resp
     resp=$(curl -s --max-time 3 \
         -H "Accept: application/json" \
@@ -353,11 +340,13 @@ fetch_usage_data() {
         "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
 
     if [[ -n "$resp" ]] && echo "$resp" | jq -e '.five_hour' >/dev/null 2>&1; then
-        echo "$resp" > "$usage_cache_file"
+        local tmp="${usage_cache_file}.$$"
+        echo "$resp" > "$tmp" && mv -f "$tmp" "$usage_cache_file"
         echo "$resp"
         return 0
     fi
 
+    # API failed — return stale cache (mtime already touched, TTL resets)
     [[ -f "$usage_cache_file" ]] && cat "$usage_cache_file" && return 0
     return 1
 }
@@ -423,7 +412,8 @@ if [[ -n "$transcript_path" && -f "$transcript_path" ]]; then
     if [[ -n "$last_user_msg" ]]; then
         max_len=80
         if [[ ${#last_user_msg} -gt $max_len ]]; then
-            echo "💬 ${last_user_msg:0:$((max_len - 3))}..."
+            truncated=$(printf '%s' "$last_user_msg" | cut -c 1-$((max_len - 3)))
+            echo "💬 ${truncated}..."
         else
             echo "💬 ${last_user_msg}"
         fi

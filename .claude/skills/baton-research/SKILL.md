@@ -9,7 +9,6 @@ description: >
   single-file lookups — those belong in the main conversation.
 user-invocable: true
 context: fork
-agent: Explore
 ---
 
 ## Iron Law
@@ -40,9 +39,11 @@ already clear, or Trivial/Small tasks that can go directly to planning.
 ### Step 0: Tool Inventory
 
 Use at least 2 distinct search methods beyond Read (e.g., Grep + Glob,
-Grep + Context7, Glob + subagent). Record what you used, what each
-returned, and why these methods are sufficient for the current investigation
-— the human judges search thoroughness.
+Grep + authoritative docs, Grep + runtime verification). When investigating
+external dependencies, also use available documentation lookup tools (e.g.,
+Context7) if configured. Record what you used, what each returned, and why
+these methods are sufficient for the current investigation — the human
+judges search thoroughness.
 
 ### Step 0.5: Frame the Investigation
 
@@ -107,15 +108,20 @@ Before forming any conclusion, actively search for evidence that would **disprov
 Record counterexamples found (or their absence) in research.md. A conclusion that survived
 a counterexample sweep is stronger than one that was never challenged.
 
-### Step 3: Use Subagents for Breadth
+### Step 3: Branch Investigation for Breadth
 
-When you encounter 3+ call paths across 10+ files, use subagents to trace parallel
-branches. Don't try to hold everything in one pass.
+When you encounter 3+ call paths across 10+ files, split the investigation
+into clearly separated document sections and trace them independently.
+Under `context: fork`, this skill runs as a subagent — do not attempt to
+spawn nested subagents from here. If parallel agent work is genuinely needed,
+surface that as a recommendation to the human; the main conversation can
+coordinate multiple agents.
 
 ### Step 4: Spike When Needed
 
-Use Bash for exploratory code — it's not blocked by write-lock. Record findings with
-evidence in research.md. Spike code is disposable — do not carry it forward.
+Use Bash for exploratory validation when available under current permissions;
+write-lock itself does not block Bash. Record findings with evidence in
+research.md. Spike code is disposable — do not carry it forward.
 
 ### Step 5: Self-Review
 
@@ -266,7 +272,7 @@ across session boundaries.
 Before presenting research.md to the human, verify:
 
 1. **Tool breadth** — At least 2 distinct search methods used beyond Read
-   (e.g., Grep + Glob, or Grep + subagent). Recorded in Tool Inventory.
+   (e.g., Grep + Glob, or Grep + runtime verification). Recorded in Tool Inventory.
    _Prevents: tunnel vision from single-tool investigation_
 
 2. **Conclusion resilience** — Each major conclusion states what evidence
