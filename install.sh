@@ -1,11 +1,11 @@
 #!/bin/sh
 # install.sh — Global installer for baton plan-first workflow
-# Usage: curl -fsSL https://raw.githubusercontent.com/<org>/baton/master/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash
 #   or:  bash /path/to/baton/install.sh
 set -eu
 
 BATON_HOME="${BATON_HOME:-$HOME/.baton}"
-BATON_REPO="${BATON_REPO:-https://github.com/anthropics/baton.git}"
+BATON_REPO="${BATON_REPO:-https://github.com/hex1n/baton.git}"
 
 echo "Installing baton..."
 

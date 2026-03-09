@@ -51,6 +51,22 @@ For each piece of feedback:
 
 ## Install
 
+**Prerequisites**: `git` and `bash`. Windows users need [Git Bash](https://git-scm.com/downloads).
+
+### Remote install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash
+```
+
+This clones baton to `~/.baton` and adds the `baton` CLI to your PATH. Then initialize any project:
+
+```bash
+cd /path/to/project && baton init
+```
+
+### Local install
+
 ```bash
 # In any project:
 bash /path/to/baton/setup.sh
@@ -79,6 +95,16 @@ The interactive selector shows a short capability summary for each IDE and
 accepts IDE names or numeric shortcuts such as `1,3,4` or `134`.
 
 **Upgrade**: Run setup.sh again — it detects the installed version and updates only what changed.
+
+## Update
+
+```bash
+baton self-update      # Pull latest baton source to ~/.baton
+baton update           # Update current project's baton scripts
+baton update --all     # Update all registered projects
+```
+
+`self-update` runs `git pull` in `~/.baton`. `update` re-runs setup.sh, which compares script versions and only copies what changed.
 
 ## What Gets Installed
 
@@ -137,7 +163,7 @@ Or manually: delete `.baton/`, remove baton-* skill directories from each IDE's 
 Boris Tane's workflow succeeds because the human stays in the loop at every critical point. Baton preserves that:
 
 - **No state machine** — you know what phase you're in
-- **No CLI commands** — just files and hooks
+- **Minimal CLI** — `baton init` / `baton update`, then just files and hooks
 - **~400 tokens total overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
 - **Annotation protocol** — structured human-AI dialogue with traceable decision records
