@@ -192,6 +192,16 @@ fi
 
 # ============================================================
 echo ""
+echo "=== Test 2c2: .agents/ dir without AGENTS.md → auto-detect factory + codex ==="
+d="$tmp/t2c2" && mkdir -p "$d/.agents"
+OUTPUT="$(run_setup "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "factory"
+assert_output_contains "$OUTPUT" "codex"
+assert_file_exists "$d/AGENTS.md"
+assert_file_contains "$d/AGENTS.md" "@.baton/workflow.md"
+
+# ============================================================
+echo ""
 echo "=== Test 2d: Explicit --ide overrides detected IDEs ==="
 d="$tmp/t2d" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)

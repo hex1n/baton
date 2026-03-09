@@ -52,8 +52,8 @@ run_detect_ides() {
     }
     [ -d "$PROJECT_DIR/.claude" ]     && append_ide "claude"
     [ -d "$PROJECT_DIR/.cursor" ]     && append_ide "cursor"
-    [ -d "$PROJECT_DIR/.factory" ]    && append_ide "factory"
-    { [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SANDBOX:-}" ]; } && append_ide "codex"
+    { [ -d "$PROJECT_DIR/.factory" ] || [ -d "$PROJECT_DIR/.agents" ]; } && append_ide "factory"
+    { [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -d "$PROJECT_DIR/.agents" ] || [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SANDBOX:-}" ]; } && append_ide "codex"
     [ -z "$_ides" ] && append_ide "claude"
     echo "$_ides"
 }

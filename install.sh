@@ -93,7 +93,7 @@ echo ""
 echo "Done! Baton installed to $BATON_HOME"
 echo ""
 
-if bash "$BATON_HOME/setup.sh" "$(pwd)"; then
+if bash "$BATON_HOME/setup.sh" "$@" "$(pwd)"; then
     echo ""
     echo "  ✓ Initialized baton in current directory"
 else

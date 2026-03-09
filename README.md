@@ -59,9 +59,13 @@ For each piece of feedback:
 # Run from your project directory — installs baton globally and initializes the current project in one step:
 cd /path/to/project
 curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash
+
+# Install for specific IDEs:
+curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash -s -- --ide codex
+curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash -s -- --ide cursor,codex
 ```
 
-This installs the `baton` CLI to `~/.baton` (sparse clone, only essential files) and automatically runs `baton init` in the current directory.
+This installs the `baton` CLI to `~/.baton` (sparse clone, only essential files) and automatically runs `baton init` in the current directory. Pass `--ide` to select specific IDEs instead of auto-detection.
 
 ### Local install
 
@@ -133,7 +137,7 @@ your-project/
 | Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 7 hooks | Automatic |
 | Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
 | Cursor IDE | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
-| Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic in Codex session, or `--ide codex` |
+| Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
