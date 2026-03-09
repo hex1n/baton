@@ -57,6 +57,20 @@ case "$TARGET" in
     *.md|*.MD|*.markdown|*.mdx) exit 0 ;;
 esac
 
+# --- Files outside project directory always allowed ---
+PROJECT_DIR="${JSON_CWD:-$(pwd)}"
+# Canonicalize target to resolve ../ traversals
+TARGET_REAL="$(cd "$(dirname "$TARGET")" 2>/dev/null && pwd)/$(basename "$TARGET")" 2>/dev/null || TARGET_REAL="$TARGET"
+# Canonicalize relative paths
+case "$TARGET_REAL" in
+    /*) ;;  # absolute, keep as-is
+    *) TARGET_REAL="${PROJECT_DIR}/${TARGET_REAL}" ;;
+esac
+case "$TARGET_REAL" in
+    "$PROJECT_DIR"/*) ;;  # inside project, continue checks
+    *) exit 0 ;;          # outside project, allow
+esac
+
 # --- Source shared functions ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 if [ -f "$SCRIPT_DIR/_common.sh" ]; then
