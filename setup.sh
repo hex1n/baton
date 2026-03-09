@@ -9,8 +9,7 @@
 #   2. Lets the user select which IDEs to configure (via --ide / --choose)
 #   3. Creates .baton/ directory with write-lock, phase-guide, workflow
 #   4. Configures IDE-specific hooks and workflow injection for each selected IDE
-#   5. Installs git pre-commit hook as universal safety net
-#   6. Handles v1 → v2 → v3 migration automatically
+#   5. Handles v1 → v2 → v3 migration automatically
 set -eu
 
 usage() {
@@ -411,12 +410,12 @@ if [ "$UNINSTALL" = "1" ]; then
         done
     done
     echo "  ✓ Removed baton skills from all IDE directories"
-    # Clean git pre-commit hook
+    # Clean git pre-commit hook (legacy)
     if [ -f "$PROJECT_DIR/.git/hooks/pre-commit" ] && grep -q 'baton:pre-commit' "$PROJECT_DIR/.git/hooks/pre-commit" 2>/dev/null; then
         if grep -c '.' "$PROJECT_DIR/.git/hooks/pre-commit" | grep -q '^[0-9]' && \
            ! grep -v '^#\|^$\|baton' "$PROJECT_DIR/.git/hooks/pre-commit" | grep -q '.'; then
             rm -f "$PROJECT_DIR/.git/hooks/pre-commit"
-            echo "  ✓ Removed git pre-commit hook"
+            echo "  ✓ Removed legacy git pre-commit hook"
         else
             # Has other content — remove only baton section
             sed -i.bak '/# baton:pre-commit:start/,/# baton:pre-commit:end/d' "$PROJECT_DIR/.git/hooks/pre-commit"
@@ -1106,41 +1105,7 @@ for ide in $IDES; do
     esac
 done
 
-# --- 4. Install git pre-commit hook (universal safety net) ---
-if ! should_skip "pre-commit"; then
-    GIT_DIR=""
-    if git -C "$PROJECT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-        GIT_DIR="$(cd "$PROJECT_DIR" && git rev-parse --git-dir)"
-        # Make absolute if relative
-        case "$GIT_DIR" in
-            /*) ;;
-            *) GIT_DIR="$PROJECT_DIR/$GIT_DIR" ;;
-        esac
-    fi
-    if [ -n "$GIT_DIR" ]; then
-        HOOK_DIR="$GIT_DIR/hooks"
-        mkdir -p "$HOOK_DIR"
-        PRE_COMMIT="$HOOK_DIR/pre-commit"
-        if [ ! -f "$PRE_COMMIT" ]; then
-            cp "$BATON_DIR/.baton/git-hooks/pre-commit" "$PRE_COMMIT"
-            chmod +x "$PRE_COMMIT"
-            echo "  ✓ Installed git pre-commit hook"
-        elif grep -q 'baton:pre-commit' "$PRE_COMMIT" 2>/dev/null; then
-            echo "  ✓ Git pre-commit hook already installed"
-        else
-            # Append baton section to existing hook
-            printf '\n# baton:pre-commit:start\n' >> "$PRE_COMMIT"
-            # Source the baton pre-commit logic
-            cat "$BATON_DIR/.baton/git-hooks/pre-commit" | grep -v '^#!' | grep -v '^# pre-commit' >> "$PRE_COMMIT"
-            printf '# baton:pre-commit:end\n' >> "$PRE_COMMIT"
-            echo "  ✓ Appended baton section to existing git pre-commit hook"
-        fi
-    fi
-else
-    echo "  ⊘ Skipped pre-commit hook"
-fi
-
-# --- 5. Suggest .gitignore entries ---
+# --- 4. Suggest .gitignore entries ---
 GITIGNORE="$PROJECT_DIR/.gitignore"
 if [ -f "$GITIGNORE" ]; then
     if ! grep -q 'plan.md' "$GITIGNORE" 2>/dev/null; then

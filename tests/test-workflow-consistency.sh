@@ -69,15 +69,6 @@ for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
     fi
 done
 
-# pre-commit must also source _common.sh
-PRECOMMIT="$SCRIPT_DIR/../.baton/git-hooks/pre-commit"
-if grep -q '_common\.sh' "$PRECOMMIT"; then
-    echo "OK: pre-commit sources _common.sh"
-else
-    echo "DRIFT: pre-commit does not source _common.sh"
-    FAIL=1
-fi
-
 # No hook should still have SYNCED comments (duplication eliminated)
 echo ""
 echo "Checking no residual SYNCED comments..."
@@ -91,13 +82,6 @@ for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
         echo "OK: $script no SYNCED comments"
     fi
 done
-if grep -q 'SYNCED:' "$PRECOMMIT"; then
-    echo "DRIFT: pre-commit still has SYNCED comment"
-    FAIL=1
-else
-    echo "OK: pre-commit no SYNCED comments"
-fi
-
 # --- Flow line consistency: Scenario A and B must match ---
 echo ""
 echo "Checking Flow line consistency..."

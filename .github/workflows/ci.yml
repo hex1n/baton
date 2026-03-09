@@ -91,13 +91,6 @@ jobs:
       - name: Run multi-IDE tests
         run: bash tests/test-multi-ide.sh
 
-  test-pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run pre-commit tests
-        run: bash tests/test-pre-commit.sh
-
   test-annotation-protocol:
     runs-on: ubuntu-latest
     steps:
