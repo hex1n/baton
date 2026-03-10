@@ -39,16 +39,16 @@ AI proposes complexity level; human confirms.
    - Todolist may be skipped only when: Trivial complexity AND human explicitly says "直接实现" / "implement directly".
    - Decision authority: human only. AI must not self-judge that todolist is unnecessary.
    - Minimum constraints when skipped: BATON:GO still required + only modify plan-listed files + write Retrospective on completion.
-4. Only modify files listed in the plan. Need additions? Propose in plan first (file + reason).
+4. Only modify files in the approved write set. By default, the approved write set is the plan-listed files. During implementation, the implement skill permits narrowly scoped A/B-level additions to be appended to the current todo/write set without replanning; broader additions require updating the plan first.
    - Write set enforcement is advisory: post-write-tracker warns on plan-unlisted writes but cannot block (host hook model limitation). Skill discipline + human review provide the actual enforcement.
 5. Same approach fails 3x → MUST stop and report to human.
    Failure chain definition: same root cause = same chain. Parameter tweaks or minor
    path adjustments do not count as a new approach. Only a fundamentally different
    strategy (different algorithm, different API, different architecture) counts as new.
-6. Discover omission during implementation → MUST stop, update plan.md, wait for human confirmation.
+6. Discover a C/D-level omission during implementation → MUST stop, update plan.md, wait for human confirmation.
 7. Before writing a new plan, archive existing: `mkdir -p plans && mv <plan-file> plans/plan-<date>-<topic>.md`. If paired research file exists, archive alongside with same topic.
 8. When all items complete, append `## Retrospective` to plan.md (what the plan got wrong, what surprised you, what to research differently next time), then remind to archive.
-9. All analysis tasks produce research.md. Baton workflow applies to ALL analysis.
+9. Medium/Large analysis tasks produce research.md. Trivial/Small may inline reasoning in plan.md.
 10. Before entering any phase, check for the corresponding baton skill (baton-research / baton-plan / baton-implement). If available, invoke it first — it contains detailed phase guidance.
 
 ### Evidence Standards
