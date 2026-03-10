@@ -88,6 +88,12 @@ printf '<!-- BATON:GO -->\n' > "$d/plan.md"
 OUTPUT="$(cd "$d" && BATON_BYPASS=1 BATON_TARGET="src/app.ts" bash "$BATON/post-write-tracker.sh" 2>&1 1>/dev/null)" || true
 assert_output_not_contains "$OUTPUT" "not mentioned" "bypass → silent exit"
 
+echo "--- Test 5b: GO + no Todo + unlisted file → still warns (skip-todolist path) ---"
+d="$tmp/pwt6" && mkdir -p "$d"
+printf '<!-- BATON:GO -->\n## Approach\nModify src/app.ts\n' > "$d/plan.md"
+OUTPUT="$(cd "$d" && BATON_TARGET="src/other.ts" bash "$BATON/post-write-tracker.sh" 2>&1 1>/dev/null)" || true
+assert_output_contains "$OUTPUT" "not mentioned" "GO + no Todo + unlisted file → warning"
+
 # ============================================================
 echo ""
 echo "=== subagent-context.sh ==="
