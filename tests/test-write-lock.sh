@@ -14,19 +14,19 @@ trap 'rm -rf $tmp' EXIT
 run_lock() {
     # Run write-lock.sh with BATON_TARGET env var, from the given directory
     local dir="$1" target="$2"
-    (cd "$dir" && BATON_TARGET="$target" sh "$LOCK" < /dev/null 2>/dev/null)
+    (cd "$dir" && BATON_TARGET="$target" bash "$LOCK" < /dev/null 2>/dev/null)
 }
 
 run_lock_stdin() {
     # Run write-lock.sh with stdin JSON, from the given directory
     local dir="$1" json="$2"
-    (cd "$dir" && printf '%s' "$json" | sh "$LOCK" 2>/dev/null)
+    (cd "$dir" && printf '%s' "$json" | bash "$LOCK" 2>/dev/null)
 }
 
 run_lock_stderr() {
     # Run write-lock.sh and capture stderr
     local dir="$1" target="$2"
-    (cd "$dir" && BATON_TARGET="$target" sh "$LOCK" < /dev/null 2>&1 1>/dev/null) || true
+    (cd "$dir" && BATON_TARGET="$target" bash "$LOCK" < /dev/null 2>&1 1>/dev/null) || true
 }
 
 assert_blocked() {
@@ -132,8 +132,8 @@ assert_allowed "$d/src/components" "Button.tsx"
 echo ""
 echo "=== Test 6: No target path → fail-open with warning ==="
 TOTAL=$((TOTAL + 1))
-STDERR="$(cd "$tmp/t1" && sh "$LOCK" < /dev/null 2>&1 1>/dev/null || true)"
-if (cd "$tmp/t1" && sh "$LOCK" < /dev/null 2>/dev/null); then
+STDERR="$(cd "$tmp/t1" && bash "$LOCK" < /dev/null 2>&1 1>/dev/null || true)"
+if (cd "$tmp/t1" && bash "$LOCK" < /dev/null 2>/dev/null); then
     if echo "$STDERR" | grep -q "could not determine target"; then
         echo "  pass: empty target → allowed (fail-open) with warning"
     else
@@ -163,7 +163,7 @@ echo "=== Test 8: BATON_BYPASS=1 skips lock entirely ==="
 d="$tmp/t8" && mkdir -p "$d"
 # No plan.md, normally would block — but bypass allows it
 TOTAL=$((TOTAL + 1))
-if (cd "$d" && BATON_BYPASS=1 sh "$LOCK" < /dev/null 2>/dev/null); then
+if (cd "$d" && BATON_BYPASS=1 bash "$LOCK" < /dev/null 2>/dev/null); then
     echo "  pass: bypass allowed without plan.md (fail-open, no target)"
     PASS=$((PASS + 1))
 else
@@ -172,7 +172,7 @@ else
 fi
 # Verify bypass emits warning to stderr
 TOTAL=$((TOTAL + 1))
-STDERR="$(cd "$d" && BATON_BYPASS=1 BATON_TARGET=src/app.ts sh "$LOCK" < /dev/null 2>&1 1>/dev/null)"
+STDERR="$(cd "$d" && BATON_BYPASS=1 BATON_TARGET=src/app.ts bash "$LOCK" < /dev/null 2>&1 1>/dev/null)"
 if echo "$STDERR" | grep -q "bypassed"; then
     echo "  pass: bypass emits warning to stderr"
     PASS=$((PASS + 1))
@@ -208,7 +208,7 @@ printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/custom-plan.md"
 assert_blocked "$d" "src/app.ts"
 # Custom plan name → allowed (custom-plan.md has GO)
 TOTAL=$((TOTAL + 1))
-if (cd "$d" && BATON_PLAN=custom-plan.md BATON_TARGET=src/app.ts sh "$LOCK" < /dev/null 2>/dev/null); then
+if (cd "$d" && BATON_PLAN=custom-plan.md BATON_TARGET=src/app.ts bash "$LOCK" < /dev/null 2>/dev/null); then
     echo "  pass: BATON_PLAN=custom-plan.md allowed 'src/app.ts'"
     PASS=$((PASS + 1))
 else
@@ -218,7 +218,7 @@ fi
 # Custom plan without GO → blocked
 echo "# Custom plan" > "$d/other-plan.md"
 TOTAL=$((TOTAL + 1))
-if (cd "$d" && BATON_PLAN=other-plan.md BATON_TARGET=src/app.ts sh "$LOCK" < /dev/null 2>/dev/null); then
+if (cd "$d" && BATON_PLAN=other-plan.md BATON_TARGET=src/app.ts bash "$LOCK" < /dev/null 2>/dev/null); then
     echo "  FAIL: custom plan without GO should block"
     FAIL=$((FAIL + 1))
 else
@@ -242,7 +242,7 @@ echo "# Plan" > "$d/plan.md"
 # BATON_TARGET takes precedence over stdin
 TOTAL=$((TOTAL + 1))
 JSON='{"tool_input":{"file_path":"allowed.md","content":"hello"}}'
-if (cd "$d" && printf '%s' "$JSON" | BATON_TARGET="src/blocked.ts" sh "$LOCK" 2>/dev/null); then
+if (cd "$d" && printf '%s' "$JSON" | BATON_TARGET="src/blocked.ts" bash "$LOCK" 2>/dev/null); then
     echo "  FAIL: BATON_TARGET should take precedence over stdin"
     FAIL=$((FAIL + 1))
 else
@@ -290,7 +290,7 @@ printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/project/plan.md"
 # stdin JSON with cwd pointing to project/src → should find plan.md in project/
 TOTAL=$((TOTAL + 1))
 JSON="{\"tool_input\":{\"file_path\":\"src/app.ts\"},\"cwd\":\"$d/project/src\"}"
-if (cd "$tmp" && printf '%s' "$JSON" | sh "$LOCK" 2>/dev/null); then
+if (cd "$tmp" && printf '%s' "$JSON" | bash "$LOCK" 2>/dev/null); then
     echo "  pass: JSON cwd field used for plan discovery"
     PASS=$((PASS + 1))
 else
@@ -313,7 +313,7 @@ if [ -n "$JQ_REAL" ]; then
 else
     CLEAN_PATH="$PATH"
 fi
-if (cd "$d" && PATH="$CLEAN_PATH" printf '%s' "$JSON" | sh "$LOCK" 2>/dev/null); then
+if (cd "$d" && PATH="$CLEAN_PATH" printf '%s' "$JSON" | bash "$LOCK" 2>/dev/null); then
     echo "  pass: awk fallback parsed stdin JSON correctly"
     PASS=$((PASS + 1))
 else

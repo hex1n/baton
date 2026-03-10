@@ -487,6 +487,50 @@ else
     FAIL=1
 fi
 
+# --- Protocol drift guards (prevent re-introduction of fixed wording) ---
+echo ""
+echo "Checking protocol drift guards..."
+
+# workflow.md must NOT contain README.md (was polluting slim workflow)
+if grep -q 'README\.md' "$SLIM"; then
+    echo "DRIFT: workflow.md contains 'README.md' — keep documentation references out of slim protocol"
+    FAIL=1
+else
+    echo "OK: workflow.md does not reference README.md"
+fi
+
+# workflow.md must NOT contain Document Authority (meta-governance in slim protocol)
+if grep -q 'Document Authority' "$SLIM"; then
+    echo "DRIFT: workflow.md contains 'Document Authority' — meta-governance belongs in workflow-full.md"
+    FAIL=1
+else
+    echo "OK: workflow.md does not contain Document Authority"
+fi
+
+# workflow.md must NOT contain old research.md rule
+if grep -q 'All analysis tasks produce research\.md' "$SLIM"; then
+    echo "DRIFT: workflow.md contains old rule 'All analysis tasks produce research.md' — should be Medium/Large only"
+    FAIL=1
+else
+    echo "OK: workflow.md uses correct research.md scoping"
+fi
+
+# workflow.md MUST contain "approved write set"
+if grep -q 'approved write set' "$SLIM"; then
+    echo "OK: workflow.md contains 'approved write set'"
+else
+    echo "DRIFT: workflow.md missing 'approved write set' — was changed to vague wording"
+    FAIL=1
+fi
+
+# workflow.md omission rule MUST contain "C/D-level"
+if grep -q 'C/D-level' "$SLIM"; then
+    echo "OK: workflow.md omission rule scoped to C/D-level"
+else
+    echo "DRIFT: workflow.md omission rule missing 'C/D-level' scope"
+    FAIL=1
+fi
+
 if [ "$FAIL" -eq 1 ]; then
     echo ""
     echo "FAILED: consistency check detected drift"

@@ -38,7 +38,7 @@ AI proposes complexity level; human confirms.
 3. Todolist required before implementation. Append `## Todo` only after human says "generate todolist".
    - Todolist may be skipped only when: Trivial complexity AND human explicitly says "直接实现" / "implement directly".
    - Decision authority: human only. AI must not self-judge that todolist is unnecessary.
-   - Minimum constraints when skipped: BATON:GO still required + only modify plan-listed files + write Retrospective on completion.
+   - Minimum constraints when skipped: BATON:GO still required + only modify plan-listed files + write Retrospective on completion. A/B-level additions (rule 4) require a todolist to append to; they do not apply when todolist is skipped.
 4. Only modify files in the approved write set. By default, the approved write set is the plan-listed files. During implementation, the implement skill permits narrowly scoped A/B-level additions to be appended to the current todo/write set without replanning; broader additions require updating the plan first.
    - Write set enforcement is advisory: post-write-tracker warns on plan-unlisted writes but cannot block (host hook model limitation). Skill discipline + human review provide the actual enforcement.
 5. Same approach fails 3x → MUST stop and report to human.
@@ -81,3 +81,4 @@ Not all rules have technical enforcement. Know the difference:
 - **Hook-enforced**: BATON:GO gate (write-lock.sh blocks source writes without GO). This is a hard technical gate.
 - **Advisory**: Todolist existence (phase-guide detects AWAITING_TODO state, warns but does not block). Write set scope (post-write-tracker warns on plan-unlisted writes, cannot block).
 - **Skill-disciplined**: Unexpected discovery stop, 3-failure stop, write set adherence. These rely on skill Iron Laws and human review, not hooks.
+- **Fallback guidance** is intentionally more conservative than skill-guided execution. Without phase-specific skill discipline, stricter defaults are safer.

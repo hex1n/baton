@@ -14,7 +14,7 @@ trap 'rm -rf $tmp' EXIT
 run_guide() {
     # Run phase-guide.sh from given directory, capture stderr (guidance output)
     local dir="$1"
-    (cd "$dir" && sh "$GUIDE" 2>&1 1>/dev/null)
+    (cd "$dir" && bash "$GUIDE" 2>&1 1>/dev/null)
 }
 
 assert_output_contains() {
@@ -49,7 +49,7 @@ assert_output_not_contains() {
 assert_exit_zero() {
     local dir="$1" desc="$2"
     TOTAL=$((TOTAL + 1))
-    if (cd "$dir" && sh "$GUIDE" 2>/dev/null); then
+    if (cd "$dir" && bash "$GUIDE" 2>/dev/null); then
         echo "  pass: $desc"
         PASS=$((PASS + 1))
     else
@@ -165,7 +165,7 @@ EOF
 assert_output_contains "$d" "RESEARCH" "default plan name → RESEARCH (no plan.md)"
 # Custom plan → IMPLEMENT
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && BATON_PLAN=custom.md sh "$GUIDE" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d" && BATON_PLAN=custom.md bash "$GUIDE" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "IMPLEMENT"; then
     echo "  pass: BATON_PLAN=custom.md → IMPLEMENT guidance"
     PASS=$((PASS + 1))

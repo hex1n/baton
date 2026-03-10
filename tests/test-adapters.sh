@@ -28,7 +28,7 @@ d="$(setup_cursor t1)"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)"
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)"
 if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
     echo "  pass: cursor adapter returns allow when BATON:GO present"
     PASS=$((PASS + 1))
@@ -44,7 +44,7 @@ d="$(setup_cursor t2)"
 echo "# Plan" > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
     echo "  pass: cursor adapter returns deny when no BATON:GO"
     PASS=$((PASS + 1))
@@ -59,7 +59,7 @@ echo "=== Test 3: Cursor adapter — no plan → denied ==="
 d="$(setup_cursor t3)"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
     echo "  pass: cursor adapter blocks when no plan"
     PASS=$((PASS + 1))

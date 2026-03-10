@@ -36,7 +36,7 @@ d="$(setup_dir t1 adapter-cursor.sh)"
 echo "<!-- BATON:GO -->" > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
     echo "  pass: returns {\"decision\":\"allow\"}"
     PASS=$((PASS + 1))
@@ -51,7 +51,7 @@ d="$(setup_dir t2 adapter-cursor.sh)"
 echo "# Plan" > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | sh "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
     echo "  pass: returns {\"decision\":\"deny\"}"
     PASS=$((PASS + 1))

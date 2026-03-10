@@ -14,14 +14,14 @@ trap 'rm -rf $tmp' EXIT
 run_guard() {
     # Run stop-guard.sh from given directory, capture stderr (output)
     local dir="$1"
-    (cd "$dir" && sh "$GUARD" 2>&1 1>/dev/null)
+    (cd "$dir" && bash "$GUARD" 2>&1 1>/dev/null)
 }
 
 run_guard_exit() {
     # Run stop-guard.sh and return exit code
     local dir="$1"
     local code
-    (cd "$dir" && sh "$GUARD" 2>/dev/null)
+    (cd "$dir" && bash "$GUARD" 2>/dev/null)
     code=$?
     echo "$code"
 }
@@ -29,7 +29,7 @@ run_guard_exit() {
 assert_exit_zero() {
     local dir="$1" desc="$2"
     TOTAL=$((TOTAL + 1))
-    if (cd "$dir" && sh "$GUARD" 2>/dev/null); then
+    if (cd "$dir" && bash "$GUARD" 2>/dev/null); then
         echo "  pass: $desc"
         PASS=$((PASS + 1))
     else
@@ -147,7 +147,7 @@ EOF
 assert_output_empty "$d" "default plan.md not found → silent"
 # Custom plan → shows remaining
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && BATON_PLAN=custom-plan.md sh "$GUARD" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d" && BATON_PLAN=custom-plan.md bash "$GUARD" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "1 remaining"; then
     echo "  pass: BATON_PLAN=custom-plan.md → detects 1 remaining"
     PASS=$((PASS + 1))
