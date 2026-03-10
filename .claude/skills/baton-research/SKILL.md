@@ -1,4 +1,5 @@
 ---
+normative-status: This skill is the authoritative specification for the RESEARCH phase. workflow.md provides the overview; this file is the definitive reference for research execution.
 name: baton-research
 description: >
   Use for initial code research on Medium/Large tasks: cross-module behavior

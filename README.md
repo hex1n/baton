@@ -37,7 +37,7 @@ For each piece of feedback:
 ### The Write Lock
 
 - **Blocks** source code writes when `plan.md` doesn't exist or lacks `<!-- BATON:GO -->`
-- **Allows** markdown files (*.md, *.mdx) at all times — research and planning are never blocked
+- **Allows** markdown files (*.md, *.mdx, *.markdown) at all times — research and planning are never blocked
 - **Unlocks** when `plan.md` contains `<!-- BATON:GO -->` anywhere in the file
 - **Re-locks** if you remove `<!-- BATON:GO -->` (e.g., to go back to annotation cycle)
 - **Custom plan file**: `BATON_PLAN=design.md` to use a different plan file name
@@ -134,13 +134,15 @@ your-project/
 
 | IDE | Protection Level | What You Get | Setup |
 |-----|-----------------|--------------|-------|
-| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 7 hooks | Automatic |
+| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 8 hooks | Automatic |
 | Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
 | Cursor IDE | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
 | Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
+>
+> **Codex note**: Baton provides workflow rules via AGENTS.md but has **no technical write-lock enforcement** in Codex. Codex sessions rely on AI reading and following the protocol — there is no hook to block unauthorized writes. For full technical protection, use Claude Code, Factory AI, or Cursor.
 
 ## Suggested .gitignore
 
@@ -164,7 +166,7 @@ Or manually: delete `.baton/`, remove baton-* skill directories from each IDE's 
 
 Boris Tane's workflow succeeds because the human stays in the loop at every critical point. Baton preserves that:
 
-- **No state machine** — you know what phase you're in
+- **File-derived phase detection** — your current phase is determined by file state (plan existence, BATON:GO marker, todo completion), not stored anywhere
 - **Minimal CLI** — `baton init` / `baton update`, then just files and hooks
 - **~400 tokens total overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js

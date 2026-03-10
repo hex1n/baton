@@ -1,4 +1,5 @@
 ---
+normative-status: This skill is the authoritative specification for the PLAN phase. workflow.md provides the overview; this file is the definitive reference for plan creation and annotation processing.
 name: baton-plan
 description: >
   This skill MUST be used when the user asks to "plan", "design", "propose",

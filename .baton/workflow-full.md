@@ -36,7 +36,11 @@ AI proposes complexity level; human confirms.
 1. Source code writes require `<!-- BATON:GO -->` in plan.md. Markdown is always writable. Remove `<!-- BATON:GO -->` to roll back to annotation cycle.
 2. MUST NOT add BATON:GO yourself. Only the human places it.
 3. Todolist required before implementation. Append `## Todo` only after human says "generate todolist".
+   - Todolist may be skipped only when: Trivial complexity AND human explicitly says "直接实现" / "implement directly".
+   - Decision authority: human only. AI must not self-judge that todolist is unnecessary.
+   - Minimum constraints when skipped: BATON:GO still required + only modify plan-listed files + write Retrospective on completion.
 4. Only modify files listed in the plan. Need additions? Propose in plan first (file + reason).
+   - Write set enforcement is advisory: post-write-tracker warns on plan-unlisted writes but cannot block (host hook model limitation). Skill discipline + human review provide the actual enforcement.
 5. Same approach fails 3x → MUST stop and report to human.
    Failure chain definition: same root cause = same chain. Parameter tweaks or minor
    path adjustments do not count as a new approach. Only a fundamentally different
@@ -103,7 +107,8 @@ When archiving, preserve Lessons Learned and Annotation Log (long-term reference
 Use git worktrees for parallel sessions. Hooks auto-discover plan files; set `BATON_PLAN` to override if multiple plans exist.
 
 ### Phase Guidance
-Four phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — have detailed execution guides
+Four primary phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — plus two system states
+(AWAITING_TODO, ARCHIVE) detected by phase-guide. Detailed execution guides are
 available as skills (baton-research, baton-plan, baton-implement). Invoke the
 corresponding skill when entering a phase for full methodology and annotation protocol.
 If skills are not available, the SessionStart hook injects phase-specific guidance.

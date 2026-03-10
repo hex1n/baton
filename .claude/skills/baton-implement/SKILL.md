@@ -1,4 +1,5 @@
 ---
+normative-status: This skill is the authoritative specification for the IMPLEMENT phase. workflow.md provides the overview; this file is the definitive reference for implementation execution.
 name: baton-implement
 description: >
   This skill MUST be used when plan.md contains BATON:GO and the user says
@@ -189,11 +190,10 @@ Append `## Lessons Learned` to plan.md — what worked, what didn't, what to try
 
 ## Action Boundaries Reminder
 
-These rules are enforced by hooks and cannot be bypassed:
+These rules have different enforcement levels:
 
-1. Source code writes require `<!-- BATON:GO -->` in plan.md (write-lock.sh)
-2. Only modify files in the approved write set (plan files + Unexpected Discoveries A/B scope)
-3. Same approach fails 3x → MUST stop and report.
-   Same root cause = same chain; only a fundamentally different strategy counts as new.
-4. Discover scope omission beyond A/B → MUST stop, update plan, wait for confirmation
-5. Markdown is always writable (research.md, plan.md updates are never blocked)
+1. **Hook-enforced**: Source code writes require `<!-- BATON:GO -->` in plan.md (write-lock.sh blocks without GO)
+2. **Advisory**: Only modify files in the approved write set — post-write-tracker warns on plan-unlisted writes but cannot block (host hook model limitation)
+3. **Skill-disciplined**: Same approach fails 3x → MUST stop and report. Same root cause = same chain; only a fundamentally different strategy counts as new.
+4. **Skill-disciplined**: Discover scope omission beyond A/B → MUST stop, update plan, wait for confirmation
+5. **Hook-enforced**: Markdown is always writable (research.md, plan.md updates are never blocked)
