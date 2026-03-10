@@ -75,22 +75,9 @@ Blind compliance is a failure mode — disagree with evidence when needed.
 ### Session Handoff
 When stopping mid-work, append `## Lessons Learned` to plan.md — record what worked, what didn't, what to try next, so the next session starts with context, not from scratch.
 When archiving, preserve Lessons Learned and Annotation Log (long-term reference).
-Use git worktrees for parallel sessions. Hooks auto-discover plan files; set `BATON_PLAN` to override if multiple plans exist.
 
 ### Enforcement Boundaries
 Not all rules have technical enforcement. Know the difference:
 - **Hook-enforced**: BATON:GO gate (write-lock.sh blocks source writes without GO). This is a hard technical gate.
 - **Advisory**: Todolist existence (phase-guide detects AWAITING_TODO state, warns but does not block). Write set scope (post-write-tracker warns on plan-unlisted writes, cannot block).
 - **Skill-disciplined**: Unexpected discovery stop, 3-failure stop, write set adherence. These rely on skill Iron Laws and human review, not hooks.
-
-### Phase Guidance
-Four primary phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — plus two system states
-(AWAITING_TODO, ARCHIVE) detected by phase-guide. Detailed execution guides are
-available as skills (baton-research, baton-plan, baton-implement). Invoke the
-corresponding skill when entering a phase for full methodology and annotation protocol.
-
-### Document Authority
-- **workflow.md** — foundational protocol, always loaded (~400 tokens). The core contract.
-- **SKILL.md files** — normative phase specifications. Extend workflow.md with detailed methodology and Iron Laws. Authoritative for their respective phases.
-- **workflow-full.md** — extended reference. Fallback when skills are unavailable.
-- **README.md** — public introduction. Explanatory, not normative.

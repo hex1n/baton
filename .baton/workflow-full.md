@@ -104,7 +104,6 @@ AI: ⚠️ Project has 0 Redis dependencies (package.json:1-30).
 ### Session Handoff
 When stopping mid-work, append `## Lessons Learned` to plan.md — record what worked, what didn't, what to try next, so the next session starts with context, not from scratch.
 When archiving, preserve Lessons Learned and Annotation Log (long-term reference).
-Use git worktrees for parallel sessions. Hooks auto-discover plan files; set `BATON_PLAN` to override if multiple plans exist.
 
 ### Phase Guidance
 Four primary phases — RESEARCH, PLAN, ANNOTATION, IMPLEMENT — plus two system states
@@ -113,6 +112,12 @@ available as skills (baton-research, baton-plan, baton-implement). Invoke the
 corresponding skill when entering a phase for full methodology and annotation protocol.
 If skills are not available, the SessionStart hook injects phase-specific guidance.
 This file contains cross-phase principles plus the detailed phase guides below.
+
+### Document Authority
+- **workflow.md** — foundational protocol, always loaded (~400 tokens). The core contract.
+- **SKILL.md files** — normative phase specifications. Extend workflow.md with detailed methodology and Iron Laws. Authoritative for their respective phases.
+- **workflow-full.md** — extended reference. Fallback when skills are unavailable.
+- **README.md** — public introduction. Explanatory, not normative.
 
 ---
 
