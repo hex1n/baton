@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # post-write-tracker.sh — Advisory: warn when modified files aren't in the plan
 # Version: 1.0
 #

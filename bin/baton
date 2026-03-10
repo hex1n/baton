@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # baton — CLI entry point for baton plan-first workflow
 # Version: 1.0
 set -eu
@@ -64,7 +64,8 @@ doctor() {
 
     # Scripts
     echo "  Scripts:"
-    for _script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh; do
+    for _script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
+                   post-write-tracker.sh subagent-context.sh completion-check.sh pre-compact.sh; do
         if [ -f "$_dir/.baton/hooks/$_script" ]; then
             _pv="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/$_script" 2>/dev/null)"
             _sv=""

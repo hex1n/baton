@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # pre-compact.sh — Preserve key context before context compression
 # Version: 1.0
 #

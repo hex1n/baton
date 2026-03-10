@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # stop-guard.sh — Advisory: remind about incomplete tasks when stopping
 # Version: 3.0
 #

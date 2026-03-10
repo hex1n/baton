@@ -817,6 +817,7 @@ configure_claude() {
         MERGE_FAILED=0
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SessionStart" "bash .baton/hooks/phase-guide.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/phase-guide.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreToolUse" "bash .baton/hooks/write-lock.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"bash .baton/hooks/write-lock.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreToolUse" "bash .baton/hooks/bash-guard.sh" '{"matcher":"Bash","hooks":[{"type":"command","command":"bash .baton/hooks/bash-guard.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PostToolUse" "bash .baton/hooks/post-write-tracker.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile","hooks":[{"type":"command","command":"bash .baton/hooks/post-write-tracker.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "Stop" "bash .baton/hooks/stop-guard.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/stop-guard.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SubagentStart" "bash .baton/hooks/subagent-context.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/subagent-context.sh"}]}'
@@ -845,6 +846,15 @@ configure_claude() {
           {
             "type": "command",
             "command": "bash .baton/hooks/write-lock.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/bash-guard.sh"
           }
         ]
       }
@@ -907,7 +917,7 @@ configure_claude() {
   }
 }
 JSON
-        echo "  ✓ Created .claude/settings.json with 7 hooks (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact)"
+        echo "  ✓ Created .claude/settings.json with 8 hooks (SessionStart, PreToolUse×2, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact)"
     fi
     # Inject workflow reference into CLAUDE.md (slim — phase-guide provides details)
     CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
@@ -967,6 +977,11 @@ configure_cursor() {
         "command": "bash .baton/adapters/adapter-cursor.sh",
         "matcher": "Write",
         "timeout": 10
+      },
+      {
+        "command": "bash .baton/hooks/bash-guard.sh",
+        "matcher": "Bash",
+        "timeout": 10
       }
     ],
     "subagentStart": [
@@ -984,13 +999,14 @@ configure_cursor() {
   }
 }
 HOOKJSON
-        echo "  ✓ Created .cursor/hooks.json (4 hooks)"
+        echo "  ✓ Created .cursor/hooks.json (5 hooks)"
     else
         MERGE_CHANGED=0
         MERGE_FAILED=0
         run_merge_and_record ensure_json_default "$PROJECT_DIR/.cursor/hooks.json" "version" '1'
         run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "sessionStart" "command" "bash .baton/hooks/phase-guide.sh" '{"command":"bash .baton/hooks/phase-guide.sh","timeout":10}'
         run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "preToolUse" "command" "bash .baton/adapters/adapter-cursor.sh" '{"command":"bash .baton/adapters/adapter-cursor.sh","matcher":"Write","timeout":10}'
+        run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "preToolUse" "command" "bash .baton/hooks/bash-guard.sh" '{"command":"bash .baton/hooks/bash-guard.sh","matcher":"Bash","timeout":10}'
         run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "subagentStart" "command" "bash .baton/hooks/subagent-context.sh" '{"command":"bash .baton/hooks/subagent-context.sh","timeout":10}'
         run_merge_and_record merge_flat_hook_entry "$PROJECT_DIR/.cursor/hooks.json" "preCompact" "command" "bash .baton/hooks/pre-compact.sh" '{"command":"bash .baton/hooks/pre-compact.sh","timeout":10}'
         report_merge_result ".cursor/hooks.json"
@@ -1076,6 +1092,10 @@ install_versioned_script "write-lock.sh"
 install_versioned_script "phase-guide.sh"
 install_versioned_script "stop-guard.sh"
 install_versioned_script "bash-guard.sh"
+install_versioned_script "post-write-tracker.sh"
+install_versioned_script "subagent-context.sh"
+install_versioned_script "completion-check.sh"
+install_versioned_script "pre-compact.sh"
 
 # --- 2. Install workflow files ---
 if [ "$SELF_INSTALL" = "1" ]; then

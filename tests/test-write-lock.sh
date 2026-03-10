@@ -83,6 +83,13 @@ assert_allowed "$d" "notes.MD"
 
 # ============================================================
 echo ""
+echo "=== Test 1b: Non-existent parent directory → still blocked ==="
+d="$tmp/t1b" && mkdir -p "$d"
+# Do NOT create src/ — target's parent dir does not exist
+assert_blocked "$d" "src/app.ts"
+
+# ============================================================
+echo ""
 echo "=== Test 2: plan.md exists, no GO marker → block source ==="
 d="$tmp/t2" && mkdir -p "$d"
 echo "# Plan" > "$d/plan.md"

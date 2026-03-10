@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # subagent-context.sh — Inject plan context when a subagent starts
 # Version: 1.0
 #

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # phase-guide.sh — Detect current phase, output phase-specific guidance
 # Version: 5.0
 # Hook: SessionStart

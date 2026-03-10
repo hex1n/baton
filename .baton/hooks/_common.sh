@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # _common.sh — shared functions for baton hooks
 # Sourced by all hooks: . "$SCRIPT_DIR/_common.sh"
 

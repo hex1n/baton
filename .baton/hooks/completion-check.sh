@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # completion-check.sh — Block task completion until retrospective is written
 # Version: 1.0
 #

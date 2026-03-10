@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # bash-guard.sh — Advisory: warn about potential file writes when plan locked
 # Version: 2.0
 # Hook: PreToolUse (Bash)

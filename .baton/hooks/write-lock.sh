@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # write-lock.sh — Block source code writes until plan file contains <!-- BATON:GO -->
 # Version: 3.0
 #
@@ -60,7 +60,12 @@ esac
 # --- Files outside project directory always allowed ---
 PROJECT_DIR="${JSON_CWD:-$(pwd)}"
 # Canonicalize target to resolve ../ traversals
-TARGET_REAL="$(cd "$(dirname "$TARGET")" 2>/dev/null && pwd)/$(basename "$TARGET")" 2>/dev/null || TARGET_REAL="$TARGET"
+# realpath -m handles non-existent parent dirs (GNU); readlink -f as fallback (macOS)
+TARGET_REAL="$(realpath -m "$TARGET" 2>/dev/null || readlink -f "$TARGET" 2>/dev/null)" || true
+if [ -z "$TARGET_REAL" ]; then
+    # Manual fallback: cd into parent + pwd + basename
+    TARGET_REAL="$(cd "$(dirname "$TARGET")" 2>/dev/null && pwd)/$(basename "$TARGET")" 2>/dev/null || TARGET_REAL="$TARGET"
+fi
 # Canonicalize relative paths
 case "$TARGET_REAL" in
     /*) ;;  # absolute, keep as-is
