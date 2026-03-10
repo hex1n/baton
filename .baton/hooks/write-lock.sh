@@ -63,8 +63,14 @@ PROJECT_DIR="${JSON_CWD:-$(pwd)}"
 # realpath -m handles non-existent parent dirs (GNU); readlink -f as fallback (macOS)
 TARGET_REAL="$(realpath -m "$TARGET" 2>/dev/null || readlink -f "$TARGET" 2>/dev/null)" || true
 if [ -z "$TARGET_REAL" ]; then
-    # Manual fallback: cd into parent + pwd + basename
-    TARGET_REAL="$(cd "$(dirname "$TARGET")" 2>/dev/null && pwd)/$(basename "$TARGET")" 2>/dev/null || TARGET_REAL="$TARGET"
+    # Manual fallback for path canonicalization
+    _parent="$(dirname "$TARGET")"
+    if [ -d "$_parent" ]; then
+        TARGET_REAL="$(cd "$_parent" 2>/dev/null && pwd)/$(basename "$TARGET")"
+    else
+        # Parent doesn't exist — resolve relative to project dir
+        TARGET_REAL="${PROJECT_DIR}/${TARGET}"
+    fi
 fi
 # Canonicalize relative paths
 case "$TARGET_REAL" in
