@@ -57,6 +57,7 @@ assert_contains "$README" '| Claude Code |' "README Claude Code row"
 assert_contains "$README" '| Factory AI |' "README Factory AI row"
 assert_contains "$README" '| Cursor IDE |' "README Cursor IDE row"
 assert_contains "$README" '| Codex |' "README Codex row"
+assert_contains "$README" 'Experimental `SessionStart` + `Stop` hooks (best-effort)' "README Codex hook wording"
 
 # README: removed IDEs absent
 assert_not_contains "$README" '| Windsurf' "README no Windsurf row"
@@ -64,10 +65,13 @@ assert_not_contains "$README" '| Kiro' "README no Kiro row"
 assert_not_contains "$README" '| Cline' "README no Cline row"
 assert_not_contains "$README" '| Augment' "README no Augment row"
 assert_not_contains "$README" '| Copilot' "README no Copilot row"
+assert_not_contains "$README" '(no hooks)' "README no stale Codex no-hooks wording"
 
 # Legacy research: maintenance rule and updated scope note
 assert_contains "$LEGACY_RESEARCH" '维护规则：支持 IDE 的公开表述应先更新 [IDE Capability Matrix](./ide-capability-matrix.md)' "legacy research maintenance rule"
 assert_contains "$LEGACY_RESEARCH" 'Baton supports 4 IDEs' "legacy research 4-IDE scope note"
+assert_contains "$MATRIX" '2/8 experimental' "matrix Codex experimental hooks"
+assert_contains "$MATRIX" 'SessionStart' "matrix SessionStart note"
 
 # Setup: ide_summary entries for 4 IDEs
 assert_contains "$SETUP" 'Cursor IDE hooks + adapter' "setup Cursor IDE summary"

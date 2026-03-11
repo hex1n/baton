@@ -7,6 +7,7 @@ SETUP="$SCRIPT_DIR/../setup.sh"
 PASS=0
 FAIL=0
 TOTAL=0
+ORIGINAL_HOME="${HOME:-}"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
@@ -14,13 +15,21 @@ trap 'rm -rf $tmp' EXIT
 run_setup() {
     (
         unset CODEX_SANDBOX CODEX_THREAD_ID CODEX_SANDBOX_NETWORK_DISABLED BATON_IDE
-        bash "$SETUP" "$@"
+        _test_home="${BATON_TEST_HOME:-$HOME}"
+        if [ "$_test_home" = "$ORIGINAL_HOME" ]; then
+            _test_home="$tmp/home-default"
+        fi
+        mkdir -p "$_test_home"
+        HOME="$_test_home" bash "$SETUP" "$@"
     )
 }
 
 run_setup_as_codex() {
     (
         unset BATON_IDE
+        _codex_home="${BATON_TEST_CODEX_HOME:-$tmp/codex-home-default}"
+        mkdir -p "$_codex_home"
+        HOME="$_codex_home" \
         CODEX_THREAD_ID="test-codex-thread" \
         CODEX_SANDBOX="seatbelt" \
         CODEX_SANDBOX_NETWORK_DISABLED="1" \
@@ -207,7 +216,9 @@ assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
 echo ""
 echo "=== Test 2c: Explicit --ide codex bootstraps Codex outside session ==="
 d="$tmp/t2c" && mkdir -p "$d"
-OUTPUT="$(run_setup --ide codex "$d" 2>&1)"
+FAKE_HOME="$tmp/fakehome-2c"
+mkdir -p "$FAKE_HOME"
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: claude"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (--ide)"
 assert_file_exists "$d/AGENTS.md"
@@ -225,7 +236,9 @@ fi
 echo ""
 echo "=== Test 2c2: .agents/ dir without AGENTS.md → auto-detect factory + codex ==="
 d="$tmp/t2c2" && mkdir -p "$d/.agents"
-OUTPUT="$(run_setup "$d" 2>&1)"
+FAKE_HOME="$tmp/fakehome-2c2"
+mkdir -p "$FAKE_HOME"
+OUTPUT="$(HOME="$FAKE_HOME" run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "factory"
 assert_output_contains "$OUTPUT" "codex"
 assert_file_exists "$d/AGENTS.md"
@@ -254,7 +267,9 @@ echo ""
 echo "=== Test 2e: --choose installs only the chosen IDEs ==="
 d="$tmp/t2e" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)
-OUTPUT="$(printf '2\n' | BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
+FAKE_HOME="$tmp/fakehome-2e"
+mkdir -p "$FAKE_HOME"
+OUTPUT="$(printf '2\n' | HOME="$FAKE_HOME" BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "1. claude - full protection"
 assert_output_contains "$OUTPUT" "2. codex - session hooks"
@@ -307,7 +322,9 @@ echo ""
 echo "=== Test 2h: --choose accepts compact numeric selections ==="
 d="$tmp/t2h" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)
-OUTPUT="$(printf '32\n' | BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
+FAKE_HOME="$tmp/fakehome-2h"
+mkdir -p "$FAKE_HOME"
+OUTPUT="$(printf '32\n' | HOME="$FAKE_HOME" BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Selected IDEs: cursor codex (--choose)"
 assert_file_exists "$d/.cursor/hooks.json"
 assert_file_exists "$d/AGENTS.md"
@@ -545,9 +562,11 @@ fi
 echo ""
 echo "=== Test 17b: Codex uninstall removes AGENTS import ==="
 d="$tmp/t17b" && mkdir -p "$d"
-run_setup_as_codex "$d" > /dev/null 2>&1
+FAKE_HOME="$tmp/fakehome-17b"
+mkdir -p "$FAKE_HOME"
+BATON_TEST_CODEX_HOME="$FAKE_HOME" run_setup_as_codex "$d" > /dev/null 2>&1
 assert_file_exists "$d/AGENTS.md"
-OUTPUT="$(run_setup --uninstall "$d" 2>&1)"
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Removed @.baton/workflow"
 TOTAL=$((TOTAL + 1))
 if [ -f "$d/AGENTS.md" ] && ! grep -qE '@\.baton/workflow(-full)?\.md' "$d/AGENTS.md"; then
@@ -677,12 +696,14 @@ fi
 echo ""
 echo "=== Test: self-install bootstraps .agents/skills fallback ==="
 d="$tmp/tself" && mkdir -p "$d/.claude"
+FAKE_HOME="$tmp/fakehome-tself"
+mkdir -p "$FAKE_HOME"
 cp "$SETUP" "$d/setup.sh"
 cp -R "$SCRIPT_DIR/../.baton" "$d/.baton"
 cp -R "$SCRIPT_DIR/../.claude/skills" "$d/.claude/skills"
 OUTPUT="$(
     cd "$d" && \
-    BATON_SKIP=pre-commit bash ./setup.sh --ide codex 2>&1
+    HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --ide codex 2>&1
 )"
 assert_output_contains "$OUTPUT" "Installed baton skills to .agents/ fallback (self-install)"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
@@ -702,12 +723,14 @@ fi
 echo ""
 echo "=== Test: self-install bootstraps selected non-Codex IDE skill directories ==="
 d="$tmp/tself-ides" && mkdir -p "$d/.claude"
+FAKE_HOME="$tmp/fakehome-tself-ides"
+mkdir -p "$FAKE_HOME"
 cp "$SETUP" "$d/setup.sh"
 cp -R "$SCRIPT_DIR/../.baton" "$d/.baton"
 cp -R "$SCRIPT_DIR/../.claude/skills" "$d/.claude/skills"
 OUTPUT="$(
     cd "$d" && \
-    BATON_SKIP=pre-commit bash ./setup.sh --ide cursor,codex 2>&1
+    HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --ide cursor,codex 2>&1
 )"
 assert_output_contains "$OUTPUT" "Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
@@ -719,16 +742,18 @@ assert_file_exists "$d/AGENTS.md"
 echo ""
 echo "=== Test: self-install uninstall preserves source files but removes fallback skills ==="
 d="$tmp/tself-uninstall" && mkdir -p "$d/.claude"
+FAKE_HOME="$tmp/fakehome-tself-uninstall"
+mkdir -p "$FAKE_HOME"
 cp "$SETUP" "$d/setup.sh"
 cp -R "$SCRIPT_DIR/../.baton" "$d/.baton"
 cp -R "$SCRIPT_DIR/../.claude/skills" "$d/.claude/skills"
 (
     cd "$d" && \
-    BATON_SKIP=pre-commit bash ./setup.sh --ide codex > /dev/null 2>&1
+    HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --ide codex > /dev/null 2>&1
 )
 OUTPUT="$(
     cd "$d" && \
-    BATON_SKIP=pre-commit bash ./setup.sh --uninstall 2>&1
+    HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --uninstall 2>&1
 )"
 assert_output_contains "$OUTPUT" "Preserved source .baton/ directory (self-install)"
 assert_file_exists "$d/.baton/hooks/write-lock.sh"

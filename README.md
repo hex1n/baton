@@ -121,7 +121,7 @@ your-project/
 │   ├── phase-guide.sh      ← Session start: detects phase, prompts skill or extracts fallback
 │   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
 │   ├── bash-guard.sh       ← Advisory bash detection
-│   └── adapters/           ← Cross-IDE adapters (Cursor)
+│   └── adapters/           ← Cross-IDE adapters (Cursor, Codex)
 ├── .claude/
 │   ├── skills/              ← Phase methodology (baton-research, baton-plan, baton-implement)
 │   └── settings.json        ← Hook configuration
@@ -137,12 +137,12 @@ your-project/
 | Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 8 hooks | Automatic |
 | Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
 | Cursor IDE | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
-| Codex | Rules guidance | Workflow via generated `AGENTS.md` + generated `.agents/skills/` (no hooks) | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
+| Codex | Rules guidance | Experimental `SessionStart` + `Stop` hooks (best-effort) + generated `AGENTS.md` + generated `.agents/skills/`; no write-lock | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
 >
-> **Codex note**: Baton provides workflow rules via AGENTS.md but has **no technical write-lock enforcement** in Codex. Codex sessions rely on AI reading and following the protocol — there is no hook to block unauthorized writes. For full technical protection, use Claude Code, Factory AI, or Cursor.
+> **Codex note**: Baton uses experimental `SessionStart`/`Stop` hooks in Codex for phase guidance and stop reminders, plus `AGENTS.md` rules and `.agents/skills/`. These hooks are advisory only: Codex still has **no PreToolUse write-lock** or plan-unlisted write enforcement. For full hard-gated protection, use Claude Code, Factory AI, or Cursor.
 
 ## Suggested .gitignore
 

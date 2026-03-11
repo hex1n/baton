@@ -1,6 +1,8 @@
-# Plan: Baton 加载架构优化 — 回应"底层逻辑冲突"评审
+# Plan: Baton 加载架构优化 + Codex hooks + annotation 修复
 
 **复杂度**: Medium（workflow.md 增量增强 + Annotation Protocol 三规则同步 + Codex hooks 新能力建设）
+
+**Scope Note (Round 15)**：`Baton × superpowers interop` 已拆分为独立 follow-up plan：`plans/plan-2026-03-11-baton-superpowers-interop.md`。本计划保留并继续聚焦加载架构、Codex hooks、以及 annotation 协议修复。
 
 ## Research Source
 
@@ -366,19 +368,21 @@ workflow.md 增量版 (~92 行, ~460 tokens):
   Derived artifacts: none
   Files: `setup.sh`, `.baton/adapters/adapter-codex.sh`, `tests/test-setup.sh` (B-level: assertion update), `tests/test-ide-capability-consistency.sh` (B-level: assertion update) | Verified: test-setup.sh 152/152 ✅, test-adapters.sh 3/3 ✅, test-ide-capability-consistency.sh 20/20 ✅ | Deviations: Two test files needed B-level assertion updates for the changed ide_summary text
 
-- [ ] Todo 4: 补齐测试覆盖并跑现有守卫。
+- [x] ✅ Todo 4: 补齐测试覆盖并跑现有守卫。
   Change: 为 Codex hooks / adapter / summary / annotation drift 增加测试覆盖，并重跑现有 verify-only guards。
   Files: `tests/test-setup.sh`, `tests/test-adapters.sh`, `tests/test-annotation-protocol.sh`, `tests/test-ide-capability-consistency.sh`
   Verification: 运行 `tests/test-setup.sh`, `tests/test-adapters.sh`, `tests/test-annotation-protocol.sh`, `tests/test-ide-capability-consistency.sh`, `tests/test-phase-guide.sh`, `tests/test-workflow-consistency.sh`。
   Dependencies: Todo 2 ✅, Todo 3
   Derived artifacts: none
+  Files: `tests/test-setup.sh`, `tests/test-adapters.sh`, `tests/test-annotation-protocol.sh`, `tests/test-ide-capability-consistency.sh`, `tests/test-phase-guide.sh`, `tests/test-workflow-consistency.sh` | Verified: `test-setup.sh` 174/174 ✅, `test-adapters.sh` 7/7 ✅, `test-annotation-protocol.sh` 35/35 ✅, `test-ide-capability-consistency.sh` 24/24 ✅, `test-phase-guide.sh` 76/76 ✅, `test-workflow-consistency.sh` ALL CONSISTENT ✅ | Deviations: Codex-touching setup cases required temp `HOME` isolation in the harness, including re-install paths that auto-detect Codex via `.agents/` fallback
 
-- [ ] Todo 5: 同步 Codex 的公开能力表述。
+- [x] ✅ Todo 5: 同步 Codex 的公开能力表述。
   Change: 更新 capability matrix 和 README 中对 Codex 的描述，使其与 `setup.sh` summary 和实际支持范围一致。
   Files: `docs/ide-capability-matrix.md`, `README.md`
   Verification: 复读文案，确认与 `setup.sh` 中的 Codex summary 和计划中的 best-effort/support-boundary 表述一致。
   Dependencies: Todo 3
   Derived artifacts: none
+  Files: `docs/ide-capability-matrix.md`, `README.md`, `tests/test-ide-capability-consistency.sh` | Verified: README 与 capability matrix 都已同步为 “experimental SessionStart + Stop hooks / best-effort / no write-lock”，并由 `test-ide-capability-consistency.sh` 24/24 ✅ 约束防回退 | Deviations: README 的 adapters 清单同步从 “Cursor” 扩展为 “Cursor, Codex”
 
 ### Todo Execution Notes
 
@@ -394,6 +398,7 @@ workflow.md 增量版 (~92 行, ~460 tokens):
 - Exit code 在 Codex 中不阻断 session（与 Claude Code 的 PreToolUse exit 2=block 不同）——Codex hooks 纯 advisory。
 - Annotation Protocol 收口和 Codex hooks 是两条可独立推进的工作流。把它们拆开是对的，否则 Codex gate 会把纯文档协议改动一起阻塞。
 - 本地 spike harness 只该作为临时 completion aid 使用；研究结论写入 `research.md` 后应立即清理。
+- `.agents/` fallback 会让后续 `setup.sh` 重跑自动探测到 Codex；因此 `tests/test-setup.sh` 里凡是可能进入 Codex 路径的 case，都必须默认把 `HOME` 重定向到临时目录，不能只隔离“显式 codex”用例。
 
 ### Codex Gate Update (2026-03-11)
 
@@ -741,5 +746,19 @@ workflow.md 增量版 (~92 行, ~460 tokens):
 → 接受这条决策，并将其写入 plan body：新增 `Codex User-Config Boundary`，把用户级配置修改定义为窄范围、Baton-owned、exact-key scoped 的已批准能力；同时补入 `Codex Test Isolation` 和 `Todo Execution Notes`，要求 Codex 相关测试把 `HOME` 重定向到 temp dir，避免触碰真实用户配置。
 → Consequence: 撤回上一轮 review 中“是否允许修改用户级配置”这条 open question。剩余需要继续盯的是测试隔离和实现细节，而不是 scope 是否允许。
 → Result: accepted — plan body 已同步边界和测试约束
+
+### Round 15 (2026-03-11)
+
+**[inferred: scope-correction] § superpowers 冲突未被当前计划解决**
+"这个计划貌似没解决 superpowers冲突的问题"
+→ **正确**。当前计划只解决 Baton 自身加载架构、Codex hooks、annotation 修复；正文也明确写了 “不触碰 superpowers 插件本身”。因此它只能减少推理浪费，不能消除双 bootstrap / 双路由问题。
+→ Consequence: 按用户决策拆分 scope：当前计划保留，但标题改窄为“加载架构优化 + Codex hooks + annotation 修复”；`Baton × superpowers interop` 另立 follow-up plan 处理。
+→ Result: accepted — 当前计划标题与 scope note 已更新，follow-up plan 已新增
+
+**[inferred: change-request] § 计划拆分方式**
+"当前计划保留，标题改成“加载架构优化 + Codex hooks + annotation 修复”。\n  - 新增一个 follow-up plan，专门处理 Baton × superpowers interop"
+→ 接受该拆分。当前文档继续作为已收敛的实现计划；superpowers 冲突改为独立 companion plan，以免继续把两个不同问题域（加载架构 / 第三方 interop）揉在同一个 change list 里。
+→ Consequence: 新计划文件 `plans/plan-2026-03-11-baton-superpowers-interop.md` 建立，后续所有 superpowers 相关批注和实现讨论应转入该文档。
+→ Result: accepted — split complete
 
 <!-- BATON:GO -->

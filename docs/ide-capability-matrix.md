@@ -8,7 +8,7 @@ As of 2026-03-11. Baton supports 4 IDEs across 3 protection tiers.
 |------|-------|-------|------------|----------|
 | **Full protection** | Claude Code, Factory | 8/8 | Hard block | None |
 | **Core protection** | Cursor | 5/8 | Hard block (via adapter) | No write-set drift warning, no session-end reminders, no retrospective enforcement |
-| **Rules guidance** | Codex | 0/8 | None | No technical enforcement of any kind. Relies on AGENTS.md + AI self-discipline |
+| **Rules guidance** | Codex | 2/8 experimental | None | Advisory-only SessionStart/Stop hooks; no PreToolUse write-lock or write-set enforcement |
 
 ## Hook Inventory
 
@@ -17,15 +17,15 @@ Which hooks fire for each host:
 | Hook | Event | Enforcement | Claude Code | Factory AI | Cursor IDE | Codex |
 |------|-------|-------------|-------------|------------|------------|-------|
 | write-lock.sh | PreToolUse | Hard block | ✅ | ✅ | ✅ adapter | ❌ |
-| phase-guide.sh | SessionStart | Advisory | ✅ | ✅ | ✅ | ❌ |
+| phase-guide.sh | SessionStart | Advisory | ✅ | ✅ | ✅ | ✅ experimental |
 | bash-guard.sh | PreToolUse | Advisory | ✅ | ✅ | ✅ | ❌ |
 | subagent-context.sh | SubagentStart | Advisory | ✅ | ✅ | ✅ | ❌ |
 | pre-compact.sh | PreCompact | Advisory | ✅ | ✅ | ✅ | ❌ |
 | post-write-tracker.sh | PostToolUse | Advisory | ✅ | ✅ | ❌ | ❌ |
-| stop-guard.sh | Stop | Advisory | ✅ | ✅ | ❌ | ❌ |
+| stop-guard.sh | Stop | Advisory | ✅ | ✅ | ❌ | ✅ experimental |
 | completion-check.sh | TaskCompleted | Soft block | ✅ | ✅ | ❌ | ❌ |
 
-Source: `setup.sh` IDE installation logic (claude/factory: lines 907-962, cursor: lines 964-1002).
+Source: `setup.sh` IDE installation logic.
 
 ## Cursor Notes
 
@@ -34,8 +34,10 @@ Source: `setup.sh` IDE installation logic (claude/factory: lines 907-962, cursor
 
 ## Codex Notes
 
-- Codex has no custom hook system. Baton injects rules via generated `AGENTS.md` and `.agents/skills/` directory.
-- All enforcement in Codex is protocol-only: the AI reads the rules and follows them (or doesn't). There is no technical interception.
+- Codex currently exposes experimental `SessionStart` and `Stop` hooks. Baton configures them through `.codex/hooks.json` and `adapter-codex.sh`.
+- Those hooks are advisory only. Codex still has no `PreToolUse` write-lock, no post-write drift warning, and no task-completion gate.
+- `setup.sh` enables the project-level `codex_hooks` feature flag and adds a per-project trust entry in `~/.codex/config.toml`.
+- `AGENTS.md` and `.agents/skills/` remain part of the Codex path so the workflow still loads even when hooks are unavailable.
 - Codex sandbox and human approval controls provide separate safety layers outside Baton's scope.
 
 ## Maintenance Rules
