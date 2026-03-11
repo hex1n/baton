@@ -71,7 +71,7 @@ assert_contains "$LEGACY_RESEARCH" 'Baton supports 4 IDEs' "legacy research 4-ID
 
 # Setup: ide_summary entries for 4 IDEs
 assert_contains "$SETUP" 'Cursor IDE hooks + adapter' "setup Cursor IDE summary"
-assert_contains "$SETUP" 'rules guidance via AGENTS.md' "setup Codex summary"
+assert_contains "$SETUP" 'session hooks + AGENTS.md rules + skills' "setup Codex summary"
 assert_contains "$SETUP" 'full protection, native hooks + skills' "setup Claude summary"
 assert_contains "$SETUP" 'full protection, Claude-style hooks + skills' "setup Factory summary"
 

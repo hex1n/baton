@@ -174,6 +174,37 @@ fi
 
 # ============================================================
 echo ""
+echo "=== Test 2b2: Codex install creates hooks.json + feature flag + trust (HOME isolated) ==="
+d="$tmp/t2b2" && mkdir -p "$d"
+FAKE_HOME="$tmp/fakehome-2b2"
+mkdir -p "$FAKE_HOME"
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
+assert_file_exists "$d/.codex/hooks.json"
+assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
+assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh stop-guard"
+assert_file_contains "$d/.codex/hooks.json" "SessionStart"
+assert_file_contains "$d/.codex/hooks.json" "Stop"
+assert_file_exists "$d/.codex/config.toml"
+assert_file_contains "$d/.codex/config.toml" "codex_hooks = true"
+assert_file_exists "$FAKE_HOME/.codex/config.toml"
+assert_file_contains "$FAKE_HOME/.codex/config.toml" "baton:codex-trust:"
+assert_file_contains "$FAKE_HOME/.codex/config.toml" "trust_level"
+assert_output_contains "$OUTPUT" "Created .codex/hooks.json"
+assert_output_contains "$OUTPUT" "codex_hooks feature flag"
+assert_output_contains "$OUTPUT" "trust"
+assert_file_exists "$d/.baton/adapters/adapter-codex.sh"
+
+# ============================================================
+echo ""
+echo "=== Test 2b3: Codex re-install is idempotent (hooks.json merge) ==="
+d="$tmp/t2b2"  # reuse t2b2 directory
+FAKE_HOME="$tmp/fakehome-2b2"
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "already"
+assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
+
+# ============================================================
+echo ""
 echo "=== Test 2c: Explicit --ide codex bootstraps Codex outside session ==="
 d="$tmp/t2c" && mkdir -p "$d"
 OUTPUT="$(run_setup --ide codex "$d" 2>&1)"
@@ -226,7 +257,7 @@ d="$tmp/t2e" && mkdir -p "$d/.claude" "$d/.cursor"
 OUTPUT="$(printf '2\n' | BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "1. claude - full protection"
-assert_output_contains "$OUTPUT" "2. codex - rules guidance"
+assert_output_contains "$OUTPUT" "2. codex - session hooks"
 assert_output_contains "$OUTPUT" "3. cursor - full protection, Cursor IDE hooks + adapter"
 assert_output_contains "$OUTPUT" "Select IDEs"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (--choose)"
@@ -524,6 +555,47 @@ if [ -f "$d/AGENTS.md" ] && ! grep -qE '@\.baton/workflow(-full)?\.md' "$d/AGENT
     PASS=$((PASS + 1))
 else
     echo "  FAIL: Codex workflow import should be removed from AGENTS.md"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 17c: Codex uninstall cleans hooks.json + feature flag + trust (HOME isolated) ==="
+d="$tmp/t17c" && mkdir -p "$d"
+FAKE_HOME="$tmp/fakehome-17c"
+mkdir -p "$FAKE_HOME"
+HOME="$FAKE_HOME" run_setup --ide codex "$d" > /dev/null 2>&1
+# Verify installed state before uninstall
+assert_file_exists "$d/.codex/hooks.json"
+assert_file_exists "$d/.codex/config.toml"
+assert_file_exists "$FAKE_HOME/.codex/config.toml"
+# Uninstall
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
+# hooks.json should be cleaned (empty or removed)
+TOTAL=$((TOTAL + 1))
+if [ ! -f "$d/.codex/hooks.json" ] || ! grep -q 'adapter-codex' "$d/.codex/hooks.json" 2>/dev/null; then
+    echo "  pass: Codex hooks.json cleaned on uninstall"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: Codex hooks.json should not contain adapter-codex after uninstall"
+    FAIL=$((FAIL + 1))
+fi
+# Feature flag should be removed
+TOTAL=$((TOTAL + 1))
+if [ ! -f "$d/.codex/config.toml" ] || ! grep -q 'codex_hooks' "$d/.codex/config.toml" 2>/dev/null; then
+    echo "  pass: codex_hooks feature flag removed on uninstall"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: codex_hooks should be removed from .codex/config.toml after uninstall"
+    FAIL=$((FAIL + 1))
+fi
+# Trust entry should be removed from user config
+TOTAL=$((TOTAL + 1))
+if [ ! -f "$FAKE_HOME/.codex/config.toml" ] || ! grep -q 'baton:codex-trust:' "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+    echo "  pass: trust entry removed from user config on uninstall"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: baton:codex-trust should be removed from ~/.codex/config.toml after uninstall"
     FAIL=$((FAIL + 1))
 fi
 

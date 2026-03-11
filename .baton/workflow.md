@@ -65,6 +65,9 @@ Only explicit type: `[PAUSE]` — stop current work, investigate something else 
 After responding to any feedback, AI must self-check: did my answer change direction,
 contradict research, or reveal internal contradictions? If yes, handle immediately.
 Blind compliance is a failure mode — disagree with evidence when needed.
+When feedback triggers new analysis, write the conclusion back to the document body immediately — don't leave it only in chat.
+When new analysis changes or weakens the current approach/recommendation, re-evaluate and update the plan immediately rather than waiting for the human to point it out.
+After an annotation is processed into a structured Round entry, remove the raw text from `## 批注区`; the Round entry becomes the authoritative record.
 
 ### File Conventions
 - Todolist format: `## Todo` / `- [ ]` unchecked / `- [x] ✅` checked (lowercase x + checkmark).

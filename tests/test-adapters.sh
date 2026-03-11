@@ -69,6 +69,78 @@ else
 fi
 
 # ============================================================
+# Codex adapter tests
+# ============================================================
+
+setup_codex() {
+    d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
+    cp "$SCRIPT_DIR/../.baton/hooks/phase-guide.sh" "$d/.baton/hooks/phase-guide.sh"
+    cp "$SCRIPT_DIR/../.baton/hooks/stop-guard.sh" "$d/.baton/hooks/stop-guard.sh"
+    cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
+    chmod +x "$d/.baton/hooks/phase-guide.sh" "$d/.baton/hooks/stop-guard.sh"
+    cp "$ADAPTERS/adapter-codex.sh" "$d/.baton/adapters/adapter-codex.sh"
+    chmod +x "$d/.baton/adapters/adapter-codex.sh"
+    echo "$d"
+}
+
+echo ""
+echo "=== Test 4: Codex adapter — phase-guide output on stdout ==="
+d="$(setup_codex t4)"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d" && bash "$d/.baton/adapters/adapter-codex.sh" phase-guide 2>/dev/null)" || true
+if [ -n "$OUTPUT" ]; then
+    echo "  pass: codex adapter produces stdout output for phase-guide"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: codex adapter produced no stdout for phase-guide"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 5: Codex adapter — stderr is redirected to stdout ==="
+d="$(setup_codex t5)"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+TOTAL=$((TOTAL + 1))
+# phase-guide normally writes to stderr; codex adapter should capture it to stdout
+STDERR_OUTPUT="$(cd "$d" && bash "$d/.baton/adapters/adapter-codex.sh" phase-guide 2>&1 1>/dev/null)" || true
+STDOUT_OUTPUT="$(cd "$d" && bash "$d/.baton/adapters/adapter-codex.sh" phase-guide 2>/dev/null)" || true
+if [ -n "$STDOUT_OUTPUT" ] && [ -z "$STDERR_OUTPUT" ]; then
+    echo "  pass: codex adapter redirects stderr to stdout (no stderr leak)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected output on stdout only (stdout='${STDOUT_OUTPUT:0:40}', stderr='${STDERR_OUTPUT:0:40}')"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 6: Codex adapter — unknown hook name fails ==="
+d="$(setup_codex t6)"
+TOTAL=$((TOTAL + 1))
+if cd "$d" && bash "$d/.baton/adapters/adapter-codex.sh" unknown-hook 2>/dev/null; then
+    echo "  FAIL: expected failure for unknown hook name"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: codex adapter rejects unknown hook name"
+    PASS=$((PASS + 1))
+fi
+
+echo ""
+echo "=== Test 7: Codex adapter — stop-guard produces output ==="
+d="$(setup_codex t7)"
+printf '<!-- BATON:GO -->\n## Todo\n- [x] ✅ Step 1\n' > "$d/plan.md"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d" && bash "$d/.baton/adapters/adapter-codex.sh" stop-guard 2>/dev/null)" || true
+# stop-guard should produce some output (completion check or similar)
+if [ -n "$OUTPUT" ]; then
+    echo "  pass: codex adapter produces stdout output for stop-guard"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: codex adapter produced no stdout for stop-guard"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
 echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"

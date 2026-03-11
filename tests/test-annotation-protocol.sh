@@ -75,6 +75,14 @@ check "$FULL" "evidence" "workflow-full.md mentions evidence"
 
 # ============================================================
 echo ""
+echo "=== Cross-cutting annotation rules in workflow.md ==="
+
+check "$SLIM" "write the conclusion back to the document body" "workflow.md has analysis write-back rule"
+check "$SLIM" "re-evaluate and update the plan immediately" "workflow.md has approach re-evaluation rule"
+check "$SLIM" "remove the raw text from" "workflow.md has annotation cleanup rule"
+
+# ============================================================
+echo ""
 echo "=== Plan analysis section in workflow-full.md ==="
 
 check "$FULL" "Approach Analysis" "workflow-full.md has approach analysis section"

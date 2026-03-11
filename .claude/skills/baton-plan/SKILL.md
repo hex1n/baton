@@ -211,6 +211,9 @@ The only explicit annotation type is `[PAUSE]` — a flow control signal meaning
 "stop current work, go investigate something else first." All other feedback is
 free-text; AI determines the appropriate response from content.
 
+Cross-cutting annotation rules (analysis write-back, approach re-evaluation,
+annotation cleanup) live in `workflow.md` Annotation Protocol and apply here too.
+
 ### Processing Each Annotation
 
 For each piece of feedback:

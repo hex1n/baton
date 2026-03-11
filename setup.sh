@@ -171,6 +171,8 @@ baton_json_command_allowlist() {
   "sh .baton/hooks/bash-guard.sh",
   "bash .baton/adapters/adapter-cursor.sh",
   "sh .baton/adapters/adapter-cursor.sh",
+  "bash .baton/adapters/adapter-codex.sh phase-guide",
+  "bash .baton/adapters/adapter-codex.sh stop-guard",
   "bash .claude/write-lock.sh",
   "sh .claude/write-lock.sh"
 ]
@@ -397,6 +399,28 @@ if [ "$UNINSTALL" = "1" ]; then
             echo "  ⚠ AGENTS.md may still contain baton references — review manually"
         fi
     fi
+    # Clean Codex hooks.json
+    cleanup_baton_json_hook_file "$PROJECT_DIR/.codex/hooks.json" ".codex/hooks.json"
+    # Clean Codex project config — remove codex_hooks feature flag
+    if [ -f "$PROJECT_DIR/.codex/config.toml" ] && grep -q 'codex_hooks' "$PROJECT_DIR/.codex/config.toml" 2>/dev/null; then
+        sed -i.bak '/codex_hooks/d' "$PROJECT_DIR/.codex/config.toml"
+        rm -f "$PROJECT_DIR/.codex/config.toml.bak"
+        # Remove empty [features] section if nothing left under it
+        if grep -q '^\[features\]' "$PROJECT_DIR/.codex/config.toml" 2>/dev/null; then
+            _has_feature_content=$(sed -n '/^\[features\]/,/^\[/{/^\[features\]/d;/^\[/d;/^$/d;p;}' "$PROJECT_DIR/.codex/config.toml" 2>/dev/null)
+            if [ -z "$_has_feature_content" ]; then
+                sed -i.bak '/^\[features\]/d' "$PROJECT_DIR/.codex/config.toml"
+                rm -f "$PROJECT_DIR/.codex/config.toml.bak"
+            fi
+        fi
+        echo "  ✓ Removed codex_hooks feature flag from .codex/config.toml"
+    fi
+    # Clean Codex trust entry from user config
+    if [ -f "$HOME/.codex/config.toml" ] && grep -q '# baton:codex-trust:' "$HOME/.codex/config.toml" 2>/dev/null; then
+        sed -i.bak '/# baton:codex-trust:/,/^$/d' "$HOME/.codex/config.toml"
+        rm -f "$HOME/.codex/config.toml.bak"
+        echo "  ✓ Removed baton trust entry from ~/.codex/config.toml"
+    fi
     # Clean baton skills from all IDEs
     for _ide_dir in .claude .cursor .agents; do
         for _skill in baton-research baton-plan baton-implement; do
@@ -474,7 +498,7 @@ ide_summary() {
         claude)   echo "full protection, native hooks + skills" ;;
         factory)  echo "full protection, Claude-style hooks + skills" ;;
         cursor)   echo "full protection, Cursor IDE hooks + adapter" ;;
-        codex)    echo "rules guidance via AGENTS.md + .agents/skills" ;;
+        codex)    echo "session hooks + AGENTS.md rules + skills (experimental)" ;;
         *)        echo "supported IDE" ;;
     esac
 }
@@ -1016,7 +1040,7 @@ HOOKJSON
 
 configure_codex() {
     echo "  --- Codex CLI ---"
-    # No hooks — rules injection only
+    # AGENTS.md rules injection
     AGENTS_MD="$PROJECT_DIR/AGENTS.md"
     if [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow\.md' "$AGENTS_MD" 2>/dev/null; then
         echo "  ✓ Workflow reference already in AGENTS.md"
@@ -1031,6 +1055,89 @@ configure_codex() {
         printf '@.baton/workflow.md\n' > "$AGENTS_MD"
         echo "  ✓ Created AGENTS.md with @.baton/workflow.md"
     fi
+
+    # --- Codex hooks (experimental, requires codex_hooks feature flag) ---
+    CODEX_HOOKS_JSON="$PROJECT_DIR/.codex/hooks.json"
+    CODEX_PROJECT_CONFIG="$PROJECT_DIR/.codex/config.toml"
+    CODEX_USER_CONFIG="$HOME/.codex/config.toml"
+
+    # Resolve project path for trust entry (Windows path if available)
+    if command -v cygpath >/dev/null 2>&1; then
+        _codex_project_path="$(cygpath -w "$PROJECT_DIR")"
+    else
+        _codex_project_path="$(cd "$PROJECT_DIR" 2>/dev/null && pwd)"
+    fi
+
+    # (a) hooks.json — SessionStart + Stop via adapter-codex.sh
+    mkdir -p "$PROJECT_DIR/.codex"
+    if [ ! -f "$CODEX_HOOKS_JSON" ]; then
+        cat > "$CODEX_HOOKS_JSON" << 'HOOKJSON'
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/adapters/adapter-codex.sh phase-guide",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/adapters/adapter-codex.sh stop-guard",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+HOOKJSON
+        echo "  ✓ Created .codex/hooks.json (SessionStart + Stop)"
+    else
+        MERGE_CHANGED=0
+        MERGE_FAILED=0
+        run_merge_and_record merge_nested_hook_entry "$CODEX_HOOKS_JSON" "SessionStart" "bash .baton/adapters/adapter-codex.sh phase-guide" '{"hooks":[{"type":"command","command":"bash .baton/adapters/adapter-codex.sh phase-guide","timeout":30}]}'
+        run_merge_and_record merge_nested_hook_entry "$CODEX_HOOKS_JSON" "Stop" "bash .baton/adapters/adapter-codex.sh stop-guard" '{"hooks":[{"type":"command","command":"bash .baton/adapters/adapter-codex.sh stop-guard","timeout":30}]}'
+        report_merge_result ".codex/hooks.json"
+    fi
+
+    # (d) Feature flag — codex_hooks in project-level config.toml
+    if [ -f "$CODEX_PROJECT_CONFIG" ] && grep -q 'codex_hooks' "$CODEX_PROJECT_CONFIG" 2>/dev/null; then
+        echo "  ✓ Feature flag codex_hooks already in .codex/config.toml"
+    elif [ -f "$CODEX_PROJECT_CONFIG" ]; then
+        if grep -q '^\[features\]' "$CODEX_PROJECT_CONFIG" 2>/dev/null; then
+            # Append under existing [features] section
+            sed -i.bak '/^\[features\]/a codex_hooks = true' "$CODEX_PROJECT_CONFIG"
+            rm -f "$CODEX_PROJECT_CONFIG.bak"
+        else
+            printf '\n[features]\ncodex_hooks = true\n' >> "$CODEX_PROJECT_CONFIG"
+        fi
+        echo "  ✓ Enabled codex_hooks feature flag in .codex/config.toml"
+    else
+        printf '[features]\ncodex_hooks = true\n' > "$CODEX_PROJECT_CONFIG"
+        echo "  ✓ Created .codex/config.toml with codex_hooks feature flag"
+    fi
+
+    # (c) Trust — per-project entry in user-level ~/.codex/config.toml
+    mkdir -p "$HOME/.codex"
+    # Check if project path already has a trust entry (with or without \\?\ prefix)
+    _codex_path_escaped="$(printf '%s' "$_codex_project_path" | sed 's/[\\]/\\\\/g')"
+    if [ -f "$CODEX_USER_CONFIG" ] && grep -qF "$_codex_project_path" "$CODEX_USER_CONFIG" 2>/dev/null; then
+        echo "  ✓ Project trust already configured in ~/.codex/config.toml"
+    else
+        printf '\n# baton:codex-trust:%s\n[projects.'\''%s'\'']\ntrust_level = "trusted"\n' \
+            "$_codex_project_path" "$_codex_project_path" >> "$CODEX_USER_CONFIG"
+        echo "  ✓ Added project trust to ~/.codex/config.toml"
+    fi
+
+    install_adapter "adapter-codex.sh"
 }
 
 # ==========================================
@@ -1168,7 +1275,7 @@ echo "     → Then tell the AI \"generate todolist\" before implementation"
 echo ""
 echo "  5. Once ## Todo exists, implementation can begin"
 if echo "$IDES" | grep -q 'codex'; then
-    echo "     → Codex follows this via AGENTS.md + .agents/skills/ guidance (no hooks)"
+    echo "     → Codex uses SessionStart/Stop hooks + AGENTS.md rules (codex_hooks feature required)"
 fi
 echo ""
 echo "  To remove: bash $BATON_DIR/setup.sh --uninstall $PROJECT_DIR"

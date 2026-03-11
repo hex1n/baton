@@ -214,6 +214,9 @@ conversation. AI infers intent from content.
 The only explicit type is `[PAUSE]` — "stop current research direction, investigate
 something else first." All other feedback is free-text.
 
+Cross-cutting annotation rules (analysis write-back, approach re-evaluation,
+annotation cleanup) live in `workflow.md` Annotation Protocol and apply here too.
+
 ### Processing Each Annotation
 
 1. **Read code first** — don't answer from memory. Cite file:line.
