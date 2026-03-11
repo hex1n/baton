@@ -269,36 +269,6 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 12: Pre-commit hook installed by default ==="
-d="$tmp/t12" && mkdir -p "$d/.claude"
-(cd "$d" && git init -q)
-TOTAL=$((TOTAL + 1))
-run_setup "$d" > /dev/null 2>&1
-if [ -f "$d/.git/hooks/pre-commit" ] && grep -q 'baton' "$d/.git/hooks/pre-commit"; then
-    echo "  pass: pre-commit hook installed"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: pre-commit hook not installed"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 13: Pre-commit hook skipped with BATON_SKIP ==="
-d="$tmp/t13" && mkdir -p "$d/.claude"
-(cd "$d" && git init -q)
-TOTAL=$((TOTAL + 1))
-BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
-if [ ! -f "$d/.git/hooks/pre-commit" ]; then
-    echo "  pass: pre-commit hook skipped"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: pre-commit hook should be skipped"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
 echo "=== Test 15: Cursor expanded hooks — 4 hooks ==="
 d="$tmp/t15" && mkdir -p "$d/.cursor"
 (cd "$d" && git init -q)

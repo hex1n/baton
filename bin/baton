@@ -105,22 +105,6 @@ doctor() {
     fi
     echo ""
 
-    # Git hook
-    echo "  Git hook:"
-    if [ -d "$_dir/.git" ]; then
-        _ghdir="$(cd "$_dir" && git rev-parse --git-dir 2>/dev/null)"
-        case "$_ghdir" in /*) ;; *) _ghdir="$_dir/$_ghdir" ;; esac
-        if [ -f "$_ghdir/hooks/pre-commit" ] && grep -q 'baton' "$_ghdir/hooks/pre-commit" 2>/dev/null; then
-            echo "  ✓ git pre-commit hook installed"
-        else
-            echo "  ⚠ git pre-commit hook not installed"
-            _issues=$((_issues + 1))
-        fi
-    else
-        echo "  - not a git repository"
-    fi
-    echo ""
-
     if [ "$_issues" -gt 0 ]; then
         echo "  Result: $_issues issue(s) found. Run 'baton init' to auto-fix."
     else
@@ -218,7 +202,7 @@ Usage:
 Environment:
   BATON_HOME               Override baton home directory (~/.baton)
   BATON_PLAN               Override plan filename
-  BATON_BYPASS=1           Skip pre-commit check
+  BATON_BYPASS=1           Skip write-lock check
   BATON_SKIP=hook1,hook2   Skip specific hooks during install
 EOF
 }
