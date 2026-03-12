@@ -214,8 +214,13 @@ conversation. AI infers intent from content.
 The only explicit type is `[PAUSE]` — "stop current research direction, investigate
 something else first." All other feedback is free-text.
 
-Cross-cutting annotation rules (analysis write-back, approach re-evaluation,
-annotation cleanup) live in `workflow.md` Annotation Protocol and apply here too.
+Cross-cutting annotation rules (from workflow.md Annotation Protocol — inlined here
+for fork-context self-sufficiency):
+- **Analysis write-back**: When feedback triggers new analysis, write conclusions back to the document body immediately — don't leave them only in chat.
+- **Approach re-evaluation**: When new analysis changes or weakens the current approach, re-evaluate and update the document immediately rather than waiting for the human to point it out.
+- **Annotation cleanup**: After an annotation is processed into an Annotation Log entry, remove the raw text from `## 批注区`; the entry becomes the authoritative record.
+
+See workflow.md Annotation Protocol for the full set of cross-cutting rules.
 
 ### Processing Each Annotation
 

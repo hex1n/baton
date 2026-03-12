@@ -96,10 +96,28 @@ doctor() {
     # Rules injection
     echo "  Rules injection:"
     if [ -f "$_dir/CLAUDE.md" ]; then
-        if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-            echo "  ✓ CLAUDE.md contains @.baton/workflow*.md"
+        if grep -qE '@\.baton/workflow\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+            if grep -q '@\.baton/workflow-full\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+                echo "  ⚠ CLAUDE.md contains residual @.baton/workflow-full.md import"
+                _issues=$((_issues + 1))
+            else
+                echo "  ✓ CLAUDE.md contains @.baton/workflow.md"
+            fi
         else
-            echo "  ⚠ CLAUDE.md exists but no @.baton/workflow*.md"
+            echo "  ⚠ CLAUDE.md exists but no @.baton/workflow.md"
+            _issues=$((_issues + 1))
+        fi
+    fi
+    if [ -f "$_dir/AGENTS.md" ]; then
+        if grep -q '@\.baton/workflow\.md' "$_dir/AGENTS.md"; then
+            if grep -q '@\.baton/workflow-full\.md' "$_dir/AGENTS.md" 2>/dev/null; then
+                echo "  ⚠ AGENTS.md contains residual @.baton/workflow-full.md import"
+                _issues=$((_issues + 1))
+            else
+                echo "  ✓ Rules injection (AGENTS.md)"
+            fi
+        else
+            echo "  ⚠ AGENTS.md exists but does not import @.baton/workflow.md"
             _issues=$((_issues + 1))
         fi
     fi
@@ -129,21 +147,41 @@ status() {
     _dir="${1:-.}"
     _dir="$(cd "$_dir" && pwd)"
 
-    # Find plan file
+    # Find plan file — walk up from _dir
+    _pdir="$_dir"
+    _pname=""
     if [ -n "${BATON_PLAN:-}" ]; then
         _pname="$BATON_PLAN"
+        _found=""
+        _d="$_dir"
+        while true; do
+            [ -f "$_d/$_pname" ] && { _pdir="$_d"; _found=1; break; }
+            _p="$(dirname "$_d")"
+            [ "$_p" = "$_d" ] && break
+            _d="$_p"
+        done
     else
-        _pname="$(ls -t "$_dir"/plan.md "$_dir"/plan-*.md 2>/dev/null | head -1)"
-        _pname="${_pname##*/}"
+        _d="$_dir"
+        while true; do
+            _c="$(cd "$_d" 2>/dev/null && ls -t plan.md plan-*.md 2>/dev/null | head -1)"
+            if [ -n "$_c" ]; then
+                _pname="$_c"
+                _pdir="$_d"
+                break
+            fi
+            _p="$(dirname "$_d")"
+            [ "$_p" = "$_d" ] && break
+            _d="$_p"
+        done
         _pname="${_pname:-plan.md}"
     fi
     _rname="${_pname/plan/research}"
 
     # Detect phase
     _plan=""
-    [ -f "$_dir/$_pname" ] && _plan="$_dir/$_pname"
+    [ -f "$_pdir/$_pname" ] && _plan="$_pdir/$_pname"
     _research=""
-    [ -f "$_dir/$_rname" ] && _research="$_dir/$_rname"
+    [ -f "$_pdir/$_rname" ] && _research="$_pdir/$_rname"
 
     _phase="RESEARCH"
     _plan_status="not found"

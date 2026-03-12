@@ -40,13 +40,13 @@ For each piece of feedback:
 - **Allows** markdown files (*.md, *.mdx, *.markdown) at all times — research and planning are never blocked
 - **Unlocks** when `plan.md` contains `<!-- BATON:GO -->` anywhere in the file
 - **Re-locks** if you remove `<!-- BATON:GO -->` (e.g., to go back to annotation cycle)
-- **Custom plan file**: `BATON_PLAN=design.md` to use a different plan file name
+- **Custom plan file**: `BATON_PLAN=plan-design.md` to use a different plan file name
 - **Bypass** for emergencies: `BATON_BYPASS=1` skips the lock entirely
 - **If AI adds `<!-- BATON:GO -->` itself**: remove it immediately, return to annotation phase
 
 **Three layers of guidance:**
-- **Layer 0**: Workflow rules always in context (~400 tokens)
-- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement) with fallback to session-start hook extraction
+- **Layer 0**: Workflow rules always in context (workflow.md)
+- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement) with fallback to session-start hook with hardcoded fallback
 - **Layer 2**: Actionable blocking messages when writes are denied
 
 ## Install
@@ -108,6 +108,27 @@ baton update --all     # Update all registered projects
 
 `self-update` runs `git pull` in `~/.baton`. `update` re-runs setup.sh, which compares script versions and only copies what changed.
 
+## Testing
+
+```bash
+# Fast local confidence check:
+bash tests/test-smoke.sh
+
+# Broad regression run:
+bash tests/test-full.sh
+```
+
+`tests/test-smoke.sh` is the recommended default for routine local runs. It
+keeps the lighter hook- and protocol-focused checks while leaving the heavier
+integration suites out of the fast path.
+
+`tests/test-full.sh` runs the broader suite, including `test-setup.sh`,
+`test-multi-ide.sh`, `test-cli.sh`, and the opt-in write-lock benchmark.
+
+On Windows, prefer running the test scripts from Git Bash or WSL. For routine
+local feedback, start with `bash tests/test-smoke.sh`; use
+`bash tests/test-full.sh` when you want the heavier integration coverage.
+
 ## What Gets Installed
 
 Depending on the IDEs detected or selected, Baton installs the relevant subset of:
@@ -115,8 +136,7 @@ Depending on the IDEs detected or selected, Baton installs the relevant subset o
 ```
 your-project/
 ├── .baton/
-│   ├── workflow.md         ← Universal rules (~400 tokens)
-│   ├── workflow-full.md    ← Full reference (fallback for rules-only IDEs / missing skills)
+│   ├── workflow.md         ← Universal rules (always loaded)
 │   ├── write-lock.sh       ← Write lock (~100 lines)
 │   ├── phase-guide.sh      ← Session start: detects phase, prompts skill or extracts fallback
 │   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
@@ -168,7 +188,7 @@ Boris Tane's workflow succeeds because the human stays in the loop at every crit
 
 - **File-derived phase detection** — your current phase is determined by file state (plan existence, BATON:GO marker, todo completion), not stored anywhere
 - **Minimal CLI** — `baton init` / `baton update`, then just files and hooks
-- **~400 tokens total overhead** — always-loaded rules + skills loaded on-demand per phase
+- **Minimal overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
 - **Annotation protocol** — structured human-AI dialogue with traceable decision records
 

@@ -48,6 +48,17 @@ assert_file_exists() {
     fi
 }
 
+assert_file_not_exists() {
+    TOTAL=$((TOTAL + 1))
+    if [ ! -f "$1" ]; then
+        echo "  pass: $1 does not exist"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: $1 should not exist"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 assert_file_executable() {
     TOTAL=$((TOTAL + 1))
     if [ -x "$1" ]; then
@@ -127,7 +138,7 @@ assert_file_executable "$d/.baton/hooks/write-lock.sh"
 assert_file_exists "$d/.baton/hooks/phase-guide.sh"
 assert_file_executable "$d/.baton/hooks/phase-guide.sh"
 assert_file_exists "$d/.baton/workflow.md"
-assert_file_exists "$d/.baton/workflow-full.md"
+assert_file_not_exists "$d/.baton/workflow-full.md"
 # .claude/ settings
 assert_file_exists "$d/.claude/settings.json"
 assert_file_contains "$d/.claude/settings.json" ".baton/hooks/write-lock"
@@ -764,6 +775,88 @@ if [ ! -f "$d/.agents/skills/baton-research/SKILL.md" ]; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL: self-install uninstall should remove .agents fallback skills"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test: phase-guide.sh version upgrade ==="
+d="$tmp/t-pg-upgrade" && mkdir -p "$d/.baton/hooks"
+# Create old version phase-guide.sh
+cat > "$d/.baton/hooks/phase-guide.sh" << 'EOF'
+#!/usr/bin/env bash
+# Version: 5.0
+echo "old phase-guide"
+EOF
+run_setup "$d"
+TOTAL=$((TOTAL + 1))
+if grep -q "Version: 6.0" "$d/.baton/hooks/phase-guide.sh"; then
+    echo "  pass: phase-guide.sh upgraded from v5.0 to v6.0"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: phase-guide.sh was not upgraded"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test: workflow-full.md import migration ==="
+d="$tmp/t-wf-migrate" && mkdir -p "$d/.baton/hooks" "$d/.claude"
+# Simulate existing project with old import
+echo '@.baton/workflow-full.md' > "$d/CLAUDE.md"
+run_setup "$d"
+TOTAL=$((TOTAL + 1))
+if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" && ! grep -q 'workflow-full' "$d/CLAUDE.md"; then
+    echo "  pass: CLAUDE.md migrated from workflow-full.md to workflow.md"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: CLAUDE.md import not migrated"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test: mixed import cleanup — CLAUDE.md with both old and new ==="
+d="$tmp/t-mixed-claude" && mkdir -p "$d"
+printf '@.baton/workflow.md\nSome content\n@.baton/workflow-full.md\n' > "$d/CLAUDE.md"
+run_setup "$d"
+TOTAL=$((TOTAL + 1))
+if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md retains @.baton/workflow.md"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: CLAUDE.md should retain @.baton/workflow.md"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if ! grep -q '@\.baton/workflow-full\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md residual workflow-full.md removed"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: CLAUDE.md should not contain residual workflow-full.md"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test: mixed import cleanup — AGENTS.md with both old and new ==="
+d="$tmp/t-mixed-agents" && mkdir -p "$d"
+printf '@.baton/workflow.md\nSome content\n@.baton/workflow-full.md\n' > "$d/AGENTS.md"
+run_setup --ide codex "$d"
+TOTAL=$((TOTAL + 1))
+if grep -q '@\.baton/workflow\.md' "$d/AGENTS.md" 2>/dev/null; then
+    echo "  pass: AGENTS.md retains @.baton/workflow.md"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: AGENTS.md should retain @.baton/workflow.md"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if ! grep -q '@\.baton/workflow-full\.md' "$d/AGENTS.md" 2>/dev/null; then
+    echo "  pass: AGENTS.md residual workflow-full.md removed"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: AGENTS.md should not contain residual workflow-full.md"
     FAIL=$((FAIL + 1))
 fi
 

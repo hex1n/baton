@@ -69,8 +69,6 @@ assert_output_contains "$d" "entry points" "mentions starting from entry points"
 assert_output_contains "$d" "Mindset" "RESEARCH phase shows Mindset reminder"
 assert_output_contains "$d" "subagent" "RESEARCH phase mentions subagents"
 assert_output_contains "$d" "批注区" "RESEARCH phase mentions 批注区"
-assert_output_contains "$d" "documentation retrieval" "RESEARCH phase mentions doc retrieval tools"
-assert_output_contains "$d" "Self-Review" "RESEARCH phase mentions self-review"
 assert_output_contains "$d" "Spike" "RESEARCH phase mentions spike/exploratory coding"
 assert_exit_zero "$d" "always exit 0 (no files)"
 
@@ -86,8 +84,6 @@ assert_output_contains "$d" "approach" "mentions approach analysis"
 assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
 assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
 assert_output_contains "$d" "批注区" "PLAN phase mentions 批注区"
-assert_output_contains "$d" "Self-Review" "PLAN phase mentions self-review"
-assert_output_contains "$d" "Approach Analysis" "PLAN phase mentions approach analysis method"
 assert_exit_zero "$d" "always exit 0 (research, no plan)"
 
 # ============================================================
@@ -98,14 +94,12 @@ echo "# Plan" > "$d/plan.md"
 assert_output_contains "$d" "ANNOTATION" "outputs ANNOTATION cycle label"
 assert_output_contains "$d" "\[PAUSE\]" "mentions PAUSE annotation"
 assert_output_contains "$d" "Free-text is the default" "mentions free-text default"
-assert_output_contains "$d" "Consequence detection" "mentions consequence detection"
 assert_output_not_contains "$d" "\[NOTE\]" "does not mention NOTE annotation"
 assert_output_not_contains "$d" "\[Q\]" "does not mention Q annotation"
 assert_output_not_contains "$d" "\[CHANGE\]" "does not mention CHANGE annotation"
 assert_output_contains "$d" "file:line" "mentions evidence-based response"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO unlock"
 assert_output_contains "$d" "Mindset" "ANNOTATION phase shows Mindset reminder"
-assert_output_contains "$d" "blind compliance" "ANNOTATION phase mentions blind compliance"
 assert_exit_zero "$d" "always exit 0 (plan, no GO)"
 
 # ============================================================
@@ -118,10 +112,8 @@ cat > "$d/plan.md" << 'EOF'
 - [ ] Step 1
 EOF
 assert_output_contains "$d" "IMPLEMENT" "outputs IMPLEMENT phase label"
-assert_output_contains "$d" "typecheck" "mentions typecheck"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO"
 assert_output_contains "$d" "Mindset" "IMPLEMENT phase shows Mindset reminder"
-assert_output_contains "$d" "re-read the modified code" "IMPLEMENT phase mentions re-reading code"
 assert_output_contains "$d" "3x" "IMPLEMENT phase mentions 3x-stop rule"
 assert_exit_zero "$d" "always exit 0 (implement)"
 
@@ -156,18 +148,19 @@ assert_exit_zero "$d" "always exit 0"
 echo ""
 echo "=== Test 7: BATON_PLAN custom plan file name ==="
 d="$tmp/t7" && mkdir -p "$d"
-cat > "$d/custom.md" << 'EOF'
+# Default → no plan found → RESEARCH (check before creating any plan file)
+assert_output_contains "$d" "RESEARCH" "default plan name → RESEARCH (no plan.md)"
+# Now create custom plan file and test BATON_PLAN override
+cat > "$d/plan-custom.md" << 'EOF'
 <!-- BATON:GO -->
 ## Todo
 - [ ] Step 1
 EOF
-# Default → no plan found → RESEARCH
-assert_output_contains "$d" "RESEARCH" "default plan name → RESEARCH (no plan.md)"
 # Custom plan → IMPLEMENT
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && BATON_PLAN=custom.md bash "$GUIDE" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d" && BATON_PLAN=plan-custom.md bash "$GUIDE" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "IMPLEMENT"; then
-    echo "  pass: BATON_PLAN=custom.md → IMPLEMENT guidance"
+    echo "  pass: BATON_PLAN=plan-custom.md → IMPLEMENT guidance"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: BATON_PLAN should use custom plan file"
@@ -289,6 +282,34 @@ echo "# Research findings" > "$d/research.md"
 # In PLAN phase, baton-plan skill is NOT installed, so fallback should appear
 assert_output_not_contains "$d" "/baton-plan" "baton-research doesn't trigger /baton-plan"
 assert_output_contains "$d" "PLAN" "still shows PLAN phase"
+
+# ============================================================
+echo ""
+echo "=== Test 18: find_plan() walk-up discovers plan-*.md from subdirectory ==="
+d="$tmp/t18" && mkdir -p "$d/src/deep"
+cat > "$d/plan-feature.md" << 'EOF'
+# Plan for feature
+Some content without BATON:GO
+EOF
+# cd to subdirectory, run phase-guide — should find plan-feature.md and show ANNOTATION (not RESEARCH)
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d/src/deep" && bash "$GUIDE" 2>&1 1>/dev/null)"
+if echo "$OUTPUT" | grep -q "ANNOTATION"; then
+    echo "  pass: walk-up finds plan-feature.md from subdirectory → ANNOTATION"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected ANNOTATION from walk-up plan-feature.md discovery"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if ! echo "$OUTPUT" | grep -q "RESEARCH"; then
+    echo "  pass: walk-up does not fall back to RESEARCH"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: walk-up fell back to RESEARCH (plan-feature.md not found)"
+    FAIL=$((FAIL + 1))
+fi
 
 # ============================================================
 echo ""

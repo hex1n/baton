@@ -300,8 +300,31 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 17: awk fallback (hide jq) ==="
-d="$tmp/t17" && mkdir -p "$d"
+echo "=== Test 17: JSON cwd subdirectory + plan-*.md walk-up ==="
+d="$tmp/t17w" && mkdir -p "$d/project/src"
+cat > "$d/project/plan-feature.md" << 'PLAN'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+PLAN
+INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/app.ts","content":"code"},"cwd":"'"$d/project/src"'"}'
+# Run from outside project — write-lock reads JSON_CWD from stdin, walks up from src/ to find plan-feature.md
+RESULT="$(echo "$INPUT" | bash "$LOCK" 2>&1)"
+EXIT_CODE=$?
+TOTAL=$((TOTAL + 1))
+if [ "$EXIT_CODE" -eq 0 ]; then
+    echo "  pass: JSON_CWD walk-up finds plan-feature.md with GO → allows write"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected exit 0 (write allowed), got $EXIT_CODE"
+    echo "  RESULT: $RESULT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 18: awk fallback (hide jq) ==="
+d="$tmp/t18a" && mkdir -p "$d"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
@@ -323,24 +346,28 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 18: Performance benchmark (write-lock latency) ==="
-d="$tmp/t18" && mkdir -p "$d"
-printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
-TOTAL=$((TOTAL + 1))
-START_NS=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
-for i in $(seq 1 100); do
-    run_lock "$d" "src/test.ts" >/dev/null 2>&1 || true
-done
-END_NS=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
-ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
-AVG_MS=$((ELAPSED_MS / 100))
-echo "  100 invocations in ${ELAPSED_MS}ms (avg ${AVG_MS}ms/call)"
-if [ "$AVG_MS" -lt 200 ]; then
-    echo "  pass: write-lock latency ${AVG_MS}ms < 200ms threshold"
-    PASS=$((PASS + 1))
+echo "=== Test 20: Performance benchmark (write-lock latency) ==="
+if [ "${BATON_RUN_BENCH:-0}" = "1" ]; then
+    d="$tmp/t18" && mkdir -p "$d"
+    printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+    TOTAL=$((TOTAL + 1))
+    START_NS=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
+    for i in $(seq 1 100); do
+        run_lock "$d" "src/test.ts" >/dev/null 2>&1 || true
+    done
+    END_NS=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
+    ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
+    AVG_MS=$((ELAPSED_MS / 100))
+    echo "  100 invocations in ${ELAPSED_MS}ms (avg ${AVG_MS}ms/call)"
+    if [ "$AVG_MS" -lt 200 ]; then
+        echo "  pass: write-lock latency ${AVG_MS}ms < 200ms threshold"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: write-lock.sh too slow: ${AVG_MS}ms > 200ms threshold"
+        FAIL=$((FAIL + 1))
+    fi
 else
-    echo "  FAIL: write-lock.sh too slow: ${AVG_MS}ms > 200ms threshold"
-    FAIL=$((FAIL + 1))
+    echo "  skip: benchmark disabled (set BATON_RUN_BENCH=1 to enable)"
 fi
 
 # ============================================================

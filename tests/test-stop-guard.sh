@@ -169,8 +169,29 @@ assert_exit_zero "$d/project/src/components" "exit 0 from subdirectory"
 
 # ============================================================
 echo ""
-echo "=== Test 8: Single unchecked item ==="
-d="$tmp/t8" && mkdir -p "$d"
+echo "=== Test 8: Walk-up finds plan-*.md from subdirectory ==="
+d="$tmp/t8" && mkdir -p "$d/src/deep"
+cat > "$d/plan-feature.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1: do something
+EOF
+# Run from subdirectory — should find plan-feature.md and detect remaining todo
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d/src/deep" && bash "$GUARD" 2>&1 1>/dev/null)"
+if echo "$OUTPUT" | grep -q "remaining"; then
+    echo "  pass: walk-up finds plan-feature.md from subdirectory, detects remaining todo"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected 'remaining' in output for plan-feature.md walk-up"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 9: Single unchecked item ==="
+d="$tmp/t9" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 <!-- BATON:GO -->
 - [ ] Step 1: Only task
@@ -181,8 +202,8 @@ assert_exit_zero "$d" "exit 0"
 
 # ============================================================
 echo ""
-echo "=== Test 9: Mixed content — only counts TODO lines ==="
-d="$tmp/t9" && mkdir -p "$d"
+echo "=== Test 10: Mixed content — only counts TODO lines ==="
+d="$tmp/t10" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 # Plan
 <!-- BATON:GO -->

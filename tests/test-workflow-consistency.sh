@@ -4,40 +4,20 @@ set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SLIM="$SCRIPT_DIR/../.baton/workflow.md"
-FULL="$SCRIPT_DIR/../.baton/workflow-full.md"
 README_FILE="$SCRIPT_DIR/../README.md"
 SETUP="$SCRIPT_DIR/../setup.sh"
 FIRST_PRINCIPLES="$SCRIPT_DIR/../docs/first-principles.md"
 IMPL_DESIGN="$SCRIPT_DIR/../docs/implementation-design.md"
 FAIL=0
 
-extract_section() {
-    awk -v sect="### $2" 'BEGIN{f=0} $0==sect{f=1} f && /^---$/{exit} f && /^### / && $0!=sect{exit} f{print}' "$1"
-}
-
-for section in "Mindset" "Action Boundaries" "File Conventions" "Session Handoff"; do
-    A="$(extract_section "$SLIM" "$section")"
-    B="$(extract_section "$FULL" "$section")"
-    if [ -z "$A" ] && [ -z "$B" ]; then
-        echo "DRIFT: '$section' not found in either file (false positive guard)"
-        FAIL=1
-    elif [ "$A" != "$B" ]; then
-        echo "DRIFT: '$section' differs between workflow.md and workflow-full.md"
-        FAIL=1
-    else
-        echo "OK: '$section' is consistent"
-    fi
-done
-
-# --- Shared core concepts: workflow.md must contain key concepts from workflow-full.md ---
-echo ""
-echo "Checking shared core concepts..."
+# --- Core concepts: workflow.md must contain key baton concepts ---
+echo "Checking core concepts in workflow.md..."
 for concept in "Mindset" "Verify before you claim" "Disagree with evidence" "Stop when uncertain" \
                "Scenario A" "Scenario B" "BATON:GO" "file:line" "批注区" "Annotation"; do
-    if grep -q "$concept" "$SLIM" && grep -q "$concept" "$FULL"; then
-        echo "OK: core concept '$concept' in both files"
+    if grep -q "$concept" "$SLIM"; then
+        echo "OK: core concept '$concept' in workflow.md"
     else
-        echo "DRIFT: core concept '$concept' not in both workflow files"
+        echo "DRIFT: core concept '$concept' missing from workflow.md"
         FAIL=1
     fi
 done
@@ -82,72 +62,32 @@ for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
         echo "OK: $script no SYNCED comments"
     fi
 done
-# --- Flow line consistency: Scenario A and B must match ---
-echo ""
-echo "Checking Flow line consistency..."
 GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
-
-for scenario in "Scenario A" "Scenario B"; do
-    LINE_SLIM="$(grep -m1 "$scenario" "$SLIM" 2>/dev/null || true)"
-    LINE_FULL="$(grep -m1 "$scenario" "$FULL" 2>/dev/null || true)"
-    if [ -z "$LINE_SLIM" ] && [ -z "$LINE_FULL" ]; then
-        echo "WARN: '$scenario' not found in either file"
-    elif [ "$LINE_SLIM" != "$LINE_FULL" ]; then
-        echo "DRIFT: '$scenario' line differs between workflow.md and workflow-full.md"
-        FAIL=1
-    else
-        echo "OK: '$scenario' line is consistent"
-    fi
-done
-
-# --- phase-guide.sh keyword cross-validation ---
-echo ""
-echo "Checking phase-guide.sh keywords in workflow-full.md..."
-
-# RESEARCH phase keywords
-for kw in "RESEARCH" "file:line" "subagent" "批注区"; do
-    if grep -q "$kw" "$GUIDE" && ! grep -q "$kw" "$FULL"; then
-        echo "DRIFT: phase-guide.sh mentions '$kw' but workflow-full.md does not"
-        FAIL=1
-    else
-        echo "OK: keyword '$kw' consistent"
-    fi
-done
-
-# IMPLEMENT phase keywords
-for kw in "typecheck" "BATON:GO" "3x"; do
-    if grep -q "$kw" "$GUIDE" && ! grep -q "$kw" "$FULL"; then
-        echo "DRIFT: phase-guide.sh mentions '$kw' but workflow-full.md does not"
-        FAIL=1
-    else
-        echo "OK: keyword '$kw' consistent"
-    fi
-done
 
 # --- 批注区 rule consistency ---
 echo ""
 echo "Checking 批注区 rule consistency..."
-if grep -q "批注区" "$SLIM" && grep -q "批注区" "$FULL"; then
-    echo "OK: 批注区 mentioned in both workflow files"
+if grep -q "批注区" "$SLIM"; then
+    echo "OK: 批注区 mentioned in workflow.md"
 else
-    echo "DRIFT: 批注区 not consistently mentioned in both workflow files"
+    echo "DRIFT: 批注区 not mentioned in workflow.md"
     FAIL=1
 fi
 
 # --- Complexity Calibration consistency ---
 echo ""
 echo "Checking Complexity Calibration consistency..."
-if grep -q "Complexity Calibration" "$SLIM" && grep -q "Complexity Calibration" "$FULL"; then
-    echo "OK: Complexity Calibration in both workflow files"
+if grep -q "Complexity Calibration" "$SLIM"; then
+    echo "OK: Complexity Calibration in workflow.md"
 else
-    echo "DRIFT: Complexity Calibration not consistently present"
+    echo "DRIFT: Complexity Calibration not in workflow.md"
     FAIL=1
 fi
 for level in "Trivial" "Small" "Medium" "Large"; do
-    if grep -q "$level" "$SLIM" && grep -q "$level" "$FULL"; then
-        echo "OK: complexity level '$level' in both files"
+    if grep -q "$level" "$SLIM"; then
+        echo "OK: complexity level '$level' in workflow.md"
     else
-        echo "DRIFT: complexity level '$level' not consistently present"
+        echo "DRIFT: complexity level '$level' missing from workflow.md"
         FAIL=1
     fi
 done
@@ -156,36 +96,23 @@ done
 echo ""
 echo "Checking anti-sycophancy line consistency..."
 SYCO="accuracy, not comfort"
-if grep -q "$SYCO" "$SLIM" && grep -q "$SYCO" "$FULL"; then
-    echo "OK: anti-sycophancy line in both workflow files"
+if grep -q "$SYCO" "$SLIM"; then
+    echo "OK: anti-sycophancy line in workflow.md"
 else
-    echo "DRIFT: anti-sycophancy line not consistently present"
+    echo "DRIFT: anti-sycophancy line not in workflow.md"
     FAIL=1
 fi
 
-# --- Self-Review keyword consistency (SKILL.md or phase-guide ↔ workflow-full) ---
-echo ""
-echo "Checking Self-Review keyword consistency..."
 SKILLS_DIR="$SCRIPT_DIR/../.claude/skills"
-SKILL_HAS_SELF_REVIEW=false
-for _skill_dir in "$SKILLS_DIR"/baton-*/; do
-    [ -f "$_skill_dir/SKILL.md" ] && grep -q "Self-Review" "$_skill_dir/SKILL.md" && SKILL_HAS_SELF_REVIEW=true
-done
-if ($SKILL_HAS_SELF_REVIEW || grep -q "Self-Review" "$GUIDE") && grep -q "Self-Review" "$FULL"; then
-    echo "OK: Self-Review in skills/phase-guide and workflow-full.md"
-else
-    echo "DRIFT: Self-Review not consistent between skills/phase-guide and workflow-full.md"
-    FAIL=1
-fi
 
 # --- Retrospective keyword consistency ---
 echo ""
 echo "Checking Retrospective keyword consistency..."
 STOP="$SCRIPT_DIR/../.baton/hooks/stop-guard.sh"
-if grep -q "Retrospective" "$FULL" && grep -q "Retrospective" "$STOP"; then
-    echo "OK: Retrospective in both workflow-full.md and stop-guard.sh"
+if grep -q "Retrospective" "$STOP"; then
+    echo "OK: Retrospective in stop-guard.sh"
 else
-    echo "DRIFT: Retrospective not consistent between workflow-full.md and stop-guard.sh"
+    echo "DRIFT: Retrospective missing from stop-guard.sh"
     FAIL=1
 fi
 
@@ -287,7 +214,7 @@ echo "Checking Direction γ annotation system..."
 GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
 
 # [PAUSE] must be in all annotation-related files and current protocol/runtime sources
-for f in "$PLAN_SKILL" "$RESEARCH_SKILL" "$SLIM" "$FULL" "$GUIDE" \
+for f in "$PLAN_SKILL" "$RESEARCH_SKILL" "$SLIM" "$GUIDE" \
          "$README_FILE" "$SETUP" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
     fname="$(basename "$f")"
     if grep -q '\[PAUSE\]' "$f"; then
@@ -360,21 +287,18 @@ for f in "$PLAN_SKILL" "$RESEARCH_SKILL"; do
 done
 
 # Template guidance must not use invalid nested HTML comments around BATON:GO
-for f in "$PLAN_SKILL" "$FULL"; do
-    fname="$(basename "$f")"
-    if grep -q '审阅完成后添加 <!-- BATON:GO -->' "$f"; then
-        echo "DRIFT: $fname plan template still contains nested BATON:GO comment"
-        FAIL=1
-    else
-        echo "OK: $fname plan template avoids nested BATON:GO comment"
-    fi
-done
+fname="$(basename "$PLAN_SKILL")"
+if grep -q '审阅完成后添加 <!-- BATON:GO -->' "$PLAN_SKILL"; then
+    echo "DRIFT: $fname plan template still contains nested BATON:GO comment"
+    FAIL=1
+else
+    echo "OK: $fname plan template avoids nested BATON:GO comment"
+fi
 
 # Todo completion format should be aligned across workflow and active skills
 if grep -q '\- \[x\] ✅' "$PLAN_SKILL" \
    && grep -q '\- \[x\] ✅' "$IMPL_SKILL" \
-   && grep -q '\- \[x\] ✅' "$SLIM" \
-   && grep -q '\- \[x\] ✅' "$FULL"; then
+   && grep -q '\- \[x\] ✅' "$SLIM"; then
     echo "OK: todo completion format aligned on - [x] ✅"
 else
     echo "DRIFT: todo completion format differs across workflow/skills"
@@ -470,23 +394,6 @@ else
     FAIL=1
 fi
 
-# workflow-full.md must have Surface Scan hint
-if grep -q 'Surface Scan' "$FULL" && grep -q 'disposition table' "$FULL"; then
-    echo "OK: workflow-full.md has Surface Scan references"
-else
-    echo "DRIFT: workflow-full.md missing Surface Scan alignment"
-    FAIL=1
-fi
-
-# workflow-full.md must have cascading triggers matching baton-implement
-if grep -q 'After completing each todo' "$FULL" \
-   && grep -q 'already changed by a prior todo' "$FULL"; then
-    echo "OK: workflow-full.md has cascading triggers aligned with baton-implement"
-else
-    echo "DRIFT: workflow-full.md missing cascading triggers"
-    FAIL=1
-fi
-
 # --- Protocol drift guards (prevent re-introduction of fixed wording) ---
 echo ""
 echo "Checking protocol drift guards..."
@@ -499,12 +406,12 @@ else
     echo "OK: workflow.md does not reference README.md"
 fi
 
-# workflow.md must NOT contain Document Authority (meta-governance in slim protocol)
+# workflow.md MUST contain Document Authority (authority model moved here from workflow-full.md)
 if grep -q 'Document Authority' "$SLIM"; then
-    echo "DRIFT: workflow.md contains 'Document Authority' — meta-governance belongs in workflow-full.md"
-    FAIL=1
+    echo "OK: workflow.md contains Document Authority"
 else
-    echo "OK: workflow.md does not contain Document Authority"
+    echo "DRIFT: workflow.md missing 'Document Authority' — authority model should be in workflow.md"
+    FAIL=1
 fi
 
 # workflow.md must NOT contain old research.md rule

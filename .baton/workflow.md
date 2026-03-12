@@ -79,9 +79,13 @@ After an annotation is processed into a structured Round entry, remove the raw t
 When stopping mid-work, append `## Lessons Learned` to plan.md — record what worked, what didn't, what to try next, so the next session starts with context, not from scratch.
 When archiving, preserve Lessons Learned and Annotation Log (long-term reference).
 
+### Document Authority
+- **workflow.md** — foundational protocol, always loaded. The core contract.
+- **SKILL.md files** — normative phase specifications. Authoritative for their respective phases.
+
 ### Enforcement Boundaries
 Not all rules have technical enforcement. Know the difference:
 - **Hook-enforced**: BATON:GO gate (write-lock.sh blocks source writes without GO). This is a hard technical gate.
 - **Advisory**: Todolist existence (phase-guide detects AWAITING_TODO state, warns but does not block). Write set scope (post-write-tracker warns on plan-unlisted writes, cannot block).
 - **Skill-disciplined**: Unexpected discovery stop, 3-failure stop, write set adherence. These rely on skill Iron Laws and human review, not hooks.
-- **Fallback guidance** is intentionally more conservative than skill-guided execution. Without phase-specific skill discipline, stricter defaults are safer.
+- **Fallback guidance** is intentionally more conservative than skill-guided execution. When skills are unavailable, hooks output hardcoded summaries as a safety net.

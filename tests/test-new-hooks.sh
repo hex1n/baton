@@ -152,27 +152,39 @@ assert_output_contains "$OUTPUT" "Retrospective" "blocking message mentions Retr
 
 # ============================================================
 echo ""
+echo "=== Test 15: completion-check walk-up finds plan-*.md from subdirectory ==="
+d="$tmp/t15" && mkdir -p "$d/src/deep"
+cat > "$d/plan-feature.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] ✅ Step 1: done
+EOF
+# Run from subdirectory — should find plan-feature.md, all done, no Retrospective → exit 2
+assert_exit_code 2 "completion-check.sh" "$d/src/deep"
+
+# ============================================================
+echo ""
 echo "=== pre-compact.sh ==="
 
-echo "--- Test 15: Implement phase → outputs progress ---"
+echo "--- Test 16: Implement phase → outputs progress ---"
 d="$tmp/pc1" && mkdir -p "$d"
 printf '<!-- BATON:GO -->\n## Todo\n- [x] Step 1\n- [ ] Step 2\n' > "$d/plan.md"
 OUTPUT="$(cd "$d" && bash "$BATON/pre-compact.sh" 2>&1 1>/dev/null)" || true
 assert_output_contains "$OUTPUT" "IMPLEMENT" "shows IMPLEMENT phase"
 assert_output_contains "$OUTPUT" "1/2" "shows progress"
 
-echo "--- Test 16: Annotation phase → outputs phase info ---"
+echo "--- Test 17: Annotation phase → outputs phase info ---"
 d="$tmp/pc2" && mkdir -p "$d"
 echo "# Plan" > "$d/plan.md"
 OUTPUT="$(cd "$d" && bash "$BATON/pre-compact.sh" 2>&1 1>/dev/null)" || true
 assert_output_contains "$OUTPUT" "PLAN/ANNOTATION" "shows PLAN/ANNOTATION phase"
 
-echo "--- Test 17: No plan → silent ---"
+echo "--- Test 18: No plan → silent ---"
 d="$tmp/pc3" && mkdir -p "$d"
 OUTPUT="$(cd "$d" && bash "$BATON/pre-compact.sh" 2>&1 1>/dev/null)" || true
 assert_output_not_contains "$OUTPUT" "Baton context" "no plan → silent"
 
-echo "--- Test 18: Plan with Annotation Log → mentions it ---"
+echo "--- Test 19: Plan with Annotation Log → mentions it ---"
 d="$tmp/pc4" && mkdir -p "$d"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n## Annotation Log\nRound 1\n' > "$d/plan.md"
 OUTPUT="$(cd "$d" && bash "$BATON/pre-compact.sh" 2>&1 1>/dev/null)" || true

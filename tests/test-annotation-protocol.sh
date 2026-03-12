@@ -4,7 +4,8 @@ set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SLIM="$SCRIPT_DIR/../.baton/workflow.md"
-FULL="$SCRIPT_DIR/../.baton/workflow-full.md"
+PLAN_SKILL="$SCRIPT_DIR/../.claude/skills/baton-plan/SKILL.md"
+RESEARCH_SKILL="$SCRIPT_DIR/../.claude/skills/baton-research/SKILL.md"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -34,14 +35,21 @@ check_not() {
 }
 
 # ============================================================
-echo "=== Direction γ markers present in both files ==="
+echo "=== Direction γ markers in workflow.md ==="
 
 check "$SLIM" '\[PAUSE\]' "workflow.md contains [PAUSE]"
-check "$FULL" '\[PAUSE\]' "workflow-full.md contains [PAUSE]"
 check "$SLIM" "infers intent from content" "workflow.md mentions intent inference"
-check "$FULL" "infers intent from content" "workflow-full.md mentions intent inference"
-check "$FULL" "Free-text is the default" "workflow-full.md documents free-text default"
-check "$FULL" "Consequence detection" "workflow-full.md documents consequence detection"
+
+# ============================================================
+echo ""
+echo "=== Direction γ markers migrated to skills ==="
+
+check "$PLAN_SKILL" "infers intent" "baton-plan mentions intent inference"
+check "$PLAN_SKILL" "free-text" "baton-plan documents free-text default"
+check "$PLAN_SKILL" "Consequence detection" "baton-plan documents consequence detection"
+check "$RESEARCH_SKILL" "infers intent" "baton-research mentions intent inference"
+check "$RESEARCH_SKILL" "free-text" "baton-research documents free-text default"
+check "$RESEARCH_SKILL" "Consequence detection" "baton-research documents consequence detection"
 
 # ============================================================
 echo ""
@@ -49,29 +57,33 @@ echo "=== Legacy explicit annotation types removed ==="
 
 for marker in '\[NOTE\]' '\[Q\]' '\[CHANGE\]' '\[DEEPER\]' '\[MISSING\]' '\[RESEARCH-GAP\]'; do
     check_not "$SLIM" "$marker" "workflow.md does not contain $marker"
-    check_not "$FULL" "$marker" "workflow-full.md does not contain $marker"
 done
 
 # ============================================================
 echo ""
-echo "=== workflow-full.md has detailed annotation sections ==="
+echo "=== Annotation protocol detailed coverage in skills ==="
 
-check "$FULL" "Annotation Log" "workflow-full.md has Annotation Log section"
-check "$FULL" "Round 1" "workflow-full.md has Annotation Log example"
-check "$FULL" "Annotation Format" "workflow-full.md has annotation format section"
-check "$FULL" "Core Principles" "workflow-full.md has AI response principles"
-check "$FULL" "\[PAUSE\] Handling" "workflow-full.md has [PAUSE] handling section"
-check "$FULL" "Correct behavior:" "workflow-full.md has correct AI behavior examples"
-check "$FULL" "Incorrect behavior:" "workflow-full.md has incorrect AI behavior examples"
+check "$PLAN_SKILL" "Annotation Log" "baton-plan has Annotation Log section"
+check "$PLAN_SKILL" "Round 1" "baton-plan has Annotation Log example"
+check "$PLAN_SKILL" "Annotation Log Format" "baton-plan has annotation log format section"
+check "$PLAN_SKILL" '\[PAUSE\]' "baton-plan mentions [PAUSE]"
+check "$RESEARCH_SKILL" "Annotation Log" "baton-research has Annotation Log section"
+check "$RESEARCH_SKILL" '\[PAUSE\]' "baton-research mentions [PAUSE]"
 
 # ============================================================
 echo ""
-echo "=== Core principles present in both files ==="
+echo "=== Plan analysis concepts in baton-plan skill ==="
+
+check "$PLAN_SKILL" "Approach Analysis" "baton-plan has approach analysis section"
+check "$PLAN_SKILL" "fundamental constraints" "baton-plan mentions fundamental constraints"
+check "$PLAN_SKILL" "Fundamental Problems" "baton-plan has fundamental problem handling"
+
+# ============================================================
+echo ""
+echo "=== Core principles present in workflow.md ==="
 
 check "$SLIM" "not always right" "workflow.md contains push-back principle"
-check "$FULL" "not always right" "workflow-full.md contains push-back principle"
 check "$SLIM" "evidence" "workflow.md mentions evidence"
-check "$FULL" "evidence" "workflow-full.md mentions evidence"
 
 # ============================================================
 echo ""
@@ -83,11 +95,10 @@ check "$SLIM" "remove the raw text from" "workflow.md has annotation cleanup rul
 
 # ============================================================
 echo ""
-echo "=== Plan analysis section in workflow-full.md ==="
+echo "=== Group 3: fork-context self-sufficiency guards ==="
 
-check "$FULL" "Approach Analysis" "workflow-full.md has approach analysis section"
-check "$FULL" "fundamental constraints" "workflow-full.md mentions fundamental constraints"
-check "$FULL" "Fundamental Problems" "workflow-full.md has fundamental problem handling"
+check_not "$RESEARCH_SKILL" "live in .workflow\.md." "baton-research no longer delegates to workflow.md"
+check "$RESEARCH_SKILL" "document body" "baton-research has inlined analysis write-back rule"
 
 # ============================================================
 echo ""

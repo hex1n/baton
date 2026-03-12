@@ -948,9 +948,17 @@ JSON
     if [ -f "$CLAUDE_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
         # Migrate old @workflow-full.md → @workflow.md (slim)
         if grep -q '@\.baton/workflow-full\.md' "$CLAUDE_MD" 2>/dev/null; then
-            sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$CLAUDE_MD"
-            rm -f "$CLAUDE_MD.bak"
-            echo "  ✓ Migrated CLAUDE.md @import: workflow-full.md → workflow.md (slim)"
+            if grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null; then
+                # Both exist (mixed state) — delete old line, keep new
+                sed -i.bak '/@\.baton\/workflow-full\.md/d' "$CLAUDE_MD"
+                rm -f "$CLAUDE_MD.bak"
+                echo "  ✓ Removed residual workflow-full.md import from CLAUDE.md"
+            else
+                # Only old exists — replace
+                sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$CLAUDE_MD"
+                rm -f "$CLAUDE_MD.bak"
+                echo "  ✓ Migrated CLAUDE.md @import: workflow-full.md → workflow.md (slim)"
+            fi
         else
             echo "  ✓ Workflow @import already in CLAUDE.md"
         fi
@@ -1043,7 +1051,14 @@ configure_codex() {
     # AGENTS.md rules injection
     AGENTS_MD="$PROJECT_DIR/AGENTS.md"
     if [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow\.md' "$AGENTS_MD" 2>/dev/null; then
-        echo "  ✓ Workflow reference already in AGENTS.md"
+        # Clean up residual old import if both exist (mixed state)
+        if grep -q '@\.baton/workflow-full\.md' "$AGENTS_MD" 2>/dev/null; then
+            sed -i.bak '/@\.baton\/workflow-full\.md/d' "$AGENTS_MD"
+            rm -f "$AGENTS_MD.bak"
+            echo "  ✓ Removed residual workflow-full.md import from AGENTS.md"
+        else
+            echo "  ✓ Workflow reference already in AGENTS.md"
+        fi
     elif [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow-full\.md' "$AGENTS_MD" 2>/dev/null; then
         sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$AGENTS_MD"
         rm -f "$AGENTS_MD.bak"
@@ -1207,16 +1222,11 @@ install_versioned_script "pre-compact.sh"
 # --- 2. Install workflow files ---
 if [ "$SELF_INSTALL" = "1" ]; then
     echo "  ✓ workflow.md (self-install, skipping copy)"
-    echo "  ✓ workflow-full.md (self-install, skipping copy)"
 else
     cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.baton/workflow.md"
     echo "  ✓ Installed workflow.md (slim — detailed phase guidance lives in skills)"
 fi
 
-# Always copy workflow-full.md as reference
-if [ "$SELF_INSTALL" != "1" ]; then
-    cp "$BATON_DIR/.baton/workflow-full.md" "$PROJECT_DIR/.baton/workflow-full.md"
-fi
 
 # Install baton skills to all detected IDEs
 install_skills
