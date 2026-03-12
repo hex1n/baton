@@ -303,11 +303,15 @@ if [[ -n "$transcript_path" && -f "$transcript_path" ]]; then
             o: (map(.output_tokens // 0) | add // 0)
         }) as $t |
 
-        # Pricing by model
-        (if ($model_id | test("opus-4|opus-4-5"; "i")) then
+        # Pricing by model (per MTok, updated 2026-03)
+        (if ($model_id | test("opus-4-[56]"; "i")) then
+            { i: 5, cw: 6.25, cr: 0.50, o: 25 }
+        elif ($model_id | test("opus"; "i")) then
             { i: 15, cw: 18.75, cr: 1.50, o: 75 }
-        elif ($model_id | test("sonnet-4|sonnet-4-5|3-5-sonnet"; "i")) then
+        elif ($model_id | test("sonnet"; "i")) then
             { i: 3, cw: 3.75, cr: 0.30, o: 15 }
+        elif ($model_id | test("haiku-4-5|haiku-4\\.5"; "i")) then
+            { i: 1, cw: 1.25, cr: 0.10, o: 5 }
         elif ($model_id | test("haiku-3-5|haiku-3\\.5"; "i")) then
             { i: 0.80, cw: 1.00, cr: 0.08, o: 4 }
         elif ($model_id | test("haiku"; "i")) then
