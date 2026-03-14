@@ -1,6 +1,6 @@
 #!/bin/sh
 # setup.sh — Install or upgrade baton plan-first workflow into a project
-# Version: 3.0
+# Version: 3.1
 #
 # Usage: bash /path/to/baton/setup.sh [--ide ide[,ide...]] [--choose] [project_dir]
 #
@@ -127,6 +127,10 @@ PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 SELF_INSTALL=0
 [ "$BATON_DIR" = "$PROJECT_DIR" ] && SELF_INSTALL=1
 
+BATON_SKILL_NAMES="baton-research baton-plan baton-implement baton-review baton-debug baton-subagent"
+BATON_AGENTS_FALLBACK_MARKER=".baton-generated-fallback"
+BATON_CODEX_TRUST_MARKER_PREFIX="# baton:codex-trust:"
+
 json_edit_with_jq() {
     _jej_file="$1"
     _jej_filter="$2"
@@ -167,6 +171,8 @@ baton_json_command_allowlist() {
   "sh .baton/hooks/completion-check.sh",
   "bash .baton/hooks/pre-compact.sh",
   "sh .baton/hooks/pre-compact.sh",
+  "bash .baton/hooks/failure-tracker.sh",
+  "sh .baton/hooks/failure-tracker.sh",
   "bash .baton/hooks/bash-guard.sh",
   "sh .baton/hooks/bash-guard.sh",
   "bash .baton/adapters/adapter-cursor.sh",
@@ -415,15 +421,32 @@ if [ "$UNINSTALL" = "1" ]; then
         fi
         echo "  ✓ Removed codex_hooks feature flag from .codex/config.toml"
     fi
-    # Clean Codex trust entry from user config
-    if [ -f "$HOME/.codex/config.toml" ] && grep -q '# baton:codex-trust:' "$HOME/.codex/config.toml" 2>/dev/null; then
-        sed -i.bak '/# baton:codex-trust:/,/^$/d' "$HOME/.codex/config.toml"
-        rm -f "$HOME/.codex/config.toml.bak"
-        echo "  ✓ Removed baton trust entry from ~/.codex/config.toml"
+    # Clean Codex trust entry from user config (best-effort; do not fail uninstall)
+    if [ -f "$HOME/.codex/config.toml" ]; then
+        _codex_user_marker="${BATON_CODEX_TRUST_MARKER_PREFIX}${PROJECT_DIR}"
+        _codex_user_tmp="$HOME/.codex/config.toml.baton.tmp"
+        if grep -qxF "$_codex_user_marker" "$HOME/.codex/config.toml" 2>/dev/null; then
+            if awk -v marker="$_codex_user_marker" '
+                BEGIN { skip = 0; removed = 0 }
+                $0 == marker { skip = 1; removed = 1; next }
+                skip {
+                    if ($0 ~ /^$/) { skip = 0; next }
+                    next
+                }
+                { print }
+                END { exit removed ? 0 : 2 }
+            ' "$HOME/.codex/config.toml" > "$_codex_user_tmp" 2>/dev/null && \
+               mv "$_codex_user_tmp" "$HOME/.codex/config.toml" 2>/dev/null; then
+                echo "  ✓ Removed baton trust entry from ~/.codex/config.toml"
+            else
+                rm -f "$_codex_user_tmp"
+                echo "  ⚠ Could not remove baton trust entry from ~/.codex/config.toml — review manually"
+            fi
+        fi
     fi
     # Clean baton skills from all IDEs
     for _ide_dir in .claude .cursor .agents; do
-        for _skill in baton-research baton-plan baton-implement; do
+        for _skill in $BATON_SKILL_NAMES; do
             _skill_dir="$PROJECT_DIR/$_ide_dir/skills/$_skill"
             if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_dir" = "$BATON_DIR/.claude/skills/$_skill" ]; then
                 continue
@@ -433,6 +456,8 @@ if [ "$UNINSTALL" = "1" ]; then
             fi
         done
     done
+    rm -f "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
+    rmdir "$PROJECT_DIR/.agents/skills" "$PROJECT_DIR/.agents" 2>/dev/null || true
     echo "  ✓ Removed baton skills from all IDE directories"
     # Clean git pre-commit hook (legacy)
     if [ -f "$PROJECT_DIR/.git/hooks/pre-commit" ] && grep -q 'baton:pre-commit' "$PROJECT_DIR/.git/hooks/pre-commit" 2>/dev/null; then
@@ -474,6 +499,49 @@ append_ide() {
     esac
 }
 
+is_baton_skill_name() {
+    case " $BATON_SKILL_NAMES " in
+        *" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Ignore .agents when it contains only Baton-generated fallback skills.
+is_baton_agents_fallback_dir() {
+    _fallback_dir="$PROJECT_DIR/.agents"
+    [ -d "$_fallback_dir" ] || return 1
+
+    _has_marker=0
+    [ -f "$_fallback_dir/$BATON_AGENTS_FALLBACK_MARKER" ] && _has_marker=1
+
+    _top_entries="$(cd "$_fallback_dir" 2>/dev/null && ls -A 2>/dev/null)" || return 1
+    [ -n "$_top_entries" ] || return 1
+    for _entry in $_top_entries; do
+        case "$_entry" in
+            skills|"$BATON_AGENTS_FALLBACK_MARKER") ;;
+            *) return 1 ;;
+        esac
+    done
+
+    if [ ! -d "$_fallback_dir/skills" ]; then
+        [ "$_has_marker" -eq 1 ]
+        return
+    fi
+
+    _skill_entries="$(cd "$_fallback_dir/skills" 2>/dev/null && ls -A 2>/dev/null)" || return 1
+    if [ -z "$_skill_entries" ]; then
+        [ "$_has_marker" -eq 1 ]
+        return
+    fi
+
+    _found_baton_skill=0
+    for _entry in $_skill_entries; do
+        is_baton_skill_name "$_entry" || return 1
+        _found_baton_skill=1
+    done
+    [ "$_found_baton_skill" -eq 1 ]
+}
+
 has_codex_env() {
     [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SANDBOX:-}" ]
 }
@@ -497,7 +565,7 @@ ide_summary() {
     case "$1" in
         claude)   echo "full protection, native hooks + skills" ;;
         factory)  echo "full protection, Claude-style hooks + skills" ;;
-        cursor)   echo "full protection, Cursor IDE hooks + adapter" ;;
+        cursor)   echo "core protection, Cursor IDE hooks + adapter" ;;
         codex)    echo "session hooks + AGENTS.md rules + skills (experimental)" ;;
         *)        echo "supported IDE" ;;
     esac
@@ -616,10 +684,14 @@ choose_ides() {
 
 detect_ides() {
     _ides=""
+    _agents_signal=0
+    if [ -d "$PROJECT_DIR/.agents" ] && ! is_baton_agents_fallback_dir; then
+        _agents_signal=1
+    fi
     [ -d "$PROJECT_DIR/.claude" ]     && append_ide "claude"
     [ -d "$PROJECT_DIR/.cursor" ]     && append_ide "cursor"
-    { [ -d "$PROJECT_DIR/.factory" ] || [ -d "$PROJECT_DIR/.agents" ]; } && append_ide "factory"
-    { [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -d "$PROJECT_DIR/.agents" ]; } && append_ide "codex"
+    { [ -d "$PROJECT_DIR/.factory" ] || [ "$_agents_signal" = "1" ]; } && append_ide "factory"
+    { [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -d "$PROJECT_DIR/.codex" ] || [ "$_agents_signal" = "1" ]; } && append_ide "codex"
     has_codex_env                    && append_ide "codex"
     [ -z "$_ides" ] && append_ide "claude"
     echo "$_ides"
@@ -693,13 +765,53 @@ install_adapter() {
     fi
 }
 
-# Install baton skills to each detected IDE's skill directory
-# Skills are the canonical source in .claude/skills/ within baton
+# Atomic copy: write to temp file, then mv to final location.
+# Usage: atomic_copy <src> <dst>
+atomic_copy() {
+    _ac_src="$1"
+    _ac_dst="$2"
+    _ac_tmp="${_ac_dst}.baton.tmp"
+    cp "$_ac_src" "$_ac_tmp"
+    mv "$_ac_tmp" "$_ac_dst"
+}
+
+# Determine canonical skill source directory.
+# Priority: .baton/skills/ (new canonical) > .claude/skills/ (legacy fallback)
+# Returns the source directory path via stdout; returns 1 if no source found.
+resolve_skill_source_dir() {
+    if [ -d "$BATON_DIR/.baton/skills" ]; then
+        echo "$BATON_DIR/.baton/skills"
+        return 0
+    fi
+    if [ -d "$BATON_DIR/.claude/skills" ]; then
+        echo "$BATON_DIR/.claude/skills"
+        return 0
+    fi
+    return 1
+}
+
+# Install baton skills to each detected IDE's skill directory.
+# Canonical source: .baton/skills/ in the baton installation directory.
+# Fallback: .claude/skills/ for backward compatibility during transition.
+# Only overwrites SKILL.md for the 6 Baton-managed skills.
 install_skills() {
+    _skill_source_dir=""
+    _skill_source_dir="$(resolve_skill_source_dir)" || {
+        echo "  ⚠ No skill source directory found — skipping skill installation"
+        return
+    }
+
+    # Migration detection: target project has .claude/skills/baton-*/SKILL.md
+    # but baton installation uses legacy .claude/skills/ source (no .baton/skills/).
+    if [ "$_skill_source_dir" = "$BATON_DIR/.claude/skills" ]; then
+        echo "  ⚠ Baton installation uses legacy .claude/skills/ as skill source."
+        echo "    Canonical source has moved to .baton/skills/. Consider upgrading your baton installation."
+    fi
+
     _skill_count=0
     _fallback_count=0
-    for _skill in baton-research baton-plan baton-implement; do
-        _src="$BATON_DIR/.claude/skills/$_skill/SKILL.md"
+    for _skill in $BATON_SKILL_NAMES; do
+        _src="$_skill_source_dir/$_skill/SKILL.md"
         [ -f "$_src" ] || continue
         for _ide in $IDES; do
             case "$_ide" in
@@ -713,13 +825,17 @@ install_skills() {
                 continue
             fi
             mkdir -p "$_ide_dir"
-            cp "$_src" "$_dst"
+            atomic_copy "$_src" "$_dst"
             _skill_count=$((_skill_count + 1))
         done
         mkdir -p "$PROJECT_DIR/.agents/skills/$_skill"
-        cp "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
+        atomic_copy "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
         _fallback_count=$((_fallback_count + 1))
     done
+    if [ "$_fallback_count" -gt 0 ]; then
+        mkdir -p "$PROJECT_DIR/.agents"
+        : > "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
+    fi
     if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_count" -gt 0 ]; then
         echo "  ✓ Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
     elif [ "$SELF_INSTALL" = "1" ] && [ "$_fallback_count" -gt 0 ]; then
@@ -787,6 +903,42 @@ merge_flat_hook_entry() {
     ' --arg event "$_mf_event" --arg field "$_mf_field" --arg value "$_mf_value" --argjson entry "$_mf_entry"
 }
 
+normalize_nested_hook_matcher() {
+    _nn_file="$1"
+    _nn_event="$2"
+    _nn_command="$3"
+    _nn_matcher="$4"
+    merge_json_with_jq "$_nn_file" '
+        .hooks = ((.hooks // {}) | if type == "object" then . else {} end) |
+        .hooks[$event] = ((.hooks[$event] // []) | if type == "array" then . else [] end |
+            map(
+                if any((.hooks // [])[]?; .command == $command) then
+                    .matcher = $matcher
+                else
+                    .
+                end
+            ))
+    ' --arg event "$_nn_event" --arg command "$_nn_command" --arg matcher "$_nn_matcher"
+}
+
+remove_single_command_hook_entry() {
+    _rs_file="$1"
+    _rs_event="$2"
+    _rs_command="$3"
+    _rs_matcher="$4"
+    merge_json_with_jq "$_rs_file" '
+        .hooks = ((.hooks // {}) | if type == "object" then . else {} end) |
+        .hooks[$event] = ((.hooks[$event] // []) | if type == "array" then . else [] end |
+            map(select(
+                (
+                    (.matcher // "") == $matcher and
+                    (((.hooks // []) | length) == 1) and
+                    ((.hooks[0].command // "") == $command)
+                ) | not
+            )))
+    ' --arg event "$_rs_event" --arg command "$_rs_command" --arg matcher "$_rs_matcher"
+}
+
 ensure_json_default() {
     _ej_file="$1"
     _ej_key="$2"
@@ -825,6 +977,64 @@ report_merge_result() {
     fi
 }
 
+has_codex_user_trust() {
+    _hct_file="$1"
+    _hct_project_path="$2"
+    [ -f "$_hct_file" ] || return 1
+    grep -qxF "${BATON_CODEX_TRUST_MARKER_PREFIX}${_hct_project_path}" "$_hct_file" 2>/dev/null
+}
+
+configure_codex_user_trust() {
+    _ct_file="$1"
+    _ct_project_path="$2"
+    if has_codex_user_trust "$_ct_file" "$_ct_project_path"; then
+        echo "  ✓ Project trust already configured in ~/.codex/config.toml"
+        return 0
+    fi
+    if ! mkdir -p "$(dirname "$_ct_file")" 2>/dev/null; then
+        echo "  ⚠ Could not create ~/.codex/ — skipped project trust entry (Codex may prompt until trusted manually)"
+        return 0
+    fi
+    if printf '\n%s%s\n[projects.'\''%s'\'']\ntrust_level = "trusted"\n' \
+        "$BATON_CODEX_TRUST_MARKER_PREFIX" \
+        "$_ct_project_path" "$_ct_project_path" >> "$_ct_file" 2>/dev/null; then
+        echo "  ✓ Added project trust to ~/.codex/config.toml"
+    else
+        echo "  ⚠ Could not update ~/.codex/config.toml automatically — add project trust manually if Codex prompts"
+    fi
+}
+
+remove_codex_user_trust() {
+    _rt_file="$1"
+    _rt_project_path="${2:-}"
+    [ -f "$_rt_file" ] || return 0
+    if [ -z "$_rt_project_path" ]; then
+        return 0
+    fi
+    _rt_marker="${BATON_CODEX_TRUST_MARKER_PREFIX}${_rt_project_path}"
+    if ! grep -qxF "$_rt_marker" "$_rt_file" 2>/dev/null; then
+        return 0
+    fi
+    _rt_tmp="${_rt_file}.baton.tmp"
+    awk -v marker="$_rt_marker" '
+        BEGIN { skip = 0; removed = 0 }
+        $0 == marker { skip = 1; removed = 1; next }
+        skip {
+            if ($0 ~ /^$/) { skip = 0; next }
+            next
+        }
+        { print }
+        END { exit removed ? 0 : 2 }
+    ' "$_rt_file" > "$_rt_tmp" 2>/dev/null
+    _rt_status=$?
+    if [ "$_rt_status" -eq 0 ] && mv "$_rt_tmp" "$_rt_file" 2>/dev/null; then
+        echo "  ✓ Removed baton trust entry from ~/.codex/config.toml"
+    else
+        rm -f "$_rt_tmp"
+        echo "  ⚠ Could not remove baton trust entry from ~/.codex/config.toml — review manually"
+    fi
+}
+
 # --- Per-IDE configuration functions ---
 
 configure_claude() {
@@ -842,11 +1052,17 @@ configure_claude() {
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SessionStart" "bash .baton/hooks/phase-guide.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/phase-guide.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreToolUse" "bash .baton/hooks/write-lock.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"bash .baton/hooks/write-lock.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreToolUse" "bash .baton/hooks/bash-guard.sh" '{"matcher":"Bash","hooks":[{"type":"command","command":"bash .baton/hooks/bash-guard.sh"}]}'
-        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PostToolUse" "bash .baton/hooks/post-write-tracker.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile","hooks":[{"type":"command","command":"bash .baton/hooks/post-write-tracker.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PostToolUse" "bash .baton/hooks/post-write-tracker.sh" '{"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"bash .baton/hooks/post-write-tracker.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "Stop" "bash .baton/hooks/stop-guard.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/stop-guard.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "SubagentStart" "bash .baton/hooks/subagent-context.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/subagent-context.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "TaskCompleted" "bash .baton/hooks/completion-check.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/completion-check.sh"}]}'
         run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PreCompact" "bash .baton/hooks/pre-compact.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/pre-compact.sh"}]}'
+        run_merge_and_record merge_nested_hook_entry "$SETTINGS" "PostToolUseFailure" "bash .baton/hooks/failure-tracker.sh" '{"matcher":"","hooks":[{"type":"command","command":"bash .baton/hooks/failure-tracker.sh"}]}'
+        run_merge_and_record remove_single_command_hook_entry "$SETTINGS" "SessionStart" "bash .baton/hooks/phase-guide.sh" "compact"
+        run_merge_and_record normalize_nested_hook_matcher "$SETTINGS" "SessionStart" "bash .baton/hooks/phase-guide.sh" ""
+        run_merge_and_record normalize_nested_hook_matcher "$SETTINGS" "PreToolUse" "bash .baton/hooks/write-lock.sh" "Edit|Write|MultiEdit|CreateFile|NotebookEdit"
+        run_merge_and_record normalize_nested_hook_matcher "$SETTINGS" "PreToolUse" "bash .baton/hooks/bash-guard.sh" "Bash"
+        run_merge_and_record normalize_nested_hook_matcher "$SETTINGS" "PostToolUse" "bash .baton/hooks/post-write-tracker.sh" "Edit|Write|MultiEdit|CreateFile|NotebookEdit"
         report_merge_result ".claude/settings.json"
     else
         cat > "$SETTINGS" << 'JSON'
@@ -885,7 +1101,7 @@ configure_claude() {
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|CreateFile",
+        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [
           {
             "type": "command",
@@ -937,11 +1153,22 @@ configure_claude() {
           }
         ]
       }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/failure-tracker.sh"
+          }
+        ]
+      }
     ]
   }
 }
 JSON
-        echo "  ✓ Created .claude/settings.json with 8 hooks (SessionStart, PreToolUse×2, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact)"
+        echo "  ✓ Created .claude/settings.json with 9 hooks (SessionStart, PreToolUse×2, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact, PostToolUseFailure)"
     fi
     # Inject workflow reference into CLAUDE.md (slim — phase-guide provides details)
     CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
@@ -1141,16 +1368,7 @@ HOOKJSON
     fi
 
     # (c) Trust — per-project entry in user-level ~/.codex/config.toml
-    mkdir -p "$HOME/.codex"
-    # Check if project path already has a trust entry (with or without \\?\ prefix)
-    _codex_path_escaped="$(printf '%s' "$_codex_project_path" | sed 's/[\\]/\\\\/g')"
-    if [ -f "$CODEX_USER_CONFIG" ] && grep -qF "$_codex_project_path" "$CODEX_USER_CONFIG" 2>/dev/null; then
-        echo "  ✓ Project trust already configured in ~/.codex/config.toml"
-    else
-        printf '\n# baton:codex-trust:%s\n[projects.'\''%s'\'']\ntrust_level = "trusted"\n' \
-            "$_codex_project_path" "$_codex_project_path" >> "$CODEX_USER_CONFIG"
-        echo "  ✓ Added project trust to ~/.codex/config.toml"
-    fi
+    configure_codex_user_trust "$CODEX_USER_CONFIG" "$_codex_project_path"
 
     install_adapter "adapter-codex.sh"
 }
@@ -1210,6 +1428,7 @@ else
 fi
 
 # Install scripts (versioned + skippable)
+install_versioned_script "plan-parser.sh"
 install_versioned_script "write-lock.sh"
 install_versioned_script "phase-guide.sh"
 install_versioned_script "stop-guard.sh"
@@ -1218,6 +1437,7 @@ install_versioned_script "post-write-tracker.sh"
 install_versioned_script "subagent-context.sh"
 install_versioned_script "completion-check.sh"
 install_versioned_script "pre-compact.sh"
+install_versioned_script "failure-tracker.sh"
 
 # --- 2. Install workflow files ---
 if [ "$SELF_INSTALL" = "1" ]; then
@@ -1246,7 +1466,7 @@ done
 GITIGNORE="$PROJECT_DIR/.gitignore"
 if [ -f "$GITIGNORE" ]; then
     if ! grep -q 'plan.md' "$GITIGNORE" 2>/dev/null; then
-        echo "  💡 Consider adding to .gitignore: plan.md, research.md, plans/"
+        echo "  💡 Consider adding to .gitignore: plan.md, plan-*.md, research.md, research-*.md, plans/"
     fi
 fi
 
@@ -1274,12 +1494,12 @@ else
 fi
 echo ""
 echo "  2. Tell the AI what you want to build or fix"
-echo "     → The AI writes research.md and/or plan.md depending on task complexity; simple changes may skip straight to plan.md"
+echo "     → The AI writes research and/or a plan depending on task complexity; simple changes may skip straight to planning"
 echo ""
-echo "  3. Give feedback in research.md, plan.md, or chat. Free-text is the default; [PAUSE] means stop and investigate first"
+echo "  3. Give feedback in the research file, plan file, or chat. Free-text is the default; [PAUSE] means stop and investigate first"
 echo "     → AI infers intent, responds with file:line evidence, and records it in Annotation Log"
 echo ""
-echo "  4. When satisfied, add this line to plan.md:"
+echo "  4. When satisfied, add this line to the plan:"
 echo "     <!-- BATON:GO -->"
 echo "     → Then tell the AI \"generate todolist\" before implementation"
 echo ""

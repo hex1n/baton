@@ -57,6 +57,7 @@ assert_contains "$README" '| Claude Code |' "README Claude Code row"
 assert_contains "$README" '| Factory AI |' "README Factory AI row"
 assert_contains "$README" '| Cursor IDE |' "README Cursor IDE row"
 assert_contains "$README" '| Codex |' "README Codex row"
+assert_contains "$README" '| Cursor IDE | **Core protection** |' "README Cursor IDE core protection wording"
 assert_contains "$README" 'Experimental `SessionStart` + `Stop` hooks (best-effort)' "README Codex hook wording"
 
 # README: removed IDEs absent
@@ -70,7 +71,7 @@ assert_not_contains "$README" '(no hooks)' "README no stale Codex no-hooks wordi
 # Legacy research: maintenance rule and updated scope note
 assert_contains "$LEGACY_RESEARCH" '维护规则：支持 IDE 的公开表述应先更新 [IDE Capability Matrix](./ide-capability-matrix.md)' "legacy research maintenance rule"
 assert_contains "$LEGACY_RESEARCH" 'Baton supports 4 IDEs' "legacy research 4-IDE scope note"
-assert_contains "$MATRIX" '2/8 experimental' "matrix Codex experimental hooks"
+assert_contains "$MATRIX" '2/9 experimental' "matrix Codex experimental hooks"
 assert_contains "$MATRIX" 'SessionStart' "matrix SessionStart note"
 
 # Setup: ide_summary entries for 4 IDEs
@@ -78,6 +79,7 @@ assert_contains "$SETUP" 'Cursor IDE hooks + adapter' "setup Cursor IDE summary"
 assert_contains "$SETUP" 'session hooks + AGENTS.md rules + skills' "setup Codex summary"
 assert_contains "$SETUP" 'full protection, native hooks + skills' "setup Claude summary"
 assert_contains "$SETUP" 'full protection, Claude-style hooks + skills' "setup Factory summary"
+assert_contains "$SETUP" 'core protection, Cursor IDE hooks + adapter' "setup Cursor core summary"
 
 echo ""
 if [ "$FAIL" -eq 0 ]; then

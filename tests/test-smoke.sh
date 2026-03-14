@@ -18,7 +18,9 @@ run_test() {
 }
 
 TESTS=(
+    "test-plan-parser.sh"
     "test-write-lock.sh"
+    "test-bash-guard.sh"
     "test-stop-guard.sh"
     "test-phase-guide.sh"
     "test-new-hooks.sh"

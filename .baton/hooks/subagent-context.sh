@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # subagent-context.sh — Inject plan context when a subagent starts
-# Version: 1.0
+# Version: 1.1
 #
 # Hook: SubagentStart
 # Always exit 0 — SubagentStart cannot block
@@ -27,11 +27,10 @@ find_plan
 grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null || exit 0
 
 # --- Output plan context ---
-TOTAL=$(grep -c '^\- \[' "$PLAN" 2>/dev/null) || TOTAL=0
-DONE=$(grep -ci '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
+parser_todo_counts
 
-echo "📋 Baton plan context ($DONE/$TOTAL items done):" >&2
+echo "📋 Baton plan context ($TODO_DONE/$TODO_TOTAL items done):" >&2
 # Output todo items (up to 20 lines to avoid flooding)
-grep '^\- \[' "$PLAN" 2>/dev/null | head -20 >&2
+parser_todo_items "$PLAN" | head -20 >&2
 
 exit 0

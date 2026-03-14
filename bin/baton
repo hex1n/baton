@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # baton — CLI entry point for baton plan-first workflow
-# Version: 1.0
+# Version: 1.1
 set -eu
 
 BATON_HOME="${BATON_HOME:-$HOME/.baton}"
@@ -64,8 +64,9 @@ doctor() {
 
     # Scripts
     echo "  Scripts:"
-    for _script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
-                   post-write-tracker.sh subagent-context.sh completion-check.sh pre-compact.sh; do
+    for _script in plan-parser.sh write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
+                   post-write-tracker.sh subagent-context.sh completion-check.sh pre-compact.sh \
+                   failure-tracker.sh; do
         if [ -f "$_dir/.baton/hooks/$_script" ]; then
             _pv="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/$_script" 2>/dev/null)"
             _sv=""
@@ -91,6 +92,52 @@ doctor() {
     [ -d "$_dir/.factory" ]    && { _check_ide_config "$_dir" "factory" ".claude/settings.json" "baton"; }
     [ -d "$_dir/.cursor" ]     && { _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "baton"; }
     [ -f "$_dir/AGENTS.md" ]   && { _check_ide_config "$_dir" "codex" "AGENTS.md" "baton"; }
+    echo ""
+
+    # Adapters
+    echo "  Adapters:"
+    if [ -d "$_dir/.cursor" ]; then
+        if [ -f "$_dir/.baton/adapters/adapter-cursor.sh" ] && [ -x "$_dir/.baton/adapters/adapter-cursor.sh" ] 2>/dev/null || [ -f "$_dir/.baton/adapters/adapter-cursor.sh" ]; then
+            printf "  ✓ %-12s adapter-cursor.sh present\n" "cursor"
+        else
+            printf "  ✗ %-12s adapter-cursor.sh missing\n" "cursor"
+            _issues=$((_issues + 1))
+        fi
+    fi
+    if [ -f "$_dir/AGENTS.md" ]; then
+        if [ -f "$_dir/.baton/adapters/adapter-codex.sh" ]; then
+            printf "  ✓ %-12s adapter-codex.sh present\n" "codex"
+        else
+            printf "  ✗ %-12s adapter-codex.sh missing\n" "codex"
+            _issues=$((_issues + 1))
+        fi
+    fi
+    echo ""
+
+    # Skills
+    echo "  Skills:"
+    _skill_dirs=""
+    [ -d "$_dir/.claude/skills" ] && _skill_dirs="$_skill_dirs .claude/skills"
+    [ -d "$_dir/.cursor/skills" ] && _skill_dirs="$_skill_dirs .cursor/skills"
+    [ -d "$_dir/.agents/skills" ] && _skill_dirs="$_skill_dirs .agents/skills"
+    for _sdir in $_skill_dirs; do
+        _smissing=0
+        for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent; do
+            if [ ! -f "$_dir/$_sdir/$_skill/SKILL.md" ]; then
+                _smissing=$((_smissing + 1))
+            fi
+        done
+        if [ "$_smissing" -eq 0 ]; then
+            printf "  ✓ %-20s 6/6 skills present\n" "$_sdir"
+        else
+            printf "  ⚠ %-20s %s/6 skills missing\n" "$_sdir" "$_smissing"
+            _issues=$((_issues + 1))
+        fi
+    done
+    if [ -z "$_skill_dirs" ]; then
+        echo "  ⚠ No skill directories found"
+        _issues=$((_issues + 1))
+    fi
     echo ""
 
     # Rules injection
@@ -147,77 +194,78 @@ status() {
     _dir="${1:-.}"
     _dir="$(cd "$_dir" && pwd)"
 
-    # Find plan file — walk up from _dir
-    _pdir="$_dir"
-    _pname=""
-    if [ -n "${BATON_PLAN:-}" ]; then
-        _pname="$BATON_PLAN"
-        _found=""
-        _d="$_dir"
-        while true; do
-            [ -f "$_d/$_pname" ] && { _pdir="$_d"; _found=1; break; }
-            _p="$(dirname "$_d")"
-            [ "$_p" = "$_d" ] && break
-            _d="$_p"
-        done
-    else
-        _d="$_dir"
-        while true; do
-            _c="$(cd "$_d" 2>/dev/null && ls -t plan.md plan-*.md 2>/dev/null | head -1)"
-            if [ -n "$_c" ]; then
-                _pname="$_c"
-                _pdir="$_d"
-                break
-            fi
-            _p="$(dirname "$_d")"
-            [ "$_p" = "$_d" ] && break
-            _d="$_p"
-        done
-        _pname="${_pname:-plan.md}"
+    # Source parser from target project or BATON_HOME
+    _parser=""
+    [ -f "$_dir/.baton/hooks/plan-parser.sh" ] && _parser="$_dir/.baton/hooks/plan-parser.sh"
+    [ -z "$_parser" ] && [ -f "$BATON_HOME/.baton/hooks/plan-parser.sh" ] && _parser="$BATON_HOME/.baton/hooks/plan-parser.sh"
+    if [ -z "$_parser" ]; then
+        echo "⚠️ Parser not found in project or BATON_HOME" >&2
+        return 1
     fi
-    _rname="${_pname/plan/research}"
+    # Reset parser loaded guard so re-sourcing works for different projects
+    _BATON_PARSER_LOADED=""
+    . "$_parser"
 
-    # Detect phase
-    _plan=""
-    [ -f "$_pdir/$_pname" ] && _plan="$_pdir/$_pname"
-    _research=""
-    [ -f "$_pdir/$_rname" ] && _research="$_pdir/$_rname"
+    # Discovery — set JSON_CWD for both parser calls
+    JSON_CWD="$_dir"
+    parser_find_plan
+    parser_find_research
 
+    # Phase detection
     _phase="RESEARCH"
     _plan_status="not found"
     _research_status="not found"
     _todos="0/0"
 
-    if [ -n "$_research" ]; then
+    # Research status
+    if [ -n "$RESEARCH" ]; then
         _research_status="exists"
+    elif [ "${RESEARCH_FALLBACK_COUNT:-0}" -gt 1 ] 2>/dev/null; then
+        _research_status="multiple matches"
+        RESEARCH_NAME="research-*.md"
+        echo "⚠️ Multiple research files found (research-*.md). Name your plan to match the primary research file, or consolidate." >&2
     fi
 
-    if [ -n "$_plan" ]; then
+    # Phase from research
+    if [ -z "$PLAN" ] && { [ -n "$RESEARCH" ] || [ "${RESEARCH_FALLBACK_COUNT:-0}" -gt 1 ] 2>/dev/null; }; then
+        _phase="PLAN"
+    fi
+
+    # Plan-based phase
+    if [ -n "$PLAN" ]; then
         _plan_status="exists, no BATON:GO"
         _phase="ANNOTATION"
 
-        if grep -q '<!-- BATON:GO -->' "$_plan" 2>/dev/null; then
+        if parser_has_go; then
             _plan_status="approved (BATON:GO)"
             _phase="IMPLEMENT"
 
-            _total=$(grep -c '^\- \[' "$_plan" 2>/dev/null) || _total=0
-            _done=$(grep -c '^\- \[x\]' "$_plan" 2>/dev/null) || _done=0
-            _todos="$_done/$_total"
+            parser_todo_counts
+            _todos="$TODO_DONE/$TODO_TOTAL"
 
-            if [ "$_total" -gt 0 ] && [ "$_total" -eq "$_done" ]; then
-                _phase="ARCHIVE"
+            if [ "$TODO_TOTAL" -gt 0 ] && [ "$TODO_REMAINING" -eq 0 ]; then
+                _phase="FINISH"
+                if parser_retro_valid; then
+                    _finish_status="ready to complete"
+                else
+                    _finish_status="retrospective needed"
+                fi
             fi
 
-            if ! grep -qi '^## Todo$' "$_plan" 2>/dev/null; then
+            parser_todo_range
+            if [ "${TODO_START:-0}" -eq 0 ] 2>/dev/null || [ "$TODO_TOTAL" -eq 0 ] 2>/dev/null; then
                 _phase="AWAITING_TODO"
             fi
         fi
     fi
 
     echo "📍 Phase: $_phase"
-    echo "   Plan:     $_pname ($_plan_status)"
-    echo "   Research: $_rname ($_research_status)"
+    echo "   Plan:     $PLAN_NAME ($_plan_status)"
+    echo "   Research: $RESEARCH_NAME ($_research_status)"
     echo "   Todos:    $_todos"
+    if [ "$_phase" = "FINISH" ]; then
+        echo "   Finish:   $_finish_status"
+    fi
 }
 
 # --- Usage ---

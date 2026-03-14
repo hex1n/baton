@@ -4,6 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP="$SCRIPT_DIR/../setup.sh"
+WRITE_LOCK_VERSION="$(sed -n 's/^# Version: *//p' "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" 2>/dev/null | head -1)"
+PHASE_GUIDE_VERSION="$(sed -n 's/^# Version: *//p' "$SCRIPT_DIR/../.baton/hooks/phase-guide.sh" 2>/dev/null | head -1)"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -135,6 +137,8 @@ OUTPUT="$(run_setup "$d" 2>&1)"
 # .baton/ directory structure
 assert_file_exists "$d/.baton/hooks/write-lock.sh"
 assert_file_executable "$d/.baton/hooks/write-lock.sh"
+assert_file_exists "$d/.baton/hooks/plan-parser.sh"
+assert_file_executable "$d/.baton/hooks/plan-parser.sh"
 assert_file_exists "$d/.baton/hooks/phase-guide.sh"
 assert_file_executable "$d/.baton/hooks/phase-guide.sh"
 assert_file_exists "$d/.baton/workflow.md"
@@ -146,12 +150,16 @@ assert_file_contains "$d/.claude/settings.json" "PreToolUse"
 assert_file_contains "$d/.claude/settings.json" "SessionStart"
 assert_file_contains "$d/.claude/settings.json" "phase-guide"
 assert_file_contains "$d/.claude/settings.json" "NotebookEdit"
+# failure-tracker hook
+assert_file_exists "$d/.baton/hooks/failure-tracker.sh"
+assert_file_contains "$d/.claude/settings.json" "failure-tracker"
+assert_file_contains "$d/.claude/settings.json" "PostToolUseFailure"
 # CLAUDE.md with @import
 assert_file_exists "$d/CLAUDE.md"
 assert_file_contains "$d/CLAUDE.md" "@.baton/workflow.md"
 assert_output_contains "$OUTPUT" "Installing baton"
-assert_output_contains "$OUTPUT" "research.md, plan.md, or chat"
-assert_output_contains "$OUTPUT" "simple changes may skip straight to plan.md"
+assert_output_contains "$OUTPUT" "research file, plan file, or chat"
+assert_output_contains "$OUTPUT" "simple changes may skip straight to planning"
 assert_output_contains "$OUTPUT" "Free-text is the default"
 assert_output_contains "$OUTPUT" "\[PAUSE\]"
 assert_output_not_contains "$OUTPUT" "Give feedback in plan.md or chat"
@@ -172,6 +180,44 @@ assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
 # Claude Code gets slim workflow (SessionStart support)
 assert_file_contains "$d/.baton/workflow.md" "Shared Understanding Construction Protocol"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-subagent/SKILL.md"
+
+# ============================================================
+echo ""
+echo "=== Test 2a: Baton-generated .agents fallback does not trigger Codex/Factory on re-run ==="
+d="$tmp/t2a" && mkdir -p "$d/.claude"
+BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
+OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Detected IDEs: claude"
+assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
+TOTAL=$((TOTAL + 1))
+if [ ! -f "$d/AGENTS.md" ]; then
+    echo "  pass: fallback .agents directory does not bootstrap Codex on re-run"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: Baton-generated .agents fallback should not auto-bootstrap Codex on re-run"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 2a2: Legacy Baton-only .agents fallback is ignored during detection ==="
+d="$tmp/t2a2" && mkdir -p "$d/.claude" "$d/.agents/skills/baton-research" "$d/.agents/skills/baton-plan"
+echo "legacy fallback" > "$d/.agents/skills/baton-research/SKILL.md"
+echo "legacy fallback" > "$d/.agents/skills/baton-plan/SKILL.md"
+OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Detected IDEs: claude"
+assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
+TOTAL=$((TOTAL + 1))
+if [ ! -f "$d/AGENTS.md" ]; then
+    echo "  pass: legacy Baton-only .agents fallback does not count as Codex/Factory signal"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: legacy Baton-only .agents fallback should be ignored"
+    FAIL=$((FAIL + 1))
+fi
 
 # ============================================================
 echo ""
@@ -183,6 +229,9 @@ assert_output_contains "$OUTPUT" "Selected IDEs: codex (auto)"
 assert_file_exists "$d/AGENTS.md"
 assert_file_contains "$d/AGENTS.md" "@.baton/workflow.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-subagent/SKILL.md"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/settings.json" ]; then
     echo "  pass: Codex install does not create Claude hooks"
@@ -222,6 +271,26 @@ FAKE_HOME="$tmp/fakehome-2b2"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "already"
 assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
+
+# ============================================================
+echo ""
+echo "=== Test 2b4: Codex install tolerates unwritable HOME trust config ==="
+d="$tmp/t2b4" && mkdir -p "$d"
+FAKE_HOME="$tmp/fakehome-2b4"
+mkdir -p "$FAKE_HOME"
+chmod 500 "$FAKE_HOME"
+TOTAL=$((TOTAL + 1))
+if OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"; then
+    echo "  pass: codex install still succeeds with unwritable HOME"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: codex install should fail-open when HOME trust config is unwritable"
+    FAIL=$((FAIL + 1))
+fi
+chmod 700 "$FAKE_HOME"
+assert_file_exists "$d/.codex/hooks.json"
+assert_file_contains "$d/.codex/config.toml" "codex_hooks = true"
+assert_output_contains "$OUTPUT" "manually"
 
 # ============================================================
 echo ""
@@ -284,7 +353,7 @@ OUTPUT="$(printf '2\n' | HOME="$FAKE_HOME" BATON_SKIP=pre-commit run_setup --cho
 assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "1. claude - full protection"
 assert_output_contains "$OUTPUT" "2. codex - session hooks"
-assert_output_contains "$OUTPUT" "3. cursor - full protection, Cursor IDE hooks + adapter"
+assert_output_contains "$OUTPUT" "3. cursor - core protection, Cursor IDE hooks + adapter"
 assert_output_contains "$OUTPUT" "Select IDEs"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (--choose)"
 assert_file_exists "$d/AGENTS.md"
@@ -395,6 +464,101 @@ assert_output_contains "$OUTPUT" "Merged missing Baton hooks into .claude/settin
 
 # ============================================================
 echo ""
+echo "=== Test 7b: Existing Claude settings are normalized to current baton contract ==="
+d="$tmp/t7b" && mkdir -p "$d/.claude"
+cat > "$d/.claude/settings.json" << 'JSON'
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/phase-guide.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/phase-guide.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|CreateFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/write-lock.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|CreateFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/post-write-tracker.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+JSON
+OUTPUT="$(run_setup "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Merged missing Baton hooks into .claude/settings.json"
+if command -v jq >/dev/null 2>&1; then
+    TOTAL=$((TOTAL + 1))
+    if jq -e '[.hooks.SessionStart[] | select(any(.hooks[]?; .command=="bash .baton/hooks/phase-guide.sh")) | .matcher] == [""]' \
+        "$d/.claude/settings.json" >/dev/null 2>&1; then
+        echo "  pass: phase-guide compact duplicate removed"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: phase-guide SessionStart entries should normalize to a single empty matcher"
+        FAIL=$((FAIL + 1))
+    fi
+    TOTAL=$((TOTAL + 1))
+    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command=="bash .baton/hooks/write-lock.sh"))' \
+        "$d/.claude/settings.json" >/dev/null 2>&1; then
+        echo "  pass: write-lock matcher upgraded to include NotebookEdit"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: write-lock matcher should include NotebookEdit after merge"
+        FAIL=$((FAIL + 1))
+    fi
+    TOTAL=$((TOTAL + 1))
+    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Bash" and any(.hooks[]?; .command=="bash .baton/hooks/bash-guard.sh"))' \
+        "$d/.claude/settings.json" >/dev/null 2>&1; then
+        echo "  pass: bash-guard entry exists with Bash matcher"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: bash-guard entry should exist with Bash matcher"
+        FAIL=$((FAIL + 1))
+    fi
+    TOTAL=$((TOTAL + 1))
+    if jq -e 'any(.hooks.PostToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command=="bash .baton/hooks/post-write-tracker.sh"))' \
+        "$d/.claude/settings.json" >/dev/null 2>&1; then
+        echo "  pass: post-write-tracker matcher upgraded to include NotebookEdit"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: post-write-tracker matcher should include NotebookEdit after merge"
+        FAIL=$((FAIL + 1))
+    fi
+else
+    echo "  skip: jq unavailable, normalization assertions skipped"
+fi
+
+# ============================================================
+echo ""
 echo "=== Test 8: v1 → v2 migration (move write-lock.sh) ==="
 d="$tmp/t8" && mkdir -p "$d/.claude"
 # Install v1 layout
@@ -416,7 +580,7 @@ else
     FAIL=$((FAIL + 1))
 fi
 assert_file_exists "$d/.baton/hooks/write-lock.sh"
-assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: 3.0"
+assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: $WRITE_LOCK_VERSION"
 
 # ============================================================
 echo ""
@@ -485,7 +649,7 @@ chmod +x "$d/.baton/hooks/write-lock.sh"
 OUTPUT="$(run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "v0.1"
 assert_output_contains "$OUTPUT" "Updated write-lock.sh"
-assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: 3.0"
+assert_file_contains "$d/.baton/hooks/write-lock.sh" "Version: $WRITE_LOCK_VERSION"
 
 # ============================================================
 echo ""
@@ -631,6 +795,43 @@ fi
 
 # ============================================================
 echo ""
+echo "=== Test 17c2: Codex uninstall removes only the current project's trust entry ==="
+FAKE_HOME="$tmp/fakehome-17c2"
+mkdir -p "$FAKE_HOME"
+d="$tmp/t17c2-prefix" && mkdir -p "$d"
+d2="$tmp/t17c2-prefix-long" && mkdir -p "$d2"
+HOME="$FAKE_HOME" run_setup --ide codex "$d2" > /dev/null 2>&1
+HOME="$FAKE_HOME" run_setup --ide codex "$d" > /dev/null 2>&1
+TOTAL=$((TOTAL + 1))
+if grep -qxF "# baton:codex-trust:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+    echo "  pass: user config contains exact trust marker for second project"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected exact trust marker for second project"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if grep -qxF "# baton:codex-trust:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+    echo "  pass: user config contains exact trust marker for first project"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected exact trust marker for first project"
+    FAIL=$((FAIL + 1))
+fi
+OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
+assert_output_contains "$OUTPUT" "Removed baton trust entry"
+TOTAL=$((TOTAL + 1))
+if grep -qxF "# baton:codex-trust:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null && \
+   ! grep -qxF "# baton:codex-trust:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+    echo "  pass: uninstall removes only the matching project trust entry"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: uninstall should preserve other project trust entries"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
 echo "=== Test 17d: Claude uninstall removes Baton hooks but preserves user settings ==="
 d="$tmp/t17d" && mkdir -p "$d/.claude"
 cat > "$d/.claude/settings.json" << 'JSON'
@@ -687,21 +888,42 @@ BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 assert_file_exists "$d/.claude/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-implement/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-subagent/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
 # Cross-IDE fallback
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-implement/SKILL.md"
-# Skill content should match source
-TOTAL=$((TOTAL + 1))
-if diff -q "$SCRIPT_DIR/../.claude/skills/baton-research/SKILL.md" \
-           "$d/.claude/skills/baton-research/SKILL.md" > /dev/null 2>&1; then
-    echo "  pass: installed SKILL.md matches source"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: installed SKILL.md differs from source"
-    FAIL=$((FAIL + 1))
+assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-subagent/SKILL.md"
+# Skill content should match canonical source (.baton/skills/) byte-for-byte
+_skill_source="$SCRIPT_DIR/../.baton/skills"
+if [ ! -d "$_skill_source" ]; then
+    _skill_source="$SCRIPT_DIR/../.claude/skills"  # fallback for pre-migration
 fi
+for _sk in baton-research baton-plan baton-implement baton-review baton-debug baton-subagent; do
+    TOTAL=$((TOTAL + 1))
+    if diff -q "$_skill_source/$_sk/SKILL.md" \
+               "$d/.claude/skills/$_sk/SKILL.md" > /dev/null 2>&1; then
+        echo "  pass: .claude/skills/$_sk/SKILL.md matches canonical source"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: .claude/skills/$_sk/SKILL.md differs from canonical source"
+        FAIL=$((FAIL + 1))
+    fi
+    TOTAL=$((TOTAL + 1))
+    if diff -q "$_skill_source/$_sk/SKILL.md" \
+               "$d/.agents/skills/$_sk/SKILL.md" > /dev/null 2>&1; then
+        echo "  pass: .agents/skills/$_sk/SKILL.md matches canonical source"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: .agents/skills/$_sk/SKILL.md differs from canonical source"
+        FAIL=$((FAIL + 1))
+    fi
+done
 
 # ============================================================
 echo ""
@@ -720,6 +942,9 @@ assert_output_contains "$OUTPUT" "Installed baton skills to .agents/ fallback (s
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-implement/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-subagent/SKILL.md"
 assert_file_exists "$d/AGENTS.md"
 TOTAL=$((TOTAL + 1))
 if [ ! -d "$d/.cursor/skills" ]; then
@@ -746,7 +971,13 @@ OUTPUT="$(
 assert_output_contains "$OUTPUT" "Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.cursor/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.cursor/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.cursor/skills/baton-subagent/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-subagent/SKILL.md"
 assert_file_exists "$d/AGENTS.md"
 
 # ============================================================
@@ -769,6 +1000,9 @@ OUTPUT="$(
 assert_output_contains "$OUTPUT" "Preserved source .baton/ directory (self-install)"
 assert_file_exists "$d/.baton/hooks/write-lock.sh"
 assert_file_exists "$d/.claude/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-subagent/SKILL.md"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.agents/skills/baton-research/SKILL.md" ]; then
     echo "  pass: self-install uninstall removes fallback skills only"
@@ -790,8 +1024,8 @@ echo "old phase-guide"
 EOF
 run_setup "$d"
 TOTAL=$((TOTAL + 1))
-if grep -q "Version: 6.0" "$d/.baton/hooks/phase-guide.sh"; then
-    echo "  pass: phase-guide.sh upgraded from v5.0 to v6.0"
+if grep -q "Version: $PHASE_GUIDE_VERSION" "$d/.baton/hooks/phase-guide.sh"; then
+    echo "  pass: phase-guide.sh upgraded from v5.0 to v$PHASE_GUIDE_VERSION"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: phase-guide.sh was not upgraded"
@@ -859,6 +1093,44 @@ else
     echo "  FAIL: AGENTS.md should not contain residual workflow-full.md"
     FAIL=$((FAIL + 1))
 fi
+
+# ============================================================
+echo ""
+echo "=== Test: transition path — legacy baton with only .claude/skills/ (no .baton/skills/) ==="
+# Simulate a baton installation that has not yet moved skills to .baton/skills/
+d="$tmp/t-transition" && mkdir -p "$d/.claude"
+FAKE_HOME="$tmp/fakehome-transition"
+mkdir -p "$FAKE_HOME"
+# Create a fake baton dir that has .claude/skills but no .baton/skills
+FAKE_BATON="$tmp/fake-baton-legacy"
+mkdir -p "$FAKE_BATON/.baton/hooks" "$FAKE_BATON/.claude/skills" "$FAKE_BATON/bin"
+# Copy hooks and setup from real baton
+cp "$SCRIPT_DIR/../setup.sh" "$FAKE_BATON/setup.sh"
+cp -R "$SCRIPT_DIR/../.baton/hooks" "$FAKE_BATON/.baton/"
+cp -R "$SCRIPT_DIR/../.baton/adapters" "$FAKE_BATON/.baton/" 2>/dev/null || true
+cp "$SCRIPT_DIR/../.baton/workflow.md" "$FAKE_BATON/.baton/workflow.md"
+# Copy skills to .claude/skills ONLY (legacy layout, no .baton/skills/)
+_canon_src="$SCRIPT_DIR/../.baton/skills"
+[ ! -d "$_canon_src" ] && _canon_src="$SCRIPT_DIR/../.claude/skills"
+for _sk in baton-research baton-plan baton-implement baton-review baton-debug baton-subagent; do
+    mkdir -p "$FAKE_BATON/.claude/skills/$_sk"
+    cp "$_canon_src/$_sk/SKILL.md" "$FAKE_BATON/.claude/skills/$_sk/SKILL.md"
+done
+OUTPUT="$(
+    cd "$FAKE_BATON" && \
+    HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh "$d" 2>&1
+)"
+# Skills should still be installed via backward-compatibility fallback
+assert_file_exists "$d/.claude/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-implement/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.claude/skills/baton-subagent/SKILL.md"
+assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+assert_output_contains "$OUTPUT" "legacy .claude/skills/"
+assert_file_exists "$d/.baton/workflow.md"
+assert_file_exists "$d/.baton/hooks/write-lock.sh"
 
 # ============================================================
 echo ""

@@ -4,8 +4,8 @@ set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SLIM="$SCRIPT_DIR/../.baton/workflow.md"
-PLAN_SKILL="$SCRIPT_DIR/../.claude/skills/baton-plan/SKILL.md"
-RESEARCH_SKILL="$SCRIPT_DIR/../.claude/skills/baton-research/SKILL.md"
+PLAN_SKILL="$SCRIPT_DIR/../.baton/skills/baton-plan/SKILL.md"
+RESEARCH_SKILL="$SCRIPT_DIR/../.baton/skills/baton-research/SKILL.md"
 PASS=0
 FAIL=0
 TOTAL=0

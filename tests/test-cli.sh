@@ -13,8 +13,11 @@ tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
 
 # Use a temporary BATON_HOME to avoid polluting real config
+export HOME="$tmp/home"
+mkdir -p "$HOME"
 export BATON_HOME="$tmp/baton_home"
 mkdir -p "$BATON_HOME"
+unset CODEX_THREAD_ID CODEX_SANDBOX CODEX_SANDBOX_NETWORK_DISABLED BATON_IDE 2>/dev/null || true
 # Copy required files into fake BATON_HOME
 cp -r "$SCRIPT_DIR/../.baton" "$BATON_HOME/.baton"
 cp "$SETUP" "$BATON_HOME/setup.sh"
@@ -50,11 +53,29 @@ echo "=== Test 3: baton init — registers project ==="
 d="$tmp/proj1" && mkdir -p "$d/.claude"
 (cd "$d" && git init -q)
 TOTAL=$((TOTAL + 1))
-if BATON_SKIP=pre-commit bash "$BATON_CLI" init "$d" > /dev/null 2>&1; then
+READONLY_HOME="$tmp/readonly-home"
+mkdir -p "$READONLY_HOME"
+chmod 555 "$READONLY_HOME"
+set +e
+OUTPUT="$(HOME="$READONLY_HOME" CODEX_THREAD_ID="test-codex-thread" CODEX_SANDBOX="seatbelt" BATON_SKIP=pre-commit bash "$BATON_CLI" init "$d" 2>&1)"
+STATUS=$?
+set -e
+chmod 755 "$READONLY_HOME"
+if [ "$STATUS" -eq 0 ]; then
     echo "  pass: init succeeded"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: init failed"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "Could not update ~/.codex/config.toml automatically\|skipped project trust entry"; then
+    echo "  pass: init degrades gracefully when ~/.codex/config.toml is not writable"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected graceful warning when ~/.codex/config.toml is not writable"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 # Check registry
@@ -104,6 +125,77 @@ else
     echo "  FAIL: doctor should check scripts"
     FAIL=$((FAIL + 1))
 fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'failure-tracker.sh'; then
+    echo "  pass: doctor checks failure-tracker.sh"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should check failure-tracker.sh"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'plan-parser.sh'; then
+    echo "  pass: doctor checks plan-parser.sh"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should check plan-parser.sh"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 5b: baton doctor — checks skills ==="
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'Skills:'; then
+    echo "  pass: doctor has Skills section"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should have Skills section"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'skills present'; then
+    echo "  pass: doctor checks skill presence"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should check skill presence"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 5c: baton doctor — detects missing skills ==="
+d_doc="$tmp/doc_skills" && mkdir -p "$d_doc/.baton/hooks" "$d_doc/.claude/skills/baton-plan"
+# Only 1 of 6 skills → should flag missing
+echo "---" > "$d_doc/.claude/skills/baton-plan/SKILL.md"
+echo '@.baton/workflow.md' > "$d_doc/CLAUDE.md"
+touch "$d_doc/.baton/workflow.md"
+TOTAL=$((TOTAL + 1))
+OUTPUT_DOC="$(bash "$BATON_CLI" doctor "$d_doc" 2>&1)"
+if echo "$OUTPUT_DOC" | grep -q 'missing'; then
+    echo "  pass: doctor detects missing skills"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should detect missing skills"
+    echo "  OUTPUT: $OUTPUT_DOC"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 5d: baton doctor — checks adapters ==="
+d_adap="$tmp/doc_adapt" && mkdir -p "$d_adap/.baton/hooks" "$d_adap/.cursor"
+touch "$d_adap/.baton/workflow.md"
+echo '@.baton/workflow.md' > "$d_adap/CLAUDE.md"
+# .cursor dir exists but no adapter → should flag
+TOTAL=$((TOTAL + 1))
+OUTPUT_ADAP="$(bash "$BATON_CLI" doctor "$d_adap" 2>&1)"
+if echo "$OUTPUT_ADAP" | grep -q 'adapter-cursor.sh missing'; then
+    echo "  pass: doctor detects missing cursor adapter"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should detect missing cursor adapter"
+    echo "  OUTPUT: $OUTPUT_ADAP"
+    FAIL=$((FAIL + 1))
+fi
 
 # ============================================================
 echo ""
@@ -146,15 +238,60 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 9: baton status — ARCHIVE phase (all todos done) ==="
+echo "=== Test 9: baton status — FINISH phase (all todos done, no retro) ==="
 printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [x] Step 1\n- [x] Step 2\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
-if echo "$OUTPUT" | grep -q 'ARCHIVE'; then
-    echo "  pass: status shows ARCHIVE when all todos complete"
+if echo "$OUTPUT" | grep -q 'FINISH'; then
+    echo "  pass: status shows FINISH when all todos complete"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: should show ARCHIVE phase, got: $OUTPUT"
+    echo "  FAIL: should show FINISH phase, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'retrospective needed'; then
+    echo "  pass: FINISH shows 'retrospective needed' without retrospective"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: should show 'retrospective needed', got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 9b: baton status — FINISH phase (retro present, ready to complete) ==="
+printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [x] Step 1\n- [x] Step 2\n## Retrospective\nLine one of retro.\nLine two of retro.\nLine three of retro.\n' > "$d/plan.md"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+if echo "$OUTPUT" | grep -q 'FINISH'; then
+    echo "  pass: status shows FINISH with retrospective"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: should show FINISH phase, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'ready to complete'; then
+    echo "  pass: FINISH shows 'ready to complete' with valid retrospective"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: should show 'ready to complete', got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 9c: baton status — ## Todo with trailing spaces still counts ==="
+printf '# Plan\n<!-- BATON:GO -->\n## Todo   \n- [ ] Step 1\n' > "$d/plan.md"
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+if echo "$OUTPUT" | grep -q 'IMPLEMENT'; then
+    echo "  pass: status treats ## Todo with trailing spaces as IMPLEMENT"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: status should not regress to AWAITING_TODO for trailing spaces"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
@@ -357,6 +494,162 @@ if echo "$OUTPUT" | grep -q "residual"; then
 else
     echo "  FAIL: doctor should flag residual workflow-full.md in mixed AGENTS.md"
     echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 16: Multi-plan detection in status ==="
+d="$tmp/t16" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+EOF
+echo "# Other" > "$d/plan-feature.md"
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "Multiple plan files"; then
+    echo "  pass: multi-plan warning in status output"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected multi-plan warning"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "BATON_PLAN"; then
+    echo "  pass: multi-plan warning suggests BATON_PLAN"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected BATON_PLAN suggestion"
+    FAIL=$((FAIL + 1))
+fi
+# No warning when BATON_PLAN is set
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(BATON_PLAN=plan.md bash "$BATON_CLI" status "$d" 2>&1)"
+if echo "$OUTPUT" | grep -q "Multiple plan files"; then
+    echo "  FAIL: should not warn when BATON_PLAN is set"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: no multi-plan warning when BATON_PLAN is set"
+    PASS=$((PASS + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 17: Research fallback — single topic-named research ==="
+d="$tmp/t17" && mkdir -p "$d"
+echo "# Research" > "$d/research-auth.md"
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "research-auth.md"; then
+    echo "  pass: discovered research-auth.md via fallback"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected research-auth.md in output"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "exists"; then
+    echo "  pass: research file shows 'exists'"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected 'exists' for research file"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "PLAN"; then
+    echo "  pass: no plan + research → PLAN phase"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected PLAN phase with research only"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 18: Research fallback — multiple research files ==="
+d="$tmp/t18" && mkdir -p "$d"
+echo "# Research A" > "$d/research-auth.md"
+echo "# Research B" > "$d/research-api.md"
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "Multiple research files"; then
+    echo "  pass: multi-research warning"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected multi-research warning"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "Research: research-\\*\\.md (multiple matches)"; then
+    echo "  pass: research status line stays ambiguous when multiple"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected ambiguous research status line"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "PLAN"; then
+    echo "  pass: multiple research files still imply PLAN phase"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected PLAN phase for ambiguous research"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 19: PLAN phase — no plan, research only ==="
+d="$tmp/t19" && mkdir -p "$d"
+echo "# Research" > "$d/research.md"
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "PLAN"; then
+    echo "  pass: no plan + research.md → PLAN phase"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected PLAN phase"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "research.md.*exists"; then
+    echo "  pass: research.md detected as exists"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected research.md to show 'exists'"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 20: Section-aware todo counting ==="
+d="$tmp/t20" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Approach
+- [ ] Not a real todo
+## Todo
+- [x] Step 1
+- [ ] Step 2
+## Notes
+- [ ] Also not a real todo
+EOF
+OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q "1/2"; then
+    echo "  pass: section-aware counting (1/2)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected 1/2 in todos, got: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 

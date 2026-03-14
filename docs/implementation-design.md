@@ -21,34 +21,45 @@
 ├── workflow.md            # 跨切面核心规则（始终加载）
 └── adapters/              # 跨 IDE 适配器（不变）
 
-.claude/skills/             # 阶段方法论（agentskills.io 标准，per-phase 权威）
+.claude/skills/             # 核心阶段 skill（per-phase 权威）
 ├── baton-research/SKILL.md # 研究阶段 skill（规范性）
 ├── baton-plan/SKILL.md     # 计划+标注阶段 skill（规范性）
-└── baton-implement/SKILL.md# 实现阶段 skill（规范性）
+├── baton-implement/SKILL.md# 实现阶段 skill（规范性）
+├── baton-review/SKILL.md   # 核心：对抗性审查 skill
+├── baton-debug/SKILL.md    # 可选扩展：系统调试 skill
+└── baton-subagent/SKILL.md # 可选扩展：并行 subagent 协调 skill
 ```
 
 ### 运行时产出的文件（用户项目中）
 
 ```
 project/
-├── research.md            # AI 的理解（可选，简单任务可跳过）
-├── plan.md                # 双方共识（标注循环的主要载体）
-└── plans/                 # 归档目录
-    ├── plan-2026-03-01-auth-refactor.md
-    └── research-2026-03-01-auth-refactor.md
+├── baton-tasks/                    # 任务目录
+│   └── <topic>/                   # 每个任务一个子目录
+│       ├── plan.md                # 双方共识（标注循环的主要载体）
+│       └── research.md            # AI 的理解（可选，简单任务可跳过）
+├── plan-<topic>.md                # 根目录 plan 也支持（向后兼容）
+└── plans/                         # 历史归档（不再主动使用）
 ```
 
-### Hook 配置（不变）
+### Hook 配置
+
+9 个 hook 事件，覆盖完整生命周期（subset shown for brevity — full config in `.claude/settings.json`）：
 
 ```json
 {
   "hooks": {
-    "SessionStart": [{ "type": "command", "command": "sh .baton/phase-guide.sh" }],
+    "SessionStart": [{ "type": "command", "command": "bash .baton/hooks/phase-guide.sh" }],
     "PreToolUse": [
-      { "type": "command", "command": "sh .baton/write-lock.sh", "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit" },
-      { "type": "command", "command": "sh .baton/bash-guard.sh", "matcher": "Bash" }
+      { "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit", "type": "command", "command": "bash .baton/hooks/write-lock.sh" },
+      { "matcher": "Bash", "type": "command", "command": "bash .baton/hooks/bash-guard.sh" }
     ],
-    "Stop": [{ "type": "command", "command": "sh .baton/stop-guard.sh" }]
+    "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit", "type": "command", "command": "bash .baton/hooks/post-write-tracker.sh" }],
+    "Stop": [{ "type": "command", "command": "bash .baton/hooks/stop-guard.sh" }],
+    "SubagentStart": [{ "type": "command", "command": "bash .baton/hooks/subagent-context.sh" }],
+    "TaskCompleted": [{ "type": "command", "command": "bash .baton/hooks/completion-check.sh" }],
+    "PreCompact": [{ "type": "command", "command": "bash .baton/hooks/pre-compact.sh" }],
+    "PostToolUseFailure": [{ "type": "command", "command": "bash .baton/hooks/failure-tracker.sh" }]
   }
 }
 ```
@@ -66,8 +77,8 @@ project/
 删除 `<!-- BATON:GO -->` 可回退到标注循环。
 
 ### 流程
-场景 A（目标明确）: research.md → 人提需求 → plan.md → 标注循环 → BATON:GO → 生成 todolist → 实现
-场景 B（需要探索）: research.md ← 标注循环 → plan.md ← 标注循环 → BATON:GO → 生成 todolist → 实现
+场景 A（目标明确）: research.md（或 research-<topic>.md）→ 人提需求 → plan.md（或 plan-<topic>.md）→ 标注循环 → BATON:GO → 生成 todolist → 实现
+场景 B（需要探索）: research.md（或 research-<topic>.md）← 标注循环 → plan.md（或 plan-<topic>.md）← 标注循环 → BATON:GO → 生成 todolist → 实现
 简单改动可跳过 research.md。
 
 ### 标注协议
@@ -87,7 +98,7 @@ project/
 - 只改计划中的文件；需加文件先在 plan 中提出
 - 同一方法失败 3× → 停下报告
 - 实现过程中发现遗漏 → 停下，更新 plan.md，等人确认
-- 全部完成后提醒归档到 plans/
+- 全部完成后添加 <!-- BATON:COMPLETE --> 标记
 ```
 
 ---
@@ -275,8 +286,7 @@ AI 必须**诚实呈现**，而不是在有问题的基础上硬做方案：
 - 实现过程中发现计划遗漏：
   · 小补充 → 更新 plan.md 说明，人确认后继续
   · 需要改设计方向 → 停下，告知人。人删除 BATON:GO 回退到标注循环
-- 全部完成 + 测试通过 → 提醒归档：
-  mkdir -p plans && mv plan.md plans/plan-$(date +%Y-%m-%d)-topic.md
+- 全部完成 + 测试通过 → 添加 `<!-- BATON:COMPLETE -->` 标记到 plan 文件
 - 如果中途停止 → 在 plan.md 追加 ## Lessons Learned（什么有效/什么无效/下次怎么做）
 
 Todolist 有依赖关系的 items 应顺序执行（后续 item 需要看到前面的实际代码）。
@@ -302,39 +312,44 @@ phase-guide.sh 采用 skills-first 策略：优先检测对应阶段的 baton sk
 
 ### 状态检测逻辑
 
+plan 文件发现使用 `find_plan()`（_common.sh），支持 `plan.md` 和 `plan-*.md`（walk-up）。
+research 文件发现支持 `research.md` 和 `research-*.md` fallback。多 research 文件场景输出 advisory 并停留 PLAN 语义。
+
 ```
 # 优先级从高到低检测
 
-1. 归档检测
-   plan.md 存在 + BATON:GO + 所有 todo 标记 [x] + 无未标记 todo
-   → 输出：任务已完成，建议归档
+1. 完成检测
+   plan 存在 + BATON:GO + 所有 todo 标记 [x] + 无未标记 todo
+   → 输出：FINISH phase，提示完成流程（baton-implement Step 5）
 
 2. AWAITING_TODO
-   plan.md 存在 + BATON:GO + 无 ## Todo
+   plan 存在 + BATON:GO + 无 ## Todo
    → 输出：提醒人说 "generate todolist"
 
 3. 实现阶段
-   plan.md 存在 + BATON:GO + ## Todo 存在
+   plan 存在 + BATON:GO + ## Todo 存在
    → 有 baton-implement skill：提示 /baton-implement
+   → 有 baton-debug skill：附加提示（如遇重复失败可用 /baton-debug）
    → 无 skill：输出硬编码 IMPLEMENT 摘要
 
 4. 标注循环（plan）
-   plan.md 存在 + 无 BATON:GO
+   plan 存在 + 无 BATON:GO
    → 有 baton-plan skill：提示 /baton-plan
    → 无 skill：输出硬编码 ANNOTATION 摘要
 
 5. 计划阶段
-   research.md 存在 + 无 plan.md
+   research 存在（research.md 或 research-*.md）+ 无 plan
+   → 多个 research-*.md：输出 advisory（多研究文件检测）
    → 有 baton-plan skill：提示 /baton-plan
    → 无 skill：输出硬编码 PLAN 摘要
 
 6. 研究阶段
-   无 research.md + 无 plan.md
+   无 research + 无 plan
    → 有 baton-research skill：提示 /baton-research
    → 无 skill：输出硬编码 RESEARCH 摘要
 
 7. 跳过研究（边界情况）
-   无 research.md + plan.md 存在
+   无 research + plan 存在
    → 视为标注循环（简单任务直接写了 plan）
 ```
 
@@ -352,11 +367,14 @@ Investigate code: start from entry points, trace call chains with file:line evid
 ...
 ```
 
-**归档提醒**（无 skill 区分）：
+**完成提醒**（无 skill 区分）：
 ```
-📋 All tasks complete. Consider archiving:
-   mkdir -p plans && mv plan.md plans/plan-$(date +%Y-%m-%d)-topic.md
-   mv research.md plans/research-$(date +%Y-%m-%d)-topic.md
+✅ All todo items complete — FINISH phase.
+📍 Complete the finish workflow before stopping:
+   1. Append ## Retrospective to plan (≥3 lines)
+   2. Run the full test suite
+   3. Mark complete: add <!-- BATON:COMPLETE --> on its own line
+   4. Decide branch disposition (merge, keep, or discard)
 💡 The Annotation Log records design decision rationale — valuable long-term reference.
 ```
 
@@ -364,39 +382,44 @@ Investigate code: start from entry points, trace call chains with file:line evid
 
 ## 五、write-lock.sh 设计
 
-### 变更：最小改动
-
-与当前 baton 的 write-lock.sh 相比，逻辑**几乎不变**：
+### 变更
 
 ```
-1. BATON_BYPASS=1 → 放行（不变）
-2. 读取目标文件路径（不变）
-3. 目标是 .md/.mdx/.markdown → 放行（不变）
-4. 找 plan.md（walk-up 算法，不变）
-5. 无 plan.md → 阻止（不变）
-6. plan.md 无 BATON:GO → 阻止（不变）
-7. plan.md 有 BATON:GO → 放行（不变）
+1. BATON_BYPASS=1 → 放行
+2. 读取目标文件路径（stdin JSON 或 BATON_TARGET env）
+3. 目标是 .md/.mdx/.markdown → 放行
+4. 目标在项目目录外 → 放行
+4.5 多 plan 文件检测（MULTI_PLAN_COUNT > 1 且无 BATON_PLAN）→ 阻止（fail-closed）
+5. 无 plan 文件 → 阻止（exit 2）
+6. plan 文件无 BATON:GO → 阻止（exit 2）
+7. plan 文件有 BATON:GO → 放行 + 输出 additionalContext JSON（self-check 提醒）
 ```
 
-**唯一改动：阻止消息措辞更新**
+**阻止消息（泛化，不再绑定 plan.md 硬编码文件名）**
 
-无 plan.md 时：
+无计划文件时：
 ```
-🔒 Blocked: 无 plan.md。
-📍 先完成研究（research.md），再写计划（plan.md）。简单改动可直接写 plan.md。
+🔒 Blocked: no plan.md found.
+📍 Complete research first, then write a plan. Simple changes may skip straight to planning.
 ```
 
-plan.md 无 BATON:GO 时：
+多 plan 文件歧义时：
 ```
-🔒 Blocked: plan.md 未审批。
-📍 标注循环进行中。完成审批后添加 <!-- BATON:GO --> 解锁。
+🔒 Blocked: N plan files found — ambiguous.
+📍 Set BATON_PLAN=<filename> to select one, or remove unused plans.
+```
+
+计划文件无 BATON:GO 时：
+```
+🔒 Blocked: plan.md not approved.
+📍 Annotation cycle in progress. Add <!-- BATON:GO --> after approval to unlock.
 ```
 
 ---
 
 ## 六、stop-guard.sh 设计
 
-### 变更：增加归档提醒
+### 变更：增加完成提醒
 
 在当前逻辑基础上增加：
 
@@ -407,13 +430,13 @@ plan.md 无 BATON:GO 时：
 - plan.md + BATON:GO + 有未完成 todo → 提醒进度
 
 新增逻辑：
-- plan.md + BATON:GO + 全部 todo 完成 → 提醒归档
+- plan.md + BATON:GO + 全部 todo 完成 → 提醒完成流程
 ```
 
-归档提醒输出：
+完成提醒输出：
 ```
-✅ 所有 todo items 已完成。
-📋 建议归档：mkdir -p plans && mv plan.md plans/plan-$(date +%Y-%m-%d)-topic.md
+✅ All todo items complete — FINISH phase.
+📍 Complete the finish workflow: retrospective, mark complete (<!-- BATON:COMPLETE -->), test suite, branch disposition.
 ```
 
 ---
@@ -462,7 +485,7 @@ research.md  →  plan.md  →  [标注循环]  →  <!-- BATON:GO -->  →  imp
 
 简要说明场景 A（目标明确）和场景 B（需要探索）的区别。
 
-**保留不变**：写锁说明、IDE 支持表、安装/卸载、.gitignore 建议、哲学段落。
+**保留不变**：写锁说明、IDE 支持表、安装/卸载、哲学段落。（.gitignore 建议已更新以包含 topic-named 文件模式）
 
 ---
 
@@ -483,9 +506,9 @@ research.md  →  plan.md  →  [标注循环]  →  <!-- BATON:GO -->  →  imp
 | 2 | 有 research.md，无 plan.md → PLAN 引导 | 包含"计划阶段"、"引用 research" |
 | 3 | 有 plan.md，无 GO → ANNOTATION 引导 | 包含"标注循环"、"`[PAUSE]`"、"Free-text is the default"、"人不一定正确" |
 | 4 | 有 plan.md + GO → IMPLEMENT 引导 | 包含"实现阶段"、"typecheck" |
-| 5 | 有 plan.md + GO + 全部 [x] → 归档提醒 | 包含"归档"、"plans/" |
+| 5 | 有 plan.md + GO + 全部 [x] → 完成提醒 | 包含"BATON:COMPLETE"、"FINISH" |
 | 6 | 无 research.md + 有 plan.md → ANNOTATION 引导 | 简单改动场景 |
-| 7 | BATON_PLAN 自定义文件名 | 不变 |
+| 7 | BATON_PLAN 自定义文件名 / 多计划消歧 | 已扩展：同时验证 topic-named 文件和多计划消歧场景 |
 | 8 | walk-up 目录查找 | 不变 |
 | 12-17 | skill 检测分支覆盖 | 验证 has_skill() walk-up、per-skill 检测、fallback 抑制 |
 
@@ -494,7 +517,7 @@ research.md  →  plan.md  →  [标注循环]  →  <!-- BATON:GO -->  →  imp
 | # | 测试 | 变更 |
 |---|------|------|
 | 1-9 | 现有 9 个测试 | 不变 |
-| 新增 | plan + GO + 全部完成 → 归档提醒 | 验证输出包含"归档"关键词 |
+| 新增 | plan + GO + 全部完成 → 完成提醒 | 验证输出包含"BATON:COMPLETE"关键词 |
 
 ### test-workflow-consistency.sh 更新
 
@@ -580,14 +603,14 @@ baton_bak 的用户：
 |------|-------|------|
 | workflow.md | 重写 | 跨切面核心规则 |
 | SKILL.md (x3) | 重写 | 各阶段方法论（per-phase 权威） |
-| phase-guide.sh | 改造 | skills-first + 硬编码 fallback + 归档提醒 |
+| phase-guide.sh | 改造 | skills-first + 硬编码 fallback + 完成提醒 |
 | README.md | 重写 | 体现新定位和标注循环 |
 
 ### P1：应该实现（完善体验）
 
 | 组件 | 改动量 | 说明 |
 |------|-------|------|
-| stop-guard.sh | 小改 | 增加归档提醒 |
+| stop-guard.sh | 小改 | 增加完成提醒 |
 | write-lock.sh | 小改 | 更新阻止消息措辞 |
 | setup.sh | 中改 | v3 版本号 + 迁移逻辑 |
 | 测试 | 中改 | 更新 phase-guide 测试 + 新增 annotation 一致性测试 |
@@ -614,5 +637,5 @@ baton_bak 的用户：
 | 人可以错，AI 要回推 | ✅ | 明确的回应规则 + 正确/错误行为示例 |
 | 与 superpowers 不冲突 | ✅ | 层次分离：文档协议 vs 执行方法论 |
 | 简单改动可跳过 research | ✅ | 写锁不检查 research.md |
-| 归档机制 | ✅ | phase-guide 检测 + stop-guard 提醒 |
+| 完成机制 | ✅ | BATON:COMPLETE 标记 + phase-guide 检测 + stop-guard 提醒 |
 | Todolist 从 plan 分离 | ✅ | 人说"生成 todolist"后追加 |

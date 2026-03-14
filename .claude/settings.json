@@ -1,7 +1,8 @@
 {
   "env": {
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
-    "ENABLE_LSP_TOOL": "1"
+    "ENABLE_LSP_TOOL": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35"
   },
   "hooks": {
     "SessionStart": [
@@ -13,18 +14,18 @@
             "command": "bash .baton/hooks/phase-guide.sh"
           }
         ]
-      },
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .baton/hooks/phase-guide.sh"
-          }
-        ]
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/bash-guard.sh"
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [
@@ -37,11 +38,15 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|CreateFile",
+        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "bash .baton/hooks/post-write-tracker.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/quality-gate.sh"
           }
         ]
       }
@@ -86,6 +91,17 @@
           {
             "type": "command",
             "command": "bash .baton/hooks/pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/failure-tracker.sh"
           }
         ]
       }

@@ -15,6 +15,7 @@ trap 'rm -rf $tmp' EXIT
 setup_dir() {
     d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
     cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
+    [ -f "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" ] && cp "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" "$d/.baton/hooks/plan-parser.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/completion-check.sh" "$d/.baton/hooks/completion-check.sh"
@@ -67,6 +68,33 @@ else
     echo "  FAIL: should include reason field"
     FAIL=$((FAIL + 1))
 fi
+
+echo ""
+echo "--- Test 3: Cursor adapter — deny includes capability tier statement ---"
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'Baton capability: reduced enforcement (Cursor)'; then
+    echo "  pass: deny reason includes capability tier statement"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected capability tier in deny reason, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "--- Test 4: Cursor adapter — allow with BATON:GO includes write-gate context ---"
+d="$(setup_dir t4 adapter-cursor.sh)"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+JSON='{"tool_input":{"file_path":"src/app.ts"}}'
+TOTAL=$((TOTAL + 1))
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
+    echo "  pass: returns allow with write-gate context"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected decision:allow, got: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
 # ============================================================
 echo ""
 echo "================================"

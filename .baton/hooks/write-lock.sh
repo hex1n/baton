@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # write-lock.sh — Block source code writes until plan file contains <!-- BATON:GO -->
-# Version: 3.0
+# Version: 3.1
 #
 # Hook: PreToolUse (Edit|Write|MultiEdit|CreateFile)
 # Unlock: Add <!-- BATON:GO --> anywhere in plan file
@@ -57,31 +57,6 @@ case "$TARGET" in
     *.md|*.MD|*.markdown|*.mdx) exit 0 ;;
 esac
 
-# --- Files outside project directory always allowed ---
-PROJECT_DIR="${JSON_CWD:-$(pwd)}"
-# Canonicalize target to resolve ../ traversals
-# realpath -m handles non-existent parent dirs (GNU); readlink -f as fallback (macOS)
-TARGET_REAL="$(realpath -m "$TARGET" 2>/dev/null || readlink -f "$TARGET" 2>/dev/null)" || true
-if [ -z "$TARGET_REAL" ]; then
-    # Manual fallback for path canonicalization
-    _parent="$(dirname "$TARGET")"
-    if [ -d "$_parent" ]; then
-        TARGET_REAL="$(cd "$_parent" 2>/dev/null && pwd)/$(basename "$TARGET")"
-    else
-        # Parent doesn't exist — resolve relative to project dir
-        TARGET_REAL="${PROJECT_DIR}/${TARGET}"
-    fi
-fi
-# Canonicalize relative paths
-case "$TARGET_REAL" in
-    /*) ;;  # absolute, keep as-is
-    *) TARGET_REAL="${PROJECT_DIR}/${TARGET_REAL}" ;;
-esac
-case "$TARGET_REAL" in
-    "$PROJECT_DIR"/*) ;;  # inside project, continue checks
-    *) exit 0 ;;          # outside project, allow
-esac
-
 # --- Source shared functions ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 if [ -f "$SCRIPT_DIR/_common.sh" ]; then
@@ -95,19 +70,70 @@ fi
 resolve_plan_name
 find_plan
 
+_canonicalize_path() {
+    local _base="$1"
+    local _path="$2"
+    local _candidate
+    case "$_path" in
+        /*) _candidate="$_path" ;;
+        *) _candidate="$_base/$_path" ;;
+    esac
+    _candidate="$(realpath -m "$_candidate" 2>/dev/null || readlink -f "$_candidate" 2>/dev/null)" || true
+    if [ -n "$_candidate" ]; then
+        printf '%s\n' "$_candidate"
+        return
+    fi
+
+    local _parent _name
+    _name="$(basename "$_path")"
+    case "$_path" in
+        /*) _parent="$(dirname "$_path")" ;;
+        *) _parent="$_base/$(dirname "$_path")" ;;
+    esac
+    if [ -d "$_parent" ]; then
+        printf '%s/%s\n' "$(cd "$_parent" 2>/dev/null && pwd)" "$_name"
+    else
+        case "$_path" in
+            /*) printf '%s\n' "$_path" ;;
+            *) printf '%s/%s\n' "$_base" "$_path" ;;
+        esac
+    fi
+}
+
+# --- Files outside Baton project root always allowed ---
+SESSION_DIR="${JSON_CWD:-$(pwd)}"
+PROJECT_DIR="$(parser_project_root "$SESSION_DIR")"
+PROJECT_DIR="$(cd "$PROJECT_DIR" 2>/dev/null && pwd || printf '%s' "$PROJECT_DIR")"
+TARGET_REAL="$(_canonicalize_path "$SESSION_DIR" "$TARGET")"
+case "$TARGET_REAL" in
+    "$PROJECT_DIR"|"$PROJECT_DIR"/*) ;;  # inside project, continue checks
+    *) exit 0 ;;                          # outside project, allow
+esac
+
 # --- No plan → block + research phase guidance ---
 if [ -z "$PLAN" ]; then
     echo "🔒 Blocked: no $PLAN_NAME found." >&2
-    echo "📍 Complete research (research.md) first, then write plan (plan.md). Simple changes may skip straight to plan.md." >&2
-    exit 1
+    echo "📍 Complete research first, then write a plan. Simple changes may skip straight to planning." >&2
+    exit 2
+fi
+
+# --- Multi-plan ambiguity → fail-closed ---
+if [ "${MULTI_PLAN_COUNT:-0}" -gt 1 ] 2>/dev/null && [ -z "${BATON_PLAN:-}" ]; then
+    echo "🔒 Blocked: $MULTI_PLAN_COUNT plan files found — ambiguous." >&2
+    echo "📍 Set BATON_PLAN=<filename> to select one, or remove unused plans." >&2
+    exit 2
 fi
 
 # --- Check GO marker ---
-if grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
+if parser_has_go; then
+    # Plan-approved write — inject self-check reminder via additionalContext
+    cat <<'HOOKJSON'
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"Baton: verify this file is in the approved write set. Self-check after writing."}}
+HOOKJSON
     exit 0
 fi
 
 # --- Plan exists, no GO → block + plan phase guidance ---
 echo "🔒 Blocked: $PLAN_NAME not approved." >&2
 echo "📍 Annotation cycle in progress. Add <!-- BATON:GO --> after approval to unlock." >&2
-exit 1
+exit 2

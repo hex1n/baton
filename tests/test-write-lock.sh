@@ -130,6 +130,13 @@ assert_allowed "$d/src/components" "Button.tsx"
 
 # ============================================================
 echo ""
+echo "=== Test 5b: Subdirectory target with ../ stays inside project root ==="
+d="$tmp/t5b" && mkdir -p "$d/src"
+printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
+assert_allowed "$d/src" "../main.go"
+
+# ============================================================
+echo ""
 echo "=== Test 6: No target path → fail-open with warning ==="
 TOTAL=$((TOTAL + 1))
 STDERR="$(cd "$tmp/t1" && bash "$LOCK" < /dev/null 2>&1 1>/dev/null || true)"
@@ -257,11 +264,11 @@ d="$tmp/t15" && mkdir -p "$d"
 # No plan → research guidance
 TOTAL=$((TOTAL + 1))
 STDERR="$(run_lock_stderr "$d" "src/app.ts")"
-if echo "$STDERR" | grep -q "research.md"; then
-    echo "  pass: no plan → blocking message mentions research.md"
+if echo "$STDERR" | grep -q "research first"; then
+    echo "  pass: no plan → blocking message mentions research first"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: no plan blocking message should mention research.md"
+    echo "  FAIL: no plan blocking message should mention research first"
     FAIL=$((FAIL + 1))
 fi
 # Plan without GO → annotation cycle guidance
@@ -328,20 +335,159 @@ d="$tmp/t18a" && mkdir -p "$d"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-# Build a PATH that excludes the real jq binary
-JQ_REAL="$(command -v jq 2>/dev/null || true)"
-if [ -n "$JQ_REAL" ]; then
-    JQ_DIR="$(dirname "$JQ_REAL")"
-    CLEAN_PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$JQ_DIR" | paste -sd: -)"
-else
-    CLEAN_PATH="$PATH"
-fi
-if (cd "$d" && PATH="$CLEAN_PATH" printf '%s' "$JSON" | bash "$LOCK" 2>/dev/null); then
+# Use a minimal PATH that includes required utilities but deliberately omits jq.
+NO_JQ_BIN="$tmp/no-jq-write-lock"
+mkdir -p "$NO_JQ_BIN"
+for cmd in awk basename cat dirname grep head ls pwd readlink realpath tr wc; do
+    CMD_PATH="$(command -v "$cmd" 2>/dev/null || true)"
+    [ -n "$CMD_PATH" ] && ln -sf "$CMD_PATH" "$NO_JQ_BIN/$cmd"
+done
+if (cd "$d" && printf '%s' "$JSON" | env PATH="$NO_JQ_BIN" "$(command -v bash)" "$LOCK" 2>/dev/null); then
     echo "  pass: awk fallback parsed stdin JSON correctly"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: awk fallback should parse stdin JSON"
     FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 21: Exit code 2 on all blocked scenarios ==="
+assert_blocked_exit2() {
+    TOTAL=$((TOTAL + 1))
+    local actual=0
+    (cd "$1" && BATON_TARGET="$2" bash "$LOCK" < /dev/null 2>/dev/null) || actual=$?
+    if [ "$actual" -eq 2 ]; then
+        echo "  pass: exit 2 for '$2'"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: expected exit 2 for '$2', got $actual"
+        FAIL=$((FAIL + 1))
+    fi
+}
+d="$tmp/t21" && mkdir -p "$d"
+assert_blocked_exit2 "$d" "src/app.ts"  # no plan
+echo "# Plan" > "$d/plan.md"
+assert_blocked_exit2 "$d" "src/app.ts"  # no GO
+
+# ============================================================
+echo ""
+echo "=== Test 22: Multi-plan ambiguity → exit 2 ==="
+d="$tmp/t22" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [ ] Step 1
+EOF
+echo "# Other plan" > "$d/plan-feature.md"
+# Multi-plan without BATON_PLAN → blocked
+TOTAL=$((TOTAL + 1))
+EXIT_CODE=0
+(cd "$d" && BATON_TARGET="src/app.ts" bash "$LOCK" < /dev/null 2>/dev/null) || EXIT_CODE=$?
+if [ "$EXIT_CODE" -eq 2 ]; then
+    echo "  pass: multi-plan without BATON_PLAN → exit 2"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected exit 2, got $EXIT_CODE"
+    FAIL=$((FAIL + 1))
+fi
+# Multi-plan + stderr contains warning
+TOTAL=$((TOTAL + 1))
+STDERR="$(run_lock_stderr "$d" "src/app.ts")"
+if echo "$STDERR" | grep -qi "multiple plan files\|ambiguous"; then
+    echo "  pass: multi-plan stderr mentions ambiguity"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: multi-plan stderr should mention ambiguity"
+    echo "    got: $STDERR"
+    FAIL=$((FAIL + 1))
+fi
+# Multi-plan + BATON_PLAN set → allowed (plan.md has GO)
+TOTAL=$((TOTAL + 1))
+if (cd "$d" && BATON_PLAN=plan.md BATON_TARGET=src/app.ts bash "$LOCK" < /dev/null 2>/dev/null); then
+    echo "  pass: multi-plan + BATON_PLAN=plan.md → allowed"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: multi-plan + BATON_PLAN should resolve ambiguity"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 23: additionalContext injection on plan-approved writes ==="
+d="$tmp/t23" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+# Plan
+<!-- BATON:GO -->
+## Todo
+- [ ] Implement feature
+EOF
+
+# Plan-approved write → stdout should contain hookSpecificOutput JSON
+TOTAL=$((TOTAL + 1))
+STDOUT="$(cd "$d" && BATON_TARGET="src/app.ts" bash "$LOCK" < /dev/null 2>/dev/null)"
+if echo "$STDOUT" | grep -q 'additionalContext'; then
+    echo "  pass: plan-approved write emits additionalContext JSON"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: plan-approved write should emit additionalContext JSON"
+    echo "    stdout: $STDOUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# Verify JSON structure
+TOTAL=$((TOTAL + 1))
+if echo "$STDOUT" | grep -q 'hookSpecificOutput'; then
+    echo "  pass: stdout contains hookSpecificOutput wrapper"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: stdout should contain hookSpecificOutput wrapper"
+    FAIL=$((FAIL + 1))
+fi
+
+# Bypass → no additionalContext
+TOTAL=$((TOTAL + 1))
+STDOUT="$(cd "$d" && BATON_BYPASS=1 BATON_TARGET="src/app.ts" bash "$LOCK" < /dev/null 2>/dev/null)" || true
+if echo "$STDOUT" | grep -q 'additionalContext'; then
+    echo "  FAIL: bypass should not emit additionalContext"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: bypass does not emit additionalContext"
+    PASS=$((PASS + 1))
+fi
+
+# Markdown target → no additionalContext
+TOTAL=$((TOTAL + 1))
+STDOUT="$(cd "$d" && BATON_TARGET="notes.md" bash "$LOCK" < /dev/null 2>/dev/null)" || true
+if echo "$STDOUT" | grep -q 'additionalContext'; then
+    echo "  FAIL: markdown should not emit additionalContext"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: markdown target does not emit additionalContext"
+    PASS=$((PASS + 1))
+fi
+
+# No target → no additionalContext (fail-open path)
+TOTAL=$((TOTAL + 1))
+STDOUT="$(cd "$d" && bash "$LOCK" < /dev/null 2>/dev/null)" || true
+if echo "$STDOUT" | grep -q 'additionalContext'; then
+    echo "  FAIL: no-target should not emit additionalContext"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: no-target does not emit additionalContext"
+    PASS=$((PASS + 1))
+fi
+
+# No plan → no additionalContext (blocked, but verify stdout is clean)
+d2="$tmp/t23b" && mkdir -p "$d2"
+TOTAL=$((TOTAL + 1))
+STDOUT="$(cd "$d2" && BATON_TARGET="src/app.ts" bash "$LOCK" < /dev/null 2>/dev/null)" || true
+if echo "$STDOUT" | grep -q 'additionalContext'; then
+    echo "  FAIL: blocked write should not emit additionalContext"
+    FAIL=$((FAIL + 1))
+else
+    echo "  pass: blocked write does not emit additionalContext"
+    PASS=$((PASS + 1))
 fi
 
 # ============================================================

@@ -4,7 +4,7 @@
 > 目的：为 baton 的安装分发设计提供依据，确定哪些 IDE 支持 hook 硬阻断写入
 > 更新提示：2026-03-07 之后，请同时参考较新的 [Hook Research 2026-03-07](../research-ide-hooks-2026-03-07.md)。较新的研究额外区分了 `Cursor IDE` vs `Cursor CLI`，以及 `Kiro` vs `Amazon Q Developer CLI`，并保守处理了 `Roo Code` 的官方 hook 证据。
 > 维护规则：支持 IDE 的公开表述应先更新 [IDE Capability Matrix](./ide-capability-matrix.md)，再同步到 `README.md`、`setup.sh` 和测试。
-> Current implementation scope (2026-03-09): Baton supports 4 IDEs — Claude Code, Factory AI, Cursor IDE (full protection via hooks), and Codex (rules guidance). All other IDEs documented below are historical research only and are not supported by the current installer.
+> Current implementation scope (2026-03-09): Baton supports 4 IDEs — Claude Code, Factory AI, Cursor IDE (core protection via adapter), and Codex (rules guidance). All other IDEs documented below are historical research only and are not supported by the current installer.
 
 ## 核心发现
 

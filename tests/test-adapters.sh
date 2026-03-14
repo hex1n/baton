@@ -16,6 +16,7 @@ setup_cursor() {
     d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
+    [ -f "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" ] && cp "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" "$d/.baton/hooks/plan-parser.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
     cp "$ADAPTERS/adapter-cursor.sh" "$d/.baton/adapters/adapter-cursor.sh"
     chmod +x "$d/.baton/adapters/adapter-cursor.sh"
@@ -77,6 +78,7 @@ setup_codex() {
     cp "$SCRIPT_DIR/../.baton/hooks/phase-guide.sh" "$d/.baton/hooks/phase-guide.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/stop-guard.sh" "$d/.baton/hooks/stop-guard.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
+    [ -f "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" ] && cp "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" "$d/.baton/hooks/plan-parser.sh"
     chmod +x "$d/.baton/hooks/phase-guide.sh" "$d/.baton/hooks/stop-guard.sh"
     cp "$ADAPTERS/adapter-codex.sh" "$d/.baton/adapters/adapter-codex.sh"
     chmod +x "$d/.baton/adapters/adapter-codex.sh"
@@ -94,6 +96,28 @@ if [ -n "$OUTPUT" ]; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL: codex adapter produced no stdout for phase-guide"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 4b: Codex adapter — capability tier statement present ==="
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'Baton capability: rules + guidance only (Codex)'; then
+    echo "  pass: codex adapter includes capability tier statement"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected capability tier statement, got: ${OUTPUT:0:80}"
+    FAIL=$((FAIL + 1))
+fi
+
+echo ""
+echo "=== Test 4c: Codex adapter — mentions hard gates not available ==="
+TOTAL=$((TOTAL + 1))
+if echo "$OUTPUT" | grep -q 'Hard gates.*not available'; then
+    echo "  pass: codex adapter mentions hard gates not available"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: expected hard gate unavailability notice, got: ${OUTPUT:0:80}"
     FAIL=$((FAIL + 1))
 fi
 

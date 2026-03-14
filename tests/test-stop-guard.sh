@@ -105,6 +105,7 @@ d="$tmp/t4" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 # Plan
 <!-- BATON:GO -->
+## Todo
 - [x] Step 1: Done
 - [x] Step 2: Done
 - [x] Step 3: Done
@@ -119,18 +120,22 @@ assert_exit_zero "$d" "exit 0 even with remaining items"
 
 # ============================================================
 echo ""
-echo "=== Test 5: plan + GO, all done → archival reminder ==="
+echo "=== Test 5: plan + GO, all done → finish workflow reminder ==="
 d="$tmp/t5" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 # Plan
 <!-- BATON:GO -->
+## Todo
 - [x] Step 1: Done
 - [x] Step 2: Done
 - [x] Step 3: Done
 EOF
 assert_output_contains "$d" "todo items complete" "shows completion message"
-assert_output_contains "$d" "Retrospective" "suggests writing Retrospective before archiving"
-assert_output_contains "$d" "archiving" "suggests archiving"
+assert_output_contains "$d" "FINISH phase" "shows FINISH phase"
+assert_output_contains "$d" "Retrospective" "suggests writing Retrospective"
+assert_output_contains "$d" "test suite" "mentions full test suite"
+assert_output_contains "$d" "branch disposition" "mentions branch disposition"
+assert_output_contains "$d" "BATON:COMPLETE" "mentions COMPLETE marker"
 assert_output_contains "$d" "Annotation Log" "mentions Annotation Log value"
 assert_exit_zero "$d" "exit 0 when all complete"
 
@@ -140,6 +145,7 @@ echo "=== Test 6: BATON_PLAN custom plan file name ==="
 d="$tmp/t6" && mkdir -p "$d"
 cat > "$d/custom-plan.md" << 'EOF'
 <!-- BATON:GO -->
+## Todo
 - [x] Step 1: Done
 - [ ] Step 2: Not done
 EOF
@@ -162,6 +168,7 @@ echo "=== Test 7: Walk-up plan discovery ==="
 d="$tmp/t7" && mkdir -p "$d/project/src/components"
 cat > "$d/project/plan.md" << 'EOF'
 <!-- BATON:GO -->
+## Todo
 - [ ] Step 1: Not done
 EOF
 assert_output_contains "$d/project/src/components" "1 remaining" "walk-up finds plan.md in parent"
@@ -194,6 +201,7 @@ echo "=== Test 9: Single unchecked item ==="
 d="$tmp/t9" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 <!-- BATON:GO -->
+## Todo
 - [ ] Step 1: Only task
 EOF
 assert_output_contains "$d" "0/1" "shows 0/1 done"
@@ -211,7 +219,7 @@ cat > "$d/plan.md" << 'EOF'
 ## Description
 Some text about the plan.
 
-## TODO
+## Todo
 - [x] Step 1: Done
 - [ ] Step 2: Not done
 
@@ -220,6 +228,56 @@ Some text about the plan.
 - Another note
 EOF
 assert_output_contains "$d" "1/2" "counts only TODO-format lines"
+assert_exit_zero "$d" "exit 0"
+
+# ============================================================
+echo ""
+echo "=== Test 11: All done → finish workflow with 3-question Retrospective prompt ==="
+d="$tmp/t11" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] Step 1: Done
+- [x] Step 2: Done
+EOF
+assert_output_contains "$d" "FINISH phase" "finish workflow shows FINISH phase"
+assert_output_contains "$d" "plan get wrong" "Retrospective prompt includes 'plan get wrong'"
+assert_output_contains "$d" "surprised" "Retrospective prompt includes 'surprised'"
+assert_output_contains "$d" "research differently" "Retrospective prompt includes 'research differently'"
+
+# ============================================================
+echo ""
+echo "=== Test 12: Multi-plan advisory — stop-guard still works ==="
+d="$tmp/t12" && mkdir -p "$d"
+echo "# Other" > "$d/plan-feature.md"
+sleep 0.1  # ensure plan.md is newer by mtime
+cat > "$d/plan.md" << 'EOF'
+<!-- BATON:GO -->
+## Todo
+- [x] Step 1: Done
+- [ ] Step 2: Not done
+EOF
+# stop-guard is advisory (exit 0 always) — multi-plan doesn't block it
+assert_output_contains "$d" "remaining" "multi-plan → stop-guard still detects remaining"
+assert_exit_zero "$d" "multi-plan → still exit 0"
+
+# ============================================================
+echo ""
+echo "=== Test 13: Section-aware counting — items outside ## Todo ignored ==="
+d="$tmp/t13" && mkdir -p "$d"
+cat > "$d/plan.md" << 'EOF'
+# Plan
+<!-- BATON:GO -->
+## Approach
+- [ ] This is NOT a todo item (in wrong section)
+## Todo
+- [x] Step 1: Done
+- [ ] Step 2: Not done
+## Notes
+- [ ] This is also NOT a todo item
+EOF
+assert_output_contains "$d" "1/2" "only counts items under ## Todo"
+assert_output_contains "$d" "1 remaining" "ignores items in other sections"
 assert_exit_zero "$d" "exit 0"
 
 # ============================================================

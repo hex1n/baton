@@ -18,11 +18,12 @@ Advisory. Hook always exits 0 but emits guidance to stderr. Guides AI behavior b
 
 | Capability | Hook | What it does |
 |------------|------|--------------|
-| Phase detection | phase-guide.sh | 6-state machine (RESEARCH → PLAN → ANNOTATION → AWAITING_TODO → IMPLEMENT → ARCHIVE). Routes to skills when available, falls back to hardcoded guidance. |
-| Write-set drift warning | post-write-tracker.sh | Warns when modified file basename not mentioned in plan. |
+| Phase detection | phase-guide.sh | 6-state machine (RESEARCH → PLAN → ANNOTATION → AWAITING_TODO → IMPLEMENT → FINISH). Routes to skills when available, falls back to hardcoded guidance. |
+| Write-set drift warning | post-write-tracker.sh | Exact path matching against `Files:` fields in `## Todo` items; falls back to basename grep when no structured write set exists. |
 | Todolist gate | phase-guide.sh | Detects AWAITING_TODO state (GO set, no `## Todo`). Reminds to generate todolist before implementing. |
-| Retrospective enforcement | completion-check.sh | Soft-blocks task completion until `## Retrospective` exists when all todos are done. |
-| Risky bash detection | bash-guard.sh | Warns on file-writing bash patterns (`>>`, `sed -i`, `cp`, `mv`) when plan is locked. |
+| Retrospective enforcement | completion-check.sh | Soft-blocks task completion until `## Retrospective` with ≥3 content lines exists when all todos are done. Multi-plan without BATON_PLAN → fail-closed. |
+| Failure tracking | failure-tracker.sh | Counts cumulative tool failures per session. Alerts at thresholds (3 and 5). |
+| Shell write blocking | bash-guard.sh | Selectively blocks explicit file-write patterns (redirects, tee, sed -i, cp, mv, install, truncate) when plan gate is closed (exit 2). Read-only commands always pass. Quote-aware: commands inside quoted strings are not false-positived. |
 | Subagent context | subagent-context.sh | Injects plan progress into subagent sessions. |
 | Session-end reminders | stop-guard.sh | Reminds about incomplete todos and suggests Lessons Learned on session stop. |
 | Pre-compact summary | pre-compact.sh | Outputs progress summary before context compression. |
@@ -37,6 +38,7 @@ No hook enforcement. Relies on skill Iron Laws + human review.
 | 3-failure stop | workflow.md rule 5 | Same approach fails 3× → must stop and report. Same root cause = same chain. |
 | C/D discovery stop | workflow.md rule 6 | Scope extension or design change discovered → must stop, update plan, wait for confirmation. |
 | Fallback conservatism | workflow.md Enforcement Boundaries | Fallback guidance is intentionally more conservative than skill-guided execution. When skills are unavailable, hooks output hardcoded summaries as a safety net. |
+| Adversarial review | baton-review skill | First-principles review of artifacts via subagent (`context: fork`). Dispatched before presenting research/plan/todolist to human. Skill-disciplined, not hook-enforced. |
 
 ## Design Principles
 

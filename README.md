@@ -9,19 +9,19 @@ Baton adds two things Boris can't do with words alone: **a code-level write lock
 ## How It Works
 
 ```
-research.md  →  plan.md  →  [annotation cycle]  →  <!-- BATON:GO -->  →  generate todolist  →  implement
-   (understand)    (propose)    (build shared understanding)   (approve)          (prepare)         (execute)
+research.md  →  plan.md  →  [annotation cycle]  →  <!-- BATON:GO -->  →  generate todolist  →  implement  →  finish
+   (understand)    (propose)    (build shared understanding)   (approve)          (prepare)         (execute)     (verify/complete)
 ```
 
-**Scenario A** (clear goal): research.md → you state the requirement → plan.md → annotation cycle → BATON:GO → generate todolist → implement
+**Scenario A** (clear goal): research.md (or `research-<topic>.md`) → you state the requirement → plan.md (or `plan-<topic>.md`) → annotation cycle → BATON:GO → generate todolist → implement → finish
 
-**Scenario B** (exploration): research.md ← annotation cycle → plan.md ← annotation cycle → BATON:GO → generate todolist → implement
+**Scenario B** (exploration): research.md (or `research-<topic>.md`) ← annotation cycle → plan.md (or `plan-<topic>.md`) ← annotation cycle → BATON:GO → generate todolist → implement → finish
 
 Simple changes can skip research.md and go straight to plan.md.
 
 ### The Annotation Cycle
 
-The annotation cycle is Baton's core mechanism. It applies to both research.md and plan.md.
+The annotation cycle is Baton's core mechanism. It applies to both research.md and plan.md (or their topic-named equivalents).
 
 You can give feedback directly in the document or in chat. Free-text is the default.
 `[PAUSE]` is the only explicit marker: it means stop the current direction and
@@ -36,17 +36,17 @@ For each piece of feedback:
 
 ### The Write Lock
 
-- **Blocks** source code writes when `plan.md` doesn't exist or lacks `<!-- BATON:GO -->`
+- **Blocks** source code writes when the plan doesn't exist or lacks `<!-- BATON:GO -->`
 - **Allows** markdown files (*.md, *.mdx, *.markdown) at all times — research and planning are never blocked
-- **Unlocks** when `plan.md` contains `<!-- BATON:GO -->` anywhere in the file
+- **Unlocks** when the plan contains `<!-- BATON:GO -->` anywhere in the file
 - **Re-locks** if you remove `<!-- BATON:GO -->` (e.g., to go back to annotation cycle)
-- **Custom plan file**: `BATON_PLAN=plan-design.md` to use a different plan file name
+- **Custom plan file**: `BATON_PLAN=plan-auth.md` — use a topic-named file (e.g. `plan-auth.md`, `plan-refactor.md`); also required when multiple plan files coexist so the write-lock knows which one to check
 - **Bypass** for emergencies: `BATON_BYPASS=1` skips the lock entirely
 - **If AI adds `<!-- BATON:GO -->` itself**: remove it immediately, return to annotation phase
 
 **Three layers of guidance:**
 - **Layer 0**: Workflow rules always in context (workflow.md)
-- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement) with fallback to session-start hook with hardcoded fallback
+- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement / baton-review) with fallback to session-start hook with hardcoded fallback
 - **Layer 2**: Actionable blocking messages when writes are denied
 
 ## Install
@@ -136,39 +136,51 @@ Depending on the IDEs detected or selected, Baton installs the relevant subset o
 ```
 your-project/
 ├── .baton/
-│   ├── workflow.md         ← Universal rules (always loaded)
-│   ├── write-lock.sh       ← Write lock (~100 lines)
-│   ├── phase-guide.sh      ← Session start: detects phase, prompts skill or extracts fallback
-│   ├── stop-guard.sh       ← Stop hook: progress/archival reminder
-│   ├── bash-guard.sh       ← Advisory bash detection
-│   └── adapters/           ← Cross-IDE adapters (Cursor, Codex)
+│   ├── workflow.md           ← Universal rules (always loaded)
+│   ├── hooks/
+│   │   ├── _common.sh        ← Shared library (plan discovery, skill detection)
+│   │   ├── plan-parser.sh    ← Shared plan/todo/write-set parser
+│   │   ├── write-lock.sh     ← Write lock (PreToolUse, hard block)
+│   │   ├── phase-guide.sh    ← Phase detection + skill routing (SessionStart)
+│   │   ├── stop-guard.sh     ← Progress/completion reminder (Stop)
+│   │   ├── bash-guard.sh     ← Selective shell write blocking (PreToolUse)
+│   │   ├── post-write-tracker.sh  ← Write-set drift warning (PostToolUse)
+│   │   ├── subagent-context.sh    ← Plan progress injection (SubagentStart)
+│   │   ├── completion-check.sh    ← Retrospective enforcement (TaskCompleted)
+│   │   ├── pre-compact.sh    ← Context summary (PreCompact)
+│   │   └── failure-tracker.sh ← Tool failure counter (PostToolUseFailure)
+│   └── adapters/             ← Cross-IDE adapters (Cursor, Codex)
 ├── .claude/
-│   ├── skills/              ← Phase methodology (baton-research, baton-plan, baton-implement)
-│   └── settings.json        ← Hook configuration
-├── CLAUDE.md                ← Claude import: @.baton/workflow.md
-├── AGENTS.md                ← Generated for Codex installs: @.baton/workflow.md
-└── .agents/skills/          ← Generated Codex fallback skills
+│   ├── skills/               ← Generated host copies of Baton-managed skills
+│   └── settings.json         ← Hook configuration (9 hooks)
+├── CLAUDE.md                 ← Claude import: @.baton/workflow.md
+├── AGENTS.md                 ← Generated for Codex installs: @.baton/workflow.md
+└── .agents/skills/           ← Generated Codex fallback skills
 ```
 
 ## Supported IDEs
 
 | IDE | Protection Level | What You Get | Setup |
 |-----|-----------------|--------------|-------|
-| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 8 hooks | Automatic |
+| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 9 hooks | Automatic |
 | Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
-| Cursor IDE | **Full protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
+| Cursor IDE | **Core protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
 | Codex | Rules guidance | Experimental `SessionStart` + `Stop` hooks (best-effort) + generated `AGENTS.md` + generated `.agents/skills/`; no write-lock | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
+> **Core protection** = hard write-lock plus a reduced hook set. Some advisory/finish hooks are unavailable on this host.
 > **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
 >
-> **Codex note**: Baton uses experimental `SessionStart`/`Stop` hooks in Codex for phase guidance and stop reminders, plus `AGENTS.md` rules and `.agents/skills/`. These hooks are advisory only: Codex still has **no PreToolUse write-lock** or plan-unlisted write enforcement. For full hard-gated protection, use Claude Code, Factory AI, or Cursor.
+> **Codex note**: Baton uses experimental `SessionStart`/`Stop` hooks in Codex for phase guidance and stop reminders, plus `AGENTS.md` rules and `.agents/skills/`. These hooks are advisory only: Codex still has **no PreToolUse write-lock** or plan-unlisted write enforcement. For the richest full-protection surface, use Claude Code or Factory AI; Cursor keeps the hard write-lock but exposes a reduced hook set.
 
 ## Suggested .gitignore
 
 ```
+baton-tasks/
 plan.md
+plan-*.md
 research.md
+research-*.md
 plans/
 ```
 

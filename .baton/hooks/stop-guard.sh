@@ -6,7 +6,7 @@
 # Always exit 0 — never block the stop action
 #
 # Checks: implement phase (plan + GO marker + unchecked TODOs)
-#         archival phase (plan + GO marker + all TODOs done)
+#         finish phase (plan + GO marker + all TODOs done)
 # Plan file override: BATON_PLAN=custom-plan.md (default: plan.md)
 
 # --- Fail-open on unexpected errors ---
@@ -27,21 +27,25 @@ find_plan
 grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null || exit 0
 
 # Count TODO items
-TOTAL=$(grep -c '^\- \[' "$PLAN" 2>/dev/null) || TOTAL=0
-DONE=$(grep -ci '^\- \[x\]' "$PLAN" 2>/dev/null) || DONE=0
-REMAINING=$((TOTAL - DONE))
+parser_todo_counts
 
-if [ "$TOTAL" -gt 0 ] && [ "$REMAINING" -eq 0 ]; then
-    # All done — retrospective + archival reminder
+if [ "$TODO_TOTAL" -gt 0 ] && [ "$TODO_REMAINING" -eq 0 ]; then
+    # All done — finish workflow reminder
     echo "" >&2
-    echo "✅ All todo items complete." >&2
-    echo "📋 Before archiving, append ## Retrospective to $PLAN_NAME: what did the plan get wrong?" >&2
-    echo "   Then: mkdir -p plans && mv $PLAN_NAME plans/\${PLAN_NAME%.md}-\$(date +%Y-%m-%d)-topic.md" >&2
+    echo "✅ All todo items complete — FINISH phase." >&2
+    echo "📍 Complete the finish workflow before stopping:" >&2
+    echo "   1. Append ## Retrospective to $PLAN_NAME (≥3 lines, answer all three):" >&2
+    echo "      · What did the plan get wrong?" >&2
+    echo "      · What surprised you during implementation?" >&2
+    echo "      · What would you research differently next time?" >&2
+    echo "   2. Run the full test suite to verify nothing is broken" >&2
+    echo "   3. Mark complete: add <!-- BATON:COMPLETE --> on its own line in $PLAN_NAME" >&2
+    echo "   4. Decide branch disposition (merge, keep, or discard)" >&2
     echo "💡 The Annotation Log records design decision rationale — valuable long-term reference." >&2
-elif [ "$REMAINING" -gt 0 ]; then
+elif [ "$TODO_REMAINING" -gt 0 ]; then
     # In progress — progress reminder
     echo "" >&2
-    echo "📋 Implementation in progress: $DONE/$TOTAL items done, $REMAINING remaining." >&2
+    echo "📋 Implementation in progress: $TODO_DONE/$TODO_TOTAL items done, $TODO_REMAINING remaining." >&2
     echo "   Next session can resume from the $PLAN_NAME checklist." >&2
     echo "   💡 Consider appending '## Lessons Learned' to $PLAN_NAME before stopping." >&2
 fi

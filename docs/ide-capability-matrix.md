@@ -6,9 +6,9 @@ As of 2026-03-11. Baton supports 4 IDEs across 3 protection tiers.
 
 | Tier | Hosts | Hooks | Write-lock | Key gaps |
 |------|-------|-------|------------|----------|
-| **Full protection** | Claude Code, Factory | 8/8 | Hard block | None |
-| **Core protection** | Cursor | 5/8 | Hard block (via adapter) | No write-set drift warning, no session-end reminders, no retrospective enforcement |
-| **Rules guidance** | Codex | 2/8 experimental | None | Advisory-only SessionStart/Stop hooks; no PreToolUse write-lock or write-set enforcement |
+| **Full protection** | Claude Code, Factory | 9/9 | Hard block | None |
+| **Core protection** | Cursor | 5/9 | Hard block (via adapter) | No write-set drift warning, no session-end reminders, no retrospective enforcement |
+| **Rules guidance** | Codex | 2/9 experimental | None | Advisory-only SessionStart/Stop hooks; no PreToolUse write-lock or write-set enforcement |
 
 ## Hook Inventory
 
@@ -24,6 +24,7 @@ Which hooks fire for each host:
 | post-write-tracker.sh | PostToolUse | Advisory | ✅ | ✅ | ❌ | ❌ |
 | stop-guard.sh | Stop | Advisory | ✅ | ✅ | ❌ | ✅ experimental |
 | completion-check.sh | TaskCompleted | Soft block | ✅ | ✅ | ❌ | ❌ |
+| failure-tracker.sh | PostToolUseFailure | Advisory | ✅ | ✅ | ❌ | ❌ |
 
 Source: `setup.sh` IDE installation logic.
 
