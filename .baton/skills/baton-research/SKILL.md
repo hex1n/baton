@@ -20,7 +20,8 @@ FIRST PRINCIPLES BEFORE FRAMING.
 ```
 
 This skill is the local source of truth for research-phase framing.
-`workflow.md` only supplements cross-phase annotation handling; local field requirements are defined here.
+`workflow.md` defines cross-phase invariants (Challenge Model, Evidence Model, Permission Model);
+local field requirements including annotation format and evidence extensions are defined here.
 
 Research produces understanding, not code. Write findings down for the plan phase.
 
