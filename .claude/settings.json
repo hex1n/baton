@@ -2,8 +2,7 @@
   "env": {
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
     "ENABLE_LSP_TOOL": "1",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35",
-    "BATON_PLAN": "baton-tasks/symlink-skill-source/plan.md"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35"
   },
   "hooks": {
     "SessionStart": [
