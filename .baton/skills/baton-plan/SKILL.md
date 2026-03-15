@@ -19,6 +19,18 @@ VERIFY = VISIBLE OUTPUT. "I checked" is not evidence.
 FIRST PRINCIPLES BEFORE FRAMING. State problem → list constraints → enumerate solution categories → then evaluate.
 ```
 
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
+
+| Thought | Reality |
+|---------|---------|
+| "This approach is obviously the best" | Did you enumerate other solution categories? |
+| "Surface Scan not needed, impact is small" | Medium/Large must do it. Your memory is less reliable than grep |
+| "Self-Challenge is done" | Is the depth sufficient? "No other alternatives" is not a genuine answer |
+| "I can skip the review dispatch" | Every version presented to the human must have been reviewed |
+| "The plan is obvious from the research" | Plans must add: What, Why, Impact, Risks. Research doesn't have all of these |
+
 ## When to Use
 
 - After research is complete and you need to propose concrete changes

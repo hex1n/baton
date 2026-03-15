@@ -24,7 +24,7 @@ if [ -d "$BATON_HOME/.git" ]; then
         _git_major="${_git_ver%% *}"
         _git_minor="${_git_ver##* }"
         if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
-            (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore)
+            (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /bin /setup.sh /install.sh /.gitignore)
             echo "  ✓ Converted to sparse checkout"
         fi
     fi
@@ -39,7 +39,7 @@ else
     _git_minor="${_git_ver##* }"
     if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
         git clone --depth 1 --filter=blob:none --sparse "$BATON_REPO" "$BATON_HOME"
-        (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /.claude/skills /bin /setup.sh /install.sh /.gitignore)
+        (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /bin /setup.sh /install.sh /.gitignore)
         echo "  ✓ Cloned baton (sparse: only essential files)"
     else
         git clone --depth 1 "$BATON_REPO" "$BATON_HOME"

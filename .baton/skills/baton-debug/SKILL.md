@@ -16,6 +16,18 @@ DEBUG IS RESEARCH — WRITE FINDINGS TO THE RESEARCH FILE
 VERIFY = VISIBLE OUTPUT. "I checked" is not evidence.
 ```
 
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
+
+| Thought | Reality |
+|---------|---------|
+| "I know where the problem is, just fix it" | Hypothesis ≠ root cause. Reproduce first, then analyze |
+| "Let me try once more with different parameters" | Parameter tweaks are not new approaches. 3-failure rule |
+| "This is probably a simple typo" | Reproduce it. If it's truly simple, Phase 1 takes 30 seconds |
+| "I'll just add a quick workaround" | Workarounds mask root causes. Investigate first |
+| "The test environment must be broken" | Cannot reproduce → investigate environment, don't assume |
+
 ## When to Use
 
 - Test failure not immediately obvious

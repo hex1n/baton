@@ -938,7 +938,7 @@ OUTPUT="$(
     cd "$d" && \
     HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --ide codex 2>&1
 )"
-assert_output_contains "$OUTPUT" "Installed baton skills to .agents/ fallback (self-install)"
+assert_output_contains "$OUTPUT" "Repaired baton skills via absolute symlinks (self-install fallback)"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-implement/SKILL.md"
@@ -968,7 +968,7 @@ OUTPUT="$(
     cd "$d" && \
     HOME="$FAKE_HOME" BATON_SKIP=pre-commit bash ./setup.sh --ide cursor,codex 2>&1
 )"
-assert_output_contains "$OUTPUT" "Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
+assert_output_contains "$OUTPUT" "Repaired baton skills via absolute symlinks (self-install fallback)"
 assert_file_exists "$d/.cursor/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-plan/SKILL.md"
 assert_file_exists "$d/.cursor/skills/baton-review/SKILL.md"
@@ -1004,11 +1004,11 @@ assert_file_exists "$d/.claude/skills/baton-review/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-debug/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-subagent/SKILL.md"
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$d/.agents/skills/baton-research/SKILL.md" ]; then
-    echo "  pass: self-install uninstall removes fallback skills only"
+if [ -f "$d/.agents/skills/baton-research/SKILL.md" ]; then
+    echo "  pass: self-install uninstall preserves .agents committed skills"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: self-install uninstall should remove .agents fallback skills"
+    echo "  FAIL: self-install uninstall should preserve .agents skills (committed symlinks)"
     FAIL=$((FAIL + 1))
 fi
 

@@ -448,7 +448,7 @@ if [ "$UNINSTALL" = "1" ]; then
     for _ide_dir in .claude .cursor .agents; do
         for _skill in $BATON_SKILL_NAMES; do
             _skill_dir="$PROJECT_DIR/$_ide_dir/skills/$_skill"
-            if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_dir" = "$BATON_DIR/.claude/skills/$_skill" ]; then
+            if [ "$SELF_INSTALL" = "1" ] && { [ "$_skill_dir" = "$BATON_DIR/.claude/skills/$_skill" ] || [ "$_skill_dir" = "$BATON_DIR/.agents/skills/$_skill" ]; }; then
                 continue
             fi
             if [ -d "$_skill_dir" ]; then
@@ -775,6 +775,28 @@ atomic_copy() {
     mv "$_ac_tmp" "$_ac_dst"
 }
 
+# Create a symlink atomically. Falls back to atomic_copy if symlinks unsupported.
+# CONSTRAINT: $_al_target MUST be an absolute path (required for copy fallback
+# and to avoid relative-path resolution ambiguity between ln and cp).
+# Atomicity: ln -sf creates symlink at temp path, mv (rename(2)) atomically
+# replaces the destination. _al_tmp is in the same dir as _al_link to
+# guarantee same-filesystem rename(2).
+# [DOC] POSIX rename(2): atomically replaces destination if it exists.
+# See: https://pubs.opengroup.org/onlinepubs/9699919799/functions/rename.html
+# Usage: atomic_link <target> <link_path>
+atomic_link() {
+    _al_target="$1"  # absolute path to symlink target
+    _al_link="$2"    # path where symlink is created
+    _al_tmp="${_al_link}.baton.tmp"  # same dir as _al_link — same filesystem
+    if ln -sf "$_al_target" "$_al_tmp" 2>/dev/null; then
+        mv "$_al_tmp" "$_al_link"
+        return 0
+    fi
+    rm -f "$_al_tmp"
+    # Fallback: copy if symlinks not supported (e.g. Windows)
+    atomic_copy "$_al_target" "$_al_link"
+}
+
 # Determine canonical skill source directory.
 # Priority: .baton/skills/ (new canonical) > .claude/skills/ (legacy fallback)
 # Returns the source directory path via stdout; returns 1 if no source found.
@@ -801,6 +823,30 @@ install_skills() {
         return
     }
 
+    # Self-install: committed symlinks already handle all locations
+    if [ "$SELF_INSTALL" = "1" ]; then
+        # Clean stale fallback marker unconditionally (committed dir, not generated)
+        rm -f "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
+
+        # Verify committed symlinks are actual symlinks and resolve correctly
+        _broken=0
+        for _skill in $BATON_SKILL_NAMES; do
+            for _check_dir in .claude/skills .agents/skills; do
+                _check="$PROJECT_DIR/$_check_dir/$_skill/SKILL.md"
+                if [ ! -L "$_check" ] || [ ! -f "$_check" ]; then
+                    _broken=1
+                    echo "  ⚠ Missing/broken/non-symlink: $_check_dir/$_skill/SKILL.md"
+                fi
+            done
+        done
+        if [ "$_broken" = "0" ]; then
+            echo "  ✓ Baton skills: committed symlinks intact (self-install)"
+            return
+        fi
+        echo "  ⚠ Broken symlinks detected — reinstalling skills"
+        # Fall through to normal install path (creates absolute symlinks as repair)
+    fi
+
     # Migration detection: target project has .claude/skills/baton-*/SKILL.md
     # but baton installation uses legacy .claude/skills/ source (no .baton/skills/).
     if [ "$_skill_source_dir" = "$BATON_DIR/.claude/skills" ]; then
@@ -825,21 +871,21 @@ install_skills() {
                 continue
             fi
             mkdir -p "$_ide_dir"
-            atomic_copy "$_src" "$_dst"
+            atomic_link "$_src" "$_dst"
             _skill_count=$((_skill_count + 1))
         done
         mkdir -p "$PROJECT_DIR/.agents/skills/$_skill"
-        atomic_copy "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
+        atomic_link "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
         _fallback_count=$((_fallback_count + 1))
     done
-    if [ "$_fallback_count" -gt 0 ]; then
+    if [ "$SELF_INSTALL" != "1" ] && [ "$_fallback_count" -gt 0 ]; then
         mkdir -p "$PROJECT_DIR/.agents"
         : > "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
     fi
     if [ "$SELF_INSTALL" = "1" ] && [ "$_skill_count" -gt 0 ]; then
-        echo "  ✓ Installed baton skills to selected IDE directories + .agents/ fallback (self-install)"
+        echo "  ✓ Repaired baton skills via absolute symlinks (self-install fallback)"
     elif [ "$SELF_INSTALL" = "1" ] && [ "$_fallback_count" -gt 0 ]; then
-        echo "  ✓ Installed baton skills to .agents/ fallback (self-install)"
+        echo "  ✓ Repaired baton skills via absolute symlinks (self-install fallback)"
     elif [ "$_skill_count" -gt 0 ]; then
         echo "  ✓ Installed baton skills to $(echo "$IDES" | wc -w | tr -d ' ') IDE(s) + .agents/ fallback"
     elif [ "$_fallback_count" -gt 0 ]; then

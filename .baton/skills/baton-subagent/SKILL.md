@@ -87,7 +87,9 @@ After ALL subagents complete:
 2. Check for conflicts between independently-made changes
 3. If conflicts found, resolve sequentially (not via more subagents)
 
-## Red Flags — STOP
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
 
 | Thought | Reality |
 |---------|---------|
@@ -95,8 +97,5 @@ After ALL subagents complete:
 | "The subagent can figure out the context" | Subagents have no memory. Provide everything they need. |
 | "Let me dispatch all items at once" | Batch by dependency level. Earlier batches must complete first. |
 | "Two subagents can coordinate on this file" | They cannot. No overlapping write sets. Ever. |
-
-## 批注区
-
-<!-- 写下你的反馈，AI 会判断如何处理。 -->
-<!-- 如果需要暂停当前工作去做其他调查，写 [PAUSE]。 -->
+| "I can skip the completion review for subagent output" | Every subagent result needs spec compliance + write set adherence check |
+| "This task is small enough to not need subagent isolation" | If write sets don't overlap and there are 3+ items, the overhead pays for itself |

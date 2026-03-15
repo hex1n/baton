@@ -15,10 +15,24 @@ NO CODE CHANGES WITHOUT BATON:GO IN PLAN.MD
 ONLY MODIFY FILES IN THE APPROVED WRITE SET (SEE UNEXPECTED DISCOVERIES FOR SCOPE)
 STOP ON UNEXPECTED DISCOVERIES — UPDATE PLAN FIRST
 VERIFY = VISIBLE OUTPUT. "I checked" is not evidence.
-FIRST PRINCIPLES BEFORE FRAMING. (reference workflow.md)
+FIRST PRINCIPLES BEFORE FRAMING.
 ```
 
 Approved write set = files listed in plan/todo + A/B-level additions.
+
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
+
+| Thought | Reality |
+|---------|---------|
+| "This small change isn't in the plan but makes sense" | A/B-level? Record and continue. C/D-level? Stop and update plan |
+| "Tests passed, no need for self-check" | Self-check is re-reading code, not looking at test results |
+| "This todo is too simple to need verification" | Every todo has a Verify field. Use it |
+| "Three failures in a row but I'm close" | 3-failure rule. Stop and report |
+| "I'll just fix this one more thing" | Is it in the write set? Is it A/B-level? If not, stop |
+| "The plan implied this change" | Implied ≠ approved. If it's not in the write set, it's a discovery |
+| "I can skip the review dispatch, the changes are small" | Review dispatch is mandatory at completion. No exceptions |
 
 ## When to Use
 
