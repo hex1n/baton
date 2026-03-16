@@ -234,17 +234,17 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 8: workflow.md stays slim ==="
+echo "=== Test 8: constitution.md stays slim ==="
 d="$tmp/t8" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)
 TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
-# .baton/workflow.md should stay slim regardless of selected IDE mix
-if ! grep -q '^\[RESEARCH\]' "$d/.baton/workflow.md" 2>/dev/null; then
-    echo "  pass: .baton/workflow.md is slim version"
+# .baton/constitution.md should stay slim regardless of selected IDE mix
+if ! grep -q '^\[RESEARCH\]' "$d/.baton/constitution.md" 2>/dev/null; then
+    echo "  pass: .baton/constitution.md is slim version"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: .baton/workflow.md should stay slim"
+    echo "  FAIL: .baton/constitution.md should stay slim"
     FAIL=$((FAIL + 1))
 fi
 
@@ -293,33 +293,33 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 21: Cursor .mdc embeds slim workflow content ==="
+echo "=== Test 21: Cursor .mdc embeds constitution content ==="
 d="$tmp/t21" && mkdir -p "$d/.cursor"
 (cd "$d" && git init -q)
 TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 if [ -f "$d/.cursor/rules/baton.mdc" ] && \
    grep -q 'alwaysApply: true' "$d/.cursor/rules/baton.mdc" && \
-   grep -q 'Shared Understanding Construction Protocol' "$d/.cursor/rules/baton.mdc"; then
-    echo "  pass: .cursor/rules/baton.mdc has YAML frontmatter + workflow content"
+   grep -q 'Baton Constitution' "$d/.cursor/rules/baton.mdc"; then
+    echo "  pass: .cursor/rules/baton.mdc has YAML frontmatter + constitution content"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: .cursor/rules/baton.mdc should embed workflow content"
+    echo "  FAIL: .cursor/rules/baton.mdc should embed constitution content"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 22: CLAUDE.md uses slim workflow.md ==="
+echo "=== Test 22: CLAUDE.md uses constitution.md ==="
 d="$tmp/t22" && mkdir -p "$d/.claude"
 (cd "$d" && git init -q)
 TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
-if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" 2>/dev/null; then
-    echo "  pass: CLAUDE.md references workflow.md (slim)"
+if grep -q '@\.baton/constitution\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md references constitution.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: CLAUDE.md should reference workflow.md (slim)"
+    echo "  FAIL: CLAUDE.md should reference constitution.md"
     FAIL=$((FAIL + 1))
 fi
 

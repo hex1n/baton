@@ -80,8 +80,9 @@ validated user requirements and any directly verified evidence.
 
 **Any plan whose correctness depends on multi-surface impact analysis must show
 evidence-based coverage. Build the table from codebase evidence, not from
-memory. Record how you verified coverage. Never fabricate table entries —
-every row must cite a tool invocation or file read that produced the evidence.**
+memory. Verify coverage is complete before building the table. Never fabricate
+table entries — every row must cite a tool invocation or file read that produced
+the evidence.**
 
 **L1 — Direct references**: Search for terms being changed.
 **L2 — Dependency tracing**: Who imports/sources/references each L1 file?

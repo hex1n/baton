@@ -383,9 +383,9 @@ if [ "$UNINSTALL" = "1" ]; then
     fi
     # Clean CLAUDE.md @import
     if [ -f "$PROJECT_DIR/CLAUDE.md" ]; then
-        sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$PROJECT_DIR/CLAUDE.md"
+        sed -i.bak '/@\.baton\/\(workflow\(-full\)\{0,1\}\|constitution\)\.md/d' "$PROJECT_DIR/CLAUDE.md"
         rm -f "$PROJECT_DIR/CLAUDE.md.bak"
-        echo "  ✓ Removed @.baton/workflow*.md from CLAUDE.md"
+        echo "  ✓ Removed @.baton/constitution.md from CLAUDE.md"
     fi
     cleanup_baton_json_hook_file "$PROJECT_DIR/.claude/settings.json" ".claude/settings.json"
     # Clean Cursor
@@ -396,10 +396,10 @@ if [ "$UNINSTALL" = "1" ]; then
     cleanup_baton_json_hook_file "$PROJECT_DIR/.cursor/hooks.json" ".cursor/hooks.json"
     # Clean Codex (AGENTS.md)
     if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
-        if grep -qE '@\.baton/workflow(-full)?\.md' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
-            sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$PROJECT_DIR/AGENTS.md"
+        if grep -qE '@\.baton/(workflow(-full)?|constitution)\.md' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
+            sed -i.bak '/@\.baton\/\(workflow\(-full\)\{0,1\}\|constitution\)\.md/d' "$PROJECT_DIR/AGENTS.md"
             rm -f "$PROJECT_DIR/AGENTS.md.bak"
-            echo "  ✓ Removed @.baton/workflow*.md from AGENTS.md"
+            echo "  ✓ Removed @.baton/constitution.md from AGENTS.md"
         fi
         if grep -q 'baton' "$PROJECT_DIR/AGENTS.md" 2>/dev/null; then
             echo "  ⚠ AGENTS.md may still contain baton references — review manually"
@@ -445,7 +445,7 @@ if [ "$UNINSTALL" = "1" ]; then
         fi
     fi
     # Clean baton skills from all IDEs
-    for _ide_dir in .claude .cursor .agents; do
+    for _ide_dir in .claude .cursor .codex .agents; do
         for _skill in $BATON_SKILL_NAMES; do
             _skill_dir="$PROJECT_DIR/$_ide_dir/skills/$_skill"
             if [ "$SELF_INSTALL" = "1" ] && { [ "$_skill_dir" = "$BATON_DIR/.claude/skills/$_skill" ] || [ "$_skill_dir" = "$BATON_DIR/.agents/skills/$_skill" ]; }; then
@@ -458,6 +458,7 @@ if [ "$UNINSTALL" = "1" ]; then
     done
     rm -f "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
     rmdir "$PROJECT_DIR/.agents/skills" "$PROJECT_DIR/.agents" 2>/dev/null || true
+    rmdir "$PROJECT_DIR/.codex/skills" 2>/dev/null || true
     echo "  ✓ Removed baton skills from all IDE directories"
     # Clean git pre-commit hook (legacy)
     if [ -f "$PROJECT_DIR/.git/hooks/pre-commit" ] && grep -q 'baton:pre-commit' "$PROJECT_DIR/.git/hooks/pre-commit" 2>/dev/null; then
@@ -788,12 +789,25 @@ atomic_link() {
     _al_target="$1"  # absolute path to symlink target
     _al_link="$2"    # path where symlink is created
     _al_tmp="${_al_link}.baton.tmp"  # same dir as _al_link — same filesystem
-    if ln -sf "$_al_target" "$_al_tmp" 2>/dev/null; then
+    # Standard symlink attempt — verify with [ -L ] because MSYS/Git Bash
+    # silently creates copies instead of symlinks (ln returns 0 but result is a file).
+    if ln -sf "$_al_target" "$_al_tmp" 2>/dev/null && [ -L "$_al_tmp" ]; then
         mv "$_al_tmp" "$_al_link"
         return 0
     fi
     rm -f "$_al_tmp"
-    # Fallback: copy if symlinks not supported (e.g. Windows)
+    # MSYS/Git Bash: retry with nativestrict to force real Windows symlinks.
+    # Requires Developer Mode or admin privileges on Windows.
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*)
+            if MSYS="${MSYS:+$MSYS }winsymlinks:nativestrict" ln -sf "$_al_target" "$_al_tmp" 2>/dev/null && [ -L "$_al_tmp" ]; then
+                mv "$_al_tmp" "$_al_link"
+                return 0
+            fi
+            rm -f "$_al_tmp"
+            ;;
+    esac
+    # Fallback: copy if symlinks not supported (e.g. Windows without Developer Mode)
     atomic_copy "$_al_target" "$_al_link"
 }
 
@@ -864,6 +878,7 @@ install_skills() {
                 claude)   _ide_dir="$PROJECT_DIR/.claude/skills/$_skill" ;;
                 factory)  _ide_dir="$PROJECT_DIR/.claude/skills/$_skill" ;;
                 cursor)   _ide_dir="$PROJECT_DIR/.cursor/skills/$_skill" ;;
+                codex)    _ide_dir="$PROJECT_DIR/.codex/skills/$_skill" ;;
                 *)        continue ;;
             esac
             _dst="$_ide_dir/SKILL.md"
@@ -890,6 +905,19 @@ install_skills() {
         echo "  ✓ Installed baton skills to $(echo "$IDES" | wc -w | tr -d ' ') IDE(s) + .agents/ fallback"
     elif [ "$_fallback_count" -gt 0 ]; then
         echo "  ✓ Installed baton skills to .agents/ fallback"
+    fi
+    # Warn if skills were copied instead of symlinked (Windows without Developer Mode)
+    if [ "$SELF_INSTALL" != "1" ] && [ $((_skill_count + _fallback_count)) -gt 0 ]; then
+        _sample_skill="$(echo "$BATON_SKILL_NAMES" | awk '{print $1}')"
+        _sample_file="$PROJECT_DIR/.agents/skills/$_sample_skill/SKILL.md"
+        if [ -f "$_sample_file" ] && [ ! -L "$_sample_file" ]; then
+            echo "  ⚠ Skills were copied (not symlinked). Run 'baton init' after updating baton to refresh."
+            case "$(uname -s 2>/dev/null)" in
+                MINGW*|MSYS*)
+                    echo "    Enable Developer Mode in Windows Settings for real symlinks."
+                    ;;
+            esac
+        fi
     fi
 }
 
@@ -1216,33 +1244,30 @@ configure_claude() {
 JSON
         echo "  ✓ Created .claude/settings.json with 9 hooks (SessionStart, PreToolUse×2, PostToolUse, Stop, SubagentStart, TaskCompleted, PreCompact, PostToolUseFailure)"
     fi
-    # Inject workflow reference into CLAUDE.md (slim — phase-guide provides details)
+    # Inject constitution reference into CLAUDE.md
     CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
-    if [ -f "$CLAUDE_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
-        # Migrate old @workflow-full.md → @workflow.md (slim)
-        if grep -q '@\.baton/workflow-full\.md' "$CLAUDE_MD" 2>/dev/null; then
-            if grep -q '@\.baton/workflow\.md' "$CLAUDE_MD" 2>/dev/null; then
-                # Both exist (mixed state) — delete old line, keep new
-                sed -i.bak '/@\.baton\/workflow-full\.md/d' "$CLAUDE_MD"
-                rm -f "$CLAUDE_MD.bak"
-                echo "  ✓ Removed residual workflow-full.md import from CLAUDE.md"
-            else
-                # Only old exists — replace
-                sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$CLAUDE_MD"
-                rm -f "$CLAUDE_MD.bak"
-                echo "  ✓ Migrated CLAUDE.md @import: workflow-full.md → workflow.md (slim)"
-            fi
+    if [ -f "$CLAUDE_MD" ] && grep -q '@\.baton/constitution\.md' "$CLAUDE_MD" 2>/dev/null; then
+        # Already migrated — clean up any residual old imports
+        if grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
+            sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$CLAUDE_MD"
+            rm -f "$CLAUDE_MD.bak"
+            echo "  ✓ Removed residual workflow import from CLAUDE.md"
         else
-            echo "  ✓ Workflow @import already in CLAUDE.md"
+            echo "  ✓ Constitution @import already in CLAUDE.md"
         fi
+    elif [ -f "$CLAUDE_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
+        # Migrate old workflow.md or workflow-full.md → constitution.md
+        sed -i.bak 's|@\.baton/workflow\(-full\)\{0,1\}\.md|@.baton/constitution.md|g' "$CLAUDE_MD"
+        rm -f "$CLAUDE_MD.bak"
+        echo "  ✓ Migrated CLAUDE.md @import: workflow → constitution.md"
     elif [ -f "$CLAUDE_MD" ]; then
         if ! grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null; then
-            printf '\n@.baton/workflow.md\n' >> "$CLAUDE_MD"
-            echo "  ✓ Added @.baton/workflow.md to CLAUDE.md"
+            printf '\n@.baton/constitution.md\n' >> "$CLAUDE_MD"
+            echo "  ✓ Added @.baton/constitution.md to CLAUDE.md"
         fi
     else
-        printf '@.baton/workflow.md\n' > "$CLAUDE_MD"
-        echo "  ✓ Created CLAUDE.md with @.baton/workflow.md"
+        printf '@.baton/constitution.md\n' > "$CLAUDE_MD"
+        echo "  ✓ Created CLAUDE.md with @.baton/constitution.md"
     fi
 }
 
@@ -1255,16 +1280,16 @@ configure_factory() {
 configure_cursor() {
     echo "  --- Cursor ---"
     mkdir -p "$PROJECT_DIR/.cursor/rules"
-    # Rules file — embed slim workflow (phase-guide.sh provides phase-specific details)
+    # Rules file — embed constitution (phase-guide.sh provides phase-specific details)
     {
         printf '%s\n' '---'
-        printf '%s\n' 'description: Baton plan-first workflow enforcer'
+        printf '%s\n' 'description: Baton plan-first protocol enforcer'
         printf '%s\n' 'alwaysApply: true'
         printf '%s\n' '---'
         printf '\n'
-        cat "$BATON_DIR/.baton/workflow.md"
+        cat "$BATON_DIR/.baton/constitution.md"
     } > "$PROJECT_DIR/.cursor/rules/baton.mdc"
-    echo "  ✓ Created .cursor/rules/baton.mdc (slim workflow + phase-guide provides details)"
+    echo "  ✓ Created .cursor/rules/baton.mdc (constitution + phase-guide provides details)"
     # Hooks
     if [ ! -f "$PROJECT_DIR/.cursor/hooks.json" ]; then
         cat > "$PROJECT_DIR/.cursor/hooks.json" << 'HOOKJSON'
@@ -1323,25 +1348,26 @@ configure_codex() {
     echo "  --- Codex CLI ---"
     # AGENTS.md rules injection
     AGENTS_MD="$PROJECT_DIR/AGENTS.md"
-    if [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow\.md' "$AGENTS_MD" 2>/dev/null; then
-        # Clean up residual old import if both exist (mixed state)
-        if grep -q '@\.baton/workflow-full\.md' "$AGENTS_MD" 2>/dev/null; then
-            sed -i.bak '/@\.baton\/workflow-full\.md/d' "$AGENTS_MD"
+    if [ -f "$AGENTS_MD" ] && grep -q '@\.baton/constitution\.md' "$AGENTS_MD" 2>/dev/null; then
+        # Already migrated — clean up any residual old imports
+        if grep -qE '@\.baton/workflow(-full)?\.md' "$AGENTS_MD" 2>/dev/null; then
+            sed -i.bak '/@\.baton\/workflow\(-full\)\{0,1\}\.md/d' "$AGENTS_MD"
             rm -f "$AGENTS_MD.bak"
-            echo "  ✓ Removed residual workflow-full.md import from AGENTS.md"
+            echo "  ✓ Removed residual workflow import from AGENTS.md"
         else
-            echo "  ✓ Workflow reference already in AGENTS.md"
+            echo "  ✓ Constitution reference already in AGENTS.md"
         fi
-    elif [ -f "$AGENTS_MD" ] && grep -q '@\.baton/workflow-full\.md' "$AGENTS_MD" 2>/dev/null; then
-        sed -i.bak 's|@\.baton/workflow-full\.md|@.baton/workflow.md|g' "$AGENTS_MD"
+    elif [ -f "$AGENTS_MD" ] && grep -qE '@\.baton/workflow(-full)?\.md' "$AGENTS_MD" 2>/dev/null; then
+        # Migrate old workflow.md or workflow-full.md → constitution.md
+        sed -i.bak 's|@\.baton/workflow\(-full\)\{0,1\}\.md|@.baton/constitution.md|g' "$AGENTS_MD"
         rm -f "$AGENTS_MD.bak"
-        echo "  ✓ Migrated AGENTS.md @import: workflow-full.md → workflow.md"
+        echo "  ✓ Migrated AGENTS.md @import: workflow → constitution.md"
     elif [ -f "$AGENTS_MD" ]; then
-        printf '\n@.baton/workflow.md\n' >> "$AGENTS_MD"
-        echo "  ✓ Added @.baton/workflow.md to AGENTS.md"
+        printf '\n@.baton/constitution.md\n' >> "$AGENTS_MD"
+        echo "  ✓ Added @.baton/constitution.md to AGENTS.md"
     else
-        printf '@.baton/workflow.md\n' > "$AGENTS_MD"
-        echo "  ✓ Created AGENTS.md with @.baton/workflow.md"
+        printf '@.baton/constitution.md\n' > "$AGENTS_MD"
+        echo "  ✓ Created AGENTS.md with @.baton/constitution.md"
     fi
 
     # --- Codex hooks (experimental, requires codex_hooks feature flag) ---
@@ -1457,9 +1483,9 @@ fi
 # Detect legacy workflow in CLAUDE.md
 CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
 if [ -f "$CLAUDE_MD" ] && grep -q '## AI Workflow' "$CLAUDE_MD" 2>/dev/null && \
-   ! grep -qE '@\.baton/workflow(-full)?\.md' "$CLAUDE_MD" 2>/dev/null; then
+   ! grep -qE '@\.baton/(workflow(-full)?|constitution)\.md' "$CLAUDE_MD" 2>/dev/null; then
     echo "  ⚠ Legacy workflow detected in CLAUDE.md."
-    echo "    Remove the '## AI Workflow' section and add: @.baton/workflow.md"
+    echo "    Remove the '## AI Workflow' section and add: @.baton/constitution.md"
 fi
 
 # --- 1. Install .baton/ directory ---
@@ -1485,12 +1511,17 @@ install_versioned_script "completion-check.sh"
 install_versioned_script "pre-compact.sh"
 install_versioned_script "failure-tracker.sh"
 
-# --- 2. Install workflow files ---
+# --- 2. Install constitution ---
 if [ "$SELF_INSTALL" = "1" ]; then
-    echo "  ✓ workflow.md (self-install, skipping copy)"
+    echo "  ✓ constitution.md (self-install, skipping copy)"
 else
-    cp "$BATON_DIR/.baton/workflow.md" "$PROJECT_DIR/.baton/workflow.md"
-    echo "  ✓ Installed workflow.md (slim — detailed phase guidance lives in skills)"
+    cp "$BATON_DIR/.baton/constitution.md" "$PROJECT_DIR/.baton/constitution.md"
+    echo "  ✓ Installed constitution.md (detailed phase guidance lives in skills)"
+    # Clean up old workflow.md after migration
+    if [ -f "$PROJECT_DIR/.baton/workflow.md" ]; then
+        rm "$PROJECT_DIR/.baton/workflow.md"
+        echo "  ✓ Removed old workflow.md (migrated to constitution.md)"
+    fi
 fi
 
 
@@ -1529,7 +1560,7 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 echo ""
-echo "Done. Your project now uses the Baton workflow."
+echo "Done. Your project now uses Baton."
 echo ""
 echo "  How it works:"
 echo "  1. Start your AI coding session"

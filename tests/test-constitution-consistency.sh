@@ -1,23 +1,24 @@
 #!/bin/sh
-# test-workflow-consistency.sh — Verify shared sections between workflow.md and workflow-full.md
+# test-constitution-consistency.sh — Verify constitution.md content and cross-skill consistency
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SLIM="$SCRIPT_DIR/../.baton/workflow.md"
+SLIM="$SCRIPT_DIR/../.baton/constitution.md"
 README_FILE="$SCRIPT_DIR/../README.md"
 SETUP="$SCRIPT_DIR/../setup.sh"
 FIRST_PRINCIPLES="$SCRIPT_DIR/../docs/first-principles.md"
 IMPL_DESIGN="$SCRIPT_DIR/../docs/implementation-design.md"
 FAIL=0
 
-# --- Core concepts: workflow.md must contain key baton concepts ---
-echo "Checking core concepts in workflow.md..."
-for concept in "Mindset" "Verify before you claim" "Disagree with evidence" "Stop when uncertain" \
-               "Scenario A" "Scenario B" "BATON:GO" "file:line" "批注区" "Annotation"; do
+# --- Core concepts: constitution.md must contain key baton concepts ---
+echo "Checking core concepts in constitution.md..."
+for concept in "No claim without evidence" "No silent agreement" "No guessing past uncertainty" \
+               "No execution beyond authorization" "No stale authorization" "No completion by implication" \
+               "BATON:GO" "file:line" "Authority Model" "Discovery protocol"; do
     if grep -q "$concept" "$SLIM"; then
-        echo "OK: core concept '$concept' in workflow.md"
+        echo "OK: core concept '$concept' in constitution.md"
     else
-        echo "DRIFT: core concept '$concept' missing from workflow.md"
+        echo "DRIFT: core concept '$concept' missing from constitution.md"
         FAIL=1
     fi
 done
@@ -64,44 +65,30 @@ for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
 done
 GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
 
-# --- 批注区 rule consistency ---
+# --- Constitution section structure ---
 echo ""
-echo "Checking 批注区 rule consistency..."
-if grep -q "批注区" "$SLIM"; then
-    echo "OK: 批注区 mentioned in workflow.md"
-else
-    echo "DRIFT: 批注区 not mentioned in workflow.md"
-    FAIL=1
-fi
-
-# --- Complexity Calibration consistency ---
-echo ""
-echo "Checking Complexity Calibration consistency..."
-if grep -q "Complexity Calibration" "$SLIM"; then
-    echo "OK: Complexity Calibration in workflow.md"
-else
-    echo "DRIFT: Complexity Calibration not in workflow.md"
-    FAIL=1
-fi
-for level in "Trivial" "Small" "Medium" "Large"; do
-    if grep -q "$level" "$SLIM"; then
-        echo "OK: complexity level '$level' in workflow.md"
+echo "Checking constitution.md section structure..."
+for section in "Core Invariants" "Authority Model" "State Model" "Permission Model" \
+               "Evidence Model" "Challenge Model" "Completion Model" "Document Semantics"; do
+    if grep -q "$section" "$SLIM"; then
+        echo "OK: section '$section' in constitution.md"
     else
-        echo "DRIFT: complexity level '$level' missing from workflow.md"
+        echo "DRIFT: section '$section' missing from constitution.md"
         FAIL=1
     fi
 done
 
-# --- Anti-sycophancy line consistency ---
+# --- Key permission concepts ---
 echo ""
-echo "Checking anti-sycophancy line consistency..."
-SYCO="accuracy, not comfort"
-if grep -q "$SYCO" "$SLIM"; then
-    echo "OK: anti-sycophancy line in workflow.md"
-else
-    echo "DRIFT: anti-sycophancy line not in workflow.md"
-    FAIL=1
-fi
+echo "Checking key permission concepts..."
+for concept in "Failure boundary" "Discovery protocol" "Scope boundary" "implementation-local"; do
+    if grep -q "$concept" "$SLIM"; then
+        echo "OK: '$concept' in constitution.md"
+    else
+        echo "DRIFT: '$concept' missing from constitution.md"
+        FAIL=1
+    fi
+done
 
 # Canonical skill source: .baton/skills/ (new canonical), .claude/skills/ (legacy fallback)
 if [ -d "$SCRIPT_DIR/../.baton/skills" ]; then
@@ -176,17 +163,17 @@ echo "Checking skill guardrails for derived artifacts and parallel execution..."
 PLAN_SKILL="$SKILLS_DIR/baton-plan/SKILL.md"
 IMPL_SKILL="$SKILLS_DIR/baton-implement/SKILL.md"
 
-if grep -q "Artifacts" "$PLAN_SKILL" && grep -q "Schema ownership" "$PLAN_SKILL"; then
-    echo "OK: baton-plan includes artifacts in todo schema"
+if grep -q "Artifacts" "$PLAN_SKILL" && grep -q "Deps" "$PLAN_SKILL"; then
+    echo "OK: baton-plan includes artifacts and deps in todo schema"
 else
-    echo "DRIFT: baton-plan missing artifacts in todo schema"
+    echo "DRIFT: baton-plan missing artifacts/deps in todo schema"
     FAIL=1
 fi
 
-if grep -q "write sets do" "$IMPL_SKILL" && grep -q "explicit file ownership" "$IMPL_SKILL"; then
-    echo "OK: baton-implement guards parallel execution with write-set ownership"
+if grep -q "explicit file ownership" "$IMPL_SKILL" && grep -q "Overlapping files" "$IMPL_SKILL"; then
+    echo "OK: baton-implement guards parallel execution with file ownership"
 else
-    echo "DRIFT: baton-implement missing parallel write-set guardrail"
+    echo "DRIFT: baton-implement missing parallel execution guardrail"
     FAIL=1
 fi
 
@@ -282,7 +269,7 @@ echo "Checking Direction γ annotation system..."
 GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
 
 # [PAUSE] must be in all annotation-related files and current protocol/runtime sources
-for f in "$RESEARCH_SKILL" "$SLIM" "$GUIDE" \
+for f in "$RESEARCH_SKILL" "$GUIDE" \
          "$README_FILE" "$SETUP" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
     fname="$(basename "$f")"
     if grep -q '\[PAUSE\]' "$f"; then
@@ -363,12 +350,11 @@ else
     echo "OK: $fname plan template avoids nested BATON:GO comment"
 fi
 
-# Todo completion format should be aligned across workflow and active skills
-if grep -q '\- \[x\] ✅' "$PLAN_SKILL" \
-   && grep -q '\- \[x\] ✅' "$SLIM"; then
-    echo "OK: todo completion format aligned on - [x] ✅ (plan + workflow)"
+# Todo completion format must exist in baton-plan
+if grep -q '\- \[x\] ✅' "$PLAN_SKILL"; then
+    echo "OK: todo completion format - [x] ✅ in baton-plan"
 else
-    echo "DRIFT: todo completion format differs across workflow/plan skill"
+    echo "DRIFT: todo completion format - [x] ✅ missing from baton-plan"
     FAIL=1
 fi
 
@@ -380,11 +366,12 @@ else
     FAIL=1
 fi
 
-# Annotation Protocol must exist in baton-plan (covers direction change and contradiction detection)
-if grep -q 'Annotation Protocol' "$PLAN_SKILL" && grep -q 'direction change\|contradiction' "$PLAN_SKILL"; then
-    echo "OK: Annotation Protocol with direction/contradiction handling in baton-plan"
+# baton-plan must handle internal contradictions (Iron Law #4)
+# Annotation Protocol was moved to baton-research; plan catches contradictions via Iron Law
+if grep -q 'NO INTERNAL CONTRADICTIONS' "$PLAN_SKILL"; then
+    echo "OK: baton-plan handles contradictions via Iron Law"
 else
-    echo "DRIFT: baton-plan missing Annotation Protocol with direction/contradiction handling"
+    echo "DRIFT: baton-plan missing contradiction handling"
     FAIL=1
 fi
 
@@ -444,11 +431,11 @@ else
     FAIL=1
 fi
 
-# baton-plan Self-Review must reference disposition table
-if grep -q 'disposition table' "$PLAN_SKILL"; then
-    echo "OK: baton-plan Self-Review references disposition table"
+# baton-plan must have Self-Challenge step
+if grep -q 'Self-Challenge' "$PLAN_SKILL"; then
+    echo "OK: baton-plan has Self-Challenge step"
 else
-    echo "DRIFT: baton-plan Self-Review missing disposition table completeness check"
+    echo "DRIFT: baton-plan missing Self-Challenge step"
     FAIL=1
 fi
 
@@ -462,10 +449,10 @@ fi
 
 # baton-implement must have grep-for-same-bug and run-tests self-checks
 if grep -q 'Grep for same bug' "$IMPL_SKILL" \
-   && grep -q 'Run tests before marking done' "$IMPL_SKILL"; then
-    echo "OK: baton-implement has grep-for-bug and test-before-done self-checks"
+   && grep -q 'Run the required validation' "$IMPL_SKILL"; then
+    echo "OK: baton-implement has grep-for-bug and validation self-checks"
 else
-    echo "DRIFT: baton-implement missing grep-for-bug or test-before-done self-checks"
+    echo "DRIFT: baton-implement missing grep-for-bug or validation self-checks"
     FAIL=1
 fi
 
@@ -473,43 +460,43 @@ fi
 echo ""
 echo "Checking protocol drift guards..."
 
-# workflow.md must NOT contain README.md (was polluting slim workflow)
+# constitution.md must NOT contain README.md
 if grep -q 'README\.md' "$SLIM"; then
-    echo "DRIFT: workflow.md contains 'README.md' — keep documentation references out of slim protocol"
+    echo "DRIFT: constitution.md contains 'README.md' — keep documentation references out of slim protocol"
     FAIL=1
 else
-    echo "OK: workflow.md does not reference README.md"
+    echo "OK: constitution.md does not reference README.md"
 fi
 
-# workflow.md MUST contain Document Authority (authority model moved here from workflow-full.md)
-if grep -q 'Document Authority' "$SLIM"; then
-    echo "OK: workflow.md contains Document Authority"
+# constitution.md MUST contain Document Semantics
+if grep -q 'Document Semantics' "$SLIM"; then
+    echo "OK: constitution.md contains Document Semantics"
 else
-    echo "DRIFT: workflow.md missing 'Document Authority' — authority model should be in workflow.md"
+    echo "DRIFT: constitution.md missing 'Document Semantics'"
     FAIL=1
 fi
 
-# workflow.md must NOT contain old research.md rule
+# constitution.md must NOT contain old research.md rule
 if grep -q 'All analysis tasks produce research\.md' "$SLIM"; then
-    echo "DRIFT: workflow.md contains old rule 'All analysis tasks produce research.md' — should be Medium/Large only"
+    echo "DRIFT: constitution.md contains old rule 'All analysis tasks produce research.md' — should be Medium/Large only"
     FAIL=1
 else
-    echo "OK: workflow.md uses correct research.md scoping"
+    echo "OK: constitution.md uses correct research.md scoping"
 fi
 
-# workflow.md MUST contain "approved write set"
+# constitution.md MUST contain "approved write set"
 if grep -q 'approved write set' "$SLIM"; then
-    echo "OK: workflow.md contains 'approved write set'"
+    echo "OK: constitution.md contains 'approved write set'"
 else
-    echo "DRIFT: workflow.md missing 'approved write set' — was changed to vague wording"
+    echo "DRIFT: constitution.md missing 'approved write set' — was changed to vague wording"
     FAIL=1
 fi
 
-# workflow.md omission rule MUST contain "C/D-level"
-if grep -q 'C/D-level' "$SLIM"; then
-    echo "OK: workflow.md omission rule scoped to C/D-level"
+# constitution.md MUST contain discovery protocol with Q1/Q2
+if grep -q 'Question 1' "$SLIM" && grep -q 'Question 2' "$SLIM"; then
+    echo "OK: constitution.md has discovery protocol with Q1/Q2"
 else
-    echo "DRIFT: workflow.md omission rule missing 'C/D-level' scope"
+    echo "DRIFT: constitution.md missing discovery protocol Q1/Q2"
     FAIL=1
 fi
 
@@ -530,12 +517,12 @@ done
 echo ""
 echo "Checking canonical ownership assumptions..."
 
-# baton-plan is the owner of the todo schema
-if grep -q 'Schema ownership' "$BATON_SKILLS_DIR/baton-plan/SKILL.md" \
-   && grep -q 'baton-plan owns' "$BATON_SKILLS_DIR/baton-plan/SKILL.md"; then
-    echo "OK: baton-plan declares schema ownership of todo schema"
+# baton-plan defines the todo schema format
+if grep -q 'Todolist Format' "$BATON_SKILLS_DIR/baton-plan/SKILL.md" \
+   && grep -q 'Verify:' "$BATON_SKILLS_DIR/baton-plan/SKILL.md"; then
+    echo "OK: baton-plan defines todo schema with Verify field"
 else
-    echo "DRIFT: baton-plan missing schema ownership declaration"
+    echo "DRIFT: baton-plan missing todo schema definition"
     FAIL=1
 fi
 
@@ -557,47 +544,33 @@ else
     FAIL=1
 fi
 
-# --- FINISH phase promotion assertions ---
+# --- Phase skill listing in Authority Model ---
 echo ""
-echo "Checking FINISH phase promotion in workflow.md..."
+echo "Checking Authority Model phase skill listing..."
 
-# Flow scenarios must end in 'completion'
-if grep -q 'implement → completion' "$SLIM"; then
-    echo "OK: Flow scenarios end in '→ completion'"
-else
-    echo "DRIFT: Flow scenarios do not end in '→ completion'"
-    FAIL=1
-fi
+# Authority Model must list all 4 phase skills
+for skill in baton-research baton-plan baton-implement baton-review; do
+    if grep -q "$skill" "$SLIM"; then
+        echo "OK: Authority Model lists $skill"
+    else
+        echo "DRIFT: Authority Model missing $skill"
+        FAIL=1
+    fi
+done
 
-# Rule 10 must include baton-review in skill list (not baton-finish)
-if grep '10\.' "$SLIM" | grep -q 'baton-review'; then
-    echo "OK: Rule 10 includes baton-review in skill invocation list"
-else
-    echo "DRIFT: Rule 10 missing baton-review in skill invocation list"
-    FAIL=1
-fi
-
-# baton-finish must NOT appear in workflow.md (merged into implement)
+# baton-finish must NOT appear in constitution.md (merged into implement)
 if grep -q 'baton-finish' "$SLIM"; then
-    echo "DRIFT: workflow.md still references baton-finish"
+    echo "DRIFT: constitution.md still references baton-finish"
     FAIL=1
 else
-    echo "OK: workflow.md has no baton-finish references"
+    echo "OK: constitution.md has no baton-finish references"
 fi
 
-# Document Authority must list baton-review as core phase skill
-if grep -qi 'Core phase skills.*baton-review' "$SLIM"; then
-    echo "OK: Document Authority lists baton-review as core phase skill"
+# Completion Model must exist and require human confirmation
+if grep -q 'Completion Model' "$SLIM" && grep -q 'human confirms' "$SLIM"; then
+    echo "OK: Completion Model requires human confirmation"
 else
-    echo "DRIFT: Document Authority missing baton-review as core phase skill"
-    FAIL=1
-fi
-
-# workflow.md must have first-principles in Mindset
-if grep -q 'First principles before framing' "$SLIM"; then
-    echo "OK: workflow.md Mindset includes first-principles"
-else
-    echo "DRIFT: workflow.md Mindset missing first-principles"
+    echo "DRIFT: Completion Model missing or lacks human confirmation requirement"
     FAIL=1
 fi
 

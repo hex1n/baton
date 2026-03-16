@@ -143,28 +143,34 @@ doctor() {
     # Rules injection
     echo "  Rules injection:"
     if [ -f "$_dir/CLAUDE.md" ]; then
-        if grep -qE '@\.baton/workflow\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-            if grep -q '@\.baton/workflow-full\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-                echo "  ⚠ CLAUDE.md contains residual @.baton/workflow-full.md import"
+        if grep -q '@\.baton/constitution\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+            if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+                echo "  ⚠ CLAUDE.md contains residual workflow import (run baton init to migrate)"
                 _issues=$((_issues + 1))
             else
-                echo "  ✓ CLAUDE.md contains @.baton/workflow.md"
+                echo "  ✓ CLAUDE.md contains @.baton/constitution.md"
             fi
+        elif grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
+            echo "  ⚠ CLAUDE.md uses old @.baton/workflow.md import (run baton init to migrate)"
+            _issues=$((_issues + 1))
         else
-            echo "  ⚠ CLAUDE.md exists but no @.baton/workflow.md"
+            echo "  ⚠ CLAUDE.md exists but no @.baton/constitution.md"
             _issues=$((_issues + 1))
         fi
     fi
     if [ -f "$_dir/AGENTS.md" ]; then
-        if grep -q '@\.baton/workflow\.md' "$_dir/AGENTS.md"; then
-            if grep -q '@\.baton/workflow-full\.md' "$_dir/AGENTS.md" 2>/dev/null; then
-                echo "  ⚠ AGENTS.md contains residual @.baton/workflow-full.md import"
+        if grep -q '@\.baton/constitution\.md' "$_dir/AGENTS.md"; then
+            if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/AGENTS.md" 2>/dev/null; then
+                echo "  ⚠ AGENTS.md contains residual workflow import (run baton init to migrate)"
                 _issues=$((_issues + 1))
             else
                 echo "  ✓ Rules injection (AGENTS.md)"
             fi
+        elif grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/AGENTS.md" 2>/dev/null; then
+            echo "  ⚠ AGENTS.md uses old @.baton/workflow.md import (run baton init to migrate)"
+            _issues=$((_issues + 1))
         else
-            echo "  ⚠ AGENTS.md exists but does not import @.baton/workflow.md"
+            echo "  ⚠ AGENTS.md exists but does not import @.baton/constitution.md"
             _issues=$((_issues + 1))
         fi
     fi

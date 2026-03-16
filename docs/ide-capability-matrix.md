@@ -31,7 +31,7 @@ Source: `setup.sh` IDE installation logic.
 ## Cursor Notes
 
 - Write-lock runs through `adapter-cursor.sh`, which translates shell exit codes to Cursor's JSON protocol (`{"decision":"allow"}` / `{"decision":"deny","reason":"..."}`).
-- Missing hooks mean Cursor users get no advisory warning for plan-unlisted writes, no session-end discipline, and no retrospective enforcement. These behaviors are still described in workflow.md but are not technically prompted.
+- Missing hooks mean Cursor users get no advisory warning for plan-unlisted writes, no session-end discipline, and no retrospective enforcement. These behaviors are still described in constitution.md but are not technically prompted.
 
 ## Codex Notes
 

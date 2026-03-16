@@ -1,1 +1,1 @@
-@.baton/workflow.md
+@.baton/constitution.md

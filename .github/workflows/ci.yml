@@ -77,12 +77,12 @@ jobs:
       - name: Run adapter tests
         run: bash tests/test-adapters.sh
 
-  test-workflow-consistency:
+  test-constitution-consistency:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check workflow consistency
-        run: sh tests/test-workflow-consistency.sh
+      - name: Check constitution consistency
+        run: sh tests/test-constitution-consistency.sh
 
   test-multi-ide:
     runs-on: ubuntu-latest

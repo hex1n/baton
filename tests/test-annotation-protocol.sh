@@ -3,7 +3,7 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SLIM="$SCRIPT_DIR/../.baton/workflow.md"
+SLIM="$SCRIPT_DIR/../.baton/constitution.md"
 PLAN_SKILL="$SCRIPT_DIR/../.baton/skills/baton-plan/SKILL.md"
 RESEARCH_SKILL="$SCRIPT_DIR/../.baton/skills/baton-research/SKILL.md"
 PASS=0
@@ -35,10 +35,10 @@ check_not() {
 }
 
 # ============================================================
-echo "=== Direction γ markers in workflow.md ==="
+echo "=== Direction γ markers in constitution.md ==="
 
-check "$SLIM" '\[PAUSE\]' "workflow.md contains [PAUSE]"
-check "$SLIM" "infers intent from content" "workflow.md mentions intent inference"
+check "$SLIM" '\[PAUSE\]' "constitution.md contains [PAUSE]"
+check "$SLIM" "infers intent from content" "constitution.md mentions intent inference"
 
 # ============================================================
 echo ""
@@ -56,7 +56,7 @@ echo ""
 echo "=== Legacy explicit annotation types removed ==="
 
 for marker in '\[NOTE\]' '\[Q\]' '\[CHANGE\]' '\[DEEPER\]' '\[MISSING\]' '\[RESEARCH-GAP\]'; do
-    check_not "$SLIM" "$marker" "workflow.md does not contain $marker"
+    check_not "$SLIM" "$marker" "constitution.md does not contain $marker"
 done
 
 # ============================================================
@@ -80,24 +80,24 @@ check "$PLAN_SKILL" "Fundamental Problems" "baton-plan has fundamental problem h
 
 # ============================================================
 echo ""
-echo "=== Core principles present in workflow.md ==="
+echo "=== Core principles present in constitution.md ==="
 
-check "$SLIM" "not always right" "workflow.md contains push-back principle"
-check "$SLIM" "evidence" "workflow.md mentions evidence"
+check "$SLIM" "not always right" "constitution.md contains push-back principle"
+check "$SLIM" "evidence" "constitution.md mentions evidence"
 
 # ============================================================
 echo ""
-echo "=== Cross-cutting annotation rules in workflow.md ==="
+echo "=== Cross-cutting annotation rules in constitution.md ==="
 
-check "$SLIM" "write the conclusion back to the document body" "workflow.md has analysis write-back rule"
-check "$SLIM" "re-evaluate and update the plan immediately" "workflow.md has approach re-evaluation rule"
-check "$SLIM" "remove the raw text from" "workflow.md has annotation cleanup rule"
+check "$SLIM" "write the conclusion back to the document body" "constitution.md has analysis write-back rule"
+check "$SLIM" "re-evaluate and update the plan immediately" "constitution.md has approach re-evaluation rule"
+check "$SLIM" "remove the raw text from" "constitution.md has annotation cleanup rule"
 
 # ============================================================
 echo ""
 echo "=== Group 3: fork-context self-sufficiency guards ==="
 
-check_not "$RESEARCH_SKILL" "live in .workflow\.md." "baton-research no longer delegates to workflow.md"
+check_not "$RESEARCH_SKILL" "live in .workflow\.md." "baton-research no longer delegates to constitution.md"
 check "$RESEARCH_SKILL" "document body" "baton-research has inlined analysis write-back rule"
 
 # ============================================================

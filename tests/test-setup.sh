@@ -141,8 +141,8 @@ assert_file_exists "$d/.baton/hooks/plan-parser.sh"
 assert_file_executable "$d/.baton/hooks/plan-parser.sh"
 assert_file_exists "$d/.baton/hooks/phase-guide.sh"
 assert_file_executable "$d/.baton/hooks/phase-guide.sh"
-assert_file_exists "$d/.baton/workflow.md"
-assert_file_not_exists "$d/.baton/workflow-full.md"
+assert_file_exists "$d/.baton/constitution.md"
+assert_file_not_exists "$d/.baton/workflow.md"
 # .claude/ settings
 assert_file_exists "$d/.claude/settings.json"
 assert_file_contains "$d/.claude/settings.json" ".baton/hooks/write-lock"
@@ -156,7 +156,7 @@ assert_file_contains "$d/.claude/settings.json" "failure-tracker"
 assert_file_contains "$d/.claude/settings.json" "PostToolUseFailure"
 # CLAUDE.md with @import
 assert_file_exists "$d/CLAUDE.md"
-assert_file_contains "$d/CLAUDE.md" "@.baton/workflow.md"
+assert_file_contains "$d/CLAUDE.md" "@.baton/constitution.md"
 assert_output_contains "$OUTPUT" "Installing baton"
 assert_output_contains "$OUTPUT" "research file, plan file, or chat"
 assert_output_contains "$OUTPUT" "simple changes may skip straight to planning"
@@ -177,8 +177,8 @@ d="$tmp/t2" && mkdir -p "$d"
 OUTPUT="$(run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: claude"
 assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
-# Claude Code gets slim workflow (SessionStart support)
-assert_file_contains "$d/.baton/workflow.md" "Shared Understanding Construction Protocol"
+# Claude Code gets constitution (SessionStart support)
+assert_file_contains "$d/.baton/constitution.md" "Baton Constitution"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
@@ -227,7 +227,7 @@ OUTPUT="$(run_setup_as_codex "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: codex"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (auto)"
 assert_file_exists "$d/AGENTS.md"
-assert_file_contains "$d/AGENTS.md" "@.baton/workflow.md"
+assert_file_contains "$d/AGENTS.md" "@.baton/constitution.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-review/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-debug/SKILL.md"
@@ -302,7 +302,7 @@ OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: claude"
 assert_output_contains "$OUTPUT" "Selected IDEs: codex (--ide)"
 assert_file_exists "$d/AGENTS.md"
-assert_file_contains "$d/AGENTS.md" "@.baton/workflow.md"
+assert_file_contains "$d/AGENTS.md" "@.baton/constitution.md"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/settings.json" ]; then
     echo "  pass: explicit Codex selection does not create Claude hooks"
@@ -322,7 +322,7 @@ OUTPUT="$(HOME="$FAKE_HOME" run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "factory"
 assert_output_contains "$OUTPUT" "codex"
 assert_file_exists "$d/AGENTS.md"
-assert_file_contains "$d/AGENTS.md" "@.baton/workflow.md"
+assert_file_contains "$d/AGENTS.md" "@.baton/constitution.md"
 
 # ============================================================
 echo ""
@@ -425,13 +425,13 @@ assert_output_contains "$OUTPUT" "cursor = Cursor IDE"
 
 # ============================================================
 echo ""
-echo "=== Test 3: Cursor IDE detection → slim workflow + hooks ==="
+echo "=== Test 3: Cursor IDE detection → constitution + hooks ==="
 d="$tmp/t3" && mkdir -p "$d/.cursor"
 (cd "$d" && git init -q)
 OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Detected IDEs: cursor"
-# Cursor now has SessionStart hook support → slim workflow
-assert_file_exists "$d/.baton/workflow.md"
+# Cursor now has SessionStart hook support → constitution
+assert_file_exists "$d/.baton/constitution.md"
 assert_file_exists "$d/.cursor/rules/baton.mdc"
 assert_file_contains "$d/.cursor/rules/baton.mdc" "alwaysApply"
 assert_file_exists "$d/.cursor/hooks.json"
@@ -612,7 +612,7 @@ EOF
 OUTPUT="$(run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Legacy workflow detected"
 # Should NOT append @import when legacy workflow exists (user must clean up)
-assert_file_not_contains "$d/CLAUDE.md" "@.baton/workflow.md"
+assert_file_not_contains "$d/CLAUDE.md" "@.baton/constitution.md"
 
 # ============================================================
 echo ""
@@ -621,7 +621,7 @@ d="$tmp/t11" && mkdir -p "$d"
 run_setup "$d" >/dev/null 2>&1
 OUTPUT="$(run_setup "$d" 2>&1)"
 # @import should appear exactly once
-assert_count "$d/CLAUDE.md" "@.baton/workflow.md" 1
+assert_count "$d/CLAUDE.md" "@.baton/constitution.md" 1
 assert_output_contains "$OUTPUT" "@import already"
 
 # ============================================================
@@ -725,7 +725,7 @@ else
 fi
 # CLAUDE.md should no longer have @import
 TOTAL=$((TOTAL + 1))
-if [ -f "$d/CLAUDE.md" ] && ! grep -q '@.baton/workflow.md' "$d/CLAUDE.md"; then
+if [ -f "$d/CLAUDE.md" ] && ! grep -q '@.baton/constitution.md' "$d/CLAUDE.md"; then
     echo "  pass: @import removed from CLAUDE.md"
     PASS=$((PASS + 1))
 else
@@ -742,13 +742,13 @@ mkdir -p "$FAKE_HOME"
 BATON_TEST_CODEX_HOME="$FAKE_HOME" run_setup_as_codex "$d" > /dev/null 2>&1
 assert_file_exists "$d/AGENTS.md"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Removed @.baton/workflow"
+assert_output_contains "$OUTPUT" "Removed @.baton/constitution"
 TOTAL=$((TOTAL + 1))
-if [ -f "$d/AGENTS.md" ] && ! grep -qE '@\.baton/workflow(-full)?\.md' "$d/AGENTS.md"; then
-    echo "  pass: Codex workflow import removed from AGENTS.md"
+if [ -f "$d/AGENTS.md" ] && ! grep -qE '@\.baton/(workflow(-full)?|constitution)\.md' "$d/AGENTS.md"; then
+    echo "  pass: Codex constitution import removed from AGENTS.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: Codex workflow import should be removed from AGENTS.md"
+    echo "  FAIL: Codex constitution import should be removed from AGENTS.md"
     FAIL=$((FAIL + 1))
 fi
 
@@ -927,6 +927,21 @@ done
 
 # ============================================================
 echo ""
+echo "=== Test: install_skills() installs SKILL.md to .codex/skills when codex detected ==="
+d="$tmp/tskills-codex" && mkdir -p "$d/.claude" "$d/.codex"
+(cd "$d" && git init -q)
+BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
+assert_file_exists "$d/.codex/skills/baton-research/SKILL.md"
+assert_file_exists "$d/.codex/skills/baton-plan/SKILL.md"
+assert_file_exists "$d/.codex/skills/baton-implement/SKILL.md"
+assert_file_exists "$d/.codex/skills/baton-review/SKILL.md"
+assert_file_exists "$d/.codex/skills/baton-debug/SKILL.md"
+assert_file_exists "$d/.codex/skills/baton-subagent/SKILL.md"
+# .agents/ fallback should also exist
+assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
+
+# ============================================================
+echo ""
 echo "=== Test: self-install bootstraps .agents/skills fallback ==="
 d="$tmp/tself" && mkdir -p "$d/.claude"
 FAKE_HOME="$tmp/fakehome-tself"
@@ -1034,14 +1049,14 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test: workflow-full.md import migration ==="
+echo "=== Test: workflow.md import migration ==="
 d="$tmp/t-wf-migrate" && mkdir -p "$d/.baton/hooks" "$d/.claude"
-# Simulate existing project with old import
-echo '@.baton/workflow-full.md' > "$d/CLAUDE.md"
+# Simulate existing project with old workflow.md import
+echo '@.baton/workflow.md' > "$d/CLAUDE.md"
 run_setup "$d"
 TOTAL=$((TOTAL + 1))
-if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" && ! grep -q 'workflow-full' "$d/CLAUDE.md"; then
-    echo "  pass: CLAUDE.md migrated from workflow-full.md to workflow.md"
+if grep -q '@\.baton/constitution\.md' "$d/CLAUDE.md" && ! grep -q 'workflow' "$d/CLAUDE.md"; then
+    echo "  pass: CLAUDE.md migrated from workflow.md to constitution.md"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: CLAUDE.md import not migrated"
@@ -1052,22 +1067,22 @@ fi
 echo ""
 echo "=== Test: mixed import cleanup — CLAUDE.md with both old and new ==="
 d="$tmp/t-mixed-claude" && mkdir -p "$d"
-printf '@.baton/workflow.md\nSome content\n@.baton/workflow-full.md\n' > "$d/CLAUDE.md"
+printf '@.baton/constitution.md\nSome content\n@.baton/workflow.md\n' > "$d/CLAUDE.md"
 run_setup "$d"
 TOTAL=$((TOTAL + 1))
-if grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" 2>/dev/null; then
-    echo "  pass: CLAUDE.md retains @.baton/workflow.md"
+if grep -q '@\.baton/constitution\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md retains @.baton/constitution.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: CLAUDE.md should retain @.baton/workflow.md"
+    echo "  FAIL: CLAUDE.md should retain @.baton/constitution.md"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if ! grep -q '@\.baton/workflow-full\.md' "$d/CLAUDE.md" 2>/dev/null; then
-    echo "  pass: CLAUDE.md residual workflow-full.md removed"
+if ! grep -q '@\.baton/workflow\.md' "$d/CLAUDE.md" 2>/dev/null; then
+    echo "  pass: CLAUDE.md residual workflow.md removed"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: CLAUDE.md should not contain residual workflow-full.md"
+    echo "  FAIL: CLAUDE.md should not contain residual workflow.md"
     FAIL=$((FAIL + 1))
 fi
 
@@ -1075,22 +1090,22 @@ fi
 echo ""
 echo "=== Test: mixed import cleanup — AGENTS.md with both old and new ==="
 d="$tmp/t-mixed-agents" && mkdir -p "$d"
-printf '@.baton/workflow.md\nSome content\n@.baton/workflow-full.md\n' > "$d/AGENTS.md"
+printf '@.baton/constitution.md\nSome content\n@.baton/workflow.md\n' > "$d/AGENTS.md"
 run_setup --ide codex "$d"
 TOTAL=$((TOTAL + 1))
-if grep -q '@\.baton/workflow\.md' "$d/AGENTS.md" 2>/dev/null; then
-    echo "  pass: AGENTS.md retains @.baton/workflow.md"
+if grep -q '@\.baton/constitution\.md' "$d/AGENTS.md" 2>/dev/null; then
+    echo "  pass: AGENTS.md retains @.baton/constitution.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: AGENTS.md should retain @.baton/workflow.md"
+    echo "  FAIL: AGENTS.md should retain @.baton/constitution.md"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if ! grep -q '@\.baton/workflow-full\.md' "$d/AGENTS.md" 2>/dev/null; then
-    echo "  pass: AGENTS.md residual workflow-full.md removed"
+if ! grep -q '@\.baton/workflow\.md' "$d/AGENTS.md" 2>/dev/null; then
+    echo "  pass: AGENTS.md residual workflow.md removed"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: AGENTS.md should not contain residual workflow-full.md"
+    echo "  FAIL: AGENTS.md should not contain residual workflow.md"
     FAIL=$((FAIL + 1))
 fi
 
@@ -1108,7 +1123,7 @@ mkdir -p "$FAKE_BATON/.baton/hooks" "$FAKE_BATON/.claude/skills" "$FAKE_BATON/bi
 cp "$SCRIPT_DIR/../setup.sh" "$FAKE_BATON/setup.sh"
 cp -R "$SCRIPT_DIR/../.baton/hooks" "$FAKE_BATON/.baton/"
 cp -R "$SCRIPT_DIR/../.baton/adapters" "$FAKE_BATON/.baton/" 2>/dev/null || true
-cp "$SCRIPT_DIR/../.baton/workflow.md" "$FAKE_BATON/.baton/workflow.md"
+cp "$SCRIPT_DIR/../.baton/constitution.md" "$FAKE_BATON/.baton/constitution.md"
 # Copy skills to .claude/skills ONLY (legacy layout, no .baton/skills/)
 _canon_src="$SCRIPT_DIR/../.baton/skills"
 [ ! -d "$_canon_src" ] && _canon_src="$SCRIPT_DIR/../.claude/skills"
@@ -1129,7 +1144,7 @@ assert_file_exists "$d/.claude/skills/baton-debug/SKILL.md"
 assert_file_exists "$d/.claude/skills/baton-subagent/SKILL.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
 assert_output_contains "$OUTPUT" "legacy .claude/skills/"
-assert_file_exists "$d/.baton/workflow.md"
+assert_file_exists "$d/.baton/constitution.md"
 assert_file_exists "$d/.baton/hooks/write-lock.sh"
 
 # ============================================================

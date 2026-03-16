@@ -35,9 +35,9 @@ No hook enforcement. Relies on skill Iron Laws + human review.
 | Capability | Where defined | What it does |
 |------------|---------------|--------------|
 | A/B write-set additions | baton-implement skill | Narrowly scoped file additions without replanning. Requires todolist to append to; does not apply when todolist is skipped. |
-| 3-failure stop | workflow.md rule 5 | Same approach fails 3× → must stop and report. Same root cause = same chain. |
-| C/D discovery stop | workflow.md rule 6 | Scope extension or design change discovered → must stop, update plan, wait for confirmation. |
-| Fallback conservatism | workflow.md Enforcement Boundaries | Fallback guidance is intentionally more conservative than skill-guided execution. When skills are unavailable, hooks output hardcoded summaries as a safety net. |
+| Failure boundary | constitution.md §4.4 | Same approach fails repeatedly → must stop and report. Same underlying hypothesis = same approach. |
+| Discovery protocol | constitution.md §4.3 | Q1/Q2 discovery (assumption change or plan change) → must stop, update plan, wait for renewed BATON:GO. |
+| Fallback conservatism | constitution.md Enforcement Boundaries | Fallback guidance is intentionally more conservative than skill-guided execution. When skills are unavailable, hooks output hardcoded summaries as a safety net. |
 | Adversarial review | baton-review skill | First-principles review of artifacts via subagent (`context: fork`). Dispatched before presenting research/plan/todolist to human. Skill-disciplined, not hook-enforced. |
 
 ## Design Principles

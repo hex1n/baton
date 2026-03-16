@@ -167,8 +167,8 @@ echo "=== Test 5c: baton doctor — detects missing skills ==="
 d_doc="$tmp/doc_skills" && mkdir -p "$d_doc/.baton/hooks" "$d_doc/.claude/skills/baton-plan"
 # Only 1 of 6 skills → should flag missing
 echo "---" > "$d_doc/.claude/skills/baton-plan/SKILL.md"
-echo '@.baton/workflow.md' > "$d_doc/CLAUDE.md"
-touch "$d_doc/.baton/workflow.md"
+echo '@.baton/constitution.md' > "$d_doc/CLAUDE.md"
+touch "$d_doc/.baton/constitution.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT_DOC="$(bash "$BATON_CLI" doctor "$d_doc" 2>&1)"
 if echo "$OUTPUT_DOC" | grep -q 'missing'; then
@@ -183,8 +183,8 @@ fi
 echo ""
 echo "=== Test 5d: baton doctor — checks adapters ==="
 d_adap="$tmp/doc_adapt" && mkdir -p "$d_adap/.baton/hooks" "$d_adap/.cursor"
-touch "$d_adap/.baton/workflow.md"
-echo '@.baton/workflow.md' > "$d_adap/CLAUDE.md"
+touch "$d_adap/.baton/constitution.md"
+echo '@.baton/constitution.md' > "$d_adap/CLAUDE.md"
 # .cursor dir exists but no adapter → should flag
 TOTAL=$((TOTAL + 1))
 OUTPUT_ADAP="$(bash "$BATON_CLI" doctor "$d_adap" 2>&1)"
@@ -416,21 +416,21 @@ fi
 echo ""
 echo "=== Test 14: doctor rules injection ==="
 d="$tmp/t14" && mkdir -p "$d/.baton/hooks" "$d/.claude"
-echo '@.baton/workflow-full.md' > "$d/CLAUDE.md"
-touch "$d/.baton/workflow.md"
+echo '@.baton/workflow.md' > "$d/CLAUDE.md"
+touch "$d/.baton/constitution.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "⚠"; then
-    echo "  pass: doctor flags old workflow-full.md import in CLAUDE.md"
+    echo "  pass: doctor flags old workflow.md import in CLAUDE.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should flag workflow-full.md import"
+    echo "  FAIL: doctor should flag workflow.md import"
     echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
 # Correct import — narrow to Rules injection section only
-echo '@.baton/workflow.md' > "$d/CLAUDE.md"
+echo '@.baton/constitution.md' > "$d/CLAUDE.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "✓ CLAUDE.md"; then
@@ -443,19 +443,19 @@ else
 fi
 
 # AGENTS.md old import
-echo '@.baton/workflow-full.md' > "$d/AGENTS.md"
+echo '@.baton/workflow.md' > "$d/AGENTS.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "⚠"; then
     echo "  pass: doctor flags old import in AGENTS.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should flag workflow-full.md in AGENTS.md"
+    echo "  FAIL: doctor should flag workflow.md in AGENTS.md"
     FAIL=$((FAIL + 1))
 fi
 
 # AGENTS.md correct import — narrow to Rules injection section only
-echo '@.baton/workflow.md' > "$d/AGENTS.md"
+echo '@.baton/constitution.md' > "$d/AGENTS.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep "Rules injection" | grep -qv "⚠"; then
@@ -471,28 +471,28 @@ fi
 echo ""
 echo "=== Test 15: doctor detects mixed old+new imports ==="
 d="$tmp/t15" && mkdir -p "$d/.baton/hooks" "$d/.claude"
-touch "$d/.baton/workflow.md"
+touch "$d/.baton/constitution.md"
 # CLAUDE.md with both old and new
-printf '@.baton/workflow.md\n@.baton/workflow-full.md\n' > "$d/CLAUDE.md"
+printf '@.baton/constitution.md\n@.baton/workflow.md\n' > "$d/CLAUDE.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "residual"; then
-    echo "  pass: doctor flags residual workflow-full.md in mixed CLAUDE.md"
+    echo "  pass: doctor flags residual workflow.md in mixed CLAUDE.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should flag residual workflow-full.md in mixed CLAUDE.md"
+    echo "  FAIL: doctor should flag residual workflow.md in mixed CLAUDE.md"
     echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 # AGENTS.md with both old and new
-printf '@.baton/workflow.md\n@.baton/workflow-full.md\n' > "$d/AGENTS.md"
+printf '@.baton/constitution.md\n@.baton/workflow.md\n' > "$d/AGENTS.md"
 OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "residual"; then
-    echo "  pass: doctor flags residual workflow-full.md in mixed AGENTS.md"
+    echo "  pass: doctor flags residual workflow.md in mixed AGENTS.md"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should flag residual workflow-full.md in mixed AGENTS.md"
+    echo "  FAIL: doctor should flag residual workflow.md in mixed AGENTS.md"
     echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi

@@ -45,7 +45,7 @@ For each piece of feedback:
 - **If AI adds `<!-- BATON:GO -->` itself**: remove it immediately, return to annotation phase
 
 **Three layers of guidance:**
-- **Layer 0**: Workflow rules always in context (workflow.md)
+- **Layer 0**: Constitutional rules always in context (constitution.md)
 - **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement / baton-review) with fallback to session-start hook with hardcoded fallback
 - **Layer 2**: Actionable blocking messages when writes are denied
 
@@ -136,7 +136,7 @@ Depending on the IDEs detected or selected, Baton installs the relevant subset o
 ```
 your-project/
 ├── .baton/
-│   ├── workflow.md           ← Universal rules (always loaded)
+│   ├── constitution.md       ← Universal rules (always loaded)
 │   ├── hooks/
 │   │   ├── _common.sh        ← Shared library (plan discovery, skill detection)
 │   │   ├── plan-parser.sh    ← Shared plan/todo/write-set parser
@@ -153,8 +153,8 @@ your-project/
 ├── .claude/
 │   ├── skills/               ← Generated host copies of Baton-managed skills
 │   └── settings.json         ← Hook configuration (9 hooks)
-├── CLAUDE.md                 ← Claude import: @.baton/workflow.md
-├── AGENTS.md                 ← Generated for Codex installs: @.baton/workflow.md
+├── CLAUDE.md                 ← Claude import: @.baton/constitution.md
+├── AGENTS.md                 ← Generated for Codex installs: @.baton/constitution.md
 └── .agents/skills/           ← Generated Codex fallback skills
 ```
 
