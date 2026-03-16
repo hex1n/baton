@@ -2,11 +2,12 @@
 normative-status: Authoritative specification for the RESEARCH phase.
 name: baton-research
 description: >
-    Use for Medium/Large tasks that require systematic investigation before
-    planning or implementation: reducing key uncertainties, validating framing,
-    tracing behavior, reconciling contradictions, comparing alternatives, or
-    building evidence-backed understanding across multiple surfaces.
-    Also use for [PAUSE] investigations and when the user explicitly asks to research.
+  Use for Medium/Large tasks that require systematic investigation before
+  planning or implementation: reducing key uncertainties, validating framing,
+  tracing behavior, reconciling contradictions, comparing alternatives, or
+  building evidence-backed understanding across multiple surfaces.
+  Also use for [PAUSE] investigations and when the user explicitly asks to
+  research.
 user-invocable: true
 ---
 
@@ -20,8 +21,7 @@ FIRST PRINCIPLES BEFORE FRAMING.
 ```
 
 This skill is the local source of truth for research-phase framing.
-`constitution.md` defines cross-phase invariants (Challenge Model, Evidence Model, Permission Model);
-local field requirements including annotation format and evidence extensions are defined here.
+`constitution.md` only supplements cross-phase annotation handling; local field requirements are defined here.
 
 Research produces understanding, not code. Write findings down for the plan phase.
 
@@ -38,6 +38,8 @@ These thoughts mean STOP — you're rationalizing:
 | "This is a quick lookup, no need for full research" | If it's truly trivial, the skill says "When NOT to use." If you're here, follow the process |
 | "I can answer from what I already know" | Memory is unreliable. Verify with evidence |
 | "The counterexample sweep found nothing" | Did you actively search for disproving evidence, or just not find any by default? |
+| "I know this system well enough" | Familiarity is an assessment, not an assumption. Record it in Orient |
+| "I found several blog posts confirming this" | Blogs are leads, not evidence. Trace to primary source |
 
 ## When to Use
 
@@ -72,6 +74,37 @@ Define at top of research file:
 - **System goal being served**: what outcome this research enables
 - **Claimed framing from human/docs**: the framing as stated
 - **What must be validated before accepting that framing**: assumptions to verify
+
+### Step 0.25: Orient
+
+Before choosing investigation targets, assess your starting position.
+This step determines investigation strategy and template selection.
+
+**Assessment A — System / Domain familiarity:**
+
+State your current understanding level: **none** / **partial** / **deep**
+
+- **none or partial** → You must build baseline understanding before targeted investigation.
+  For codebase: complete the System Baseline section in the template.
+  For external: complete the Source Landscape section in the template.
+  Do not skip this — jumping to targets without baseline understanding is the primary
+  failure mode this step prevents.
+- **deep** → State existing understanding in 3-5 sentences. Proceed to targets.
+
+**Assessment B — Primary evidence type:**
+
+Determine where the evidence lives:
+
+- **Codebase-primary** → Evidence is in the repo. Investigation follows code structure.
+  **Read `./template-codebase.md` and use its output structure.**
+- **External-primary** → Evidence is in docs, APIs, ecosystem.
+  **Read `./template-external.md` and use its output structure.**
+- **Mixed** → State which type is primary for each sub-question.
+  Use the primary type's template, add the supplementary section for the secondary type
+  (see the "For mixed research" section at the bottom of each template).
+
+**Strategy statement**: Given my familiarity and evidence type, write one paragraph
+describing how this investigation will proceed. This feeds Step 2's uncertainty-driven process.
 
 ### Step 0.5: Investigation Methods
 
@@ -168,7 +201,7 @@ Typical use cases:
 - entry-point to sink analysis
 - root-cause analysis
 - failure-path tracing
-- “where does this value / decision / side effect come from?”
+- "where does this value / decision / side effect come from?"
 
 Guidance:
 - Read implementations, not just interfaces
@@ -189,7 +222,7 @@ Typical use cases:
 
 Guidance:
 - Test the claim directly when direct testing is possible
-- Separate “false” from “true only under constraints”
+- Separate "false" from "true only under constraints"
 - If the claim is external, note version/date/currency
 - If the claim conflicts with current behavior, record the mismatch explicitly
 
@@ -207,8 +240,8 @@ Typical use cases:
 Guidance:
 - State evaluation criteria explicitly before comparing
 - Separate descriptive comparison from normative judgment
-- “A does X, B does Y” may be fact
-- “A is better” is judgment unless criteria are stated
+- "A does X, B does Y" may be fact
+- "A is better" is judgment unless criteria are stated
 - Do not smuggle preference in as fact
 - If a recommendation depends on priorities or constraints, say so explicitly
 - For comparison conclusions, mark whether each is **Fact**, **Inference**, or **Judgment**
@@ -228,7 +261,7 @@ Guidance:
 - Name the contradiction explicitly
 - Do not smooth conflicting findings into vague prose
 - Prefer resolution by stronger evidence, not rhetorical convenience
-- Apply Step 3 conflict-resolution rules explicitly
+- Apply evidence conflict-resolution rules (see `./investigation-infrastructure.md` Section 1)
 - If unresolved, keep it visible as ❓ rather than hand-waving it away
 
 #### Build systematic coverage
@@ -241,7 +274,7 @@ Typical use cases:
 - N config formats
 - feature parity across implementations
 - consistency across adapters / hooks / surfaces
-- “does every relevant surface behave the same way?”
+- "does every relevant surface behave the same way?"
 
 Guidance:
 - Use a comparison matrix when parallel coverage matters
@@ -255,11 +288,11 @@ Guidance:
 Use when progress depends on an assumption that has not yet been tested directly.
 
 Typical use cases:
-- “this probably only happens in one path”
-- “the framework likely guarantees this”
-- “this config is probably inherited”
-- “this behavior should be impossible”
-- “this earlier conclusion likely generalizes”
+- "this probably only happens in one path"
+- "the framework likely guarantees this"
+- "this config is probably inherited"
+- "this behavior should be impossible"
+- "this earlier conclusion likely generalizes"
 
 Guidance:
 - Surface the assumption explicitly
@@ -278,8 +311,55 @@ Typical use cases:
 
 Guidance:
 - Search for evidence that would disprove the current leading interpretation
-- Do not treat “nothing obvious contradicted it” as a completed challenge
+- Do not treat "nothing obvious contradicted it" as a completed challenge
 - Record what was checked and how the result changed confidence
+
+#### Map the source landscape
+
+Use when investigating external sources and you need to establish what authoritative information exists before reading.
+
+Typical use cases:
+- comparing frameworks or libraries
+- evaluating an API or service
+- researching best practices or standards
+- investigating a technology ecosystem
+
+Guidance:
+- Identify authoritative sources BEFORE reading any of them
+- Classify each source by type (official docs, source code, spec, peer-reviewed, community, blog)
+- Assess coverage: is the question well-covered by authoritative sources?
+- Select sources for depth based on authority and relevance, not search ranking
+
+#### Verify claim against primary source
+
+Use when a secondary source (blog, tutorial, summary) makes a claim that matters to the investigation.
+
+Typical use cases:
+- blog says "framework X supports feature Y"
+- tutorial shows a pattern — is it officially recommended?
+- AI-generated summary makes a technical claim
+- Stack Overflow answer describes behavior — is it current?
+
+Guidance:
+- Trace the claim to its primary source (official docs, source code, spec)
+- If the primary source doesn't support the claim, mark it ❓
+- Note version/date discrepancies between secondary and primary sources
+- Do not treat "multiple secondary sources agree" as equivalent to primary verification
+
+#### Assess applicability
+
+Use when external findings need to be evaluated against the current project's specific context.
+
+Typical use cases:
+- documentation describes behavior for version X — are we on version X?
+- pattern works for use case A — does our use case match?
+- recommendation assumes constraint C — do we have that constraint?
+
+Guidance:
+- State the target context explicitly (version, platform, use case)
+- Compare each finding's assumptions against the target context
+- Mark findings that don't match the target context as conditionally applicable
+- Do not assume external findings transfer without checking
 
 ### Minimum record for any investigation move
 
@@ -338,75 +418,30 @@ Record:
 - **Result**: disproving evidence found / no disproving evidence found / insufficient search
 - **Effect on confidence**:
 
-Do not treat “nothing obvious contradicted it” as a completed counterexample sweep.
+Do not treat "nothing obvious contradicted it" as a completed counterexample sweep.
 
 ### Step 3: Evidence Standards
 
-- `[CODE]` file:line — `[DOC]` external docs — `[RUNTIME]` command output — `[HUMAN]` chat
-- `[DESIGN]` design decision or pattern — `[EMPIRICAL]` observed behavior in practice
-- `✅` confirmed — `❌` problem — `❓` unverified
-- Keep Facts / Inferences / Judgments distinct
+Follow `./investigation-infrastructure.md` Section 1 for evidence labels, status markers,
+conflict resolution rules, and evidence provenance requirements.
 
-**Conflict resolution** (when evidence types disagree):
-- Runtime observed behavior > stale docs, unless runtime setup is suspect
-- Code implementation > interface comments, unless dead code or non-executed path
-- Human-stated intent ≠ current behavior → mark as requirement/expectation mismatch
-- Design preference cannot override evidence of current behavior; it only informs judgment
+### Step 4: Self-Challenge
 
-When multiple investigation moves are used, preserve evidence provenance per move.
-Do not merge findings across moves so aggressively that the original evidence path becomes unclear.
-
-### Step 4: Self-Challenge (write into artifact, not just think)
-
-Before presenting, write `## Self-Challenge` into the research file:
-1. What's the weakest conclusion and why? What evidence would disprove it?
-2. What did I NOT investigate that I should have?
-3. What assumptions did I make without verifying?
-
-Visible output — human judges depth. Shallow answers signal skipped self-challenge.
+Follow `./investigation-infrastructure.md` Section 2.
+Write `## Self-Challenge` into the research artifact — visible output, not internal reasoning.
 
 ### Step 5: Review the Research
 
-After self-challenge, perform an explicit review before presenting conclusions.
-
-Choose the review strategy based on engineering judgment, not form preference.
-The goal is review quality — not isolation for its own sake.
-
-**Option A — Isolated review via subagent**  
-Prefer this when:
-- the artifact is sufficiently self-contained,
-- the reviewer can provide a meaningfully independent perspective,
-- and handoff/context-loss risk is low.
-
-If using isolated review:
-- provide only the research artifact text,
-- process findings before presenting,
-- record accepted / rejected / unresolved review findings in the artifact.
-
-**Option B — Structured self-review**  
-Prefer this when:
-- host capabilities do not support isolated review,
-- critical context would be lost in handoff,
-- or the artifact still depends heavily on conversation history.
-
-If using structured self-review, write `## Self-Review` and answer:
-1. What is the actual problem? Does the problem statement reference a solution?
-2. Is this solving the right problem, or patching within an inherited frame?
-3. What fundamentally different approaches were not considered?
-4. Does each piece serve the stated problem, or is it inherited baggage?
-
-Both review paths are legitimate.
-Choose based on artifact self-sufficiency, host capabilities, and context-loss risk.
+Follow `./investigation-infrastructure.md` Section 3.
+Choose Option A (isolated review via subagent) or Option B (structured self-review)
+based on artifact self-sufficiency and context-loss risk.
 
 ### Step 6: Convergence Check
 
 Before transitioning to plan:
 1. Mark superseded conclusions: `→ Revised in [section]`
-2. Write `## Final Conclusions` — each conclusion states:
-   - **Confidence**: high / medium / low (use percentages only with quantitative evidence) + one-sentence rationale
-   - **Evidence**: reference to supporting evidence
-   - **Uncertainty**: what remains unverified
-   - **Plan implication**: actionable / watchlist / judgment-needed / blocked
+2. Write the One-Sentence Summary, Final Conclusions, and Questions for Human Judgment
+   sections as defined in the applicable template
 3. Capture chat requirements: `Human requirement (chat): ...`
 
 If multiple investigation moves were used, reconcile them before final conclusions.
@@ -416,7 +451,7 @@ Do not present parallel findings as if they were already a single conclusion.
 
 1. Main path verified with evidence, no ❓ on critical paths
 2. Key unknowns explicitly marked ❓ with reason
-3. Human judgment questions in `## Questions for Human Judgment`
+3. Human judgment questions in `## Questions for Human Judgment` (with blocking severity)
 4. Every final conclusion classifies its plan implication (actionable / watchlist / judgment-needed / blocked)
 5. Open unknowns classified by blocking severity: blocks plan / does not block plan
 
@@ -425,6 +460,11 @@ Do not present parallel findings as if they were already a single conclusion.
 Default path: `baton-tasks/<topic>/research.md` — always include a topic.
 If host/repo defines a different task workspace convention, follow that instead.
 `mkdir -p` the target directory before writing.
+
+**Template selection** (determined by Orient Assessment B):
+- Codebase-primary → use structure from `./template-codebase.md`
+- External-primary → use structure from `./template-external.md`
+- Mixed → use primary type's template with supplementary section for secondary type
 
 **Update policy**:
 - If continuing the same investigation, update the existing artifact in place
@@ -443,60 +483,7 @@ If host/repo defines a different task workspace convention, follow that instead.
 Do not silently erase prior reasoning that later findings corrected.
 Preserve traceability when conclusions change.
 
-**Required section structure** (preserve regardless of path):
-1. Question / Why / Scope / Constraints / Framing validation
-2. Investigation Methods
-3. Investigation body (findings organized by investigation move; include Cross-Move Synthesis if multiple moves were used)
-4. Self-Challenge
-5. Self-Review or Review findings (if applicable)
-6. Final Conclusions
-7. Questions for Human Judgment (if any)
-8. 批注区
-
 ## Annotation Protocol
 
-Cross-phase annotation conventions may supplement this section, but local field requirements are defined here.
-
-If annotations, challenges, review comments, or human objections arise during research,
-record them in `## 批注区`. Do not handle strong challenges silently.
-
-### Required format for each annotation item
-
-- **Trigger / 触发点**: original annotation, objection, or review finding
-- **Intent as understood / 理解后的意图**: what concern or claim is being raised
-- **Response / 回应**: evidence-backed response
-- **Status**: ✅ accepted / ❌ rejected / ❓ unresolved
-- **Impact**:
-  - none
-  - research clarification only
-  - affects final conclusion
-  - blocks plan until resolved
-
-### Rules
-
-- Read the underlying evidence before responding
-- Infer intent cautiously; do not rewrite a challenge into a weaker one
-- Check whether the annotation exposes contradiction, missing evidence, weak framing, or scope drift
-- If accepted, update the relevant research section and mark superseded text when needed
-- If rejected, explain why with evidence
-- If unresolved, keep it visible as ❓ rather than silently dismissing it
-
-### Escalation heuristic
-
-If repeated annotations expose the same class of depth problem
-(e.g., repeated missing evidence, repeated framing errors, repeated scope confusion),
-note that the task may have been under-scoped and suggest upgrading complexity.
-Use pattern judgment, not a rigid numeric threshold.
-
-### `## 批注区` minimum structure
-
-Each entry should use this template:
-
-```md
-### [Annotation N]
-- Trigger / 触发点:
-- Intent as understood / 理解后的意图:
-- Response / 回应:
-- Status: ✅ / ❌ / ❓
-- Impact: none / research clarification only / affects final conclusion / blocks plan until resolved
-```
+Follow `./investigation-infrastructure.md` Section 4 for annotation format, processing rules,
+escalation heuristics, and `## 批注区` structure.

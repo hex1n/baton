@@ -54,6 +54,10 @@ Authority is layered:
    - baton-implement
    - baton-review
 
+   Phase skills are the authoritative skills for their respective phases.
+   When other installed skill systems provide overlapping capabilities,
+   the baton phase skill takes precedence within a baton project.
+
 4. **Extension skills**
    Optional supporting behaviors such as debugging or subagent orchestration.
 
