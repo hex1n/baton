@@ -52,7 +52,7 @@ If `## Todo` doesn't exist and human said "generate todolist":
 - Order by dependencies; parallelization must satisfy the independence criteria in Step 3
 
 **After generating, review the todolist:**
-- Preferred: independent review — dispatch review subagent via Agent tool with only the todolist + plan text
+- Preferred: independent review — dispatch baton-review via Agent tool with only the todolist + plan text
 - Fallback: explicit self-review checklist in current agent (re-read plan, verify each todo traces to a plan section, check ordering and deps)
 - If neither review method performed: do not claim reviewed
 
@@ -95,11 +95,11 @@ For each item:
 ### Step 5: Completion
 
 After ALL items verified:
-1. **Implementation review** — review all changes independently:
-   - Preferred: dispatch review subagent via Agent tool with the diff (`git diff` of all changes)
-   - Fallback: perform explicit self-review in current agent against plan contract
-   - Review criteria: does each change match plan intent? Unintended side effects? Missed edge cases? Were any B-level additions made, and are their rationales in `## Implementation Notes` justified?
-   - Fix findings before proceeding.
+1. **Implementation review** — dispatch baton-review via Agent tool with the diff (`git diff` of all changes).
+   Fallback: explicit self-review in current agent against plan contract.
+   Additionally verify: were any B-level additions made, and are their rationales in `## Implementation Notes` justified?
+   Fix findings, then re-review. Repeat until baton-review passes or circuit breaker
+   triggers (3 rounds of high severity findings → escalate to human).
 2. **Full test suite** — run the project's complete suite (as defined by repo conventions or plan), not just per-item tests
 3. **Retrospective** — append `## Retrospective` to plan (≥3 lines: wrong predictions,
    surprises, research improvements)

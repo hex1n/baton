@@ -159,7 +159,7 @@ Frame-level findings must be reported first. Do not output only detail-level fix
 ## Review Outcome
 
 Review findings determine whether the artifact may proceed:
-- **Any frame-level high severity finding**: artifact must not enter the next phase. For research/plan/todolist: author must revise the artifact and re-review. For implementation: if the defect is spec-compliance, fix the implementation; if the defect exposes an upstream plan flaw, return to plan phase rather than patching code. **Circuit breaker**: if the same high severity finding persists after 2 revision-and-re-review cycles, escalate to the approving human rather than continuing the loop.
+- **Any frame-level high severity finding**: artifact must not enter the next phase. For research/plan/todolist: author must revise the artifact and re-review. For implementation: if the defect is spec-compliance, fix the implementation; if the defect exposes an upstream plan flaw, return to plan phase rather than patching code. **Circuit breaker**: if the same high severity finding persists after 3 revision-and-re-review cycles, escalate to the approving human rather than continuing the loop.
 - **Any spec-compliance failure** (implementation review): review fails. Author must fix before proceeding.
 - **Only low/medium findings**: author may proceed after addressing findings, with explicit acknowledgment of remaining risk by the approving human. However, if multiple medium findings touch the same core assumption, surface, or verification gap, reviewer must flag whether they collectively imply a frame-level concern.
 
