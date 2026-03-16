@@ -1,5 +1,7 @@
 # Investigation Infrastructure
 
+<!-- Located in baton-research/ as current sole consumer. Move to shared location if other skills need it. -->
+
 Shared infrastructure for baton investigation phases.
 Extends the Evidence Model and Challenge Model defined in `constitution.md`.
 

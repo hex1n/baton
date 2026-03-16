@@ -811,6 +811,39 @@ atomic_link() {
     atomic_copy "$_al_target" "$_al_link"
 }
 
+# Create a directory symlink. Falls back to cp -r if symlinks unsupported.
+# Removes existing target (directory or symlink) before creating the new link.
+# Usage: atomic_link_dir <source_dir> <link_path>
+atomic_link_dir() {
+    _ald_target="$1"  # absolute path to source directory
+    _ald_link="$2"    # path where symlink is created
+    _ald_tmp="${_ald_link}.baton.tmp"
+    # Remove existing target (old directory, old symlink, or stale path)
+    if [ -L "$_ald_link" ] || [ -d "$_ald_link" ]; then
+        rm -rf "$_ald_link"
+    fi
+    # Standard symlink attempt — verify with [ -L ] because MSYS/Git Bash
+    # silently creates copies instead of symlinks.
+    if ln -s "$_ald_target" "$_ald_tmp" 2>/dev/null && [ -L "$_ald_tmp" ]; then
+        mv "$_ald_tmp" "$_ald_link"
+        return 0
+    fi
+    rm -rf "$_ald_tmp"
+    # MSYS/Git Bash: retry with nativestrict
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*)
+            if MSYS="${MSYS:+$MSYS }winsymlinks:nativestrict" ln -s "$_ald_target" "$_ald_tmp" 2>/dev/null && [ -L "$_ald_tmp" ]; then
+                mv "$_ald_tmp" "$_ald_link"
+                return 0
+            fi
+            rm -rf "$_ald_tmp"
+            ;;
+    esac
+    # Fallback: copy entire directory if symlinks not supported
+    mkdir -p "$_ald_link"
+    cp -r "$_ald_target"/. "$_ald_link"/
+}
+
 # Determine canonical skill source directory.
 # Priority: .baton/skills/ (new canonical) > .claude/skills/ (legacy fallback)
 # Returns the source directory path via stdout; returns 1 if no source found.
@@ -829,7 +862,7 @@ resolve_skill_source_dir() {
 # Install baton skills to each detected IDE's skill directory.
 # Canonical source: .baton/skills/ in the baton installation directory.
 # Fallback: .claude/skills/ for backward compatibility during transition.
-# Only overwrites SKILL.md for the 6 Baton-managed skills.
+# Symlinks entire skill directories (not individual SKILL.md files).
 install_skills() {
     _skill_source_dir=""
     _skill_source_dir="$(resolve_skill_source_dir)" || {
@@ -842,14 +875,14 @@ install_skills() {
         # Clean stale fallback marker unconditionally (committed dir, not generated)
         rm -f "$PROJECT_DIR/.agents/$BATON_AGENTS_FALLBACK_MARKER"
 
-        # Verify committed symlinks are actual symlinks and resolve correctly
+        # Verify committed directory symlinks are intact
         _broken=0
         for _skill in $BATON_SKILL_NAMES; do
             for _check_dir in .claude/skills .agents/skills; do
-                _check="$PROJECT_DIR/$_check_dir/$_skill/SKILL.md"
-                if [ ! -L "$_check" ] || [ ! -f "$_check" ]; then
+                _check="$PROJECT_DIR/$_check_dir/$_skill"
+                if [ ! -L "$_check" ] || [ ! -d "$_check" ]; then
                     _broken=1
-                    echo "  ⚠ Missing/broken/non-symlink: $_check_dir/$_skill/SKILL.md"
+                    echo "  ⚠ Missing/broken/non-symlink: $_check_dir/$_skill"
                 fi
             done
         done
@@ -871,8 +904,8 @@ install_skills() {
     _skill_count=0
     _fallback_count=0
     for _skill in $BATON_SKILL_NAMES; do
-        _src="$_skill_source_dir/$_skill/SKILL.md"
-        [ -f "$_src" ] || continue
+        _src_dir="$_skill_source_dir/$_skill"
+        [ -d "$_src_dir" ] || continue
         for _ide in $IDES; do
             case "$_ide" in
                 claude)   _ide_dir="$PROJECT_DIR/.claude/skills/$_skill" ;;
@@ -881,16 +914,16 @@ install_skills() {
                 codex)    _ide_dir="$PROJECT_DIR/.codex/skills/$_skill" ;;
                 *)        continue ;;
             esac
-            _dst="$_ide_dir/SKILL.md"
-            if [ "$_dst" = "$_src" ]; then
+            if [ "$_ide_dir" = "$_src_dir" ]; then
                 continue
             fi
-            mkdir -p "$_ide_dir"
-            atomic_link "$_src" "$_dst"
+            _ide_parent="$(dirname "$_ide_dir")"
+            mkdir -p "$_ide_parent"
+            atomic_link_dir "$_src_dir" "$_ide_dir"
             _skill_count=$((_skill_count + 1))
         done
-        mkdir -p "$PROJECT_DIR/.agents/skills/$_skill"
-        atomic_link "$_src" "$PROJECT_DIR/.agents/skills/$_skill/SKILL.md"
+        mkdir -p "$PROJECT_DIR/.agents/skills"
+        atomic_link_dir "$_src_dir" "$PROJECT_DIR/.agents/skills/$_skill"
         _fallback_count=$((_fallback_count + 1))
     done
     if [ "$SELF_INSTALL" != "1" ] && [ "$_fallback_count" -gt 0 ]; then
@@ -909,8 +942,8 @@ install_skills() {
     # Warn if skills were copied instead of symlinked (Windows without Developer Mode)
     if [ "$SELF_INSTALL" != "1" ] && [ $((_skill_count + _fallback_count)) -gt 0 ]; then
         _sample_skill="$(echo "$BATON_SKILL_NAMES" | awk '{print $1}')"
-        _sample_file="$PROJECT_DIR/.agents/skills/$_sample_skill/SKILL.md"
-        if [ -f "$_sample_file" ] && [ ! -L "$_sample_file" ]; then
+        _sample_dir="$PROJECT_DIR/.agents/skills/$_sample_skill"
+        if [ -d "$_sample_dir" ] && [ ! -L "$_sample_dir" ]; then
             echo "  ⚠ Skills were copied (not symlinked). Run 'baton init' after updating baton to refresh."
             case "$(uname -s 2>/dev/null)" in
                 MINGW*|MSYS*)

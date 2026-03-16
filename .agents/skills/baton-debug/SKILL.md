@@ -1,1 +1,0 @@
-../../../.baton/skills/baton-debug/SKILL.md
