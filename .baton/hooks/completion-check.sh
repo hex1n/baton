@@ -6,7 +6,7 @@
 # Exit 0 = allow completion
 # Exit 2 = block completion (with message)
 #
-# When all todo items are done but no ## Retrospective exists,
+# When all Todo items are done but no ## Retrospective exists,
 # blocks completion and reminds to write retrospective.
 
 # --- Fail-open on unexpected errors ---
@@ -44,7 +44,7 @@ parser_todo_counts
 # --- Check for retrospective (exact header + ≥3 non-empty content lines) ---
 parser_retro_range
 if [ "${RETRO_START:-0}" -eq 0 ] 2>/dev/null; then
-    echo "📋 FINISH phase: all todo items complete, but no ## Retrospective found in $PLAN_NAME." >&2
+    echo "📋 FINISH phase: all Todo items complete, but no ## Retrospective found in $PLAN_NAME." >&2
     echo "   Complete the finish workflow — append ## Retrospective:" >&2
     echo "   · What did the plan get wrong?" >&2
     echo "   · What surprised you during implementation?" >&2

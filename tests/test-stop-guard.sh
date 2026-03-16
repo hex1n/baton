@@ -130,7 +130,7 @@ cat > "$d/plan.md" << 'EOF'
 - [x] Step 2: Done
 - [x] Step 3: Done
 EOF
-assert_output_contains "$d" "todo items complete" "shows completion message"
+assert_output_contains "$d" "Todo items complete" "shows completion message"
 assert_output_contains "$d" "FINISH phase" "shows FINISH phase"
 assert_output_contains "$d" "Retrospective" "suggests writing Retrospective"
 assert_output_contains "$d" "test suite" "mentions full test suite"
@@ -183,11 +183,11 @@ cat > "$d/plan-feature.md" << 'EOF'
 ## Todo
 - [ ] Step 1: do something
 EOF
-# Run from subdirectory — should find plan-feature.md and detect remaining todo
+# Run from subdirectory — should find plan-feature.md and detect remaining Todo
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(cd "$d/src/deep" && bash "$GUARD" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "remaining"; then
-    echo "  pass: walk-up finds plan-feature.md from subdirectory, detects remaining todo"
+    echo "  pass: walk-up finds plan-feature.md from subdirectory, detects remaining Todo"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: expected 'remaining' in output for plan-feature.md walk-up"
@@ -269,12 +269,12 @@ cat > "$d/plan.md" << 'EOF'
 # Plan
 <!-- BATON:GO -->
 ## Approach
-- [ ] This is NOT a todo item (in wrong section)
+- [ ] This is NOT a Todo item (in wrong section)
 ## Todo
 - [x] Step 1: Done
 - [ ] Step 2: Not done
 ## Notes
-- [ ] This is also NOT a todo item
+- [ ] This is also NOT a Todo item
 EOF
 assert_output_contains "$d" "1/2" "only counts items under ## Todo"
 assert_output_contains "$d" "1 remaining" "ignores items in other sections"

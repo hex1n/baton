@@ -14,7 +14,7 @@ user-invocable: true
 ```
 NO IMPLEMENTATION WITHOUT AN APPROVED PLAN
 NO BATON:GO PLACED BY AI — ONLY THE HUMAN PLACES IT
-NO TODOLIST WITHOUT HUMAN SAYING "GENERATE TODOLIST"
+NO TODO LIST WITHOUT HUMAN SAYING "GENERATE TODO LIST"
 NO INTERNAL CONTRADICTIONS LEFT UNRESOLVED — FIX BEFORE PRESENTING
 VERIFY = VISIBLE OUTPUT. "I checked" is not evidence.
 FIRST PRINCIPLES BEFORE FRAMING. State problem → list constraints → enumerate solution categories → then evaluate.
@@ -127,9 +127,9 @@ The plan MUST communicate: **What** (changes), **Why** (rationale),
 The human should predict the diff from reading the plan — key files, key
 behavior changes, and verification path should be explicit enough for that.
 
-### Todolist Format
+### Todo List Format
 
-After human says "generate todolist" and BATON:GO is present:
+After human says "generate Todo list" and BATON:GO is present:
 
 ```markdown
 ## Todo
@@ -141,7 +141,7 @@ After human says "generate todolist" and BATON:GO is present:
   Artifacts: none
 ```
 
-When generating a todo list, preserve the agreed item schema so implementation
+When generating a Todo list, preserve the agreed item schema so implementation
 can map each item back to plan scope and verification requirements.
 Mark independent items clearly so later execution can parallelize them safely.
 

@@ -5,8 +5,8 @@
 # Hook: Stop
 # Always exit 0 — never block the stop action
 #
-# Checks: implement phase (plan + GO marker + unchecked TODOs)
-#         finish phase (plan + GO marker + all TODOs done)
+# Checks: implement phase (plan + GO marker + unchecked Todo items)
+#         finish phase (plan + GO marker + all Todo items done)
 # Plan file override: BATON_PLAN=custom-plan.md (default: plan.md)
 
 # --- Fail-open on unexpected errors ---
@@ -26,13 +26,13 @@ find_plan
 [ -z "$PLAN" ] && exit 0
 grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null || exit 0
 
-# Count TODO items
+# Count Todo items
 parser_todo_counts
 
 if [ "$TODO_TOTAL" -gt 0 ] && [ "$TODO_REMAINING" -eq 0 ]; then
     # All done — finish workflow reminder
     echo "" >&2
-    echo "✅ All todo items complete — FINISH phase." >&2
+    echo "✅ All Todo items complete — FINISH phase." >&2
     echo "📍 Complete the finish workflow before stopping:" >&2
     echo "   1. Append ## Retrospective to $PLAN_NAME (≥3 lines, answer all three):" >&2
     echo "      · What did the plan get wrong?" >&2
@@ -45,7 +45,7 @@ if [ "$TODO_TOTAL" -gt 0 ] && [ "$TODO_REMAINING" -eq 0 ]; then
 elif [ "$TODO_REMAINING" -gt 0 ]; then
     # In progress — progress reminder
     echo "" >&2
-    echo "📋 Implementation in progress: $TODO_DONE/$TODO_TOTAL items done, $TODO_REMAINING remaining." >&2
+    echo "📋 Implementation in progress: $TODO_DONE/$TODO_TOTAL Todo items done, $TODO_REMAINING remaining." >&2
     echo "   Next session can resume from the $PLAN_NAME checklist." >&2
     echo "   💡 Consider appending '## Lessons Learned' to $PLAN_NAME before stopping." >&2
 fi

@@ -13,16 +13,16 @@
 #
 # 1B primitives:
 #   parser_todo_range          — ## Todo section line range
-#   parser_todo_counts         — done/remaining/total counts scoped to ## Todo
-#   parser_todo_items          — checklist items scoped to ## Todo
-#   parser_todo_remaining_items — unchecked checklist items scoped to ## Todo
+#   parser_todo_counts         — done/remaining/total Todo counts scoped to ## Todo
+#   parser_todo_items          — Todo checklist items scoped to ## Todo
+#   parser_todo_remaining_items — unchecked Todo checklist items scoped to ## Todo
 #   parser_retro_range         — ## Retrospective section line range
 #   parser_retro_valid         — ≥3 non-empty content lines check
 #
 # 1C primitives:
 #   parser_writeset_normalize — path normalization (strip ./, absolute→relative)
 #   parser_writeset_extract   — Files: field extraction from ## Todo items
-#   parser_writeset_contains  — path membership check against todo write set
+#   parser_writeset_contains  — path membership check against Todo write set
 
 # Guard against double-sourcing
 [ -n "${_BATON_PARSER_LOADED:-}" ] && return 0
@@ -224,7 +224,7 @@ parser_todo_range() {
     fi
 }
 
-# parser_todo_counts — count done/remaining/total todos scoped to ## Todo only
+# parser_todo_counts — count done/remaining/total Todo items scoped to ## Todo only
 # Args:    $1 = plan file path (defaults to $PLAN)
 # Sets:    TODO_TOTAL, TODO_DONE, TODO_REMAINING
 # shellcheck disable=SC2034
@@ -247,7 +247,7 @@ parser_todo_counts() {
     TODO_REMAINING=$((TODO_TOTAL - TODO_DONE))
 }
 
-# parser_todo_items — output checklist items scoped to ## Todo only
+# parser_todo_items — output Todo checklist items scoped to ## Todo only
 # Args:    $1 = plan file path (defaults to $PLAN)
 # Outputs: newline-separated checklist item lines to stdout
 parser_todo_items() {
@@ -260,7 +260,7 @@ parser_todo_items() {
     ' "$_plan"
 }
 
-# parser_todo_remaining_items — output unchecked checklist items scoped to ## Todo
+# parser_todo_remaining_items — output unchecked Todo checklist items scoped to ## Todo
 # Args:    $1 = plan file path (defaults to $PLAN)
 # Outputs: newline-separated unchecked checklist item lines to stdout
 parser_todo_remaining_items() {
@@ -337,7 +337,7 @@ parser_writeset_normalize() {
     printf '%s\n' "$_path"
 }
 
-# parser_writeset_extract — extract all file paths from Files: fields in ## Todo
+# parser_writeset_extract — extract all file paths from Files: fields in ## Todo section
 # Parses backtick-wrapped, comma-separated paths. Strips annotations like (new)
 # and completion metadata after |. Deduplicates output.
 # Args:    $1 = plan file path (defaults to $PLAN)
@@ -365,7 +365,7 @@ parser_writeset_extract() {
     ' "$_plan" | sort -u
 }
 
-# parser_writeset_contains — check if a file path is in the todo write set
+# parser_writeset_contains — check if a file path is in the Todo write set
 # Normalizes the input path, then checks against extracted write set paths.
 # Args:    $1 = file path to check, $2 = plan file path (defaults to $PLAN)
 # Returns: 0 if in write set, 1 if not

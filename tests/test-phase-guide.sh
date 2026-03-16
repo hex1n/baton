@@ -79,7 +79,7 @@ d="$tmp/t2" && mkdir -p "$d"
 echo "# Research findings" > "$d/research.md"
 assert_output_contains "$d" "PLAN" "outputs PLAN phase label"
 assert_output_contains "$d" "research" "mentions research reference"
-assert_output_contains "$d" "todolist" "mentions not writing todolist"
+assert_output_contains "$d" "Todo list" "mentions not writing Todo list"
 assert_output_contains "$d" "approach" "mentions approach analysis"
 assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
 assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
@@ -205,9 +205,9 @@ cat > "$d/plan.md" << 'EOF'
 <!-- BATON:GO -->
 Some content but no todo section
 EOF
-assert_output_contains "$d" "no actionable ## Todo" "GO without Todo → awaiting todolist reminder"
+assert_output_contains "$d" "no actionable ## Todo" "GO without Todo → awaiting Todo list reminder"
 assert_output_not_contains "$d" "IMPLEMENT phase" "GO without Todo → not IMPLEMENT"
-assert_output_contains "$d" "generate todolist" "reminds to generate todolist"
+assert_output_contains "$d" "generate Todo list" "reminds to generate Todo list"
 assert_output_contains "$d" "Mindset" "AWAITING_TODO phase shows Mindset reminder"
 assert_exit_zero "$d" "always exit 0 (awaiting todo)"
 

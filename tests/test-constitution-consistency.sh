@@ -352,9 +352,9 @@ fi
 
 # Todo completion format must exist in baton-plan
 if grep -q '\- \[x\] ✅' "$PLAN_SKILL"; then
-    echo "OK: todo completion format - [x] ✅ in baton-plan"
+    echo "OK: Todo completion format - [x] ✅ in baton-plan"
 else
-    echo "DRIFT: todo completion format - [x] ✅ missing from baton-plan"
+    echo "DRIFT: Todo completion format - [x] ✅ missing from baton-plan"
     FAIL=1
 fi
 
@@ -517,12 +517,12 @@ done
 echo ""
 echo "Checking canonical ownership assumptions..."
 
-# baton-plan defines the todo schema format
-if grep -q 'Todolist Format' "$BATON_SKILLS_DIR/baton-plan/SKILL.md" \
+# baton-plan defines the Todo schema format
+if grep -q 'Todo List Format' "$BATON_SKILLS_DIR/baton-plan/SKILL.md" \
    && grep -q 'Verify:' "$BATON_SKILLS_DIR/baton-plan/SKILL.md"; then
-    echo "OK: baton-plan defines todo schema with Verify field"
+    echo "OK: baton-plan defines Todo schema with Verify field"
 else
-    echo "DRIFT: baton-plan missing todo schema definition"
+    echo "DRIFT: baton-plan missing Todo schema definition"
     FAIL=1
 fi
 

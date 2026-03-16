@@ -271,7 +271,7 @@ Validation passed on stale assumptions is not complete.
 
 This file defines invariants and shared semantics only.
 
-Task documents such as `plan.md`, `research.md`, and todolists may evolve during work,
+Task documents such as `plan.md`, `research.md`, and Todo lists may evolve during work,
 but they must not redefine:
 - state semantics
 - permission semantics

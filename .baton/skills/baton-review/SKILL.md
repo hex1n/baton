@@ -2,7 +2,7 @@
 normative-status: Adversarial first-principles review via subagent. Provides context-isolated review of artifacts before human presentation.
 name: baton-review
 description: >
-  Adversarial review of research, plan, todolist, or post-completion implementation
+  Adversarial review of research, plan, Todo list, or post-completion implementation
   artifacts using first-principles framework. AI-initiated: dispatched via Agent
   tool for context isolation (no generation reasoning). Human-initiated: invoked
   directly via /baton-review.
@@ -21,7 +21,7 @@ You are a reviewer, not the author. You received only the artifact text.
 Your job is to find what the author missed — especially frame-level errors
 that self-review cannot catch due to anchoring bias.
 
-Artifacts include research/plan/todolist texts, and implementation diffs
+Artifacts include research/plan/Todo list texts, and implementation diffs
 when conducting post-completion review.
 
 ## Red Flags
@@ -95,7 +95,7 @@ trace to the stated problem? **Surface Scan depth check**: is the coverage
 evidence-based or memory-based? For each "modify" file, are all references
 covered in the change set, or only the obvious ones?
 
-**Todolist**: Does each item trace to the plan? Missing steps? Vague
+**Todo list**: Does each item trace to the plan? Missing steps? Vague
 verification? Wrong dependency order?
 
 **Implementation** (post-completion code review):
@@ -159,7 +159,7 @@ Frame-level findings must be reported first. Do not output only detail-level fix
 ## Review Outcome
 
 Review findings determine whether the artifact may proceed:
-- **Any frame-level high severity finding**: artifact must not enter the next phase. For research/plan/todolist: author must revise the artifact and re-review. For implementation: if the defect is spec-compliance, fix the implementation; if the defect exposes an upstream plan flaw, return to plan phase rather than patching code. **Circuit breaker**: if the same high severity finding persists after 3 revision-and-re-review cycles, escalate to the approving human rather than continuing the loop.
+- **Any frame-level high severity finding**: artifact must not enter the next phase. For research/plan/Todo list: author must revise the artifact and re-review. For implementation: if the defect is spec-compliance, fix the implementation; if the defect exposes an upstream plan flaw, return to plan phase rather than patching code. **Circuit breaker**: if the same high severity finding persists after 3 revision-and-re-review cycles, escalate to the approving human rather than continuing the loop.
 - **Any spec-compliance failure** (implementation review): review fails. Author must fix before proceeding.
 - **Only low/medium findings**: author may proceed after addressing findings, with explicit acknowledgment of remaining risk by the approving human. However, if multiple medium findings touch the same core assumption, surface, or verification gap, reviewer must flag whether they collectively imply a frame-level concern.
 

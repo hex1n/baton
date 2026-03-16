@@ -5,7 +5,7 @@
 # Hook: PostToolUse (Edit|Write|MultiEdit|CreateFile)
 # Always exit 0 — PostToolUse cannot block, this is advisory only
 #
-# Checks if the modified file appears in plan.md's ## Todo section.
+# Checks if the modified file appears in plan.md's ## Todo section write set.
 # If not, outputs a warning to stderr.
 
 # --- Fail-open on unexpected errors ---
@@ -76,7 +76,7 @@ parser_has_go || exit 0
 # --- Check if file is in the plan's write set ---
 _writeset="$(parser_writeset_extract)"
 if [ -n "$_writeset" ]; then
-    # Exact path matching against Files: fields in ## Todo
+    # Exact path matching against Files: fields in ## Todo section
     _normalized="$(parser_writeset_normalize "$TARGET")"
     if ! printf '%s\n' "$_writeset" | grep -qxF "$_normalized"; then
         echo "⚠️ Modified $_normalized — not in $PLAN_NAME write set." >&2

@@ -49,8 +49,8 @@ if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
         cat >&2 << 'EOF'
 ⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain
 📍 BATON:GO is set but no actionable ## Todo items found.
-Ask the human to say "generate todolist" before starting implementation.
-Implementation begins only after todolist is generated.
+Ask the human to say "generate Todo list" before starting implementation.
+Implementation begins only after Todo list is generated.
 EOF
         exit 0
     fi
@@ -65,7 +65,7 @@ if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
         echo "📍 IMPLEMENT phase — <!-- BATON:GO --> is set" >&2
         echo "" >&2
         cat >&2 <<'EOF'
-For each todo item: re-read plan intent → implement → self-check → verify → mark [x].
+For each Todo item: re-read plan intent → implement → self-check → verify → mark [x].
 Only modify files listed in the plan. Discover omission → STOP, update plan.
 Same approach fails 3x → STOP and report.
 EOF
@@ -98,7 +98,7 @@ EOF
     if [ "$_anno_content" -gt 0 ] 2>/dev/null; then
         echo "📝 Unprocessed content detected in ## 批注区 — review and respond before proceeding." >&2
     fi
-    # Complexity upgrade hint: count unique file references from todo `Files:`
+    # Complexity upgrade hint: count unique file references from Todo `Files:`
     # lines and plan-spec `**File**:` / `**Files**:` lines.
     _file_count="$(
         {
@@ -145,7 +145,7 @@ if [ -n "$RESEARCH" ]; then
         cat >&2 <<EOF
 Derive approaches from research findings. Don't jump to solutions.
 Extract constraints → derive 2-3 approaches → recommend with reasoning.
-Plan must end with ## 批注区. todolist generated only after human says so.
+Plan must end with ## 批注区. Todo list generated only after human says so.
 EOF
     fi
     # Final Conclusions gate
