@@ -5,48 +5,35 @@
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35"
   },
   "hooks": {
-    "SessionStart": [
+    "PreToolUse": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/phase-guide.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .baton/hooks/bash-guard.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .baton/hooks/write-lock.sh"
+            "command": "bash .baton/hooks/dispatch.sh PreToolUse"
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/post-write-tracker.sh"
-          },
+            "command": "bash .baton/hooks/dispatch.sh PostToolUse"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/quality-gate.sh"
+            "command": "bash .baton/hooks/dispatch.sh SessionStart"
           }
         ]
       }
@@ -57,29 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/stop-guard.sh"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .baton/hooks/subagent-context.sh"
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .baton/hooks/completion-check.sh"
+            "command": "bash .baton/hooks/dispatch.sh Stop"
           }
         ]
       }
@@ -90,7 +55,29 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/pre-compact.sh"
+            "command": "bash .baton/hooks/dispatch.sh PreCompact"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/dispatch.sh SubagentStart"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/dispatch.sh TaskCompleted"
           }
         ]
       }
@@ -101,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/failure-tracker.sh"
+            "command": "bash .baton/hooks/dispatch.sh PostToolUseFailure"
           }
         ]
       }
