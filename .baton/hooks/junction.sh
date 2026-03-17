@@ -18,6 +18,10 @@ atomic_junction() {
         local _win_dst _win_src
         _win_dst="$(cygpath -w "$_dst")"
         _win_src="$(cygpath -w "$_src")"
+        # Quote paths for cmd.exe to handle spaces and special chars
+        cmd //c "mklink /J \"$_win_dst\" \"$_win_src\"" \
+            >/dev/null 2>&1 && return 0 || \
+        # Retry without inner quotes (some Git Bash versions need this)
         cmd //c "mklink /J $_win_dst $_win_src" \
             >/dev/null 2>&1 && return 0
     fi

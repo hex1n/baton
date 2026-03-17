@@ -27,7 +27,8 @@ if [ -d "$SCRIPT_DIR/../skills" ]; then
         for _skill_dir in "$_skill_src"/baton-*; do
             [ ! -d "$_skill_dir" ] && continue
             _name="$(basename "$_skill_dir")"
-            for _ide_skills in .claude/skills .cursor/skills .agents/skills; do
+            _proj="${BATON_PROJECT_DIR:-$(pwd)}"
+            for _ide_skills in "$_proj/.claude/skills" "$_proj/.cursor/skills" "$_proj/.agents/skills"; do
                 [ -d "$_ide_skills" ] || continue
                 _target="$_ide_skills/$_name"
                 [ -d "$_target" ] && continue

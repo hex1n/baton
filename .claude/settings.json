@@ -7,7 +7,16 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "",
+        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/dispatch.sh PreToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
@@ -18,7 +27,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "",
+        "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [
           {
             "type": "command",

@@ -28,7 +28,7 @@ elif [ -d "$BATON_HOME" ]; then
     exit 1
 else
     echo "  Cloning baton to $BATON_HOME..."
-    git clone "$BATON_REPO" "$BATON_HOME"
+    git clone --depth 1 "$BATON_REPO" "$BATON_HOME"
     echo "  ✓ Cloned baton"
 fi
 

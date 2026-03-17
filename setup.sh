@@ -172,60 +172,88 @@ generate_claude_settings() {
     # All 8 event types with dispatch.sh
     _events="PreToolUse PostToolUse SessionStart Stop PreCompact SubagentStart TaskCompleted PostToolUseFailure"
 
+    # Define baton hook entries with IDE-level matchers to avoid unnecessary dispatch.
+    # PreToolUse/PostToolUse use specific matchers so dispatch.sh only fires for relevant tools.
+    _baton_hooks='[
+        {"event":"PreToolUse","matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","cmd":"PreToolUse"},
+        {"event":"PreToolUse","matcher":"Bash","cmd":"PreToolUse"},
+        {"event":"PostToolUse","matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","cmd":"PostToolUse"},
+        {"event":"SessionStart","matcher":"","cmd":"SessionStart"},
+        {"event":"Stop","matcher":"","cmd":"Stop"},
+        {"event":"PreCompact","matcher":"","cmd":"PreCompact"},
+        {"event":"SubagentStart","matcher":"","cmd":"SubagentStart"},
+        {"event":"TaskCompleted","matcher":"","cmd":"TaskCompleted"},
+        {"event":"PostToolUseFailure","matcher":"","cmd":"PostToolUseFailure"}
+    ]'
+
     if [ ! -f "$_settings" ]; then
-        # Fresh install: generate complete file
+        # Fresh install: generate via jq if available, otherwise hardcode
         mkdir -p "$(dirname "$_settings")"
-        cat > "$_settings" << 'SETTINGS_EOF'
+        if command -v jq >/dev/null 2>&1; then
+            echo '{}' | jq --arg prefix "$_dispatch_cmd_prefix" --argjson entries "$_baton_hooks" '
+                .hooks = (reduce $entries[] as $e ({};
+                    .[$e.event] = (.[$e.event] // []) + [{
+                        "matcher": $e.matcher,
+                        "hooks": [{"type":"command","command":($prefix + " " + $e.cmd)}]
+                    }]
+                ))
+            ' > "$_settings"
+        else
+            # Hardcoded fallback without jq
+            cat > "$_settings" << SETTINGS_EOF
 {
   "hooks": {
-SETTINGS_EOF
-        _first=1
-        for _event in $_events; do
-            [ "$_first" = "0" ] && printf ',\n' >> "$_settings"
-            _first=0
-            cat >> "$_settings" << EOF
-    "$_event": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$_dispatch_cmd_prefix $_event"
-          }
-        ]
-      }
+    "PreToolUse": [
+      {"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PreToolUse"}]},
+      {"matcher":"Bash","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PreToolUse"}]}
+    ],
+    "PostToolUse": [
+      {"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PostToolUse"}]}
+    ],
+    "SessionStart": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix SessionStart"}]}
+    ],
+    "Stop": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix Stop"}]}
+    ],
+    "PreCompact": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PreCompact"}]}
+    ],
+    "SubagentStart": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix SubagentStart"}]}
+    ],
+    "TaskCompleted": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix TaskCompleted"}]}
+    ],
+    "PostToolUseFailure": [
+      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PostToolUseFailure"}]}
     ]
-EOF
-        done
-        printf '\n  }\n}\n' >> "$_settings"
-        echo "  ✓ Created $_settings (8 event types)"
+  }
+}
+SETTINGS_EOF
+        fi
+        echo "  ✓ Created $_settings"
         return
     fi
 
-    # Existing file: merge baton entries, preserve everything else
+    # Existing file: remove only baton entries, preserve user hooks, then add baton entries
     if command -v jq >/dev/null 2>&1 && jq empty "$_settings" >/dev/null 2>&1; then
         _tmp="$_settings.baton.tmp"
-        # Remove old baton entries (identified by .baton/hooks/ in command)
-        # Then add new dispatch entries
-        jq --arg prefix "$_dispatch_cmd_prefix" '
-            # Remove old baton hook entries
+        jq --arg prefix "$_dispatch_cmd_prefix" --argjson entries "$_baton_hooks" '
+            # Step 1: Remove only baton-related entries (matching .baton/hooks/ or dispatch.sh)
             .hooks = ((.hooks // {}) | to_entries | map(
                 .value = ([.value[] | select(
                     ([(.hooks // [])[] | .command // ""] | any(test("\\.baton/hooks/"))) | not
-                )]
-                | if length == 0 then null else . end)
-            ) | map(select(.value != null)) | from_entries) |
+                )])
+            ) | from_entries) |
 
-            # Add dispatch entries for all events
-            .hooks = (.hooks // {}) |
-            .hooks.PreToolUse = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " PreToolUse")}]}] |
-            .hooks.PostToolUse = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " PostToolUse")}]}] |
-            .hooks.SessionStart = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " SessionStart")}]}] |
-            .hooks.Stop = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " Stop")}]}] |
-            .hooks.PreCompact = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " PreCompact")}]}] |
-            .hooks.SubagentStart = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " SubagentStart")}]}] |
-            .hooks.TaskCompleted = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " TaskCompleted")}]}] |
-            .hooks.PostToolUseFailure = [{"matcher":"","hooks":[{"type":"command","command":($prefix + " PostToolUseFailure")}]}]
+            # Step 2: Append baton dispatch entries to each event
+            reduce $entries[] as $e (.;
+                .hooks[$e.event] = ((.hooks[$e.event] // []) + [{
+                    "matcher": $e.matcher,
+                    "hooks": [{"type":"command","command":($prefix + " " + $e.cmd)}]
+                }])
+            )
         ' "$_settings" > "$_tmp" && mv "$_tmp" "$_settings"
         echo "  ✓ Merged baton hooks into $_settings (preserved existing config)"
     else
@@ -251,6 +279,12 @@ generate_cursor_hooks() {
     "preToolUse": [
       { "command": "$_dispatch_cmd preToolUse", "timeout": 10 }
     ],
+    "postToolUse": [
+      { "command": "$_dispatch_cmd postToolUse", "timeout": 10 }
+    ],
+    "stop": [
+      { "command": "$_dispatch_cmd stop", "timeout": 10 }
+    ],
     "subagentStart": [
       { "command": "$_dispatch_cmd subagentStart", "timeout": 10 }
     ],
@@ -264,12 +298,17 @@ EOF
     else
         if command -v jq >/dev/null 2>&1 && jq empty "$_hooks" >/dev/null 2>&1; then
             _tmp="$_hooks.baton.tmp"
+            # Remove old baton entries, then add new ones (preserves user hooks)
             jq --arg cmd "$_dispatch_cmd" '
-                .hooks = (.hooks // {}) |
-                .hooks.sessionStart = [{"command":($cmd + " sessionStart"),"timeout":10}] |
-                .hooks.preToolUse = [{"command":($cmd + " preToolUse"),"timeout":10}] |
-                .hooks.subagentStart = [{"command":($cmd + " subagentStart"),"timeout":10}] |
-                .hooks.preCompact = [{"command":($cmd + " preCompact"),"timeout":10}]
+                .hooks = ((.hooks // {}) | to_entries | map(
+                    .value = ([.value[] | select(.command | test("dispatch|baton") | not)])
+                ) | from_entries) |
+                .hooks.sessionStart = ((.hooks.sessionStart // []) + [{"command":($cmd + " sessionStart"),"timeout":10}]) |
+                .hooks.preToolUse = ((.hooks.preToolUse // []) + [{"command":($cmd + " preToolUse"),"timeout":10}]) |
+                .hooks.postToolUse = ((.hooks.postToolUse // []) + [{"command":($cmd + " postToolUse"),"timeout":10}]) |
+                .hooks.stop = ((.hooks.stop // []) + [{"command":($cmd + " stop"),"timeout":10}]) |
+                .hooks.subagentStart = ((.hooks.subagentStart // []) + [{"command":($cmd + " subagentStart"),"timeout":10}]) |
+                .hooks.preCompact = ((.hooks.preCompact // []) + [{"command":($cmd + " preCompact"),"timeout":10}])
             ' "$_hooks" > "$_tmp" && mv "$_tmp" "$_hooks"
             echo "  ✓ Merged baton hooks into .cursor/hooks.json"
         else
