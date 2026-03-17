@@ -69,6 +69,7 @@ These thoughts mean STOP — you're bypassing governance:
 | "This external skill already reviewed the output" | Does it check constitution.md compliance? If not, insufficient. |
 | "Simple doc, governance is overhead" | Simple docs get simple compliance. Still must comply. |
 | "The external skill is more capable here" | Capability ≠ authority. Phase skill defines procedure. |
+| "I'll use superpowers:code-reviewer for review" | **NO.** All review goes through baton-review dispatch. See Review Dispatch section. |
 
 ## Artifact Governance
 
@@ -101,6 +102,28 @@ Rules:
 - If rejected, explain why with evidence
 - If unresolved, keep visible as ❓
 - If repeated annotations expose the same depth problem, suggest upgrading complexity
+
+## Review Dispatch
+
+**Never use `superpowers:code-reviewer` or any non-baton review skill.** All review
+in a baton project goes through baton-review. Copy-paste the matching template:
+
+**Plan review:**
+```
+Agent(prompt="<review-criteria>\n[paste content of .baton/skills/baton-plan/review-prompt.md]\n</review-criteria>\n\n<artifact>\n[paste plan text]\n</artifact>")
+```
+
+**Implementation review:**
+```
+Agent(prompt="<review-criteria>\n[paste content of .baton/skills/baton-implement/review-prompt.md]\n</review-criteria>\n\n<artifact>\n[paste git diff output]\n</artifact>\n\n<plan>\n[paste plan text]\n</plan>")
+```
+
+**Research review:**
+```
+Agent(prompt="<review-criteria>\n[paste content of .baton/skills/baton-research/review-prompt-codebase.md]\n</review-criteria>\n\n<artifact>\n[paste research text]\n</artifact>")
+```
+
+Steps: (1) Read the matching review-prompt.md → (2) Read the artifact → (3) Dispatch via Agent with template above.
 
 ## After Review
 
