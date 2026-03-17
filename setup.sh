@@ -52,7 +52,7 @@ ensure_baton_home() {
         fi
     elif [ ! -d "$BATON_HOME" ]; then
         echo "  Cloning baton to $BATON_HOME..."
-        git clone "$BATON_REPO" "$BATON_HOME"
+        git clone --depth 1 "$BATON_REPO" "$BATON_HOME"
         echo "  ✓ Cloned baton"
     fi
 }
@@ -277,10 +277,13 @@ generate_cursor_hooks() {
       { "command": "$_dispatch_cmd sessionStart", "timeout": 10 }
     ],
     "preToolUse": [
-      { "command": "$_dispatch_cmd preToolUse", "timeout": 10 }
+      { "command": "$_dispatch_cmd preToolUse", "matcher": "Write", "timeout": 10 },
+      { "command": "$_dispatch_cmd preToolUse", "matcher": "Edit", "timeout": 10 },
+      { "command": "$_dispatch_cmd preToolUse", "matcher": "Bash", "timeout": 10 }
     ],
     "postToolUse": [
-      { "command": "$_dispatch_cmd postToolUse", "timeout": 10 }
+      { "command": "$_dispatch_cmd postToolUse", "matcher": "Write", "timeout": 10 },
+      { "command": "$_dispatch_cmd postToolUse", "matcher": "Edit", "timeout": 10 }
     ],
     "stop": [
       { "command": "$_dispatch_cmd stop", "timeout": 10 }
@@ -298,14 +301,21 @@ EOF
     else
         if command -v jq >/dev/null 2>&1 && jq empty "$_hooks" >/dev/null 2>&1; then
             _tmp="$_hooks.baton.tmp"
-            # Remove old baton entries, then add new ones (preserves user hooks)
+            # Remove only baton entries (match dispatch-cursor.sh or .baton/ paths)
             jq --arg cmd "$_dispatch_cmd" '
                 .hooks = ((.hooks // {}) | to_entries | map(
-                    .value = ([.value[] | select(.command | test("dispatch|baton") | not)])
+                    .value = ([.value[] | select(.command | test("dispatch-cursor\\.sh|\\.baton/hooks/|\\.baton/adapters/") | not)])
                 ) | from_entries) |
                 .hooks.sessionStart = ((.hooks.sessionStart // []) + [{"command":($cmd + " sessionStart"),"timeout":10}]) |
-                .hooks.preToolUse = ((.hooks.preToolUse // []) + [{"command":($cmd + " preToolUse"),"timeout":10}]) |
-                .hooks.postToolUse = ((.hooks.postToolUse // []) + [{"command":($cmd + " postToolUse"),"timeout":10}]) |
+                .hooks.preToolUse = ((.hooks.preToolUse // []) + [
+                    {"command":($cmd + " preToolUse"),"matcher":"Write","timeout":10},
+                    {"command":($cmd + " preToolUse"),"matcher":"Edit","timeout":10},
+                    {"command":($cmd + " preToolUse"),"matcher":"Bash","timeout":10}
+                ]) |
+                .hooks.postToolUse = ((.hooks.postToolUse // []) + [
+                    {"command":($cmd + " postToolUse"),"matcher":"Write","timeout":10},
+                    {"command":($cmd + " postToolUse"),"matcher":"Edit","timeout":10}
+                ]) |
                 .hooks.stop = ((.hooks.stop // []) + [{"command":($cmd + " stop"),"timeout":10}]) |
                 .hooks.subagentStart = ((.hooks.subagentStart // []) + [{"command":($cmd + " subagentStart"),"timeout":10}]) |
                 .hooks.preCompact = ((.hooks.preCompact // []) + [{"command":($cmd + " preCompact"),"timeout":10}])

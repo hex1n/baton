@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/dispatch-codex.sh SessionStart",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .baton/hooks/dispatch-codex.sh Stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
