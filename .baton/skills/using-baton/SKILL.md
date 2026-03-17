@@ -118,13 +118,18 @@ Agent(prompt="<review-criteria>\n[paste .baton/skills/baton-research/review-prom
 
 ## Annotation Protocol
 
-When annotations, challenges, or objections arise, record in `## 批注区`:
+When annotations, challenges, or objections arise, record in `## 批注区`.
 
-- **Trigger / 触发点**: the original annotation or objection
-- **Intent as understood / 理解后的意图**: what concern is being raised
-- **Response / 回应**: evidence-backed response
-- **Status**: ✅ accepted / ❌ rejected / ❓ unresolved
+Template — copy per annotation:
+
+```md
+### [Annotation N]
+- **Trigger / 触发点**:
+- **Intent as understood / 理解后的意图**:
+- **Response / 回应**:
+- **Status**: ✅ / ❌ / ❓
 - **Impact**: none / clarification only / affects conclusions / blocks next phase
+```
 
 Rules:
 - Read underlying evidence before responding
@@ -132,6 +137,7 @@ Rules:
 - If accepted, update the relevant section
 - If rejected, explain why with evidence
 - If unresolved, keep visible as ❓
+- If repeated annotations expose the same depth problem, suggest upgrading complexity
 
 ## After Review
 
