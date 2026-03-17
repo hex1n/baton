@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # baton — CLI entry point for baton plan-first workflow
-# Version: 1.1
+# Version: 2.0
 set -eu
 
 BATON_HOME="${BATON_HOME:-$HOME/.baton}"
@@ -62,56 +62,44 @@ doctor() {
     echo "Checking baton installation in $_dir..."
     echo ""
 
-    # Scripts
-    echo "  Scripts:"
-    for _script in plan-parser.sh write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
-                   post-write-tracker.sh subagent-context.sh completion-check.sh pre-compact.sh \
-                   failure-tracker.sh; do
-        if [ -f "$_dir/.baton/hooks/$_script" ]; then
-            _pv="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/$_script" 2>/dev/null)"
-            _sv=""
-            if [ -f "$BATON_HOME/.baton/hooks/$_script" ]; then
-                _sv="$(sed -n 's/^# Version: *//p' "$BATON_HOME/.baton/hooks/$_script" 2>/dev/null)"
-            fi
-            if [ -n "$_pv" ] && [ -n "$_sv" ] && [ "$_pv" != "$_sv" ]; then
-                printf "  ⚠ %-20s v%s (latest: v%s)\n" "$_script" "$_pv" "$_sv"
-                _issues=$((_issues + 1))
-            else
-                printf "  ✓ %-20s v%s\n" "$_script" "${_pv:-?}"
-            fi
+    # .baton directory
+    echo "  Installation:"
+    if [ -L "$_dir/.baton" ]; then
+        printf "  ✓ .baton/ is junction/symlink (v4 architecture)\n"
+    elif [ -f "$_dir/.baton/.copy-mode" ]; then
+        printf "  ⚠ .baton/ is copy-mode (updates need 'baton update')\n"
+    elif [ -d "$_dir/.baton" ]; then
+        if [ -d "$_dir/.baton/skills" ] && [ -f "$_dir/.baton/hooks/dispatch.sh" ]; then
+            printf "  ✓ .baton/ is source directory (self-install)\n"
         else
-            printf "  ✗ %-20s missing\n" "$_script"
+            printf "  ⚠ .baton/ is old-style copy (run 'baton init' to upgrade)\n"
             _issues=$((_issues + 1))
         fi
-    done
+    else
+        printf "  ✗ .baton/ not found\n"
+        _issues=$((_issues + 1))
+    fi
+
+    # Dispatch system
+    if [ -f "$_dir/.baton/hooks/dispatch.sh" ]; then
+        printf "  ✓ dispatch.sh present\n"
+    else
+        printf "  ✗ dispatch.sh missing\n"
+        _issues=$((_issues + 1))
+    fi
+    if [ -f "$_dir/.baton/hooks/manifest.conf" ]; then
+        printf "  ✓ manifest.conf present\n"
+    else
+        printf "  ✗ manifest.conf missing\n"
+        _issues=$((_issues + 1))
+    fi
     echo ""
 
     # IDE configs
     echo "  IDE configuration:"
-    [ -d "$_dir/.claude" ]     && { _check_ide_config "$_dir" "claude" ".claude/settings.json" "baton"; }
-    [ -d "$_dir/.factory" ]    && { _check_ide_config "$_dir" "factory" ".claude/settings.json" "baton"; }
-    [ -d "$_dir/.cursor" ]     && { _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "baton"; }
-    [ -f "$_dir/AGENTS.md" ]   && { _check_ide_config "$_dir" "codex" "AGENTS.md" "baton"; }
-    echo ""
-
-    # Adapters
-    echo "  Adapters:"
-    if [ -d "$_dir/.cursor" ]; then
-        if [ -f "$_dir/.baton/adapters/adapter-cursor.sh" ] && [ -x "$_dir/.baton/adapters/adapter-cursor.sh" ] 2>/dev/null || [ -f "$_dir/.baton/adapters/adapter-cursor.sh" ]; then
-            printf "  ✓ %-12s adapter-cursor.sh present\n" "cursor"
-        else
-            printf "  ✗ %-12s adapter-cursor.sh missing\n" "cursor"
-            _issues=$((_issues + 1))
-        fi
-    fi
-    if [ -f "$_dir/AGENTS.md" ]; then
-        if [ -f "$_dir/.baton/adapters/adapter-codex.sh" ]; then
-            printf "  ✓ %-12s adapter-codex.sh present\n" "codex"
-        else
-            printf "  ✗ %-12s adapter-codex.sh missing\n" "codex"
-            _issues=$((_issues + 1))
-        fi
-    fi
+    _check_ide_config "$_dir" "claude" ".claude/settings.json" "dispatch.sh"
+    [ -d "$_dir/.cursor" ]   && _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "dispatch"
+    [ -f "$_dir/AGENTS.md" ] && _check_ide_config "$_dir" "codex" "AGENTS.md" "constitution"
     echo ""
 
     # Skills
@@ -128,56 +116,31 @@ doctor() {
             fi
         done
         if [ "$_smissing" -eq 0 ]; then
-            printf "  ✓ %-20s 6/6 skills present\n" "$_sdir"
+            printf "  ✓ %-20s 6/6 skills\n" "$_sdir"
         else
-            printf "  ⚠ %-20s %s/6 skills missing\n" "$_sdir" "$_smissing"
+            printf "  ⚠ %-20s %s/6 missing\n" "$_sdir" "$_smissing"
             _issues=$((_issues + 1))
         fi
     done
-    if [ -z "$_skill_dirs" ]; then
-        echo "  ⚠ No skill directories found"
-        _issues=$((_issues + 1))
-    fi
+    [ -z "$_skill_dirs" ] && { echo "  ⚠ No skill directories found"; _issues=$((_issues + 1)); }
     echo ""
 
-    # Rules injection
+    # Rules
     echo "  Rules injection:"
-    if [ -f "$_dir/CLAUDE.md" ]; then
-        if grep -q '@\.baton/constitution\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-            if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-                echo "  ⚠ CLAUDE.md contains residual workflow import (run baton init to migrate)"
-                _issues=$((_issues + 1))
+    for _md in CLAUDE.md AGENTS.md; do
+        if [ -f "$_dir/$_md" ]; then
+            if grep -q '@\.baton/constitution\.md' "$_dir/$_md" 2>/dev/null; then
+                printf "  ✓ %s has constitution\n" "$_md"
             else
-                echo "  ✓ CLAUDE.md contains @.baton/constitution.md"
-            fi
-        elif grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/CLAUDE.md" 2>/dev/null; then
-            echo "  ⚠ CLAUDE.md uses old @.baton/workflow.md import (run baton init to migrate)"
-            _issues=$((_issues + 1))
-        else
-            echo "  ⚠ CLAUDE.md exists but no @.baton/constitution.md"
-            _issues=$((_issues + 1))
-        fi
-    fi
-    if [ -f "$_dir/AGENTS.md" ]; then
-        if grep -q '@\.baton/constitution\.md' "$_dir/AGENTS.md"; then
-            if grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/AGENTS.md" 2>/dev/null; then
-                echo "  ⚠ AGENTS.md contains residual workflow import (run baton init to migrate)"
+                printf "  ⚠ %s missing constitution import\n" "$_md"
                 _issues=$((_issues + 1))
-            else
-                echo "  ✓ Rules injection (AGENTS.md)"
             fi
-        elif grep -qE '@\.baton/workflow(-full)?\.md' "$_dir/AGENTS.md" 2>/dev/null; then
-            echo "  ⚠ AGENTS.md uses old @.baton/workflow.md import (run baton init to migrate)"
-            _issues=$((_issues + 1))
-        else
-            echo "  ⚠ AGENTS.md exists but does not import @.baton/constitution.md"
-            _issues=$((_issues + 1))
         fi
-    fi
+    done
     echo ""
 
     if [ "$_issues" -gt 0 ]; then
-        echo "  Result: $_issues issue(s) found. Run 'baton init' to auto-fix."
+        echo "  Result: $_issues issue(s) found. Run 'baton init' to fix."
     else
         echo "  Result: all checks passed."
     fi
@@ -190,7 +153,7 @@ _check_ide_config() {
     elif [ -f "$_cdir/$_cfile" ]; then
         printf "  ⚠ %-12s config exists but no baton hooks\n" "$_cide"
     else
-        printf "  ⚠ %-12s directory exists but no hook config\n" "$_cide"
+        printf "  ⚠ %-12s no hook config\n" "$_cide"
     fi
 }
 
@@ -281,11 +244,10 @@ usage() {
 baton — plan-first workflow for AI coding assistants
 
 Usage:
-  baton init [dir]         Install baton into a project
-  baton update [dir]       Update baton in a project
-  baton update --all       Update all registered projects
+  baton init [dir]         Install baton into a project (junction-based)
+  baton update             Update baton source (git pull, all projects see changes)
+  baton update --check     Verify junction health across projects
   baton uninstall [dir]    Remove baton from a project
-  baton self-update        Update baton itself
   baton list               List registered projects
   baton doctor [dir]       Check installation health
   baton status [dir]       Show workflow phase and progress
@@ -295,7 +257,6 @@ Environment:
   BATON_HOME               Override baton home directory (~/.baton)
   BATON_PLAN               Override plan filename
   BATON_BYPASS=1           Skip write-lock check
-  BATON_SKIP=hook1,hook2   Skip specific hooks during install
 EOF
 }
 
@@ -311,31 +272,28 @@ case "${1:-help}" in
         bash "$SETUP" "$_target" && registry_add "$_target"
         ;;
     update)
-        if [ "${2:-}" = "--all" ]; then
+        if [ "${2:-}" = "--check" ]; then
+            # Verify junction health across registered projects
             if [ ! -f "$REGISTRY" ] || [ ! -s "$REGISTRY" ]; then
-                echo "No projects registered. Run 'baton init' first."
+                echo "No projects registered."
                 exit 0
             fi
+            echo "Junction health check:"
             while IFS= read -r _dir; do
                 [ -z "$_dir" ] && continue
-                if [ -d "$_dir" ]; then
-                    echo "=== Updating: $_dir ==="
-                    bash "$SETUP" "$_dir"
-                    echo ""
-                else
-                    echo "=== Skipping: $_dir (not found) ==="
+                if [ ! -d "$_dir" ]; then
+                    printf "  ✗ %-50s (not found)\n" "$_dir"
+                elif [ -L "$_dir/.baton" ]; then
+                    printf "  ✓ %-50s (junction)\n" "$_dir"
+                elif [ -f "$_dir/.baton/.copy-mode" ]; then
+                    printf "  ⚠ %-50s (copy-mode)\n" "$_dir"
+                elif [ -d "$_dir/.baton" ]; then
+                    printf "  ⚠ %-50s (old-style, run baton init)\n" "$_dir"
                 fi
             done < "$REGISTRY"
-        else
-            _target="${2:-.}"
-            bash "$SETUP" "$_target"
+            exit 0
         fi
-        ;;
-    uninstall)
-        _target="${2:-.}"
-        bash "$SETUP" --uninstall "$_target" && registry_remove "$_target"
-        ;;
-    self-update)
+        # Default: git pull + copy-mode recovery
         echo "Updating baton..."
         if git -C "$BATON_HOME" pull --ff-only; then
             echo "✓ Updated to latest"
@@ -343,6 +301,37 @@ case "${1:-help}" in
             echo "⚠ Update failed. Check for local changes in $BATON_HOME"
             exit 1
         fi
+        # Copy-mode recovery
+        if [ -f "$REGISTRY" ]; then
+            while IFS= read -r _dir; do
+                [ -z "$_dir" ] && continue
+                [ ! -d "$_dir" ] && continue
+                if [ -f "$_dir/.baton/.copy-mode" ]; then
+                    echo "  Refreshing copy-mode project: $_dir"
+                    rm -rf "$_dir/.baton"
+                    cp -r "$BATON_HOME/.baton" "$_dir/.baton"
+                    touch "$_dir/.baton/.copy-mode"
+                    for _skill_dir in "$BATON_HOME/.baton/skills"/baton-*; do
+                        [ ! -d "$_skill_dir" ] && continue
+                        _name="$(basename "$_skill_dir")"
+                        for _ide_skills in "$_dir/.claude/skills" "$_dir/.cursor/skills" "$_dir/.agents/skills"; do
+                            [ -d "$_ide_skills" ] || continue
+                            rm -rf "$_ide_skills/$_name"
+                            cp -r "$_skill_dir" "$_ide_skills/$_name"
+                        done
+                    done
+                fi
+            done < "$REGISTRY"
+        fi
+        ;;
+    uninstall)
+        _target="${2:-.}"
+        bash "$SETUP" --uninstall "$_target" && registry_remove "$_target"
+        ;;
+    self-update)
+        # Backward compat alias
+        echo "Note: 'baton self-update' is now just 'baton update'"
+        exec "$0" update
         ;;
     list)
         registry_list
