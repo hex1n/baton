@@ -48,6 +48,8 @@ Review is mandatory unless all skip conditions are met.
 
 **May skip only when all of the following are true:** single-surface, no control flow / contract / validation change, no alternative trade-offs, and no semantic behavior change (e.g., defaults, error handling, boundary conditions). When skipping, state explicitly that review was skipped and why.
 
+**Note:** These skip conditions apply to human-initiated standalone reviews. When dispatched by a phase skill's mandatory review step (e.g., baton-implement Step 5), the phase skill's requirement takes precedence — do not use these skip conditions to bypass a mandatory dispatch.
+
 ## First-Principles Review Framework
 
 Apply these questions to every artifact type covered by this skill.
@@ -85,13 +87,33 @@ These make first-principles compliance verifiable:
   unconscious default?
 - Are omitted surfaces truly unaffected, or merely unexamined?
 
-## Shared Protocol Compliance
+## Cross-Phase Compliance Checks
 
-All artifacts must comply with `.baton/shared-protocols.md`. Check:
-- Section 1: Evidence labels and conflict resolution applied correctly?
-- Section 2: Self-Challenge present and genuinely deep?
-- Section 3: Review protocol followed?
-- Section 4: `## 批注区` present with correct annotation template?
+All artifacts must comply with these standards:
+
+### Evidence
+- Claims labeled with `[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]` + status `✅`/`❌`/`❓`?
+- When evidence types disagree, is the stronger source preferred? (Runtime > stale docs; code > comments; human intent ≠ current behavior → mark mismatch)
+- "Should be fine" or similar unsupported confidence language present? → finding.
+
+### Self-Challenge
+- `## Self-Challenge` section present?
+- ≥3 substantive answers? ("No alternatives" / "all verified" = not genuine)
+- Weakest conclusion identified with disproving criteria?
+
+### 批注区
+- `## 批注区` present at end of document?
+- Each annotation has: Trigger, Intent, Response, Status, Impact?
+- Strong challenges not dismissed without equal evidence?
+
+### Challenge Strength (for evaluating rebuttals)
+1. **Reproducible runtime evidence** (failing test, error trace) — strongest
+2. **Code evidence** (file:line) — strong
+3. **Human directive** — strong (human factual claims are ❓ until verified)
+4. **Reasoning without direct evidence** — weakest
+
+Rebuttals must provide evidence at equal or higher fidelity than the challenge.
+Rebuttals relying solely on reasoning against evidence-backed challenges are invalid.
 
 ## Domain-Specific Criteria
 

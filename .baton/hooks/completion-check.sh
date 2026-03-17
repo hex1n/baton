@@ -61,4 +61,10 @@ if ! parser_retro_valid; then
     exit 2
 fi
 
+# --- Check for test suite execution (advisory) ---
+_test_cmd="$(baton_resolve_test_cmd)"
+if [ -n "$_test_cmd" ]; then
+    echo "ℹ️ Test suite detected: $_test_cmd — verify it was run before marking BATON:COMPLETE." >&2
+fi
+
 exit 0

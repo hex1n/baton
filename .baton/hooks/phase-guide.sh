@@ -116,13 +116,17 @@ if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     parser_todo_counts
     if [ "$TODO_TOTAL" -gt 0 ] && [ "$TODO_TOTAL" -eq "$TODO_DONE" ]; then
         echo "$MINDSET_LINE" >&2
-        cat >&2 <<EOF
-📍 FINISH phase — all tasks complete. Complete the completion workflow (baton-implement Step 5):
-   1. Append ## Retrospective to $PLAN_NAME (≥3 lines: what went wrong, surprises, research improvements)
-   2. Run the full test suite to verify nothing is broken
-   3. Mark complete: add <!-- BATON:COMPLETE --> on its own line in $PLAN_NAME
-   4. Decide branch disposition (merge, keep, or discard)
+        _finish_skills="$(_skills_matching "implement" "$_ALL_SKILLS")$(_skills_matching "review" "$_ALL_SKILLS")"
+        if [ -n "$_finish_skills" ]; then
+            echo "📍 FINISH phase — all tasks complete. Load /baton-implement for the completion workflow (Step 5)." >&2
+            echo "   Available:$_finish_skills" >&2
+        else
+            cat >&2 <<EOF
+📍 FINISH phase — all tasks complete. Completion workflow:
+   1. Implementation review   2. Full test suite   3. Retrospective
+   4. Mark complete (<!-- BATON:COMPLETE -->)   5. Branch disposition
 EOF
+        fi
         exit 0
     fi
 fi
@@ -149,15 +153,10 @@ if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     _debug_skills="$(_skills_matching "debug" "$_ALL_SKILLS")"
 
     if [ -n "$_impl_skills" ]; then
-        echo "📍 IMPLEMENT phase — available:$_impl_skills" >&2
+        echo "📍 IMPLEMENT phase — load /baton-implement for execution protocol." >&2
+        echo "   Available:$_impl_skills" >&2
     else
-        echo "📍 IMPLEMENT phase — <!-- BATON:GO --> is set" >&2
-        echo "" >&2
-        cat >&2 <<'EOF'
-For each Todo item: re-read plan intent → implement → self-check → verify → mark [x].
-Only modify files listed in the plan. Discover omission → STOP, update plan.
-Same approach fails 3x → STOP and report.
-EOF
+        echo "📍 IMPLEMENT phase — execute Todo items per plan. Discover omission → STOP." >&2
     fi
     echo "" >&2
     echo "🔍 Self-check: (1) re-read modified code, not from memory · (2) run tests before marking done · (3) check consumers of changed files" >&2
@@ -175,12 +174,7 @@ if [ -n "$PLAN" ]; then
     if [ -n "$_plan_skills" ]; then
         echo "   Review annotations. Available:$_plan_skills" >&2
     else
-        echo "" >&2
-        cat >&2 <<EOF
-Read the document for feedback. Free-text is the default; [PAUSE] means stop and investigate first.
-For each piece: infer intent, verify with file:line before responding, then answer with evidence.
-Record in ## Annotation Log. Human adds <!-- BATON:GO --> when satisfied.
-EOF
+        echo "   Review annotations. Human adds <!-- BATON:GO --> when satisfied." >&2
     fi
     # Check for unprocessed annotations in 批注区
     _anno_content="$(awk '/^## 批注区/{f=1; next} f{print}' "$PLAN" \
@@ -228,16 +222,10 @@ if [ -n "$RESEARCH" ]; then
     echo "$MINDSET_LINE" >&2
     _plan_skills="$(_skills_matching "plan" "$_ALL_SKILLS")"
     if [ -n "$_plan_skills" ]; then
-        echo "📍 PLAN phase — available:$_plan_skills" >&2
+        echo "📍 PLAN phase — load /baton-plan. Available:$_plan_skills" >&2
         echo "   Create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
     else
-        echo "📍 PLAN phase — create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
-        echo "" >&2
-        cat >&2 <<EOF
-Derive approaches from research findings. Don't jump to solutions.
-Extract constraints → derive 2-3 approaches → recommend with reasoning.
-Plan must end with ## 批注区. Todo list generated only after human says so.
-EOF
+        echo "📍 PLAN phase — create in baton-tasks/<topic>/plan.md. Derive approaches from research." >&2
     fi
     # Final Conclusions gate
     _fc_count="$(grep -c '^## Final Conclusions' "$RESEARCH" 2>/dev/null)" || _fc_count=0
@@ -245,6 +233,11 @@ EOF
         echo "⚠️ Research file exists but no ## Final Conclusions — research may be incomplete." >&2
     elif [ "$_fc_count" -gt 1 ] 2>/dev/null; then
         echo "⚠️ Research has multiple ## Final Conclusions sections — may not be converged to single source of truth." >&2
+    fi
+    # Early complexity hint: if research has multi-dimension analysis, suggest Medium+
+    _dim_count="$(grep -ciE '## (Move|Dimension|Investigation)' "$RESEARCH" 2>/dev/null)" || _dim_count=0
+    if [ "$_dim_count" -gt 2 ] 2>/dev/null; then
+        echo "📊 Research has ${_dim_count} investigation dimensions — verify complexity classification is Medium+ before planning." >&2
     fi
     exit 0
 fi
@@ -266,17 +259,11 @@ fi
 echo "$MINDSET_LINE" >&2
 _research_skills="$(_skills_matching "research" "$_ALL_SKILLS")$(_skills_matching "brainstorm" "$_ALL_SKILLS")"
 if [ -n "$_research_skills" ]; then
-    echo "📍 RESEARCH phase — available:$_research_skills" >&2
+    echo "📍 RESEARCH phase — load /baton-research. Available:$_research_skills" >&2
     echo "   Create in baton-tasks/<topic>/research.md." >&2
 else
-    echo "📍 RESEARCH phase — create in baton-tasks/<topic>/research.md." >&2
-    echo "" >&2
-    cat >&2 <<EOF
-Investigate code: start from entry points, trace call chains with file:line evidence.
-Read implementations, not just interfaces. Stop at framework internals (annotate why).
-Use subagents for 3+ call paths. Spike with Bash. End with ## 批注区.
-Simple changes may skip research and go straight to $PLAN_NAME.
-EOF
+    echo "📍 RESEARCH phase — create in baton-tasks/<topic>/research.md. Investigate with evidence." >&2
+    echo "   Simple changes may skip research and go straight to $PLAN_NAME." >&2
 fi
 
 exit 0

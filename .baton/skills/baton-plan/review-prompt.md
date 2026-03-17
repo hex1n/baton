@@ -56,3 +56,15 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 ## Plan-Specific Structural Check
 
 - `<!-- BATON:GO -->` placeholder present (not pre-filled by AI)?
+
+## Cross-Phase Compliance Checks
+
+- [ ] Evidence labels (`[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]`) present for material claims?
+- [ ] Evidence status markers (✅/❌/❓) used consistently?
+- [ ] No unsupported confidence language ("should be fine", "probably works")?
+- [ ] If challenges exist, rebuttals match or exceed challenge evidence fidelity?
+- [ ] Unresolved strong challenges not overridden by execution momentum?
+- [ ] Unexpected discoveries evaluated: assumptions valid? plan still applies?
+- [ ] Impact statements present for any discoveries?
+- [ ] Out-of-set file touches recorded and justified?
+- [ ] Document ends with `## 批注区`?

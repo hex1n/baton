@@ -115,7 +115,7 @@ Then state your recommendation with reasoning:
 
 ### Step 5: Self-Challenge (write into artifact, not just think)
 
-Follow `.baton/shared-protocols.md` Section 2. Plan-specific questions:
+Write `## Self-Challenge` into the plan. Plan-specific questions:
 1. Is this the best approach, or the first one I thought of? What alternatives did I not consider?
 2. What assumptions did I make without verifying? Which ones could be wrong?
 3. What would a skeptic challenge first about this plan?
@@ -126,11 +126,11 @@ self-challenge was not genuine. Fix before presenting.
 
 ### Step 6: Review Pass
 
-Follow `.baton/shared-protocols.md` Section 3. For non-trivial plans:
+For non-trivial plans:
 
 1. **Dispatch** baton-review via Agent tool: read `./review-prompt.md` + plan text (context isolation)
    - Fallback: explicit self-review using `./review-prompt.md` checklist if subagent unavailable
-2. **Process findings** per constitution.md Challenge Model
+2. **Process findings**: address accepted items, reject with evidence if disagreeing, keep unresolved as ❓
 3. **Fix** — revise the plan to address accepted findings
 4. **Re-review** — if materially rewritten, dispatch baton-review again
 5. **Repeat** until baton-review passes or circuit breaker (3 cycles → escalate to human)
@@ -171,10 +171,10 @@ Create the plan artifact at the workflow-defined task location (default:
 
 ## Annotation Protocol
 
-Follow `.baton/shared-protocols.md` Section 4 for annotation format, processing rules,
-escalation heuristics, and `## 批注区` structure.
+Every plan document ends with `## 批注区`.
+Follow using-baton Annotation Protocol for format and processing rules.
 
 ## Evidence Standards
 
-Follow `.baton/shared-protocols.md` Section 1 for evidence labels, conflict resolution,
-and evidence provenance requirements.
+Label findings: `[CODE]` (file:line), `[DOC]` (external docs), `[RUNTIME]` (observed output), `[HUMAN]` (user-provided).
+Status: `✅` confirmed / `❌` contradicted / `❓` unverified. "Should be fine" is not evidence.

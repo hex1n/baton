@@ -11,7 +11,7 @@ Step 0 is mandatory first. Step 1 only after Step 0 passes.
 - Would a line-by-line comparison against plan intent show material deviation?
 - Would the plan author recognize this as their design?
 - Are there changes NOT in the plan's write set? If so, do they meet all three
-  implementation-local conditions (constitution.md Scope Boundary)?
+  implementation-local conditions (mechanically required, no new behavior, recorded)?
 
 Implementation review assumes the approved plan is the current spec baseline.
 Challenges to the plan itself belong in prior plan review, not in
@@ -61,3 +61,13 @@ reinterpretation during implementation.
 - Wrong dependency order? Would executing in order fail?
 - Are independent items marked for safe parallelization?
 - Are Files: fields present and accurate?
+
+## Cross-Phase Compliance Checks
+
+- [ ] Changes match approved write set? Out-of-set files mechanically required + no new behavior + recorded?
+- [ ] Unexpected discoveries evaluated: assumptions valid? plan still applies? If no → BLOCKED?
+- [ ] Impact statements present for any discoveries made during implementation?
+- [ ] Evidence contradictions surfaced (not silently resolved)?
+- [ ] Completion conditions: scope finished, validation executed, result matches objective?
+- [ ] BLOCKED state entered when required (unresolved challenge, invalidated assumptions, failure boundary)?
+- [ ] No unsupported confidence claims ("should be fine") in implementation notes?

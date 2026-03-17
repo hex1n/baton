@@ -112,11 +112,11 @@ Findings supported only by secondary sources are marked ❓ with explicit note.
 
 ## Self-Challenge
 
-> Follow .baton/shared-protocols.md Section 2
+> Follow baton-research Step 4: Self-Challenge
 
 ## Review
 
-> Follow .baton/shared-protocols.md Section 3
+> Follow baton-research Step 5: Review
 
 ## One-Sentence Summary
 
@@ -147,7 +147,7 @@ Each conclusion must include:
 
 ## 批注区
 
-> Follow .baton/shared-protocols.md Section 4
+> Follow baton-research Annotation Protocol
 ```
 
 ---

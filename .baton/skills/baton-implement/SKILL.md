@@ -60,6 +60,8 @@ Resolve review findings in the Todo list before presenting it.
 
 ### Step 2: Execute Each Todo Item
 
+**Failure threshold: 3** (overrides default ≥2)
+
 **CONTINUOUS EXECUTION: Once the user says "implement", execute ALL Todo items
 to completion without pausing between items. Only stop for: blocking errors,
 C/D unexpected discoveries, or 3-failure limit (3 failed remediation attempts for the same blocking issue; cosmetic edits or log-print additions do not reset the counter). Do not stop to show progress
@@ -91,6 +93,15 @@ For each item:
 **B. Adjacent integration** — wires up already-approved changes; does not change requirement boundary or introduce new behavior branches → continue only after appending to write set and recording rationale in `## Implementation Notes`.
 **C. Scope extension** — requires new capability, scenario, data flow, or file surface not listed in plan → STOP. Update plan. Wait for human. If scope expansion changes the file surface, data flow, or validation strategy assumed by the original plan, escalate to D-level.
 **D. Design change** — requires changing established design assumptions, interface contracts, data models, or validation strategy → STOP. Record D-level discovery and rationale in `## Implementation Notes`. Human removes BATON:GO. Return to plan phase.
+
+**Constitution Discovery Protocol mapping:**
+
+| Level | Constitution Question | State | BATON:GO |
+|-------|----------------------|-------|----------|
+| A | Q3 (neither applies) | Continue | Valid |
+| B | Q3 + implementation-local touch | Continue | Valid |
+| C | Q2 (execution plan needs change) | BLOCKED | Invalidated |
+| D | Q1 (assumptions invalid) | BLOCKED | Invalidated |
 
 ### Step 5: Completion
 

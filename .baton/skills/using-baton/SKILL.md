@@ -16,15 +16,15 @@ them — must comply with baton governance. This is not optional.
 
 ## Instruction Priority
 
-See constitution.md → Authority Model for the complete hierarchy.
-External skills must comply with constitution.md and shared-protocols.md.
+Human instruction > constitution.md > phase skills > extension skills > external skills.
+External skills must comply with baton governance.
 If an external skill's default conflicts with baton governance, baton governance wins.
 
 ## The Rule
 
 **Use baton phase skills for their respective phases. External skills may supplement
 but not replace the phase skill's authority. Every working document must comply with
-`.baton/shared-protocols.md`.**
+`constitution.md`.**
 
 ## Skill Orchestration
 
@@ -42,7 +42,7 @@ but not replace the phase skill's authority. Every working document must comply 
 External skills (superpowers:brainstorming, superpowers:writing-plans, etc.) may be
 used alongside baton skills. The orchestration rule:
 
-- **External skill produces a document** → baton governance applies (location, 批注区, evidence labels, shared-protocols.md)
+- **External skill produces a document** → baton governance applies (location, 批注区, evidence labels)
 - **External skill overlaps with a phase skill** → baton phase skill takes precedence for procedure; external skill may add supplementary value
 - **External skill has its own format** → adapt to include baton requirements, don't strip them
 
@@ -64,29 +64,44 @@ These thoughts mean STOP — you're bypassing governance:
 | "批注区 is only for baton skills" | 批注区 is for ALL documents in a baton project. |
 | "This doc goes in docs/ because the skill defaults there" | Override to `baton-tasks/<topic>/`. Parser depends on it. |
 | "Evidence labels are overkill for this" | Constitution-level invariant. Not optional. |
-| "Self-Challenge isn't needed for this artifact" | shared-protocols.md Section 2 applies to all artifacts. |
+| "Self-Challenge isn't needed for this artifact" | Self-Challenge applies to all plan and research artifacts. |
 | "I'll add 批注区 later" | Append it NOW, before presenting to the human. |
-| "This external skill already reviewed the output" | Does it check shared-protocols.md compliance? If not, insufficient. |
+| "This external skill already reviewed the output" | Does it check constitution.md compliance? If not, insufficient. |
 | "Simple doc, governance is overhead" | Simple docs get simple compliance. Still must comply. |
 | "The external skill is more capable here" | Capability ≠ authority. Phase skill defines procedure. |
 
 ## Artifact Governance
 
-All artifact invariants (location, 批注区, evidence labels, BATON:GO gate) are defined
-in `constitution.md` → Artifact Model. They are always loaded and not restated here.
+When any skill produces a working document, it must comply with:
 
-Operational protocols for all working documents are in `.baton/shared-protocols.md`:
-- Section 1: Evidence standards
-- Section 2: Self-Challenge
-- Section 3: Review protocol
-- Section 4: 批注区 protocol (annotation format, template, escalation)
+1. **Location**: `baton-tasks/<topic>/` (unless repo convention overrides)
+2. **批注区**: every research or plan document ends with `## 批注区` (see Annotation Protocol below)
+3. **Evidence labels**: `[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]` with status `✅`/`❌`/`❓`
+4. **Self-Challenge**: `## Self-Challenge` with ≥3 substantive answers
+5. **BATON:GO gate**: no source code changes without BATON:GO in the plan
 
-**Enforcement**: when any skill produces a document, check compliance with both
-the Artifact Model invariants and shared-protocols.md. If non-compliant, fix
-before presenting to the human.
+If non-compliant, fix before presenting to the human.
 
-**Failure boundary**: follow constitution.md → Permission Model → Failure boundary.
+Phase skills define the detailed format and review criteria for their phases.
+
+## Annotation Protocol
+
+When annotations, challenges, or objections arise in any working document, record them in `## 批注区` with:
+
+- **Trigger / 触发点**: the original annotation or objection
+- **Intent as understood / 理解后的意图**: what concern is being raised
+- **Response / 回应**: evidence-backed response
+- **Status**: ✅ accepted / ❌ rejected / ❓ unresolved
+- **Impact**: none / clarification only / affects conclusions / blocks next phase
+
+Rules:
+- Read underlying evidence before responding
+- Do not rewrite a challenge into a weaker one
+- If accepted, update the relevant section
+- If rejected, explain why with evidence
+- If unresolved, keep visible as ❓
+- If repeated annotations expose the same depth problem, suggest upgrading complexity
 
 ## After Review
 
-Review findings are challenges — process per constitution.md Challenge Model.
+Review findings are challenges — process per Annotation Protocol above.

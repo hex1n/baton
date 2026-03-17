@@ -81,10 +81,28 @@ if [ -n "$_writeset" ]; then
     # Exact path matching against Files: fields in ## Todo section
     _normalized="$(parser_writeset_normalize "$TARGET")"
     if ! printf '%s\n' "$_writeset" | grep -qxF "$_normalized"; then
-        echo "⚠️ Modified $_normalized — not in $PLAN_NAME write set." >&2
-        echo "   Expected files:" >&2
-        printf '%s\n' "$_writeset" | sed 's/^/   · /' >&2
-        echo "   If this is necessary, update the plan before continuing." >&2
+        # Track repeat violations per file (use PPID as session-stable identifier)
+        _session_id="${PPID:-unknown}"
+        if [ -n "$STDIN" ] && command -v jq >/dev/null 2>&1; then
+            _sid="$(printf '%s' "$STDIN" | jq -r '.session_id // empty' 2>/dev/null)"
+            [ -n "$_sid" ] && _session_id="$_sid"
+        fi
+        _session_id="$(printf '%s' "$_session_id" | tr -c 'A-Za-z0-9._-' '_')"
+        _violations_file="/tmp/baton-writeset-violations-${_session_id}"
+        _prev_count=0
+        if [ -f "$_violations_file" ]; then
+            _prev_count="$(grep -cF "$_normalized" "$_violations_file" 2>/dev/null)" || _prev_count=0
+        fi
+        echo "$_normalized" >> "$_violations_file" 2>/dev/null
+        if [ "$_prev_count" -ge 1 ] 2>/dev/null; then
+            echo "🔶 REPEAT write-set violation: $_normalized modified again (${_prev_count}+ times) — not in $PLAN_NAME write set." >&2
+            echo "   ⚠️ Repeated out-of-set writes suggest scope drift. Stop and confirm with human before next session end." >&2
+        else
+            echo "⚠️ Modified $_normalized — not in $PLAN_NAME write set." >&2
+            echo "   Expected files:" >&2
+            printf '%s\n' "$_writeset" | sed 's/^/   · /' >&2
+            echo "   If this is necessary, update the plan before continuing." >&2
+        fi
     fi
 else
     # Fallback: no Files: fields, check basename against plan text

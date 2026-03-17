@@ -47,3 +47,13 @@ Use for research artifacts where Orient Assessment B = codebase-primary.
 - Is there a clear One-Sentence Summary?
 - Are cross-move findings reconciled (not left fragmented)?
 
+## Cross-Phase Compliance Checks
+
+- [ ] Evidence labels (`[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]`) present for material findings?
+- [ ] Evidence status markers (✅/❌/❓) used consistently?
+- [ ] No unsupported confidence language?
+- [ ] Challenges rebutted with evidence at equal or higher fidelity?
+- [ ] Key facts not guessed past uncertainty — gaps surfaced?
+- [ ] Contradictions with human requests surfaced clearly?
+- [ ] Document ends with `## 批注区`?
+

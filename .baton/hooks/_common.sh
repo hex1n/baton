@@ -38,3 +38,25 @@ find_plan() {
 has_skill() {
     parser_has_skill "$1"
 }
+
+# --- Test suite configuration ---
+# BATON_TEST_CMD: command to run the project's full test suite.
+# Set via env, .claude/settings.json env field, or auto-detected here.
+baton_resolve_test_cmd() {
+    if [ -n "${BATON_TEST_CMD:-}" ]; then
+        echo "$BATON_TEST_CMD"
+        return
+    fi
+    local _root="${BATON_PROJECT_DIR:-$(pwd)}"
+    if [ -f "$_root/package.json" ] && grep -q '"test"' "$_root/package.json" 2>/dev/null; then
+        echo "npm test"
+    elif [ -f "$_root/Makefile" ] && grep -q '^test:' "$_root/Makefile" 2>/dev/null; then
+        echo "make test"
+    elif [ -f "$_root/pytest.ini" ] || [ -f "$_root/setup.cfg" ] || [ -f "$_root/pyproject.toml" ]; then
+        echo "pytest"
+    elif [ -d "$_root/tests" ] && ls "$_root/tests"/test-*.sh >/dev/null 2>&1; then
+        echo "bash tests/run.sh"
+    else
+        echo ""
+    fi
+}

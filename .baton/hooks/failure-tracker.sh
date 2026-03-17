@@ -53,9 +53,9 @@ echo "${TOOL_NAME:-unknown} $(date +%s)" >> "$COUNT_FILE"
 COUNT=$(wc -l < "$COUNT_FILE" 2>/dev/null | tr -d ' ')
 
 if [ "$COUNT" -eq 3 ] 2>/dev/null; then
-    echo "⚠️ 3 tool failures this session — consider whether recent failures share a root cause (constitution.md Failure boundary). If yes, invoke /baton-debug." >&2
+    echo "⚠️ 3 tool failures this session — check if failures share a root cause (default ≥2; active phase skill may override to 3). If yes, invoke /baton-debug." >&2
 elif [ "$COUNT" -eq 5 ] 2>/dev/null; then
-    echo "⚠️ 5 tool failures this session — 3-failure rule likely applies." >&2
+    echo "⚠️ 5 tool failures this session — failure boundary likely applies. Stop and investigate." >&2
 fi
 
 exit 0

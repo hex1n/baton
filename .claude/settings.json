@@ -2,7 +2,8 @@
   "env": {
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
     "ENABLE_LSP_TOOL": "1",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "35",
+    "BATON_PLAN": "baton-tasks/first-principles-analysis/plan.md"
   },
   "hooks": {
     "PreToolUse": [

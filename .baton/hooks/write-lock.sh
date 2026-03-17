@@ -54,9 +54,23 @@ if [ -z "$TARGET" ]; then
     exit 0
 fi
 
-# --- Markdown always allowed ---
+# --- Markdown: allowed but check for governance markers ---
 case "$TARGET" in
-    *.md|*.MD|*.markdown|*.mdx) exit 0 ;;
+    *.md|*.MD|*.markdown|*.mdx)
+        # Check if the write introduces a governance marker that only humans may add
+        if [ -n "$STDIN" ] && command -v jq >/dev/null 2>&1; then
+            _new_content="$(printf '%s' "$STDIN" | jq -r '.tool_input.new_string // .tool_input.content // empty' 2>/dev/null)"
+            if [ -n "$_new_content" ]; then
+                case "$_new_content" in
+                    *'<!-- BATON:GO'*|*'<!-- BATON:OVERRIDE'*)
+                        echo "🔒 Blocked: AI must not add governance markers (BATON:GO/BATON:OVERRIDE). Only the human may add these." >&2
+                        exit 2
+                        ;;
+                esac
+            fi
+        fi
+        exit 0
+        ;;
 esac
 
 # --- Source shared functions ---

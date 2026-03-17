@@ -80,6 +80,8 @@ changelogs, known-issues pages) for matching symptoms before escalating.
 distinct diagnostic steps without progress, treat as equivalent to a failed
 hypothesis test for stop-rule purposes.
 
+**Failure threshold: 3** (overrides default ≥2)
+
 **Stop rules (evidence-quality driven):**
 - 3 hypothesis tests that produced no significant new evidence → stop and
   escalate. "Significant" means it eliminated a candidate cause, narrowed the
@@ -108,7 +110,7 @@ produces the expected result:
 | Situation | Action |
 |-----------|--------|
 | Root cause confirmed, plan assumptions unchanged | Fix within IMPLEMENT |
-| Root cause confirmed, but plan assumptions wrong / write set exceeded | Escalate to RESEARCH/PLAN update |
+| Root cause confirmed, but plan assumptions wrong / write set exceeded | Move to BLOCKED (constitution Q1/Q2 triggered — prior BATON:GO is invalidated). Report discovery and impact to human. Renewed BATON:GO required before resuming. Escalate to RESEARCH/PLAN update |
 | Root cause unconfirmed after stop rule triggers | Stop fixing, submit findings, report to human |
 
 ## Output Routing
