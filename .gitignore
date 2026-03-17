@@ -7,3 +7,6 @@
 **/CLAUDE.md
 !CLAUDE.md
 *.stackdump
+.claude/skills/baton-*
+.cursor/skills/baton-*
+.agents/skills/baton-*

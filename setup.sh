@@ -335,10 +335,17 @@ inject_claude_md() {
 # --- Add .gitignore entries ---
 add_gitignore() {
     _gi="$PROJECT_DIR/.gitignore"
-    _entries=".baton/
+    # Self-install: don't gitignore .baton/ (it's the source directory)
+    if [ "$SELF_INSTALL" = "1" ]; then
+        _entries=".claude/skills/baton-*
+.cursor/skills/baton-*
+.agents/skills/baton-*"
+    else
+        _entries=".baton/
 .claude/skills/baton-*
 .cursor/skills/baton-*
 .agents/skills/baton-*"
+    fi
 
     [ ! -f "$_gi" ] && touch "$_gi"
     _changed=0
