@@ -44,9 +44,9 @@ For each piece of feedback:
 - **Bypass** for emergencies: `BATON_BYPASS=1` skips the lock entirely
 
 **Governance layers:**
-- **Rules**: constitution.md — cross-phase invariants, each tagged `[HARD]` (hook-enforced), `[AUDIT]` (review-checked), or `[GUIDE]` (best practice)
-- **Skills**: Phase-specific skills (baton-research / baton-plan / baton-implement / baton-review) loaded on-demand
-- **Hooks**: Write-lock, bash-guard, completion-check — mechanical enforcement of `[HARD]` rules
+- **Constitution**: cross-phase invariants (evidence, permissions, state transitions) — always loaded
+- **Skills**: phase-specific procedures (research / plan / implement / review) — loaded on-demand
+- **Hooks**: mechanical enforcement (write-lock, bash-guard, completion-check) — block violations at write time
 
 ## Install
 
@@ -136,7 +136,7 @@ Projects reference `~/.baton` via junctions — no hook scripts are copied. The 
 ```
 your-project/
 ├── .baton/                       ← Junction → ~/.baton/.baton/ (single source)
-│   ├── constitution.md              (invariants + protocols, rules tagged [HARD]/[AUDIT]/[GUIDE])
+│   ├── constitution.md              (cross-phase invariants, always loaded)
 │   ├── hooks/
 │   │   ├── dispatch.sh              (event-based hook dispatcher)
 │   │   ├── manifest.conf            (hook-to-event mapping)
@@ -213,7 +213,6 @@ Boris Tane's workflow succeeds because the human stays in the loop at every crit
 
 - **Governance wrapper, not capability provider** — baton governs output and process, not tool choice. Use any AI skill; output must comply with constitution.md
 - **File-derived phase detection** — your current phase is determined by file state (plan existence, BATON:GO marker, todo completion), not stored anywhere
-- **Rule classification** — every rule is tagged `[HARD]` (hook-enforced), `[AUDIT]` (review-checked), or `[GUIDE]` (best practice). AI knows what has consequences
 - **Minimal CLI** — `baton init` / `baton update`, then just files and junctions
 - **Minimal overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
