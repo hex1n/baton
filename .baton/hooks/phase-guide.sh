@@ -38,6 +38,32 @@ if [ -d "$SCRIPT_DIR/../skills" ]; then
     fi
 fi
 
+# --- Scan all installed skills (not just baton-*) ---
+# Returns space-separated list of skill names found across all IDE skill dirs
+_scan_all_skills() {
+    local _d="${BATON_PROJECT_DIR:-$(pwd)}" _seen="" _name
+    for _ide in .baton .claude .cursor .agents; do
+        for _skill_dir in "$_d/$_ide/skills"/*/; do
+            [ -f "$_skill_dir/SKILL.md" ] || continue
+            _name="$(basename "$_skill_dir")"
+            case " $_seen " in *" $_name "*) continue ;; esac
+            _seen="$_seen $_name"
+        done
+    done
+    echo "$_seen"
+}
+
+# Filter skills by keyword in name (e.g., "research" "plan" "implement" "debug" "review")
+_skills_matching() {
+    local _keyword="$1" _all="$2" _matched="" _s
+    for _s in $_all; do
+        case "$_s" in *"$_keyword"*) _matched="$_matched /$_s" ;; esac
+    done
+    echo "$_matched"
+}
+
+_ALL_SKILLS="$(_scan_all_skills)"
+
 resolve_plan_name
 find_plan
 parser_find_research
@@ -78,15 +104,9 @@ fi
 # State 3: IMPLEMENT — plan + GO (+ Todo exists)
 if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     echo "$MINDSET_LINE" >&2
-    # Detect available implementation skills
-    _impl_skills=""
-    has_skill baton-implement && _impl_skills="$_impl_skills /baton-implement"
-    has_skill superpowers:executing-plans && _impl_skills="$_impl_skills /superpowers:executing-plans"
-    has_skill superpowers:test-driven-development && _impl_skills="$_impl_skills /superpowers:test-driven-development"
-    has_skill superpowers:subagent-driven-development && _impl_skills="$_impl_skills /superpowers:subagent-driven-development"
-    _debug_skills=""
-    has_skill baton-debug && _debug_skills="$_debug_skills /baton-debug"
-    has_skill superpowers:systematic-debugging && _debug_skills="$_debug_skills /superpowers:systematic-debugging"
+    # Detect available implementation/debug skills dynamically
+    _impl_skills="$(_skills_matching "implement" "$_ALL_SKILLS")$(_skills_matching "execut" "$_ALL_SKILLS")$(_skills_matching "tdd" "$_ALL_SKILLS")$(_skills_matching "test-driven" "$_ALL_SKILLS")"
+    _debug_skills="$(_skills_matching "debug" "$_ALL_SKILLS")"
 
     if [ -n "$_impl_skills" ]; then
         echo "📍 IMPLEMENT phase — available:$_impl_skills" >&2
@@ -111,9 +131,7 @@ fi
 if [ -n "$PLAN" ]; then
     echo "$MINDSET_LINE" >&2
     echo "📍 ANNOTATION cycle — $PLAN_NAME awaiting approval" >&2
-    _plan_skills=""
-    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
-    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    _plan_skills="$(_skills_matching "plan" "$_ALL_SKILLS")"
     if [ -n "$_plan_skills" ]; then
         echo "   Review annotations. Available:$_plan_skills" >&2
     else
@@ -168,12 +186,10 @@ fi
 # State 5: PLAN — research exists, no plan
 if [ -n "$RESEARCH" ]; then
     echo "$MINDSET_LINE" >&2
-    _plan_skills=""
-    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
-    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    _plan_skills="$(_skills_matching "plan" "$_ALL_SKILLS")"
     if [ -n "$_plan_skills" ]; then
         echo "📍 PLAN phase — available:$_plan_skills" >&2
-        echo "   Create in baton-tasks/<topic>/plan.md or docs/ (same directory as research)." >&2
+        echo "   Create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
     else
         echo "📍 PLAN phase — create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
         echo "" >&2
@@ -197,9 +213,7 @@ fi
 if [ "$_RF_COUNT" -gt 1 ] 2>/dev/null; then
     echo "$MINDSET_LINE" >&2
     echo "⚠️ Multiple research files found (research-*.md). Name your plan to match the primary research file, or consolidate." >&2
-    _plan_skills=""
-    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
-    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    _plan_skills="$(_skills_matching "plan" "$_ALL_SKILLS")"
     if [ -n "$_plan_skills" ]; then
         echo "📍 PLAN phase — available:$_plan_skills" >&2
     else
@@ -210,9 +224,7 @@ fi
 
 # State 6: RESEARCH — nothing exists
 echo "$MINDSET_LINE" >&2
-_research_skills=""
-has_skill baton-research && _research_skills="$_research_skills /baton-research"
-has_skill superpowers:brainstorming && _research_skills="$_research_skills /superpowers:brainstorming"
+_research_skills="$(_skills_matching "research" "$_ALL_SKILLS")$(_skills_matching "brainstorm" "$_ALL_SKILLS")"
 if [ -n "$_research_skills" ]; then
     echo "📍 RESEARCH phase — available:$_research_skills" >&2
     echo "   Create in baton-tasks/<topic>/research.md." >&2

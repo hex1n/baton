@@ -1,53 +1,80 @@
 ---
 name: baton-governance-bridge
-description: Ensures workflow artifacts (from any tool) comply with Baton governance gates — BATON:GO, write-set, evidence labels
+description: Enforces Baton's artifact invariants on any skill's output — location (baton-tasks/), annotation cycle (批注区), evidence labels, BATON:GO gate
 ---
 
 # Governance Bridge
 
-When creating implementation plans (via superpowers:writing-plans, manual authoring, or any other tool):
+This skill ensures that ANY workflow tool's output complies with Baton's
+constitution. It applies to all skills — baton, superpowers, or future systems.
 
-## Plan Requirements
+## Artifact Location
 
-Every implementation plan MUST include:
+All task-related documents MUST be saved to `baton-tasks/<topic>/`:
 
-1. **BATON:GO placeholder** — Add this line (commented out) for the human to uncomment when approving:
-   ```
-   <!-- BATON:GO -->
-   ```
-   The human adds this marker. AI must never add it.
+```
+baton-tasks/<topic>/research.md     (or research-<topic>.md)
+baton-tasks/<topic>/plan.md         (or plan-<topic>.md)
+```
 
-2. **Write-set section** — List all files the plan is authorized to modify:
-   ```markdown
-   ## Write Set
-   - Modify: `path/to/file.py`
-   - Create: `path/to/new_file.py`
-   - Test: `tests/test_file.py`
-   ```
+Simple tasks may use root-level `plan.md` / `research.md`.
 
-3. **Evidence labels** — Key findings should use Baton's evidence model:
-   - `[CODE]` — repository evidence with file:line
-   - `[DOC]` — external documentation
-   - `[RUNTIME]` — observed output, logs, tests
-   - `[HUMAN]` — user-provided requirement
+When a skill defaults to a different location (e.g., `docs/specs/`,
+`docs/plans/`), override and save to `baton-tasks/<topic>/` instead.
+The parser, write-lock, and all governance hooks depend on this location.
 
-## Before Execution
+## Annotation Cycle (批注区)
 
-Before executing any plan, verify:
-1. The plan file contains `<!-- BATON:GO -->` (added by the human, not by AI)
-2. If the marker is absent, ask the human to review the plan and add it
-3. Do NOT proceed with implementation until BATON:GO is present
+Every research or plan document MUST end with:
+
+```markdown
+## 批注区
+```
+
+This is non-negotiable. The annotation cycle is Baton's core mechanism:
+
+1. Human writes feedback here (free text, or `[PAUSE]`)
+2. AI infers intent, responds with file:line evidence
+3. AI records exchange in `## Annotation Log`
+4. Repeat until shared understanding
+5. Human adds `<!-- BATON:GO -->` when satisfied
+
+**If a skill produces a document without `## 批注区`, append it immediately.**
+
+## BATON:GO Gate
+
+Every plan MUST include a `<!-- BATON:GO -->` placeholder for the human:
+
+```markdown
+<!-- Add BATON:GO below when approving this plan -->
+```
+
+AI must never add `<!-- BATON:GO -->`. Only the human adds it.
+Do NOT proceed with implementation until BATON:GO is present.
+
+## Evidence Labels
+
+Findings in any working document must use:
+- `[CODE]` — repository evidence with file:line
+- `[DOC]` — external documentation
+- `[RUNTIME]` — observed output, logs, tests
+- `[HUMAN]` — user-provided requirement
+
+With status: `✅` confirmed, `❌` contradicted, `❓` unverified.
+
+## Write Set
+
+Plans SHOULD include a write-set listing:
+
+```markdown
+## Write Set
+- Modify: `path/to/file.py`
+- Create: `path/to/new_file.py`
+- Test: `tests/test_file.py`
+```
 
 ## During Execution
 
-- Only modify files listed in the Write Set
-- If you need to modify a file not in the Write Set, check the scope boundary rules in constitution.md
-- Record any unexpected discoveries as impact statements per the Discovery Protocol
-
-## Completion
-
-Do not claim work is complete until:
-1. All approved scope is finished
-2. Required validation has been executed
-3. No unresolved blockers remain
-4. The human has confirmed completion
+- Only modify files listed in the write set
+- Unexpected discoveries → follow Discovery Protocol (constitution.md)
+- Same approach fails twice → STOP, surface the pattern

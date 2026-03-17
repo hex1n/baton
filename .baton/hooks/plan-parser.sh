@@ -55,11 +55,7 @@ parser_find_plan() {
         while true; do
             # Collect candidates: root plans + baton-tasks plans
             local _candidates
-            _candidates="$(cd "$_d" 2>/dev/null && {
-                ls -t plan.md plan-*.md 2>/dev/null
-                ls -t baton-tasks/*/plan.md baton-tasks/*/plan-*.md 2>/dev/null
-                find docs/ -maxdepth 4 \( -name 'plan*.md' -o -name '*-plan*.md' \) 2>/dev/null | sort -t/ -k1,1
-            } | head -20)" || true
+            _candidates="$(cd "$_d" 2>/dev/null && ls -t plan.md plan-*.md baton-tasks/*/plan.md baton-tasks/*/plan-*.md 2>/dev/null)" || true
 
             # Filter out COMPLETE-marked plans
             local _active=""
@@ -141,17 +137,6 @@ parser_find_research() {
         fi
     fi
 
-    # Fallback: look for design/spec docs in docs/ if no research found
-    if [ -z "$RESEARCH" ]; then
-        local _spec
-        _spec="$(cd "$_plan_dir" 2>/dev/null && find docs/ -maxdepth 4 \
-            \( -name '*-design*.md' -o -name '*-spec*.md' \) \
-            2>/dev/null | sort -r | head -1)" || true
-        if [ -n "$_spec" ] && [ -f "$_plan_dir/$_spec" ]; then
-            RESEARCH="$_plan_dir/$_spec"
-            RESEARCH_NAME="$_spec"
-        fi
-    fi
 }
 
 # parser_has_go — check if plan has <!-- BATON:GO --> marker

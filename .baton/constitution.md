@@ -301,6 +301,60 @@ depend on an override that exists only in conversation.
 
 ---
 
+### Artifact Model
+
+Working documents (research, plans, specs, designs) have mandatory structure
+regardless of which skill or workflow system created them.
+
+#### 1. Location
+
+All task-related artifacts must be stored under `baton-tasks/<topic>/`:
+
+```
+baton-tasks/
+└── <topic>/
+    ├── research.md (or research-<topic>.md)
+    ├── plan.md (or plan-<topic>.md)
+    └── (any other working documents)
+```
+
+Simple tasks may use root-level `plan.md` / `research.md`. When a skill or
+workflow tool defaults to a different output location (e.g., `docs/`, `specs/`),
+the artifact must be saved to `baton-tasks/<topic>/` instead. This ensures
+the parser, write-lock, and all governance hooks can find and validate artifacts
+without path-specific configuration.
+
+#### 2. Annotation cycle support
+
+Every research or plan document — regardless of which skill created it — must
+end with:
+
+```markdown
+## 批注区
+```
+
+This section is the human's annotation surface. The annotation cycle is Baton's
+core mechanism for building shared understanding:
+
+1. Human writes feedback (free text, or `[PAUSE]` to redirect investigation)
+2. AI infers intent, responds with file:line evidence
+3. AI records the exchange in `## Annotation Log`
+4. Repeat until shared understanding reached
+5. Human adds `<!-- BATON:GO -->` when satisfied
+
+A document without `## 批注区` is incomplete. A skill that omits it has
+produced a non-compliant artifact. When receiving a document from any skill
+that lacks `## 批注区`, append it before presenting to the human.
+
+#### 3. Evidence requirements in artifacts
+
+Findings in any working document must use the Evidence Model labels
+(`[CODE]`, `[DOC]`, `[RUNTIME]`, `[HUMAN]`) with status markers
+(`✅`, `❌`, `❓`). This applies whether the document was created by
+a baton skill, a third-party skill, or manually.
+
+---
+
 ### Minimal Operating Rule
 
 When unsure what to do next, fall back to the safest valid action:
