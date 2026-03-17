@@ -1,8 +1,9 @@
 ---
 name: using-baton
 description: >
-  Baton's entry-point skill. Defines output governance for all working documents
-  regardless of which skill produced them. Loaded at SessionStart via hook.
+  Baton's entry point and governance adapter. Routes to baton phase skills when
+  available; enforces minimum governance when external skills produce the output.
+  Loaded at SessionStart via hook.
 ---
 
 <SUBAGENT-STOP>
@@ -34,6 +35,9 @@ the reason to prefer it is quality, not prohibition.
 
 ## Phase Routing
 
+Assess task size first (see constitution.md §Task Sizing). Sizing determines
+which phases and process steps apply.
+
 | Phase | Baton skill | Value over alternatives |
 |-------|------------|----------------------|
 | RESEARCH | /baton-research | Evidence model integration, convergence checks |
@@ -41,35 +45,24 @@ the reason to prefer it is quality, not prohibition.
 | IMPLEMENT | /baton-implement | Discovery protocol, continuous execution |
 | REVIEW | /baton-review | Phase-specific review-prompt.md criteria |
 
-## Process Governance
+## Two Modes
 
-Output compliance checks the final product. Process governance ensures the
-workflow was followed. Both apply regardless of which skill produced the content.
+**Mode A — Baton phase skill handles the work:**
+Using-baton acts as router only. The phase skill owns both procedure and
+governance. No additional process is layered on top.
 
-**Mandatory process loops:**
+**Mode B — External skill (or manual work) produces the output:**
+Using-baton enforces minimum governance. The external skill handles content
+generation; using-baton ensures the output passes review before phase transition.
 
-1. **Research**: investigate → self-challenge → review → fix findings → re-review
-   → repeat until review passes or circuit breaker (3 cycles → escalate)
-   → convergence check before transitioning to plan
+Minimum governance for Mode B:
+- Output must satisfy Output Compliance (below)
+- Output must pass through baton-review before proceeding to next phase
+- 批注区 annotation cycle must complete before BATON:GO
 
-2. **Plan**: decompose → present approaches → self-challenge → review → fix →
-   re-review → repeat until review passes or circuit breaker
-   → human annotation cycle (批注区) until human adds BATON:GO
-
-3. **Implementation**: execute todos → implementation review → fix findings →
-   re-review → repeat until review passes or circuit breaker
-   → full test suite → retrospective → BATON:COMPLETE
-
-These loops are non-negotiable. If an external skill produces a research document
-or plan, the document must still pass through the review loop before proceeding
-to the next phase. The external skill handles content generation; the phase
-workflow handles quality assurance.
-
-**Annotation cycles**: 批注区 is not just a section to append — it is an
-interactive loop. Human writes annotations → AI processes each one (with evidence)
-→ updates the document → human reviews again → repeat until satisfied. A document
-with an empty 批注区 that was never reviewed by the human has not completed the
-annotation cycle.
+Phase skills define detailed process loops (self-challenge cycles, convergence
+checks, circuit breakers). When in Mode B, these details do not apply — only
+the minimum governance above.
 
 ## Output Compliance
 
@@ -117,6 +110,11 @@ Agent(prompt="<review-criteria>\n[paste .baton/skills/baton-research/review-prom
 ```
 
 ## Annotation Protocol
+
+批注区 is not just a section to append — it is an interactive loop. Human writes
+annotations → AI processes each one (with evidence) → updates the document →
+human reviews again → repeat until satisfied. A document with an empty 批注区
+that was never reviewed by the human has not completed the annotation cycle.
 
 When annotations, challenges, or objections arise, record in `## 批注区`.
 

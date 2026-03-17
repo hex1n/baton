@@ -2,13 +2,16 @@
 
 Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 
-## First-Principles Decomposition
+## Must-Check
+
+### First-Principles Decomposition
 
 - Is the problem stated without referencing a solution?
 - Are constraints explicitly listed (architecture, dependencies, backward compatibility)?
 - Were ≥2 fundamentally different solution categories enumerated (not variations)?
+- Does Self-Challenge name specific rejected alternatives, or is it generic? ("no alternatives" = not genuine)
 
-## Multi-Approach Presentation
+### Multi-Approach Presentation
 
 - Are 2-3 approaches presented with trade-offs visible to the human?
 - Or did the author internally enumerate and silently reject, presenting only the winner?
@@ -16,48 +19,52 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Is the recommendation traced to specific research findings and constraints?
 - Are rejection reasons for alternatives explicit (not just "the recommended one is better")?
 
-## Research Derivation
+### Research Derivation
 
 - Are approaches derived from validated inputs (research conclusions, human requirements)?
 - If no formal research exists, are user requirements recorded and directly verified?
 - Does the plan jump to "how" without tracing back to "why"?
+- Does the plan cite specific research conclusions by section, or claim derivation without reference? (traceable)
 
-## Internal Consistency
+### Internal Consistency
 
 - Any contradictions between sections (e.g., approach says X, impact says Y)?
 - Do all changes trace back to the stated problem?
 - Are there changes that serve no stated goal (inherited baggage)?
 
-## Impact Analysis (Surface Scan)
+### Impact Analysis (Surface Scan)
 
 - Is the Surface Scan evidence-based (tool invocations, file reads) or memory-based?
+- Do file paths in the Surface Scan come from actual grep/read results? (verifiable)
 - For each L1 file: are all importers/consumers identified (L2)?
 - Are any surfaces defaulted to "skip" without explicit justification?
 - Are there "modify" files whose references are only partially covered?
 
-## Write Set Completeness
+### Write Set Completeness
 
 - Are all affected files identified with dispositions?
 - Are test files included for modified source files?
 - Could the human predict the diff from reading this plan?
 
-## Risk Assessment
+### Risk Assessment
 
 - Are risks identified with mitigation strategies?
 - Are rollback / compatibility considerations addressed?
 - Are verification paths explicit (what test, command, or observation confirms each change)?
 
-## Scope & YAGNI
+### Scope & YAGNI
 
 - Does the plan include unnecessary features not requested?
 - Is the scope appropriate for the stated problem (not over-engineered)?
 - Could the plan be decomposed into smaller independent units?
 
-## Plan-Specific Structural Check
+### Plan-Specific Structural Check
 
 - `<!-- BATON:GO -->` placeholder present (not pre-filled by AI)?
 
-## Cross-Phase Compliance Checks
+## Should-Check (skip if hooks enforce)
+
+### Cross-Phase Compliance Checks
 
 - [ ] Evidence labels (`[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]`) present for material claims?
 - [ ] Evidence status markers (✅/❌/❓) used consistently?

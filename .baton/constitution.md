@@ -21,6 +21,24 @@ explicitly overrides via a `BATON:OVERRIDE` marker.
 
 ---
 
+### Task Sizing
+
+AI assesses task size at entry; human may override. Record sizing at the top of
+the plan or working document.
+
+| Level | Conditions | Process |
+|-------|-----------|---------|
+| **Trivial** | < 5 lines, single file, no behavior change | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
+| **Small** | < 50 lines, few files, clear change | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
+| **Medium** | Cross-module, design decisions | Full process. Surface scan depth by impact uncertainty. |
+| **Large** | Architecture-level, multi-system | Full process + multi-method research + multi-approach plan mandatory. |
+
+When in doubt, size up. Phase skills may define finer-grained complexity
+adjustments within their domain, but cannot weaken the sizing level's minimum
+requirements.
+
+---
+
 ### Authority
 
 1. **Human instruction** — goals, constraints, approval
@@ -76,6 +94,20 @@ Keep Facts / Inferences / Judgments distinct. "Should be fine" is not evidence.
 
 When evidence types conflict: runtime > stale docs; code > comments; human intent ≠ current behavior → mark mismatch.
 
+Conflict resolution examples:
+
+1. **[DOC] says X, [CODE] says Y** → `[DOC]❌` `[CODE]✅` (assuming the code
+   path is executed). Docs may be stale; code is current truth. Exception:
+   dead code or non-executed paths.
+2. **[HUMAN] says "system does X", [RUNTIME] shows Y** → mark as
+   requirement/behavior mismatch. Record both. Do not override either.
+   Submit to human judgment.
+3. **[DOC]❓ + [CODE]❓ agree on X** → still `❓`. Two unverified sources
+   agreeing does not equal verification. Need `[RUNTIME]✅` or direct code trace.
+4. **[DESIGN] vs [CODE]** → [DESIGN] expresses intent, [CODE] expresses current
+   state. Conflict = tech debt or incomplete migration. Record both; do not
+   default either as "correct."
+
 Phase skills define detailed evidence requirements for their domains.
 
 ---
@@ -100,6 +132,20 @@ AI may propose completion; add the marker only after human confirms.
 - Task artifacts: `baton-tasks/<topic>/`
 - Every research or plan document ends with `## 批注区`
 - Phase skills define format, annotation handling, and review criteria
+
+---
+
+### Defense Model
+
+Hooks enforce structure. Review enforces quality. Neither is sufficient alone.
+
+The defense is layered: self-challenge (self-check) + context-isolated review
+(independent check) + human annotation cycle (human check). Each layer can fail;
+no single-layer failure should defeat governance.
+
+Adding more structural checks (hooks) does not solve quality problems — it
+incentivizes mechanical compliance. Quality improvement comes from sharper
+review questions that check for concrete evidence, not structural presence.
 
 ---
 

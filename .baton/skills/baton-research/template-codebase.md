@@ -1,6 +1,6 @@
 # Template: Codebase Research
 
-Use this template when Orient Assessment B = **codebase-primary**.
+Use this template when evidence type = **codebase-primary**.
 
 Cognitive progression: What is this system? → What am I investigating? → How will I investigate? → What did I find? → Am I wrong? → What does it mean?
 

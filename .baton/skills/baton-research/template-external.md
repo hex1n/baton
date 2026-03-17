@@ -1,6 +1,6 @@
 # Template: External Research
 
-Use this template when Orient Assessment B = **external-primary**.
+Use this template when evidence type = **external-primary**.
 
 Cognitive progression: What am I looking for? → Where is trustworthy information? → Which sources deserve depth? → What does each source say? → Does it apply to us? → What does it mean?
 
