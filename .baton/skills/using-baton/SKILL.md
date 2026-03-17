@@ -69,7 +69,7 @@ These thoughts mean STOP — you're bypassing governance:
 | "This external skill already reviewed the output" | Does it check constitution.md compliance? If not, insufficient. |
 | "Simple doc, governance is overhead" | Simple docs get simple compliance. Still must comply. |
 | "The external skill is more capable here" | Capability ≠ authority. Phase skill defines procedure. |
-| "I'll use superpowers:code-reviewer for this baton artifact" | baton-review has phase-specific criteria that external reviewers lack. Use Review Dispatch templates below. |
+| "I'll use an external review skill for this baton artifact" | baton-review has phase-specific criteria that external reviewers lack. Use Review Dispatch templates below, unless the user explicitly requests a different reviewer. |
 
 ## Artifact Governance
 
