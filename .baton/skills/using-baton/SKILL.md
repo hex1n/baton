@@ -39,8 +39,8 @@ but not replace the phase skill's authority. Every working document must comply 
 
 ### Working with external skills
 
-External skills (superpowers:brainstorming, superpowers:writing-plans, etc.) may be
-used alongside baton skills. The orchestration rule:
+External skills (brainstorming, planning helpers, etc.) may be used alongside
+baton skills. The orchestration rule:
 
 - **External skill produces a document** → baton governance applies (location, 批注区, evidence labels)
 - **External skill overlaps with a phase skill** → baton phase skill takes precedence for procedure; external skill may add supplementary value
