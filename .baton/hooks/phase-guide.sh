@@ -19,6 +19,24 @@ else
 fi
 MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain"
 
+# --- Auto-create missing skill junctions ---
+if [ -d "$SCRIPT_DIR/../skills" ]; then
+    _skill_src="$(cd "$SCRIPT_DIR/../skills" 2>/dev/null && pwd)" 2>/dev/null || true
+    if [ -n "${_skill_src:-}" ]; then
+        . "$SCRIPT_DIR/junction.sh" 2>/dev/null || true
+        for _skill_dir in "$_skill_src"/baton-*; do
+            [ ! -d "$_skill_dir" ] && continue
+            _name="$(basename "$_skill_dir")"
+            for _ide_skills in .claude/skills .cursor/skills .agents/skills; do
+                [ -d "$_ide_skills" ] || continue
+                _target="$_ide_skills/$_name"
+                [ -d "$_target" ] && continue
+                atomic_junction "$_skill_dir" "$_target" 2>/dev/null || true
+            done
+        done
+    fi
+fi
+
 resolve_plan_name
 find_plan
 parser_find_research
