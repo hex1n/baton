@@ -69,7 +69,7 @@ These thoughts mean STOP — you're bypassing governance:
 | "This external skill already reviewed the output" | Does it check constitution.md compliance? If not, insufficient. |
 | "Simple doc, governance is overhead" | Simple docs get simple compliance. Still must comply. |
 | "The external skill is more capable here" | Capability ≠ authority. Phase skill defines procedure. |
-| "I'll use superpowers:code-reviewer for review" | **NO.** All review goes through baton-review dispatch. See Review Dispatch section. |
+| "I'll use superpowers:code-reviewer for this baton artifact" | baton-review has phase-specific criteria that external reviewers lack. Use Review Dispatch templates below. |
 
 ## Artifact Governance
 
@@ -105,8 +105,9 @@ Rules:
 
 ## Review Dispatch
 
-**Never use `superpowers:code-reviewer` or any non-baton review skill.** All review
-in a baton project goes through baton-review. Copy-paste the matching template:
+For baton-governed artifacts (research, plan, implementation), use baton-review — it
+applies phase-specific review-prompt.md criteria that external review skills lack.
+Copy-paste the matching template:
 
 **Plan review:**
 ```
