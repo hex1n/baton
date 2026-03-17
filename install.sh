@@ -9,24 +9,18 @@ BATON_REPO="${BATON_REPO:-https://github.com/hex1n/baton.git}"
 
 echo "Installing baton..."
 
-# 1. Ensure ~/.baton/ is a complete git repository
+# 1. Ensure ~/.baton/ is a git repository (plain clone, no sparse checkout)
 if [ -d "$BATON_HOME/.git" ]; then
     echo "  ✓ $BATON_HOME already exists"
-    # Update to latest
     if git -C "$BATON_HOME" pull --ff-only 2>/dev/null; then
         echo "  ✓ Updated to latest"
     else
         echo "  ⚠ Could not auto-update (local changes?). Run: git -C $BATON_HOME pull --ff-only"
     fi
-    # Convert full clone to sparse if not already
-    if [ "$(git -C "$BATON_HOME" config core.sparseCheckout 2>/dev/null)" != "true" ]; then
-        _git_ver="$(git --version | sed 's/[^0-9]*\([0-9]*\)\.\([0-9]*\).*/\1 \2/')"
-        _git_major="${_git_ver%% *}"
-        _git_minor="${_git_ver##* }"
-        if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
-            (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /bin /setup.sh /install.sh /.gitignore)
-            echo "  ✓ Converted to sparse checkout"
-        fi
+    # Disable sparse checkout if previously enabled (v3 migration)
+    if [ "$(git -C "$BATON_HOME" config core.sparseCheckout 2>/dev/null)" = "true" ]; then
+        (cd "$BATON_HOME" && git sparse-checkout disable 2>/dev/null) || true
+        echo "  ✓ Disabled sparse checkout (no longer needed)"
     fi
 elif [ -d "$BATON_HOME" ]; then
     echo "  ⚠ $BATON_HOME exists but is not a git repository"
@@ -34,17 +28,8 @@ elif [ -d "$BATON_HOME" ]; then
     exit 1
 else
     echo "  Cloning baton to $BATON_HOME..."
-    _git_ver="$(git --version | sed 's/[^0-9]*\([0-9]*\)\.\([0-9]*\).*/\1 \2/')"
-    _git_major="${_git_ver%% *}"
-    _git_minor="${_git_ver##* }"
-    if [ "$_git_major" -gt 2 ] 2>/dev/null || { [ "$_git_major" -eq 2 ] && [ "$_git_minor" -ge 25 ]; } 2>/dev/null; then
-        git clone --depth 1 --filter=blob:none --sparse "$BATON_REPO" "$BATON_HOME"
-        (cd "$BATON_HOME" && MSYS_NO_PATHCONV=1 git sparse-checkout set --no-cone /.baton /bin /setup.sh /install.sh /.gitignore)
-        echo "  ✓ Cloned baton (sparse: only essential files)"
-    else
-        git clone --depth 1 "$BATON_REPO" "$BATON_HOME"
-        echo "  ✓ Cloned baton (shallow — upgrade git to 2.25+ for sparse checkout)"
-    fi
+    git clone "$BATON_REPO" "$BATON_HOME"
+    echo "  ✓ Cloned baton"
 fi
 
 # 2. Create bin/baton executable
