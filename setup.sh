@@ -333,15 +333,118 @@ EOF
 
 # --- Configure Codex ---
 configure_codex() {
+    # (a) AGENTS.md rules injection
     _agents_md="$PROJECT_DIR/AGENTS.md"
     if [ ! -f "$_agents_md" ]; then
         printf '@.baton/constitution.md\n' > "$_agents_md"
         echo "  ✓ Created AGENTS.md"
     elif ! grep -q '@\.baton/constitution\.md' "$_agents_md" 2>/dev/null; then
-        printf '\n@.baton/constitution.md\n' >> "$_agents_md"
-        echo "  ✓ Injected constitution into AGENTS.md"
+        # Migrate old workflow imports
+        if grep -qE '@\.baton/workflow(-full)?\.md' "$_agents_md" 2>/dev/null; then
+            sed -i.bak 's|@\.baton/workflow\(-full\)\{0,1\}\.md|@.baton/constitution.md|g' "$_agents_md"
+            rm -f "$_agents_md.bak"
+            echo "  ✓ Migrated AGENTS.md: workflow → constitution.md"
+        else
+            printf '\n@.baton/constitution.md\n' >> "$_agents_md"
+            echo "  ✓ Injected constitution into AGENTS.md"
+        fi
     else
         echo "  ✓ AGENTS.md already has constitution reference"
+    fi
+
+    # (b) .codex/hooks.json — SessionStart + Stop via dispatch-codex.sh
+    _codex_hooks="$PROJECT_DIR/.codex/hooks.json"
+    _dispatch_cmd="bash .baton/hooks/dispatch-codex.sh"
+    mkdir -p "$PROJECT_DIR/.codex"
+
+    if [ ! -f "$_codex_hooks" ]; then
+        cat > "$_codex_hooks" << EOF
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$_dispatch_cmd SessionStart",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$_dispatch_cmd Stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+        echo "  ✓ Created .codex/hooks.json (SessionStart + Stop)"
+    else
+        if command -v jq >/dev/null 2>&1 && jq empty "$_codex_hooks" >/dev/null 2>&1; then
+            _tmp="$_codex_hooks.baton.tmp"
+            jq --arg cmd "$_dispatch_cmd" '
+                # Remove old baton entries
+                .hooks = ((.hooks // {}) | to_entries | map(
+                    .value = ([.value[] | select(
+                        ([(.hooks // [])[] | .command // ""] | any(test("baton/hooks/|baton/adapters/"))) | not
+                    )])
+                ) | from_entries) |
+                # Add dispatch entries
+                .hooks.SessionStart = ((.hooks.SessionStart // []) + [{
+                    "hooks": [{"type":"command","command":($cmd + " SessionStart"),"timeout":30}]
+                }]) |
+                .hooks.Stop = ((.hooks.Stop // []) + [{
+                    "hooks": [{"type":"command","command":($cmd + " Stop"),"timeout":30}]
+                }])
+            ' "$_codex_hooks" > "$_tmp" && mv "$_tmp" "$_codex_hooks"
+            echo "  ✓ Merged baton hooks into .codex/hooks.json"
+        else
+            echo "  ⚠ jq not available — cannot merge .codex/hooks.json"
+        fi
+    fi
+
+    # (c) Feature flag — codex_hooks in .codex/config.toml
+    _codex_config="$PROJECT_DIR/.codex/config.toml"
+    if [ -f "$_codex_config" ] && grep -q 'codex_hooks' "$_codex_config" 2>/dev/null; then
+        echo "  ✓ Feature flag codex_hooks already set"
+    elif [ -f "$_codex_config" ]; then
+        if grep -q '^\[features\]' "$_codex_config" 2>/dev/null; then
+            sed -i.bak '/^\[features\]/a codex_hooks = true' "$_codex_config"
+            rm -f "$_codex_config.bak"
+        else
+            printf '\n[features]\ncodex_hooks = true\n' >> "$_codex_config"
+        fi
+        echo "  ✓ Enabled codex_hooks feature flag"
+    else
+        printf '[features]\ncodex_hooks = true\n' > "$_codex_config"
+        echo "  ✓ Created .codex/config.toml with codex_hooks feature flag"
+    fi
+
+    # (d) Trust — user-level ~/.codex/config.toml
+    _codex_user_config="$HOME/.codex/config.toml"
+    if command -v cygpath >/dev/null 2>&1; then
+        _codex_project_path="$(cygpath -w "$PROJECT_DIR")"
+    else
+        _codex_project_path="$(cd "$PROJECT_DIR" 2>/dev/null && pwd)"
+    fi
+    if [ -f "$_codex_user_config" ] && grep -qF "$_codex_project_path" "$_codex_user_config" 2>/dev/null; then
+        echo "  ✓ Project trust already configured"
+    else
+        mkdir -p "$(dirname "$_codex_user_config")" 2>/dev/null || true
+        if printf '\n# baton-managed: %s\n[projects.'\''%s'\'']\ntrust_level = "trusted"\n' \
+            "$_codex_project_path" "$_codex_project_path" >> "$_codex_user_config" 2>/dev/null; then
+            echo "  ✓ Added project trust to ~/.codex/config.toml"
+        else
+            echo "  ⚠ Could not update ~/.codex/config.toml — add trust manually"
+        fi
     fi
 }
 
@@ -381,6 +484,7 @@ add_gitignore() {
 .agents/skills/baton-*"
     else
         _entries=".baton/
+.codex/
 .claude/skills/baton-*
 .cursor/skills/baton-*
 .agents/skills/baton-*"
@@ -456,11 +560,34 @@ do_uninstall() {
     # Remove cursor rules
     rm -f "$PROJECT_DIR/.cursor/rules/baton.mdc"
 
-    # Remove constitution from CLAUDE.md
+    # Remove baton entries from codex hooks.json
+    _codex_hooks="$PROJECT_DIR/.codex/hooks.json"
+    if [ -f "$_codex_hooks" ] && command -v jq >/dev/null 2>&1; then
+        _tmp="$_codex_hooks.baton.tmp"
+        jq '
+            .hooks = ((.hooks // {}) | to_entries | map(
+                .value = ([.value[] | select(
+                    ([(.hooks // [])[] | .command // ""] | any(test("baton"))) | not
+                )]
+                | if length == 0 then null else . end)
+            ) | map(select(.value != null)) | from_entries)
+        ' "$_codex_hooks" > "$_tmp" && mv "$_tmp" "$_codex_hooks"
+        echo "  ✓ Removed baton hooks from .codex/hooks.json"
+    fi
+
+    # Remove codex feature flag and trust
+    _codex_config="$PROJECT_DIR/.codex/config.toml"
+    if [ -f "$_codex_config" ] && grep -q 'codex_hooks' "$_codex_config" 2>/dev/null; then
+        sed -i.bak '/codex_hooks/d' "$_codex_config"
+        rm -f "$_codex_config.bak"
+        echo "  ✓ Removed codex_hooks feature flag"
+    fi
+
+    # Remove constitution from CLAUDE.md (also clean old workflow imports)
     for _md in CLAUDE.md AGENTS.md; do
         _path="$PROJECT_DIR/$_md"
         if [ -f "$_path" ]; then
-            sed -i.bak '/@\.baton\/constitution\.md/d' "$_path"
+            sed -i.bak '/@\.baton\/constitution\.md/d;/@\.baton\/workflow/d' "$_path"
             rm -f "$_path.bak"
             # Remove file if empty
             if [ ! -s "$_path" ] || ! grep -q '[^[:space:]]' "$_path" 2>/dev/null; then
