@@ -37,17 +37,16 @@ For each piece of feedback:
 ### The Write Lock
 
 - **Blocks** source code writes when the plan doesn't exist or lacks `<!-- BATON:GO -->`
-- **Allows** markdown files (*.md, *.mdx, *.markdown) at all times — research and planning are never blocked
-- **Unlocks** when the plan contains `<!-- BATON:GO -->` anywhere in the file
-- **Re-locks** if you remove `<!-- BATON:GO -->` (e.g., to go back to annotation cycle)
+- **Allows** markdown files at all times — except AI cannot write `BATON:GO` or `BATON:OVERRIDE` markers (hook blocks these automatically)
+- **Unlocks** when the plan contains the `BATON:GO` marker
+- **Re-locks** if you remove the marker (e.g., to go back to annotation cycle)
 - **Custom plan file**: `BATON_PLAN=plan-auth.md` — use a topic-named file (e.g. `plan-auth.md`, `plan-refactor.md`); also required when multiple plan files coexist so the write-lock knows which one to check
 - **Bypass** for emergencies: `BATON_BYPASS=1` skips the lock entirely
-- **If AI adds `<!-- BATON:GO -->` itself**: remove it immediately, return to annotation phase
 
-**Three layers of guidance:**
-- **Layer 0**: Constitutional rules always in context (constitution.md)
-- **Layer 1**: Phase-specific skills (baton-research / baton-plan / baton-implement / baton-review) with fallback to session-start hook with hardcoded fallback
-- **Layer 2**: Actionable blocking messages when writes are denied
+**Governance layers:**
+- **Rules**: constitution.md — cross-phase invariants, each tagged `[HARD]` (hook-enforced), `[AUDIT]` (review-checked), or `[GUIDE]` (best practice)
+- **Skills**: Phase-specific skills (baton-research / baton-plan / baton-implement / baton-review) loaded on-demand
+- **Hooks**: Write-lock, bash-guard, completion-check — mechanical enforcement of `[HARD]` rules
 
 ## Install
 
@@ -137,7 +136,7 @@ Projects reference `~/.baton` via junctions — no hook scripts are copied. The 
 ```
 your-project/
 ├── .baton/                       ← Junction → ~/.baton/.baton/ (single source)
-│   ├── constitution.md              (universal rules, always loaded)
+│   ├── constitution.md              (invariants + protocols, rules tagged [HARD]/[AUDIT]/[GUIDE])
 │   ├── hooks/
 │   │   ├── dispatch.sh              (event-based hook dispatcher)
 │   │   ├── manifest.conf            (hook-to-event mapping)
@@ -212,13 +211,15 @@ This removes junctions, hook entries from all IDE config files, rules files, con
 
 Boris Tane's workflow succeeds because the human stays in the loop at every critical point. Baton preserves that:
 
+- **Governance wrapper, not capability provider** — baton governs output and process, not tool choice. Use any AI skill; output must comply with constitution.md
 - **File-derived phase detection** — your current phase is determined by file state (plan existence, BATON:GO marker, todo completion), not stored anywhere
+- **Rule classification** — every rule is tagged `[HARD]` (hook-enforced), `[AUDIT]` (review-checked), or `[GUIDE]` (best practice). AI knows what has consequences
 - **Minimal CLI** — `baton init` / `baton update`, then just files and junctions
 - **Minimal overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
 - **Annotation protocol** — structured human-AI dialogue with traceable decision records
 
-The only things automated are the things humans can't reliably enforce with words: preventing AI from writing code before the plan is approved, and ensuring every annotation gets a response.
+The only things automated are the things humans can't reliably enforce with words: preventing AI from writing code before the plan is approved, blocking AI from placing governance markers, and ensuring every annotation gets a response.
 
 ## License
 
