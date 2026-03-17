@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bas
 curl -fsSL https://raw.githubusercontent.com/hex1n/baton/master/install.sh | bash -s -- --ide cursor,codex
 ```
 
-This installs the `baton` CLI to `~/.baton` (sparse clone, only essential files) and automatically runs `baton init` in the current directory. Pass `--ide` to select specific IDEs instead of auto-detection.
+This installs the `baton` CLI to `~/.baton` and automatically runs `baton init` in the current directory. Projects reference `~/.baton` via NTFS junctions (Windows) or symlinks (Unix), so updates propagate instantly without per-project copying. Pass `--ide` to select specific IDEs instead of auto-detection.
 
 ### Local install
 
@@ -96,17 +96,18 @@ session, use `--ide codex` to bootstrap the Codex files explicitly.
 The interactive selector shows a short capability summary for each IDE and
 accepts IDE names or numeric shortcuts such as `1,3,4` or `134`.
 
-**Upgrade**: Run setup.sh again — it detects the installed version and updates only what changed.
+**Upgrade**: Run setup.sh again — it detects existing configuration and merges cleanly.
 
 ## Update
 
 ```bash
-baton self-update      # Pull latest baton source to ~/.baton
-baton update           # Update current project's baton scripts
-baton update --all     # Update all registered projects
+baton update           # Pull latest baton source — all projects see changes instantly
+baton update --check   # Verify junction health across registered projects
 ```
 
-`self-update` runs `git pull` in `~/.baton`. `update` re-runs setup.sh, which compares script versions and only copies what changed.
+Since projects reference `~/.baton` via junctions (not copies), `baton update` is just `git pull` — one command updates all projects simultaneously. No need for per-project updates.
+
+For projects in copy-mode (junction unavailable), `baton update` automatically detects the `.copy-mode` marker and re-copies.
 
 ## Testing
 
@@ -131,47 +132,60 @@ local feedback, start with `bash tests/test-smoke.sh`; use
 
 ## What Gets Installed
 
-Depending on the IDEs detected or selected, Baton installs the relevant subset of:
+Projects reference `~/.baton` via junctions — no hook scripts are copied. The project footprint is minimal:
 
 ```
 your-project/
-├── .baton/
-│   ├── constitution.md       ← Universal rules (always loaded)
+├── .baton/                       ← Junction → ~/.baton/.baton/ (single source)
+│   ├── constitution.md              (universal rules, always loaded)
 │   ├── hooks/
-│   │   ├── _common.sh        ← Shared library (plan discovery, skill detection)
-│   │   ├── plan-parser.sh    ← Shared plan/todo/write-set parser
-│   │   ├── write-lock.sh     ← Write lock (PreToolUse, hard block)
-│   │   ├── phase-guide.sh    ← Phase detection + skill routing (SessionStart)
-│   │   ├── stop-guard.sh     ← Progress/completion reminder (Stop)
-│   │   ├── bash-guard.sh     ← Selective shell write blocking (PreToolUse)
-│   │   ├── post-write-tracker.sh  ← Write-set drift warning (PostToolUse)
-│   │   ├── subagent-context.sh    ← Plan progress injection (SubagentStart)
-│   │   ├── completion-check.sh    ← Retrospective enforcement (TaskCompleted)
-│   │   ├── pre-compact.sh    ← Context summary (PreCompact)
-│   │   └── failure-tracker.sh ← Tool failure counter (PostToolUseFailure)
-│   └── adapters/             ← Cross-IDE adapters (Cursor, Codex)
+│   │   ├── dispatch.sh              (event-based hook dispatcher)
+│   │   ├── manifest.conf            (hook-to-event mapping)
+│   │   ├── dispatch-cursor.sh       (Cursor adapter: exit code → JSON)
+│   │   ├── dispatch-codex.sh        (Codex adapter: stdout passthrough)
+│   │   ├── junction.sh              (shared junction/symlink/copy utility)
+│   │   ├── write-lock.sh            (PreToolUse, hard block)
+│   │   ├── phase-guide.sh           (SessionStart, phase detection + skills)
+│   │   ├── bash-guard.sh            (PreToolUse, shell write blocking)
+│   │   ├── post-write-tracker.sh    (PostToolUse, write-set drift)
+│   │   ├── quality-gate.sh          (PostToolUse, plan compliance)
+│   │   ├── stop-guard.sh            (Stop, progress reminder)
+│   │   ├── subagent-context.sh      (SubagentStart, plan injection)
+│   │   ├── completion-check.sh      (TaskCompleted, retrospective gate)
+│   │   ├── pre-compact.sh           (PreCompact, context summary)
+│   │   └── failure-tracker.sh       (PostToolUseFailure, failure counter)
+│   └── skills/                      (baton-research, baton-plan, etc.)
 ├── .claude/
-│   ├── skills/               ← Generated host copies of Baton-managed skills
-│   └── settings.json         ← Hook configuration (9 hooks)
-├── CLAUDE.md                 ← Claude import: @.baton/constitution.md
-├── AGENTS.md                 ← Generated for Codex installs: @.baton/constitution.md
-└── .agents/skills/           ← Generated Codex fallback skills
+│   ├── skills/baton-*/           ← Junctions → .baton/skills/baton-*
+│   └── settings.json            ← Generated: dispatch.sh entries per event
+├── .cursor/                      (if Cursor detected)
+│   ├── hooks.json               ← Generated: dispatch-cursor.sh entries
+│   ├── rules/baton.mdc          ← Constitution embed
+│   └── skills/baton-*/          ← Junctions
+├── .codex/                       (if Codex detected)
+│   ├── hooks.json               ← SessionStart + Stop via dispatch-codex.sh
+│   └── config.toml              ← codex_hooks feature flag
+├── CLAUDE.md                    ← @.baton/constitution.md
+├── AGENTS.md                    ← @.baton/constitution.md (Codex)
+└── .agents/skills/baton-*/      ← Junctions (fallback for all IDEs)
 ```
+
+All hook routing goes through `dispatch.sh`, which reads `manifest.conf` to determine which hooks fire for each event. New hooks only need a manifest line + script file — `baton update` propagates instantly via junctions.
 
 ## Supported IDEs
 
-| IDE | Protection Level | What You Get | Setup |
-|-----|-----------------|--------------|-------|
-| Claude Code | **Full protection** | Write-lock + phase guidance + stop guard + 9 hooks | Automatic |
-| Factory AI | **Full protection** | Write-lock + phase guidance + stop guard (Claude-style) | Automatic |
-| Cursor IDE | **Core protection** | Write-lock (via adapter) + phase guidance + subagent context | Automatic |
-| Codex | Rules guidance | Experimental `SessionStart` + `Stop` hooks (best-effort) + generated `AGENTS.md` + generated `.agents/skills/`; no write-lock | Automatic (detects `AGENTS.md`, `.agents/` dir, or Codex env), or `--ide codex` |
+| IDE | Protection Level | Events | Setup |
+|-----|-----------------|--------|-------|
+| Claude Code | **Full protection** | 8 events via dispatch.sh (PreToolUse, PostToolUse, SessionStart, Stop, PreCompact, SubagentStart, TaskCompleted, PostToolUseFailure) | Automatic |
+| Factory AI | **Full protection** | Same as Claude Code (shares `.claude/settings.json`) | Automatic |
+| Cursor IDE | **Core protection** | 6 events via dispatch-cursor.sh (preToolUse, postToolUse, sessionStart, stop, subagentStart, preCompact) | Automatic |
+| Codex | **Rules + hooks** | 2 events via dispatch-codex.sh (SessionStart, Stop) + AGENTS.md rules | Automatic or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
-> **Core protection** = hard write-lock plus a reduced hook set. Some advisory/finish hooks are unavailable on this host.
-> **Rules guidance** = workflow rules loaded into AI context. AI follows the plan-first flow but is not technically blocked.
+> **Core protection** = hard write-lock plus a reduced hook set via Cursor's JSON response protocol.
+> **Rules + hooks** = `AGENTS.md` rules + experimental SessionStart/Stop hooks. No PreToolUse write-lock.
 >
-> **Codex note**: Baton uses experimental `SessionStart`/`Stop` hooks in Codex for phase guidance and stop reminders, plus `AGENTS.md` rules and `.agents/skills/`. These hooks are advisory only: Codex still has **no PreToolUse write-lock** or plan-unlisted write enforcement. For the richest full-protection surface, use Claude Code or Factory AI; Cursor keeps the hard write-lock but exposes a reduced hook set.
+> All IDEs share the same dispatch architecture: `dispatch.sh` reads `manifest.conf` for hook routing, IDE-specific adapters (`dispatch-cursor.sh`, `dispatch-codex.sh`) translate the protocol. Adding a hook to one IDE automatically makes it available to all IDEs that support the corresponding event type.
 
 ## Suggested .gitignore
 
@@ -192,14 +206,14 @@ Some teams prefer to keep these for audit trails — it's up to you.
 bash /path/to/baton/setup.sh --uninstall /path/to/your/project
 ```
 
-Or manually: delete `.baton/`, remove baton-* skill directories from each IDE's skills folder, and remove baton workflow imports from rules files such as `CLAUDE.md`, `AGENTS.md`, `.rules`, or IDE-specific rules directories. `setup.sh --uninstall` now removes Baton-owned JSON hook entries by exact command match while preserving unrelated settings; legacy Baton commands such as `sh .claude/write-lock.sh` are included in that cleanup. If a config file is invalid JSON, `jq` is unavailable, or any config still references `.baton/` after cleanup, Baton leaves `.baton/` in place and warns for manual review. In self-install mode, Baton also preserves the repository's source `.baton/` and `.claude/skills/` directories.
+This removes junctions, hook entries from all IDE config files, rules files, constitution references, and Codex feature flags. Requires `jq` for clean JSON removal; without `jq`, manual cleanup of settings.json may be needed.
 
 ## Philosophy
 
 Boris Tane's workflow succeeds because the human stays in the loop at every critical point. Baton preserves that:
 
 - **File-derived phase detection** — your current phase is determined by file state (plan existence, BATON:GO marker, todo completion), not stored anywhere
-- **Minimal CLI** — `baton init` / `baton update`, then just files and hooks
+- **Minimal CLI** — `baton init` / `baton update`, then just files and junctions
 - **Minimal overhead** — always-loaded rules + skills loaded on-demand per phase
 - **Zero dependencies** — jq optional (falls back to awk), no Python, no Node.js
 - **Annotation protocol** — structured human-AI dialogue with traceable decision records
