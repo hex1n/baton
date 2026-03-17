@@ -41,6 +41,36 @@ the reason to prefer it is quality, not prohibition.
 | IMPLEMENT | /baton-implement | Discovery protocol, continuous execution |
 | REVIEW | /baton-review | Phase-specific review-prompt.md criteria |
 
+## Process Governance
+
+Output compliance checks the final product. Process governance ensures the
+workflow was followed. Both apply regardless of which skill produced the content.
+
+**Mandatory process loops:**
+
+1. **Research**: investigate → self-challenge → review → fix findings → re-review
+   → repeat until review passes or circuit breaker (3 cycles → escalate)
+   → convergence check before transitioning to plan
+
+2. **Plan**: decompose → present approaches → self-challenge → review → fix →
+   re-review → repeat until review passes or circuit breaker
+   → human annotation cycle (批注区) until human adds BATON:GO
+
+3. **Implementation**: execute todos → implementation review → fix findings →
+   re-review → repeat until review passes or circuit breaker
+   → full test suite → retrospective → BATON:COMPLETE
+
+These loops are non-negotiable. If an external skill produces a research document
+or plan, the document must still pass through the review loop before proceeding
+to the next phase. The external skill handles content generation; the phase
+workflow handles quality assurance.
+
+**Annotation cycles**: 批注区 is not just a section to append — it is an
+interactive loop. Human writes annotations → AI processes each one (with evidence)
+→ updates the document → human reviews again → repeat until satisfied. A document
+with an empty 批注区 that was never reviewed by the human has not completed the
+annotation cycle.
+
 ## Output Compliance
 
 Every working document must satisfy these regardless of which skill produced it:
