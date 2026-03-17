@@ -78,8 +78,18 @@ fi
 # State 3: IMPLEMENT — plan + GO (+ Todo exists)
 if [ -n "$PLAN" ] && grep -q '<!-- BATON:GO -->' "$PLAN" 2>/dev/null; then
     echo "$MINDSET_LINE" >&2
-    if has_skill baton-implement; then
-        echo "📍 IMPLEMENT phase — invoke /baton-implement for execution discipline" >&2
+    # Detect available implementation skills
+    _impl_skills=""
+    has_skill baton-implement && _impl_skills="$_impl_skills /baton-implement"
+    has_skill superpowers:executing-plans && _impl_skills="$_impl_skills /superpowers:executing-plans"
+    has_skill superpowers:test-driven-development && _impl_skills="$_impl_skills /superpowers:test-driven-development"
+    has_skill superpowers:subagent-driven-development && _impl_skills="$_impl_skills /superpowers:subagent-driven-development"
+    _debug_skills=""
+    has_skill baton-debug && _debug_skills="$_debug_skills /baton-debug"
+    has_skill superpowers:systematic-debugging && _debug_skills="$_debug_skills /superpowers:systematic-debugging"
+
+    if [ -n "$_impl_skills" ]; then
+        echo "📍 IMPLEMENT phase — available:$_impl_skills" >&2
     else
         echo "📍 IMPLEMENT phase — <!-- BATON:GO --> is set" >&2
         echo "" >&2
@@ -91,8 +101,8 @@ EOF
     fi
     echo "" >&2
     echo "🔍 Self-check: (1) re-read modified code, not from memory · (2) run tests before marking done · (3) check consumers of changed files" >&2
-    if has_skill baton-debug; then
-        echo "🐛 If stuck or hitting repeated failures, invoke /baton-debug for systematic root cause analysis" >&2
+    if [ -n "$_debug_skills" ]; then
+        echo "🐛 If stuck, available:$_debug_skills" >&2
     fi
     exit 0
 fi
@@ -101,8 +111,11 @@ fi
 if [ -n "$PLAN" ]; then
     echo "$MINDSET_LINE" >&2
     echo "📍 ANNOTATION cycle — $PLAN_NAME awaiting approval" >&2
-    if has_skill baton-plan; then
-        echo "   Review annotations in the plan. Invoke /baton-plan for annotation protocol." >&2
+    _plan_skills=""
+    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
+    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    if [ -n "$_plan_skills" ]; then
+        echo "   Review annotations. Available:$_plan_skills" >&2
     else
         echo "" >&2
         cat >&2 <<EOF
@@ -155,9 +168,12 @@ fi
 # State 5: PLAN — research exists, no plan
 if [ -n "$RESEARCH" ]; then
     echo "$MINDSET_LINE" >&2
-    if has_skill baton-plan; then
-        echo "📍 PLAN phase — invoke /baton-plan to create change proposal from research" >&2
-        echo "   Create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
+    _plan_skills=""
+    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
+    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    if [ -n "$_plan_skills" ]; then
+        echo "📍 PLAN phase — available:$_plan_skills" >&2
+        echo "   Create in baton-tasks/<topic>/plan.md or docs/ (same directory as research)." >&2
     else
         echo "📍 PLAN phase — create in baton-tasks/<topic>/plan.md (same directory as research)." >&2
         echo "" >&2
@@ -181,8 +197,11 @@ fi
 if [ "$_RF_COUNT" -gt 1 ] 2>/dev/null; then
     echo "$MINDSET_LINE" >&2
     echo "⚠️ Multiple research files found (research-*.md). Name your plan to match the primary research file, or consolidate." >&2
-    if has_skill baton-plan; then
-        echo "📍 PLAN phase — invoke /baton-plan to create change proposal" >&2
+    _plan_skills=""
+    has_skill baton-plan && _plan_skills="$_plan_skills /baton-plan"
+    has_skill superpowers:writing-plans && _plan_skills="$_plan_skills /superpowers:writing-plans"
+    if [ -n "$_plan_skills" ]; then
+        echo "📍 PLAN phase — available:$_plan_skills" >&2
     else
         echo "📍 PLAN phase — derive approaches from research findings." >&2
     fi
@@ -191,8 +210,11 @@ fi
 
 # State 6: RESEARCH — nothing exists
 echo "$MINDSET_LINE" >&2
-if has_skill baton-research; then
-    echo "📍 RESEARCH phase — invoke /baton-research to begin investigation" >&2
+_research_skills=""
+has_skill baton-research && _research_skills="$_research_skills /baton-research"
+has_skill superpowers:brainstorming && _research_skills="$_research_skills /superpowers:brainstorming"
+if [ -n "$_research_skills" ]; then
+    echo "📍 RESEARCH phase — available:$_research_skills" >&2
     echo "   Create in baton-tasks/<topic>/research.md." >&2
 else
     echo "📍 RESEARCH phase — create in baton-tasks/<topic>/research.md." >&2

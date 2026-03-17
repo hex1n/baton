@@ -1100,6 +1100,62 @@ assert_eq "$RESEARCH" "$d/baton-tasks/topic/research.md" "research glob fallback
 
 # ============================================================
 echo ""
+echo "=== docs/ plan discovery ==="
+
+# --- plan in docs/ subdirectory ---
+echo "--- docs/ plan discovery ---"
+source_parser
+d="$tmp/docs-plan-disc"
+mkdir -p "$d/.baton" "$d/docs/superpowers/plans"
+echo "# Plan" > "$d/docs/superpowers/plans/2026-03-17-feature-plan.md"
+JSON_CWD="$d" parser_find_plan
+assert_eq "$PLAN" "$d/docs/superpowers/plans/2026-03-17-feature-plan.md" "finds plan in docs/ subdirectory"
+
+# --- root plan takes priority over docs/ plan ---
+echo "--- root plan priority over docs/ ---"
+source_parser
+d="$tmp/docs-plan-priority"
+mkdir -p "$d/.baton" "$d/docs/plans"
+echo "# Docs Plan" > "$d/docs/plans/plan-feature.md"
+sleep 1
+echo "# Root Plan" > "$d/plan.md"
+JSON_CWD="$d" parser_find_plan
+assert_eq "$PLAN_NAME" "plan.md" "root plan.md takes priority over docs/ plan"
+
+# --- BATON:GO works in docs/ plans ---
+echo "--- BATON:GO in docs/ plan ---"
+source_parser
+d="$tmp/docs-plan-go"
+mkdir -p "$d/.baton" "$d/docs/superpowers/plans"
+printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > \
+    "$d/docs/superpowers/plans/2026-03-17-feature-plan.md"
+JSON_CWD="$d" parser_find_plan
+assert_eq "$PLAN" "$d/docs/superpowers/plans/2026-03-17-feature-plan.md" "finds BATON:GO plan in docs/"
+_go_rc=0
+parser_has_go || _go_rc=$?
+assert_eq "$_go_rc" "0" "parser_has_go works for docs/ plan"
+
+# --- BATON:COMPLETE plan in docs/ is filtered ---
+echo "--- COMPLETE docs/ plan filtered ---"
+source_parser
+d="$tmp/docs-plan-complete"
+mkdir -p "$d/.baton" "$d/docs/plans"
+printf '# Plan\n<!-- BATON:COMPLETE -->\n' > "$d/docs/plans/plan-done.md"
+JSON_CWD="$d" parser_find_plan
+assert_eq "$PLAN" "" "COMPLETE plan in docs/ is filtered out"
+
+# --- docs/ spec recognized as research ---
+echo "--- docs/ spec as research ---"
+source_parser
+d="$tmp/docs-spec-research"
+mkdir -p "$d/.baton" "$d/docs/superpowers/specs"
+echo "# Design Spec" > "$d/docs/superpowers/specs/2026-03-17-feature-design.md"
+JSON_CWD="$d" parser_find_plan
+parser_find_research
+assert_eq "$RESEARCH" "$d/docs/superpowers/specs/2026-03-17-feature-design.md" "finds spec in docs/ as research"
+
+# ============================================================
+echo ""
 echo "=== Results ==="
 echo "$PASS/$TOTAL passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1
