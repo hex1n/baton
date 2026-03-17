@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # phase-guide.sh — Detect current phase, output phase-specific guidance
-# Version: 6.1
+# Version: 7.0
 # Hook: SessionStart
 # Skills-first: prompts skill invocation when baton skills are available
 # Fallback: hardcoded summaries per phase
@@ -11,6 +11,45 @@ trap 'echo "⚠️ BATON phase-guide: unexpected error, skipping guidance" >&2; 
 
 # --- Source shared functions ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+
+# --- Governance context injection (runs on every exit) ---
+# Reads using-baton SKILL.md and outputs as additionalContext JSON to stdout,
+# mirroring how superpowers injects using-superpowers at SessionStart.
+_escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+_output_governance_context() {
+    local _gb_path="$SCRIPT_DIR/../skills/using-baton/SKILL.md"
+    [ ! -f "$_gb_path" ] && return 0
+    local _content
+    _content="$(cat "$_gb_path" 2>/dev/null)" || return 0
+    local _escaped
+    _escaped="$(_escape_for_json "$_content")"
+    local _ctx="<EXTREMELY_IMPORTANT>\nYou are in a baton-governed project.\n\n**Below is the full content of 'using-baton' — baton's orchestration and governance layer. It applies to ALL skills:**\n\n${_escaped}\n</EXTREMELY_IMPORTANT>"
+    if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+        cat <<EOFJ
+{
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "${_ctx}"
+  }
+}
+EOFJ
+    else
+        cat <<EOFJ
+{
+  "additional_context": "${_ctx}"
+}
+EOFJ
+    fi
+}
+trap '_output_governance_context' EXIT
 if [ -f "$SCRIPT_DIR/_common.sh" ]; then
     . "$SCRIPT_DIR/_common.sh"
 else
@@ -40,8 +79,9 @@ fi
 
 # --- Scan all installed skills (not just baton-*) ---
 # Returns space-separated list of skill names found across all IDE skill dirs
+# Uses parser_project_root for walk-up when BATON_PROJECT_DIR is not set
 _scan_all_skills() {
-    local _d="${BATON_PROJECT_DIR:-$(pwd)}" _seen="" _name
+    local _d="${BATON_PROJECT_DIR:-$(parser_project_root)}" _seen="" _name
     for _ide in .baton .claude .cursor .agents; do
         for _skill_dir in "$_d/$_ide/skills"/*/; do
             [ -f "$_skill_dir/SKILL.md" ] || continue
@@ -57,9 +97,9 @@ _scan_all_skills() {
 _skills_matching() {
     local _keyword="$1" _all="$2" _matched="" _s
     for _s in $_all; do
-        case "$_s" in *"$_keyword"*) _matched="$_matched /$_s" ;; esac
+        case "$_s" in *"$_keyword"*) _matched="${_matched:+$_matched }/$_s" ;; esac
     done
-    echo "$_matched"
+    [ -n "$_matched" ] && echo " $_matched"
 }
 
 _ALL_SKILLS="$(_scan_all_skills)"

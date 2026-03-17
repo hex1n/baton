@@ -85,36 +85,22 @@ These make first-principles compliance verifiable:
   unconscious default?
 - Are omitted surfaces truly unaffected, or merely unexamined?
 
-## Phase-Specific Additions
+## Shared Protocol Compliance
 
-**Research**: Are conclusions supported by cited evidence? What gaps exist?
-What would a skeptic challenge first?
+All artifacts must comply with `.baton/shared-protocols.md`. Check:
+- Section 1: Evidence labels and conflict resolution applied correctly?
+- Section 2: Self-Challenge present and genuinely deep?
+- Section 3: Review protocol followed?
+- Section 4: `## 批注区` present with correct annotation template?
 
-**Plan**: Internal contradictions? Missing impact analysis? Does each change
-trace to the stated problem? **Surface Scan depth check**: is the coverage
-evidence-based or memory-based? For each "modify" file, are all references
-covered in the change set, or only the obvious ones?
+## Domain-Specific Criteria
 
-**Todo list**: Does each item trace to the plan? Missing steps? Vague
-verification? Wrong dependency order?
+Each phase skill provides its own review criteria in `review-prompt.md`.
+When dispatching review, the phase skill combines this framework with its
+domain-specific criteria. See Invocation section for dispatch format.
 
-**Implementation** (post-completion code review):
-
-*Step 0 — Spec Compliance* (mandatory first):
-- Does each change match the plan's stated intent?
-- Are all plan-listed files modified? Any missing?
-- Does the diff implement what was specified, not a reinterpretation?
-- Would a line-by-line comparison against plan intent show material deviation?
-- Would the plan author recognize this as their design? (supplementary check)
-
-Implementation review assumes the approved plan is the current spec baseline.
-Challenges to the plan itself belong in prior plan review, not in
-reinterpretation during implementation.
-
-*Step 1 — Code Quality* (only after Step 0 passes):
-- Unintended side effects? Missed edge cases?
-- Consumers of changed files affected?
-- Same bug pattern elsewhere?
+Do NOT skip domain criteria if provided. Apply first-principles framework
+AND domain checklist together.
 
 ## Frame-Level Finding Requirements
 
@@ -168,18 +154,18 @@ Return findings to the artifact owner / generating workflow before progression, 
 ## Invocation
 
 **AI-initiated** (primary — provides context isolation):
-The generating skill dispatches via Agent tool:
+The phase skill reads its `review-prompt.md` and dispatches via Agent tool:
 ```
-Agent(prompt="Review this artifact using first-principles framework:\n\n[artifact text]")
+Agent(prompt="[content of review-prompt.md]\n\n---\n\nArtifact to review:\n\n[artifact text]")
 ```
-The subagent has only the artifact + these review criteria. No generation
-reasoning, no conversation history. This eliminates anchoring bias.
+The subagent receives: baton-review skill (loaded automatically) + domain criteria
++ artifact text. No generation reasoning, no conversation history.
 
 **Human-initiated** (fallback):
 Human invokes `/baton-review` directly. Runs within the current session
-context (no isolation). Avoids generator self-anchoring, but does not provide full context
-isolation — session history and user framing still influence the review. Treat
-as weaker than subagent review.
+context (no isolation). When human-initiated, read the relevant phase's
+`review-prompt.md` to get domain criteria. Treat as weaker than subagent review
+due to session history influence.
 
 ## Platform Support
 

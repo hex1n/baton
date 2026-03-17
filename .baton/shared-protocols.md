@@ -1,22 +1,17 @@
-# Investigation Infrastructure
+# Shared Protocols
 
-<!-- Located in baton-research/ as current sole consumer. Move to shared location if other skills need it. -->
-
-Shared infrastructure for baton investigation phases.
+Shared operational protocols for all baton skills and any skill operating under baton governance.
 Extends the Evidence Model and Challenge Model defined in `constitution.md`.
 
 ---
 
 ## Section 1: Extended Evidence Standards
 
-Base labels (from constitution.md Evidence Model):
-- `[CODE]` file:line — `[DOC]` external docs — `[RUNTIME]` command output — `[HUMAN]` chat
+Base labels and status markers per constitution.md Evidence Model.
 
-Extended labels:
+Extended labels (used in baton workflows):
 - `[DESIGN]` design decision or pattern
 - `[EMPIRICAL]` observed behavior in practice
-
-Status: `✅` confirmed — `❌` contradicted / problematic — `❓` unverified
 
 Keep Facts / Inferences / Judgments distinct.
 

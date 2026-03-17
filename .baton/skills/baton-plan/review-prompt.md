@@ -1,0 +1,58 @@
+# Plan Review Criteria
+
+Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
+
+## First-Principles Decomposition
+
+- Is the problem stated without referencing a solution?
+- Are constraints explicitly listed (architecture, dependencies, backward compatibility)?
+- Were ≥2 fundamentally different solution categories enumerated (not variations)?
+
+## Multi-Approach Presentation
+
+- Are 2-3 approaches presented with trade-offs visible to the human?
+- Or did the author internally enumerate and silently reject, presenting only the winner?
+- Does each approach have: what, how, trade-offs, fit?
+- Is the recommendation traced to specific research findings and constraints?
+- Are rejection reasons for alternatives explicit (not just "the recommended one is better")?
+
+## Research Derivation
+
+- Are approaches derived from validated inputs (research conclusions, human requirements)?
+- If no formal research exists, are user requirements recorded and directly verified?
+- Does the plan jump to "how" without tracing back to "why"?
+
+## Internal Consistency
+
+- Any contradictions between sections (e.g., approach says X, impact says Y)?
+- Do all changes trace back to the stated problem?
+- Are there changes that serve no stated goal (inherited baggage)?
+
+## Impact Analysis (Surface Scan)
+
+- Is the Surface Scan evidence-based (tool invocations, file reads) or memory-based?
+- For each L1 file: are all importers/consumers identified (L2)?
+- Are any surfaces defaulted to "skip" without explicit justification?
+- Are there "modify" files whose references are only partially covered?
+
+## Write Set Completeness
+
+- Are all affected files identified with dispositions?
+- Are test files included for modified source files?
+- Could the human predict the diff from reading this plan?
+
+## Risk Assessment
+
+- Are risks identified with mitigation strategies?
+- Are rollback / compatibility considerations addressed?
+- Are verification paths explicit (what test, command, or observation confirms each change)?
+
+## Scope & YAGNI
+
+- Does the plan include unnecessary features not requested?
+- Is the scope appropriate for the stated problem (not over-engineered)?
+- Could the plan be decomposed into smaller independent units?
+
+## Plan-Specific Structural Check
+
+- `<!-- BATON:GO -->` placeholder present (not pre-filled by AI)?

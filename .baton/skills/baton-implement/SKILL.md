@@ -52,8 +52,8 @@ If `## Todo` doesn't exist and human said "generate Todo list":
 - Order by dependencies; parallelization must satisfy the independence criteria in Step 3
 
 **After generating, review the Todo list:**
-- Preferred: independent review — dispatch baton-review via Agent tool with only the Todo list + plan text
-- Fallback: explicit self-review checklist in current agent (re-read plan, verify each Todo item traces to a plan section, check ordering and deps)
+- Preferred: independent review — dispatch baton-review via Agent tool with `./review-prompt.md` (Todo List section) + Todo list + plan text
+- Fallback: explicit self-review using `./review-prompt.md` Todo List checklist
 - If neither review method performed: do not claim reviewed
 
 Resolve review findings in the Todo list before presenting it.
@@ -95,9 +95,8 @@ For each item:
 ### Step 5: Completion
 
 After ALL items verified:
-1. **Implementation review** — dispatch baton-review via Agent tool with the diff (`git diff` of all changes).
-   Fallback: explicit self-review in current agent against plan contract.
-   Additionally verify: were any B-level additions made, and are their rationales in `## Implementation Notes` justified?
+1. **Implementation review** — dispatch baton-review via Agent tool with `./review-prompt.md` + diff (`git diff` of all changes) + plan text.
+   Fallback: explicit self-review using `./review-prompt.md` checklist against plan contract.
    Fix findings, then re-review. Repeat until baton-review passes or circuit breaker
    triggers (3 rounds of high severity findings → escalate to human).
 2. **Full test suite** — run the project's complete suite (as defined by repo conventions or plan), not just per-item tests

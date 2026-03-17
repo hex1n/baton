@@ -22,6 +22,7 @@ FIRST PRINCIPLES BEFORE FRAMING.
 
 This skill is the local source of truth for research-phase framing.
 `constitution.md` only supplements cross-phase annotation handling; local field requirements are defined here.
+Shared investigation infrastructure (evidence standards, self-challenge, review, 批注区 protocol) is in `.baton/shared-protocols.md`.
 
 Research produces understanding, not code. Write findings down for the plan phase.
 
@@ -261,7 +262,7 @@ Guidance:
 - Name the contradiction explicitly
 - Do not smooth conflicting findings into vague prose
 - Prefer resolution by stronger evidence, not rhetorical convenience
-- Apply evidence conflict-resolution rules (see `./investigation-infrastructure.md` Section 1)
+- Apply evidence conflict-resolution rules (see `.baton/shared-protocols.md` Section 1)
 - If unresolved, keep it visible as ❓ rather than hand-waving it away
 
 #### Build systematic coverage
@@ -422,19 +423,29 @@ Do not treat "nothing obvious contradicted it" as a completed counterexample swe
 
 ### Step 3: Evidence Standards
 
-Follow `./investigation-infrastructure.md` Section 1 for evidence labels, status markers,
+Follow `.baton/shared-protocols.md` Section 1 for evidence labels, status markers,
 conflict resolution rules, and evidence provenance requirements.
 
 ### Step 4: Self-Challenge
 
-Follow `./investigation-infrastructure.md` Section 2.
+Follow `.baton/shared-protocols.md` Section 2.
 Write `## Self-Challenge` into the research artifact — visible output, not internal reasoning.
 
 ### Step 5: Review the Research
 
-Follow `./investigation-infrastructure.md` Section 3.
-Choose Option A (isolated review via subagent) or Option B (structured self-review)
-based on artifact self-sufficiency and context-loss risk.
+Follow `.baton/shared-protocols.md` Section 3.
+
+1. **Dispatch** baton-review via Agent tool: read the matching review prompt + research text (context isolation)
+   - Codebase-primary → `./review-prompt-codebase.md`
+   - External-primary → `./review-prompt-external.md`
+   - Mixed → use primary type's review prompt
+   - Fallback: explicit self-review using the matching review prompt checklist if subagent unavailable
+2. **Process findings** per constitution.md Challenge Model
+3. **Fix** — revise the research to address accepted findings
+4. **Re-review** — if materially rewritten, dispatch baton-review again
+5. **Repeat** until baton-review passes or circuit breaker (3 cycles → escalate to human)
+
+Choose dispatch (Option A) vs self-review (Option B) based on artifact self-sufficiency and context-loss risk.
 
 ### Step 6: Convergence Check
 
@@ -485,5 +496,5 @@ Preserve traceability when conclusions change.
 
 ## Annotation Protocol
 
-Follow `./investigation-infrastructure.md` Section 4 for annotation format, processing rules,
+Follow `.baton/shared-protocols.md` Section 4 for annotation format, processing rules,
 escalation heuristics, and `## 批注区` structure.

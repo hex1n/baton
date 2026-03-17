@@ -327,20 +327,7 @@ without path-specific configuration.
 #### 2. Annotation cycle support
 
 Every research or plan document — regardless of which skill created it — must
-end with:
-
-```markdown
-## 批注区
-```
-
-This section is the human's annotation surface. The annotation cycle is Baton's
-core mechanism for building shared understanding:
-
-1. Human writes feedback (free text, or `[PAUSE]` to redirect investigation)
-2. AI infers intent, responds with file:line evidence
-3. AI records the exchange in `## Annotation Log`
-4. Repeat until shared understanding reached
-5. Human adds `<!-- BATON:GO -->` when satisfied
+end with `## 批注区`.
 
 A document without `## 批注区` is incomplete. A skill that omits it has
 produced a non-compliant artifact. When receiving a document from any skill
