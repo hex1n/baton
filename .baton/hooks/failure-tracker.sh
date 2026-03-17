@@ -8,10 +8,12 @@
 # Counts cumulative tool failures per session. Alerts at threshold =3 and =5 only.
 # Does not attempt root-cause analysis — provides "failures accumulating" signal.
 
-# --- Read stdin JSON ---
-STDIN=""
-if [ ! -t 0 ]; then
-    STDIN="$(cat 2>/dev/null || true)"
+# --- Read stdin JSON (supports dispatch mode and direct invocation) ---
+if [ -n "${BATON_STDIN+x}" ]; then
+    STDIN="$BATON_STDIN"
+else
+    STDIN=""
+    [ ! -t 0 ] && STDIN="$(cat 2>/dev/null || true)"
 fi
 
 # --- Extract session identifier ---

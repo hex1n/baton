@@ -19,10 +19,12 @@ if [ "${BATON_BYPASS:-}" = "1" ]; then
     exit 0
 fi
 
-# --- Read stdin JSON ---
-STDIN=""
-if [ ! -t 0 ]; then
-    STDIN="$(cat 2>/dev/null || true)"
+# --- Read stdin JSON (supports dispatch mode and direct invocation) ---
+if [ -n "${BATON_STDIN+x}" ]; then
+    STDIN="$BATON_STDIN"
+else
+    STDIN=""
+    [ ! -t 0 ] && STDIN="$(cat 2>/dev/null || true)"
 fi
 
 # --- Resolve target path + cwd from JSON ---

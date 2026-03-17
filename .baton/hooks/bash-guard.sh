@@ -30,9 +30,15 @@ if [ -n "$PLAN" ]; then
     fi
 fi
 
-# --- Read command from stdin JSON ---
-if [ ! -t 0 ]; then
+# --- Read command from stdin JSON (supports dispatch mode and direct invocation) ---
+if [ -n "${BATON_STDIN+x}" ]; then
+    STDIN="$BATON_STDIN"
+elif [ ! -t 0 ]; then
     STDIN="$(cat 2>/dev/null || true)"
+else
+    STDIN=""
+fi
+if [ -n "$STDIN" ]; then
     if command -v jq >/dev/null 2>&1; then
         CMD="$(printf '%s' "$STDIN" | jq -r '.tool_input.command // empty' 2>/dev/null)"
     else
