@@ -83,6 +83,7 @@ else
 fi
 
 # --- Find plan file (from JSON cwd, then shell cwd) ---
+export BATON_TARGET="$TARGET"
 resolve_plan_name
 find_plan
 

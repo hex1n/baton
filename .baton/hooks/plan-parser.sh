@@ -76,6 +76,55 @@ parser_find_plan() {
                 PLAN="$_d/$_c"
                 local _count
                 _count="$(printf '%s\n' "$_active" | wc -l | tr -d ' ')"
+
+                # --- Disambiguation when multiple active plans found ---
+                if [ "$_count" -gt 1 ] 2>/dev/null; then
+                    # Layer 1: BATON:GO uniqueness — exactly one plan has GO → select it
+                    local _go_plan="" _go_count=0
+                    while IFS= read -r _gf; do
+                        [ -z "$_gf" ] && continue
+                        if grep -q '<!-- BATON:GO -->' "$_d/$_gf" 2>/dev/null; then
+                            _go_plan="$_gf"
+                            _go_count=$((_go_count + 1))
+                        fi
+                    done <<< "$_active"
+                    if [ "$_go_count" -eq 1 ]; then
+                        PLAN_NAME="$_go_plan"
+                        PLAN="$_d/$_go_plan"
+                        export MULTI_PLAN_COUNT=1
+                        return
+                    fi
+
+                    # Layer 2: BATON_TARGET context — target in baton-tasks/<topic>/ → prefer that plan
+                    if [ -n "${BATON_TARGET:-}" ]; then
+                        local _target_rel
+                        case "$BATON_TARGET" in
+                            "$_d"/*) _target_rel="${BATON_TARGET#"$_d"/}" ;;
+                            *) _target_rel="$BATON_TARGET" ;;
+                        esac
+                        case "$_target_rel" in
+                            baton-tasks/*/*)
+                                local _topic_dir
+                                _topic_dir="${_target_rel#baton-tasks/}"
+                                _topic_dir="baton-tasks/${_topic_dir%%/*}"
+                                local _match=""
+                                while IFS= read -r _tf; do
+                                    [ -z "$_tf" ] && continue
+                                    case "$_tf" in
+                                        "$_topic_dir/"*) _match="$_tf"; break ;;
+                                    esac
+                                done <<< "$_active"
+                                if [ -n "$_match" ]; then
+                                    PLAN_NAME="$_match"
+                                    PLAN="$_d/$_match"
+                                    export MULTI_PLAN_COUNT=1
+                                    return
+                                fi
+                                ;;
+                        esac
+                    fi
+                fi
+
                 export MULTI_PLAN_COUNT="$_count"
                 if [ "$_count" -gt 1 ] 2>/dev/null; then
                     echo "⚠️ Multiple plan files found ($PLAN_NAME selected by mtime). Set BATON_PLAN=<filename> to select one, or remove unused plans." >&2
