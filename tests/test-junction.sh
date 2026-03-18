@@ -20,7 +20,7 @@ assert_true() {
     else echo "  FAIL: $2"; FAIL=$((FAIL + 1)); fi
 }
 
-. "$SCRIPT_DIR/../.baton/hooks/junction.sh"
+. "$SCRIPT_DIR/../.baton/hooks/lib/junction.sh"
 
 # --- Test: creates junction/symlink/copy to a directory ---
 echo "=== atomic_junction creates link ==="

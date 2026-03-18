@@ -4,5 +4,5 @@
 set -eu
 
 _dir="$(cd "$(dirname "$0")" && pwd)"
-bash "$_dir/dispatch.sh" "$@" 2>&1 || true
+bash "$_dir/../../hooks/dispatch.sh" "$@" 2>&1 || true
 exit 0

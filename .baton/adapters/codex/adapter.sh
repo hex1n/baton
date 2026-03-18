@@ -16,7 +16,7 @@
 
 HOOK_NAME="${1:-}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-HOOK_DIR="$SCRIPT_DIR/../hooks"
+HOOK_DIR="$SCRIPT_DIR/../../hooks"
 
 case "$HOOK_NAME" in
     phase-guide)  HOOK_SCRIPT="$HOOK_DIR/phase-guide.sh" ;;

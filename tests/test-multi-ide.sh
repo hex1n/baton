@@ -178,7 +178,7 @@ d="$tmp/t4" && mkdir -p "$d/.claude" "$d/.cursor"
 TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 # Check Claude settings
-if [ -f "$d/.claude/settings.json" ] && grep -q 'write-lock' "$d/.claude/settings.json"; then
+if [ -f "$d/.claude/settings.json" ] && grep -q 'dispatch.sh' "$d/.claude/settings.json"; then
     echo "  pass: .claude/settings.json configured"
     PASS=$((PASS + 1))
 else
@@ -187,7 +187,7 @@ else
 fi
 # Check Cursor hooks
 TOTAL=$((TOTAL + 1))
-if [ -f "$d/.cursor/hooks.json" ] && grep -q 'adapter-cursor' "$d/.cursor/hooks.json"; then
+if [ -f "$d/.cursor/hooks.json" ] && grep -q 'adapters/cursor/dispatch' "$d/.cursor/hooks.json"; then
     echo "  pass: .cursor/hooks.json configured"
     PASS=$((PASS + 1))
 else
@@ -205,11 +205,11 @@ else
 fi
 # Check adapter installed
 TOTAL=$((TOTAL + 1))
-if [ -f "$d/.baton/adapters/adapter-cursor.sh" ]; then
-    echo "  pass: adapter-cursor.sh installed"
+if [ -f "$d/.baton/adapters/cursor/adapter.sh" ]; then
+    echo "  pass: cursor/adapter.sh installed"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: adapter-cursor.sh not installed"
+    echo "  FAIL: cursor/adapter.sh not installed"
     FAIL=$((FAIL + 1))
 fi
 
@@ -224,7 +224,7 @@ BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 if grep -q '"version": 1' "$d/.cursor/hooks.json" && \
    grep -q '"sessionStart"' "$d/.cursor/hooks.json" && \
    grep -q '"preToolUse"' "$d/.cursor/hooks.json" && \
-   grep -q 'phase-guide' "$d/.cursor/hooks.json"; then
+   grep -q 'dispatch.sh' "$d/.cursor/hooks.json"; then
     echo "  pass: hooks.json has correct structure"
     PASS=$((PASS + 1))
 else
@@ -258,8 +258,7 @@ TOTAL=$((TOTAL + 1))
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 # Should preserve custom hooks and merge Baton hooks
 if grep -q '"custom"' "$d/.cursor/hooks.json" && \
-   grep -q 'adapter-cursor.sh' "$d/.cursor/hooks.json" && \
-   grep -q 'phase-guide.sh' "$d/.cursor/hooks.json"; then
+   grep -q 'adapters/cursor/dispatch.sh' "$d/.cursor/hooks.json"; then
     echo "  pass: existing .cursor/hooks.json preserved and Baton hooks merged"
     PASS=$((PASS + 1))
 else

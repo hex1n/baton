@@ -15,8 +15,8 @@ trap 'exit 0' HUP INT TERM
 
 # --- Source shared functions ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-if [ -f "$SCRIPT_DIR/_common.sh" ]; then
-    . "$SCRIPT_DIR/_common.sh"
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    . "$SCRIPT_DIR/lib/common.sh"
 else
     exit 0
 fi

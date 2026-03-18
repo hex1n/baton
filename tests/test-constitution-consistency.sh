@@ -23,29 +23,29 @@ for concept in "No claim without evidence" "No silent agreement" "No guessing pa
     fi
 done
 
-# --- _common.sh: shared functions must exist and be sourced by all hooks ---
+# --- common.sh: shared functions must exist and be sourced by all hooks ---
 echo ""
-echo "Checking _common.sh shared library..."
-COMMON="$SCRIPT_DIR/../.baton/hooks/_common.sh"
+echo "Checking common.sh shared library..."
+COMMON="$SCRIPT_DIR/../.baton/hooks/lib/common.sh"
 
-# _common.sh must define the shared functions
+# common.sh must define the shared functions
 for func in resolve_plan_name find_plan has_skill; do
     if grep -q "^${func}()" "$COMMON"; then
-        echo "OK: _common.sh defines $func"
+        echo "OK: common.sh defines $func"
     else
-        echo "DRIFT: _common.sh missing function $func"
+        echo "DRIFT: common.sh missing function $func"
         FAIL=1
     fi
 done
 
-# All hooks must source _common.sh
+# All hooks must source lib/common.sh
 for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
               post-write-tracker.sh completion-check.sh pre-compact.sh subagent-context.sh; do
     path="$SCRIPT_DIR/../.baton/hooks/$script"
-    if grep -q '_common\.sh' "$path"; then
-        echo "OK: $script sources _common.sh"
+    if grep -q 'lib/common\.sh' "$path"; then
+        echo "OK: $script sources lib/common.sh"
     else
-        echo "DRIFT: $script does not source _common.sh"
+        echo "DRIFT: $script does not source lib/common.sh"
         FAIL=1
     fi
 done

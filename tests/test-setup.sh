@@ -137,8 +137,8 @@ OUTPUT="$(run_setup "$d" 2>&1)"
 # .baton/ directory structure
 assert_file_exists "$d/.baton/hooks/write-lock.sh"
 assert_file_executable "$d/.baton/hooks/write-lock.sh"
-assert_file_exists "$d/.baton/hooks/plan-parser.sh"
-assert_file_executable "$d/.baton/hooks/plan-parser.sh"
+assert_file_exists "$d/.baton/hooks/lib/plan-parser.sh"
+assert_file_executable "$d/.baton/hooks/lib/plan-parser.sh"
 assert_file_exists "$d/.baton/hooks/phase-guide.sh"
 assert_file_executable "$d/.baton/hooks/phase-guide.sh"
 assert_file_exists "$d/.baton/constitution.md"
@@ -249,8 +249,7 @@ FAKE_HOME="$tmp/fakehome-2b2"
 mkdir -p "$FAKE_HOME"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
 assert_file_exists "$d/.codex/hooks.json"
-assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
-assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh stop-guard"
+assert_file_contains "$d/.codex/hooks.json" "adapters/codex/dispatch.sh"
 assert_file_contains "$d/.codex/hooks.json" "SessionStart"
 assert_file_contains "$d/.codex/hooks.json" "Stop"
 assert_file_exists "$d/.codex/config.toml"
@@ -261,7 +260,7 @@ assert_file_contains "$FAKE_HOME/.codex/config.toml" "trust_level"
 assert_output_contains "$OUTPUT" "Created .codex/hooks.json"
 assert_output_contains "$OUTPUT" "codex_hooks feature flag"
 assert_output_contains "$OUTPUT" "trust"
-assert_file_exists "$d/.baton/adapters/adapter-codex.sh"
+assert_file_exists "$d/.baton/adapters/codex/adapter.sh"
 
 # ============================================================
 echo ""
@@ -270,7 +269,7 @@ d="$tmp/t2b2"  # reuse t2b2 directory
 FAKE_HOME="$tmp/fakehome-2b2"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "already"
-assert_file_contains "$d/.codex/hooks.json" "adapter-codex.sh phase-guide"
+assert_file_contains "$d/.codex/hooks.json" "adapters/codex/dispatch.sh"
 
 # ============================================================
 echo ""
@@ -435,7 +434,7 @@ assert_file_exists "$d/.baton/constitution.md"
 assert_file_exists "$d/.cursor/rules/baton.mdc"
 assert_file_contains "$d/.cursor/rules/baton.mdc" "alwaysApply"
 assert_file_exists "$d/.cursor/hooks.json"
-assert_file_contains "$d/.cursor/hooks.json" "adapter-cursor"
+assert_file_contains "$d/.cursor/hooks.json" "adapters/cursor/dispatch.sh"
 
 # ============================================================
 echo ""
@@ -767,11 +766,11 @@ assert_file_exists "$FAKE_HOME/.codex/config.toml"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
 # hooks.json should be cleaned (empty or removed)
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$d/.codex/hooks.json" ] || ! grep -q 'adapter-codex' "$d/.codex/hooks.json" 2>/dev/null; then
+if [ ! -f "$d/.codex/hooks.json" ] || ! grep -q 'adapters/codex/dispatch' "$d/.codex/hooks.json" 2>/dev/null; then
     echo "  pass: Codex hooks.json cleaned on uninstall"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: Codex hooks.json should not contain adapter-codex after uninstall"
+    echo "  FAIL: Codex hooks.json should not contain codex dispatch after uninstall"
     FAIL=$((FAIL + 1))
 fi
 # Feature flag should be removed

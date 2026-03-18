@@ -13,9 +13,9 @@ trap 'rm -rf $tmp' EXIT
 
 # Helper: set up a test directory with write-lock.sh
 setup_dir() {
-    d="$tmp/$1" && mkdir -p "$d/.baton/adapters" "$d/.baton/hooks"
-    cp "$SCRIPT_DIR/../.baton/hooks/_common.sh" "$d/.baton/hooks/_common.sh"
-    [ -f "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" ] && cp "$SCRIPT_DIR/../.baton/hooks/plan-parser.sh" "$d/.baton/hooks/plan-parser.sh"
+    d="$tmp/$1" && mkdir -p "$d/.baton/adapters/cursor" "$d/.baton/hooks/lib"
+    cp "$SCRIPT_DIR/../.baton/hooks/lib/common.sh" "$d/.baton/hooks/lib/common.sh"
+    [ -f "$SCRIPT_DIR/../.baton/hooks/lib/plan-parser.sh" ] && cp "$SCRIPT_DIR/../.baton/hooks/lib/plan-parser.sh" "$d/.baton/hooks/lib/plan-parser.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
     chmod +x "$d/.baton/hooks/write-lock.sh"
     cp "$SCRIPT_DIR/../.baton/hooks/completion-check.sh" "$d/.baton/hooks/completion-check.sh"
@@ -33,11 +33,11 @@ echo "=== Cursor Adapter ==="
 echo ""
 
 echo "--- Test 1: Cursor adapter — allowed with BATON:GO ---"
-d="$(setup_dir t1 adapter-cursor.sh)"
+d="$(setup_dir t1 cursor/adapter.sh)"
 echo "<!-- BATON:GO -->" > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/cursor/adapter.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
     echo "  pass: returns {\"decision\":\"allow\"}"
     PASS=$((PASS + 1))
@@ -48,11 +48,11 @@ fi
 
 echo ""
 echo "--- Test 2: Cursor adapter — blocked without BATON:GO ---"
-d="$(setup_dir t2 adapter-cursor.sh)"
+d="$(setup_dir t2 cursor/adapter.sh)"
 echo "# Plan" > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/cursor/adapter.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"deny"'; then
     echo "  pass: returns {\"decision\":\"deny\"}"
     PASS=$((PASS + 1))
@@ -82,11 +82,11 @@ fi
 
 echo ""
 echo "--- Test 4: Cursor adapter — allow with BATON:GO includes write-gate context ---"
-d="$(setup_dir t4 adapter-cursor.sh)"
+d="$(setup_dir t4 cursor/adapter.sh)"
 printf '<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 JSON='{"tool_input":{"file_path":"src/app.ts"}}'
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/adapter-cursor.sh" 2>/dev/null)" || true
+OUTPUT="$(cd "$d" && printf '%s' "$JSON" | bash "$d/.baton/adapters/cursor/adapter.sh" 2>/dev/null)" || true
 if echo "$OUTPUT" | grep -q '"decision":"allow"'; then
     echo "  pass: returns allow with write-gate context"
     PASS=$((PASS + 1))

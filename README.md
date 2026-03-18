@@ -137,12 +137,20 @@ Projects reference `~/.baton` via junctions — no hook scripts are copied. The 
 your-project/
 ├── .baton/                       ← Junction → ~/.baton/.baton/ (single source)
 │   ├── constitution.md              (cross-phase invariants, always loaded)
+│   ├── adapters/
+│   │   ├── codex/
+│   │   │   ├── dispatch.sh          (Codex adapter: stdout passthrough)
+│   │   │   └── adapter.sh           (direct hook caller for Codex)
+│   │   └── cursor/
+│   │       ├── dispatch.sh          (Cursor adapter: exit code → JSON)
+│   │       └── adapter.sh           (direct hook caller for Cursor)
 │   ├── hooks/
 │   │   ├── dispatch.sh              (event-based hook dispatcher)
 │   │   ├── manifest.conf            (hook-to-event mapping)
-│   │   ├── dispatch-cursor.sh       (Cursor adapter: exit code → JSON)
-│   │   ├── dispatch-codex.sh        (Codex adapter: stdout passthrough)
-│   │   ├── junction.sh              (shared junction/symlink/copy utility)
+│   │   ├── lib/
+│   │   │   ├── common.sh            (shared functions for hooks)
+│   │   │   ├── plan-parser.sh       (plan discovery + section parsing)
+│   │   │   └── junction.sh          (junction/symlink/copy utility)
 │   │   ├── write-lock.sh            (PreToolUse, hard block)
 │   │   ├── phase-guide.sh           (SessionStart, phase detection + skills)
 │   │   ├── bash-guard.sh            (PreToolUse, shell write blocking)
@@ -158,11 +166,11 @@ your-project/
 │   ├── skills/baton-*/           ← Junctions → .baton/skills/baton-*
 │   └── settings.json            ← Generated: dispatch.sh entries per event
 ├── .cursor/                      (if Cursor detected)
-│   ├── hooks.json               ← Generated: dispatch-cursor.sh entries
+│   ├── hooks.json               ← Generated: adapters/cursor/dispatch.sh entries
 │   ├── rules/baton.mdc          ← Constitution embed
 │   └── skills/baton-*/          ← Junctions
 ├── .codex/                       (if Codex detected)
-│   ├── hooks.json               ← SessionStart + Stop via dispatch-codex.sh
+│   ├── hooks.json               ← SessionStart + Stop via adapters/codex/dispatch.sh
 │   └── config.toml              ← codex_hooks feature flag
 ├── CLAUDE.md                    ← @.baton/constitution.md
 ├── AGENTS.md                    ← @.baton/constitution.md (Codex)
@@ -177,14 +185,14 @@ All hook routing goes through `dispatch.sh`, which reads `manifest.conf` to dete
 |-----|-----------------|--------|-------|
 | Claude Code | **Full protection** | 8 events via dispatch.sh (PreToolUse, PostToolUse, SessionStart, Stop, PreCompact, SubagentStart, TaskCompleted, PostToolUseFailure) | Automatic |
 | Factory AI | **Full protection** | Same as Claude Code (shares `.claude/settings.json`) | Automatic |
-| Cursor IDE | **Core protection** | 6 events via dispatch-cursor.sh (preToolUse, postToolUse, sessionStart, stop, subagentStart, preCompact) | Automatic |
-| Codex | **Rules + hooks** | 2 events via dispatch-codex.sh (SessionStart, Stop) + AGENTS.md rules | Automatic or `--ide codex` |
+| Cursor IDE | **Core protection** | 6 events via adapters/cursor/dispatch.sh (preToolUse, postToolUse, sessionStart, stop, subagentStart, preCompact) | Automatic |
+| Codex | **Rules + hooks** | 2 events via adapters/codex/dispatch.sh (SessionStart, Stop) + AGENTS.md rules | Automatic or `--ide codex` |
 
 > **Full protection** = technical enforcement via hooks. AI physically cannot write source code without plan approval.
 > **Core protection** = hard write-lock plus a reduced hook set via Cursor's JSON response protocol.
 > **Rules + hooks** = `AGENTS.md` rules + experimental SessionStart/Stop hooks. No PreToolUse write-lock.
 >
-> All IDEs share the same dispatch architecture: `dispatch.sh` reads `manifest.conf` for hook routing, IDE-specific adapters (`dispatch-cursor.sh`, `dispatch-codex.sh`) translate the protocol. Adding a hook to one IDE automatically makes it available to all IDEs that support the corresponding event type.
+> All IDEs share the same dispatch architecture: `dispatch.sh` reads `manifest.conf` for hook routing, IDE-specific adapters in `adapters/{cursor,codex}/dispatch.sh` translate the protocol. Adding a hook to one IDE automatically makes it available to all IDEs that support the corresponding event type.
 
 ## Suggested .gitignore
 

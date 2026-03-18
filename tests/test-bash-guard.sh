@@ -318,17 +318,17 @@ assert_allowed "$d" "ls -la"
 
 # ============================================================
 echo ""
-echo "=== Test 20: Fail-open when _common.sh missing ==="
+echo "=== Test 20: Fail-open when common.sh missing ==="
 d="$tmp/t20" && mkdir -p "$d"
 TOTAL=$((TOTAL + 1))
-# Create a copy of bash-guard.sh in isolation (no _common.sh sibling)
+# Create a copy of bash-guard.sh in isolation (no lib/common.sh sibling)
 cp "$GUARD" "$d/bash-guard-isolated.sh"
 json='{"tool_input":{"command":"echo hello > file.txt"}}'
 if (cd "$d" && printf '%s' "$json" | bash "$d/bash-guard-isolated.sh" 2>/dev/null); then
-    echo "  pass: missing _common.sh → fail-open (exit 0)"
+    echo "  pass: missing common.sh → fail-open (exit 0)"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: missing _common.sh should fail-open"
+    echo "  FAIL: missing common.sh should fail-open"
     FAIL=$((FAIL + 1))
 fi
 

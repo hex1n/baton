@@ -37,7 +37,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 # --- Source junction utility ---
-. "$BATON_DIR/.baton/hooks/junction.sh"
+. "$BATON_DIR/.baton/hooks/lib/junction.sh"
 
 # --- Ensure ~/.baton exists ---
 ensure_baton_home() {
@@ -265,7 +265,7 @@ SETTINGS_EOF
 # --- Generate or merge Cursor hooks.json ---
 generate_cursor_hooks() {
     _hooks="$PROJECT_DIR/.cursor/hooks.json"
-    _dispatch_cmd="bash .baton/hooks/dispatch-cursor.sh"
+    _dispatch_cmd="bash .baton/adapters/cursor/dispatch.sh"
 
     if [ ! -f "$_hooks" ]; then
         mkdir -p "$PROJECT_DIR/.cursor"
@@ -364,7 +364,7 @@ configure_codex() {
 
     # (b) .codex/hooks.json — SessionStart + Stop via dispatch-codex.sh
     _codex_hooks="$PROJECT_DIR/.codex/hooks.json"
-    _dispatch_cmd="bash .baton/hooks/dispatch-codex.sh"
+    _dispatch_cmd="bash .baton/adapters/codex/dispatch.sh"
     mkdir -p "$PROJECT_DIR/.codex"
 
     if [ ! -f "$_codex_hooks" ]; then

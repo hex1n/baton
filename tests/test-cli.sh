@@ -188,11 +188,11 @@ echo '@.baton/constitution.md' > "$d_adap/CLAUDE.md"
 # .cursor dir exists but no adapter → should flag
 TOTAL=$((TOTAL + 1))
 OUTPUT_ADAP="$(bash "$BATON_CLI" doctor "$d_adap" 2>&1)"
-if echo "$OUTPUT_ADAP" | grep -q 'adapter-cursor.sh missing'; then
-    echo "  pass: doctor detects missing cursor adapter"
+if echo "$OUTPUT_ADAP" | grep -q 'no hook config'; then
+    echo "  pass: doctor detects missing cursor hook config"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should detect missing cursor adapter"
+    echo "  FAIL: doctor should detect missing cursor hook config"
     echo "  OUTPUT: $OUTPUT_ADAP"
     FAIL=$((FAIL + 1))
 fi

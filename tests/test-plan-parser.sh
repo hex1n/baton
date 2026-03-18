@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARSER="$SCRIPT_DIR/../.baton/hooks/plan-parser.sh"
+PARSER="$SCRIPT_DIR/../.baton/hooks/lib/plan-parser.sh"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -364,11 +364,11 @@ assert_eq "$PLAN" "$d/plan.md" "parser works after double source"
 
 # ============================================================
 echo ""
-echo "=== _common.sh integration ==="
+echo "=== common.sh integration ==="
 
-# Verify that sourcing _common.sh makes parser functions available
-echo "--- _common.sh sources parser ---"
-COMMON="$SCRIPT_DIR/../.baton/hooks/_common.sh"
+# Verify that sourcing common.sh makes parser functions available
+echo "--- common.sh sources parser ---"
+COMMON="$SCRIPT_DIR/../.baton/hooks/lib/common.sh"
 (
     unset _BATON_PARSER_LOADED
     SCRIPT_DIR_INNER="$(cd "$(dirname "$COMMON")" && pwd)"
@@ -398,26 +398,26 @@ COMMON="$SCRIPT_DIR/../.baton/hooks/_common.sh"
 _co="$(cat "$tmp/common-output.txt")"
 TOTAL=$((TOTAL + 1))
 if echo "$_co" | grep -q "PLAN=$tmp/common-integration/plan.md"; then
-    echo "  pass: _common.sh legacy find_plan works"
+    echo "  pass: common.sh legacy find_plan works"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: _common.sh legacy find_plan (got: $_co)"
+    echo "  FAIL: common.sh legacy find_plan (got: $_co)"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
 if echo "$_co" | grep -q "GO_RC=0"; then
-    echo "  pass: parser_has_go accessible through _common.sh"
+    echo "  pass: parser_has_go accessible through common.sh"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: parser_has_go through _common.sh (got: $_co)"
+    echo "  FAIL: parser_has_go through common.sh (got: $_co)"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
 if echo "$_co" | grep -q "SKILL_RC=0"; then
-    echo "  pass: parser_has_skill finds .baton/skills through _common.sh"
+    echo "  pass: parser_has_skill finds .baton/skills through common.sh"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: parser_has_skill through _common.sh (got: $_co)"
+    echo "  FAIL: parser_has_skill through common.sh (got: $_co)"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
@@ -748,8 +748,8 @@ echo "--- absolute path ---"
 source_parser
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 if [ -n "$GIT_ROOT" ]; then
-    result="$(parser_writeset_normalize "$GIT_ROOT/.baton/hooks/plan-parser.sh")"
-    assert_eq "$result" ".baton/hooks/plan-parser.sh" "absolute path converted to relative"
+    result="$(parser_writeset_normalize "$GIT_ROOT/.baton/hooks/lib/plan-parser.sh")"
+    assert_eq "$result" ".baton/hooks/lib/plan-parser.sh" "absolute path converted to relative"
 else
     echo "  skip: not in a git repo"
 fi
@@ -979,9 +979,9 @@ if [ -n "$GIT_ROOT" ]; then
     cat > "$d2/plan.md" <<'PLAN'
 ## Todo
 - [ ] item
-  Files: `.baton/hooks/plan-parser.sh`
+  Files: `.baton/hooks/lib/plan-parser.sh`
 PLAN
-    parser_writeset_contains "$GIT_ROOT/.baton/hooks/plan-parser.sh" "$d2/plan.md"; rc=$?
+    parser_writeset_contains "$GIT_ROOT/.baton/hooks/lib/plan-parser.sh" "$d2/plan.md"; rc=$?
     assert_rc "$rc" 0 "absolute path resolved to relative and matched"
 else
     echo "  skip: not in a git repo"

@@ -9,7 +9,7 @@
 #     stop-guard (no session-end reminders), completion-check,
 #     failure-tracker, retrospective enforcement
 
-RESULT=$(bash "$(dirname "$0")/../hooks/write-lock.sh" 2>&1)
+RESULT=$(bash "$(dirname "$0")/../../hooks/write-lock.sh" 2>&1)
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
     # Extract additionalContext from write-lock hookSpecificOutput if present

@@ -50,10 +50,10 @@ EOFJ
     fi
 }
 trap '_output_governance_context' EXIT
-if [ -f "$SCRIPT_DIR/_common.sh" ]; then
-    . "$SCRIPT_DIR/_common.sh"
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    . "$SCRIPT_DIR/lib/common.sh"
 else
-    echo "⚠️ BATON phase-guide: _common.sh not found, skipping guidance" >&2
+    echo "⚠️ BATON phase-guide: common.sh not found, skipping guidance" >&2
     exit 0
 fi
 MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain"
@@ -62,7 +62,7 @@ MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence �
 if [ -d "$SCRIPT_DIR/../skills" ]; then
     _skill_src="$(cd "$SCRIPT_DIR/../skills" 2>/dev/null && pwd)" 2>/dev/null || true
     if [ -n "${_skill_src:-}" ]; then
-        . "$SCRIPT_DIR/junction.sh" 2>/dev/null || true
+        . "$SCRIPT_DIR/lib/junction.sh" 2>/dev/null || true
         for _skill_dir in "$_skill_src"/baton-*; do
             [ ! -d "$_skill_dir" ] && continue
             _name="$(basename "$_skill_dir")"

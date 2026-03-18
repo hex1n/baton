@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
-      - name: Lint _common.sh
-        run: shellcheck .baton/hooks/_common.sh
+      - name: Lint common.sh
+        run: shellcheck .baton/hooks/lib/common.sh
       - name: Lint write-lock.sh
         run: shellcheck .baton/hooks/write-lock.sh
       - name: Lint phase-guide.sh
@@ -32,7 +32,7 @@ jobs:
       - name: Lint subagent-context.sh
         run: shellcheck .baton/hooks/subagent-context.sh
       - name: Lint adapters
-        run: shellcheck .baton/adapters/adapter-cursor.sh
+        run: shellcheck .baton/adapters/cursor/adapter.sh
       - name: Lint setup.sh
         run: shellcheck setup.sh
 

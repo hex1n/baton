@@ -165,8 +165,8 @@ status() {
 
     # Source parser from target project or BATON_HOME
     _parser=""
-    [ -f "$_dir/.baton/hooks/plan-parser.sh" ] && _parser="$_dir/.baton/hooks/plan-parser.sh"
-    [ -z "$_parser" ] && [ -f "$BATON_HOME/.baton/hooks/plan-parser.sh" ] && _parser="$BATON_HOME/.baton/hooks/plan-parser.sh"
+    [ -f "$_dir/.baton/hooks/lib/plan-parser.sh" ] && _parser="$_dir/.baton/hooks/lib/plan-parser.sh"
+    [ -z "$_parser" ] && [ -f "$BATON_HOME/.baton/hooks/lib/plan-parser.sh" ] && _parser="$BATON_HOME/.baton/hooks/lib/plan-parser.sh"
     if [ -z "$_parser" ]; then
         echo "⚠️ Parser not found in project or BATON_HOME" >&2
         return 1

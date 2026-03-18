@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch-codex.sh SessionStart",
+            "command": "bash .baton/adapters/codex/dispatch.sh SessionStart",
             "timeout": 30
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch-codex.sh Stop",
+            "command": "bash .baton/adapters/codex/dispatch.sh Stop",
             "timeout": 30
           }
         ]

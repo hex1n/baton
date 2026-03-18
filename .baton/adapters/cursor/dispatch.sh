@@ -5,6 +5,7 @@
 set -eu
 
 _dir="$(cd "$(dirname "$0")" && pwd)"
+_hooks_dir="$_dir/../../hooks"
 
 # Cursor uses camelCase event names — map to dispatch.sh PascalCase
 _event="$1"
@@ -21,7 +22,7 @@ esac
 
 _out=""
 _rc=0
-_out="$(bash "$_dir/dispatch.sh" "$_event" 2>&1)" || _rc=$?
+_out="$(bash "$_hooks_dir/dispatch.sh" "$_event" 2>&1)" || _rc=$?
 
 if [ "$_rc" -eq 2 ]; then
     # Escape output for JSON

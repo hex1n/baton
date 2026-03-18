@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# _common.sh — shared functions for baton hooks
-# Sourced by all hooks: . "$SCRIPT_DIR/_common.sh"
+# common.sh — shared functions for baton hooks
+# Sourced by all hooks: . "$SCRIPT_DIR/lib/common.sh"
 #
 # Sources plan-parser.sh for discovery/parsing primitives.
 # Legacy function names (resolve_plan_name, find_plan, has_skill) delegate
@@ -11,7 +11,7 @@ _COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 if [ -f "$_COMMON_DIR/plan-parser.sh" ]; then
     . "$_COMMON_DIR/plan-parser.sh"
 else
-    echo "⚠️ BATON _common.sh: plan-parser.sh not found, discovery functions unavailable" >&2
+    echo "⚠️ BATON common.sh: plan-parser.sh not found, discovery functions unavailable" >&2
 fi
 
 # --- Legacy wrappers (delegate to parser) ---
