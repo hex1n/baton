@@ -568,11 +568,11 @@ else
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if echo "$GOV_OUT" | grep -q 'additionalContext'; then
-    echo "  pass: stdout contains additionalContext"
+if echo "$GOV_OUT" | grep -q 'additional_context\|additionalContext'; then
+    echo "  pass: stdout contains additional_context\|additionalContext"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: stdout should contain additionalContext"
+    echo "  FAIL: stdout should contain additional_context\|additionalContext"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
@@ -598,11 +598,11 @@ if [ -f "$SKILL_PATH" ]; then
     # Run with timeout — heredoc bug would hang indefinitely
     if LARGE_OUT="$(timeout 10 bash -c "cd '$d' && bash '$GUIDE' 2>/dev/null")" 2>/dev/null || \
        LARGE_OUT="$(cd "$d" && bash "$GUIDE" 2>/dev/null)"; then
-        if echo "$LARGE_OUT" | grep -q 'additionalContext'; then
+        if echo "$LARGE_OUT" | grep -q 'additional_context\|additionalContext'; then
             echo "  pass: large SKILL.md content outputs valid JSON without hang"
             PASS=$((PASS + 1))
         else
-            echo "  FAIL: large SKILL.md should still produce additionalContext"
+            echo "  FAIL: large SKILL.md should still produce additional_context\|additionalContext"
             FAIL=$((FAIL + 1))
         fi
     else
