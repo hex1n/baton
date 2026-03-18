@@ -85,11 +85,6 @@ For each item:
 2. **Implement** — make the change
 3. **Self-check** — perform the 4 essential self-checks listed below
 4. **Verify** — run the verification method specified
-   **Verification strategy**: Prefer unit-level checks (jq pipes, grep assertions,
-   single-command output) over full test suite runs. Full suites are for final
-   regression, not per-item checks. On slow platforms (Windows Git Bash
-   ~15s/assertion), if a full suite exceeds 2 minutes without results, switch to
-   isolated verification — do not poll.
 5. **Mark complete immediately** — after self-check and verify both pass,
    immediately Edit the plan to change `- [ ]` to `- [x] ✅` for this item.
    Do not batch-update at the end. In Claude Code, also use TaskUpdate to
