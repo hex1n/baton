@@ -33,20 +33,9 @@ _output_governance_context() {
     _escaped="$(_escape_for_json "$_content")"
     local _ctx="<EXTREMELY_IMPORTANT>\nYou are in a baton-governed project.\n\n**Below is the full content of 'using-baton' — baton's orchestration and governance layer. It applies to ALL skills:**\n\n${_escaped}\n</EXTREMELY_IMPORTANT>"
     if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-        cat <<EOFJ
-{
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "${_ctx}"
-  }
-}
-EOFJ
+        printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$_ctx"
     else
-        cat <<EOFJ
-{
-  "additional_context": "${_ctx}"
-}
-EOFJ
+        printf '{\n  "additional_context": "%s"\n}\n' "$_ctx"
     fi
 }
 trap '_output_governance_context' EXIT

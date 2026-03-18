@@ -550,6 +550,73 @@ assert_output_contains "$d" "FINISH phase" "section-aware: only ## Todo items co
 
 # ============================================================
 echo ""
+echo "=== Test: Governance context JSON output (stdout) ==="
+# 5a: Basic governance context output — run_guide_stdout captures stdout (not stderr)
+run_guide_stdout() {
+    local dir="$1"
+    (cd "$dir" && bash "$GUIDE" 2>/dev/null)
+}
+
+d="$tmp/tgov" && mkdir -p "$d"
+TOTAL=$((TOTAL + 1))
+GOV_OUT="$(run_guide_stdout "$d")"
+if [ -n "$GOV_OUT" ]; then
+    echo "  pass: governance context stdout is non-empty"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: governance context stdout should be non-empty (SKILL.md exists)"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$GOV_OUT" | grep -q 'additionalContext'; then
+    echo "  pass: stdout contains additionalContext"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: stdout should contain additionalContext"
+    FAIL=$((FAIL + 1))
+fi
+TOTAL=$((TOTAL + 1))
+if echo "$GOV_OUT" | grep -q '{' && echo "$GOV_OUT" | grep -q '}'; then
+    echo "  pass: stdout looks like JSON (has braces)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: stdout should contain JSON braces"
+    FAIL=$((FAIL + 1))
+fi
+
+# 5b: Large content regression test — heredoc hang bug would timeout here
+echo ""
+echo "=== Test: Large SKILL.md content does not hang (heredoc regression) ==="
+SKILL_PATH="$(cd "$(dirname "$GUIDE")" && pwd)/../skills/using-baton/SKILL.md"
+if [ -f "$SKILL_PATH" ]; then
+    SKILL_BACKUP="$(cat "$SKILL_PATH")"
+    # Generate >2KB synthetic content
+    python3 -c "print('x' * 3000)" > "$SKILL_PATH" 2>/dev/null || \
+        printf '%0.sx' $(seq 1 3000) > "$SKILL_PATH"
+    TOTAL=$((TOTAL + 1))
+    LARGE_OUT=""
+    # Run with timeout — heredoc bug would hang indefinitely
+    if LARGE_OUT="$(timeout 10 bash -c "cd '$d' && bash '$GUIDE' 2>/dev/null")" 2>/dev/null || \
+       LARGE_OUT="$(cd "$d" && bash "$GUIDE" 2>/dev/null)"; then
+        if echo "$LARGE_OUT" | grep -q 'additionalContext'; then
+            echo "  pass: large SKILL.md content outputs valid JSON without hang"
+            PASS=$((PASS + 1))
+        else
+            echo "  FAIL: large SKILL.md should still produce additionalContext"
+            FAIL=$((FAIL + 1))
+        fi
+    else
+        echo "  FAIL: phase-guide.sh timed out with large SKILL.md (heredoc hang?)"
+        FAIL=$((FAIL + 1))
+    fi
+    # Restore original SKILL.md
+    printf '%s' "$SKILL_BACKUP" > "$SKILL_PATH"
+else
+    echo "  skip: SKILL.md not found at $SKILL_PATH"
+fi
+
+# ============================================================
+echo ""
 echo "================================"
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then
