@@ -35,6 +35,11 @@ These thoughts mean STOP — you're rationalizing:
 | "I'll just add a quick workaround" | Workarounds mask root causes. Investigate first |
 | "The test environment must be broken" | Cannot reproduce → investigate environment, don't assume |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## When to Use
 
 - Test failure not immediately obvious

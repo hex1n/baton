@@ -89,6 +89,11 @@ These thoughts mean STOP — the output will violate governance:
 | "The skill already reviewed the output" | Does it check constitution.md compliance? If not, review is incomplete. |
 | "I'll use a general-purpose reviewer, it's faster" | baton-review has phase-specific criteria. General reviewers miss governance checks. |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## Review Dispatch
 
 baton-review provides phase-specific review-prompt.md criteria that general

@@ -128,3 +128,8 @@ After ALL subagents in a batch complete:
 | "Two subagents can coordinate on this file" | Treat as sequential unless provably non-overlapping with no shared mutable state. |
 | "I can skip the completion review" | Every subagent result needs spec compliance + write set adherence check. |
 | "This task is small enough to not need isolation" | Size doesn't determine isolation need. Evaluate conflicts and overhead. |
+
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
