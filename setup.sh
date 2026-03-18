@@ -14,8 +14,22 @@ SELF_INSTALL=0
 COPY_MODE=0
 BATON_HOME="${BATON_HOME:-$HOME/.baton}"
 BATON_REPO="${BATON_REPO:-https://github.com/hex1n/baton.git}"
-BATON_SKILL_NAMES="baton-research baton-plan baton-implement baton-review baton-debug baton-subagent"
+BATON_SKILL_NAMES=""  # computed dynamically by compute_skill_names()
 SUPPORTED_IDES="claude codex cursor factory"
+
+# --- Discover skill names from .baton/skills/ (or legacy .claude/skills/) ---
+compute_skill_names() {
+    BATON_SKILL_NAMES=""
+    _src="$BATON_DIR/.baton/skills"
+    # Fallback: legacy layout stored skills in .claude/skills/
+    [ -d "$_src" ] || _src="$BATON_DIR/.claude/skills"
+    [ -d "$_src" ] || return 0
+    for _d in "$_src"/*/; do
+        [ -d "$_d" ] || continue
+        _name="$(basename "$_d")"
+        BATON_SKILL_NAMES="${BATON_SKILL_NAMES:+$BATON_SKILL_NAMES }$_name"
+    done
+}
 
 usage() {
     cat <<'EOF'
@@ -494,18 +508,18 @@ inject_claude_md() {
 # --- Add .gitignore entries ---
 add_gitignore() {
     _gi="$PROJECT_DIR/.gitignore"
-    # Self-install: don't gitignore .baton/ (it's the source directory)
-    if [ "$SELF_INSTALL" = "1" ]; then
-        _entries=".claude/skills/baton-*
-.cursor/skills/baton-*
-.agents/skills/baton-*"
-    else
+    # Build entries dynamically from discovered skill names
+    _entries=""
+    if [ "$SELF_INSTALL" != "1" ]; then
         _entries=".baton/
-.codex/
-.claude/skills/baton-*
-.cursor/skills/baton-*
-.agents/skills/baton-*"
+.codex/"
     fi
+    for _skill in $BATON_SKILL_NAMES; do
+        for _ide_dir in .claude/skills .cursor/skills .agents/skills; do
+            _entries="${_entries:+$_entries
+}$_ide_dir/$_skill"
+        done
+    done
 
     [ ! -f "$_gi" ] && touch "$_gi"
     _changed=0
@@ -618,6 +632,8 @@ do_uninstall() {
 }
 
 # --- Main ---
+compute_skill_names
+
 if [ "$UNINSTALL" = "1" ]; then
     do_uninstall
     exit 0
