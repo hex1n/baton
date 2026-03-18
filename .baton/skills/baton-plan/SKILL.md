@@ -32,6 +32,11 @@ These thoughts mean STOP — you're rationalizing:
 | "I can skip the review pass" | If a review mechanism exists for this workflow, non-trivial plans should be reviewed before presenting |
 | "The plan is obvious from the research" | Plans must add: What, Why, Impact, Risks. Research doesn't have all of these |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## When to Use
 
 - After research is complete, or whenever a code-changing task reaches the point where a concrete, reviewable implementation contract is needed
@@ -171,10 +176,10 @@ Create the plan artifact at the workflow-defined task location (default:
 
 ## Annotation Protocol
 
-Every plan document ends with `## 批注区`.
-Follow using-baton Annotation Protocol for format and processing rules.
+Every plan document ends with the content of `.baton/annotation-template.md`.
+Follow using-baton Annotation Protocol for processing rules.
 
 ## Evidence Standards
 
-Label findings: `[CODE]` (file:line), `[DOC]` (external docs), `[RUNTIME]` (observed output), `[HUMAN]` (user-provided).
-Status: `✅` confirmed / `❌` contradicted / `❓` unverified. "Should be fine" is not evidence.
+Mark material claims: `✅` verified (state how) / `❓` unverified (state why).
+"Should be fine" is not evidence.

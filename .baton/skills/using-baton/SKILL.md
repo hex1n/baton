@@ -70,7 +70,7 @@ Every working document must satisfy these regardless of which skill produced it:
 
 1. **Location**: `baton-tasks/<topic>/`
 2. **批注区**: research and plan documents end with `## 批注区`
-3. **Evidence labels**: `[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]` with status `✅`/`❌`/`❓`
+3. **Evidence markers**: `✅` verified (state how) / `❓` unverified (state why)
 4. **Self-Challenge**: `## Self-Challenge` with ≥3 substantive answers
 5. **BATON:GO gate**: no source code changes without BATON:GO in the plan
 
@@ -87,12 +87,14 @@ These thoughts mean STOP — the output will violate governance:
 | "Evidence labels are overkill for this" | Constitution invariant. Not optional. |
 | "I'll add 批注区 later" | Append it NOW, before presenting to the human. |
 | "The skill already reviewed the output" | Does it check constitution.md compliance? If not, review is incomplete. |
+| "I'll use a general-purpose reviewer, it's faster" | baton-review has phase-specific criteria. General reviewers miss governance checks. |
 
 ## Review Dispatch
 
 baton-review provides phase-specific review-prompt.md criteria that general
-reviewers lack. For baton-governed artifacts, prefer it unless the user
-explicitly requests a different reviewer. Copy-paste templates:
+reviewers lack. For baton-governed artifacts, **prefer baton-review over
+general-purpose reviewers** (e.g., superpowers:code-reviewer) because it
+checks governance compliance, not just code quality. Copy-paste templates:
 
 **Plan review:**
 ```

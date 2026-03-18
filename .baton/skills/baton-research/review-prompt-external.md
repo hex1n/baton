@@ -58,8 +58,7 @@ Use for research artifacts where evidence type = external-primary.
 
 ## Should-Check (skip if hooks enforce)
 
-- [ ] Evidence labels (`[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]`) present for material findings?
-- [ ] Evidence status markers (✅/❌/❓) used consistently?
+- [ ] Material claims marked ✅ (verified, states how) or ❓ (unverified, states why)?
 - [ ] No unsupported confidence language?
 - [ ] Challenges rebutted with evidence at equal or higher fidelity?
 - [ ] Key facts not guessed past uncertainty — gaps surfaced?

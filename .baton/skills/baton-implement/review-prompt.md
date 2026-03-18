@@ -75,3 +75,4 @@ reinterpretation during implementation.
 - [ ] Completion conditions: scope finished, validation executed, result matches objective?
 - [ ] BLOCKED state entered when required (unresolved challenge, invalidated assumptions, failure boundary)?
 - [ ] No unsupported confidence claims ("should be fine") in implementation notes?
+- [ ] Todo items marked complete immediately after verify pass? (not batch-updated at end)

@@ -37,6 +37,11 @@ These thoughts mean STOP — you're rationalizing:
 | "The counterexample sweep found nothing" | Did you actively search, or just not find any by default? |
 | "I found several blog posts confirming this" | Blogs are leads, not evidence. Trace to primary source |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## When to Use
 
 - Medium/Large tasks requiring cross-module behavior tracing
@@ -56,6 +61,33 @@ These thoughts mean STOP — you're rationalizing:
 - Contradictory evidence sources or requirement statements → use
 - Comparing 2+ approaches/frameworks/design axes → use
 - Only need to explain single file/function/concept → don't use
+
+## Two-Phase Mode + Review Gate
+
+When analysis has already been done in chat (comparison tables, code examples,
+conclusions), the skill's role shifts from **process guide** to **quality
+checklist**. Do not rewrite existing analysis into the template — enhance it.
+
+**Phase 1 — Free exploration** (before invoking this skill):
+Use any method: chat exploration, brainstorming skill, parallel agents.
+Goal: produce the richest possible analysis.
+
+**Phase 2 — Framework enhancement** (this skill):
+Take Phase 1 output and enhance with this checklist:
+- [ ] Problem framed? (Step 0) — if not, add framing
+- [ ] Evidence marked? (`✅` verified / `❓` unverified) — if not, mark key claims
+- [ ] ≥2 independent evidence methods used? (Step 2) — if not, note gap
+- [ ] Counterexample sweep done? (Step 3) — if not, do it now
+- [ ] Self-Challenge written? (Step 5) — if not, write it
+- [ ] Config files compared field-by-field? — if research involves config files, verify
+
+**Review gate**:
+Dispatch baton-review for context-isolated independent review. This catches
+gaps that self-enhancement misses.
+
+**Anti-pattern**: Do NOT rewrite Phase 1 analysis to fit Move 1/Move 2 format.
+Preserve the original structure. The checklist adds missing elements — it does
+not restructure existing content.
 
 ## The Process
 
@@ -114,13 +146,17 @@ to investigate code — the value of this skill is in constraining the failure m
 
 1. **Only positive evidence** — actively search for disproving evidence before converging.
    "Nothing contradicted it" is not a counterexample sweep.
-2. **Claims without visible evidence** — every material claim needs `[CODE]`/`[DOC]`/
-   `[RUNTIME]`/`[HUMAN]` + status. "I checked" is not evidence.
+2. **Claims without visible evidence** — every material claim needs ✅ (how verified)
+   or ❓ (why not). "I checked" is not evidence.
 3. **Smoothing over contradictions** — when sources disagree, name the contradiction
    explicitly. Do not merge into vague prose. Apply conflict resolution rules
    (constitution.md §Evidence).
 4. **Premature convergence** — if an explanation "seems obvious," that's when you
    need counterexample sweep most. Search for evidence that would disprove it.
+5. **Config files treated as code** — when research involves config files
+   (hooks.json, settings.json, plugin.json), they need field-by-field
+   comparison, not logic-flow analysis. A single field value difference
+   (e.g., `matcher`) can be the most impactful finding.
 
 **When direction changes**, record: previous uncertainty, new uncertainty, why the
 switch, what the new line is expected to clarify.
@@ -145,9 +181,7 @@ findings reinforce, where in tension, what remains unresolved.
 
 ### Step 4: Evidence Standards
 
-Label findings: `[CODE]` (file:line), `[DOC]` (external docs), `[RUNTIME]` (observed
-output), `[HUMAN]` (user-provided). Extended: `[DESIGN]`, `[EMPIRICAL]`.
-Status: `✅` confirmed / `❌` contradicted / `❓` unverified.
+Mark material claims: `✅` verified (state how) / `❓` unverified (state why).
 
 Conflict resolution: see constitution.md §Evidence (including combination examples).
 
@@ -206,5 +240,5 @@ Preserve traceability when conclusions change.
 
 ## Annotation Protocol
 
-Every research document ends with `## 批注区`.
-Follow using-baton Annotation Protocol for format and processing rules.
+Every research document ends with the content of `.baton/annotation-template.md`.
+Follow using-baton Annotation Protocol for processing rules.

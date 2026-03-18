@@ -66,8 +66,7 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 
 ### Cross-Phase Compliance Checks
 
-- [ ] Evidence labels (`[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]`) present for material claims?
-- [ ] Evidence status markers (✅/❌/❓) used consistently?
+- [ ] Material claims marked ✅ (verified, states how) or ❓ (unverified, states why)?
 - [ ] No unsupported confidence language ("should be fine", "probably works")?
 - [ ] If challenges exist, rebuttals match or exceed challenge evidence fidelity?
 - [ ] Unresolved strong challenges not overridden by execution momentum?

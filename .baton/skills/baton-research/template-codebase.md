@@ -33,7 +33,7 @@ Cognitive progression: What is this system? → What am I investigating? → How
 ## System Baseline
 
 > Required when familiarity = none or partial. Skip only when familiarity = deep.
-> Every answer must cite evidence [CODE] file:line.
+> Every answer must cite evidence ✅ (read file:line).
 > Goal: a reader who doesn't know this system can sketch its architecture after reading this.
 
 **1. What does this system do?**
@@ -124,9 +124,7 @@ Each conclusion must include:
 
 **Out of scope but related** — recorded but does not block:
 
-## 批注区
-
-> Follow baton-research Annotation Protocol
+> Append content of `.baton/annotation-template.md`
 ```
 
 ---

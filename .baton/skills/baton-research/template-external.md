@@ -145,9 +145,7 @@ Each conclusion must include:
 
 **Out of scope but related** — recorded but does not block:
 
-## 批注区
-
-> Follow baton-research Annotation Protocol
+> Append content of `.baton/annotation-template.md`
 ```
 
 ---
@@ -160,7 +158,7 @@ If the investigation also requires codebase analysis, add after Source Landscape
 ## Codebase Context
 
 Brief system baseline for the codebase component of this investigation.
-Every answer must cite [CODE] file:line.
+Every answer must cite evidence ✅ (read file:line).
 
 1. **Relevant modules**: Which parts of the codebase does this investigation touch?
 2. **Current implementation**: How does the codebase currently handle the topic being researched?

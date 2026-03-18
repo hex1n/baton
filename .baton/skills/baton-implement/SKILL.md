@@ -34,6 +34,11 @@ These thoughts mean STOP — you're rationalizing:
 | "The plan implied this change" | Implied ≠ approved. If it's not in the write set, it's a discovery |
 | "I can skip the review, the changes are small" | Completion review is mandatory. Prefer independent review; otherwise explicit self-review. No exceptions |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## When to Use
 
 - Plan has `<!-- BATON:GO -->` and user says to implement or generate Todo list
@@ -67,12 +72,28 @@ to completion without pausing between items. Only stop for: blocking errors,
 C/D unexpected discoveries, or 3-failure limit (3 failed remediation attempts for the same blocking issue; cosmetic edits or log-print additions do not reset the counter). Do not stop to show progress
 or ask for confirmation between items — the approved plan IS the confirmation.**
 
+**Progress tracking**: In Claude Code, use TaskCreate at the start of
+execution to create a task for each Todo item. Use TaskUpdate to mark
+in_progress when starting an item and completed when done. This provides
+visual progress in the chat. When adding Todo items mid-implementation,
+recreate all tasks (including completed ones, marked immediately as
+completed) so the user sees full progress context. Outside Claude Code,
+rely on immediate plan marking (Step 2 point 5) for progress visibility.
+
 For each item:
 1. **Understand intent** — re-read the plan section this Todo item implements and identify the specific contract, restrictions, and boundary conditions it must preserve
 2. **Implement** — make the change
 3. **Self-check** — perform the 4 essential self-checks listed below
 4. **Verify** — run the verification method specified
-5. **Mark complete** — only after self-check and verify both pass
+   **Verification strategy**: Prefer unit-level checks (jq pipes, grep assertions,
+   single-command output) over full test suite runs. Full suites are for final
+   regression, not per-item checks. On slow platforms (Windows Git Bash
+   ~15s/assertion), if a full suite exceeds 2 minutes without results, switch to
+   isolated verification — do not poll.
+5. **Mark complete immediately** — after self-check and verify both pass,
+   immediately Edit the plan to change `- [ ]` to `- [x] ✅` for this item.
+   Do not batch-update at the end. In Claude Code, also use TaskUpdate to
+   mark the task completed for visual progress tracking.
 
 ### Step 3: Handle Dependencies
 

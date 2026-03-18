@@ -36,6 +36,11 @@ These thoughts mean STOP — you're rationalizing:
 | "Easier to pass file paths for the agent to read" | Pass artifact text, not file paths. Paths break context isolation |
 | "The approach is obviously correct" | Obvious to whom? Challenge the frame, not just the content |
 
+## Gotchas
+
+> Operational failure patterns. Add entries when observed in real usage.
+> Empty until then — do not pre-fill with theory.
+
 ## When Review is Mandatory
 
 Review is mandatory unless all skip conditions are met.
@@ -92,7 +97,7 @@ These make first-principles compliance verifiable:
 All artifacts must comply with these standards:
 
 ### Evidence
-- Claims labeled with `[CODE]`/`[DOC]`/`[RUNTIME]`/`[HUMAN]` + status `✅`/`❌`/`❓`?
+- Material claims marked `✅` (verified, states how) or `❓` (unverified, states why)?
 - When evidence types disagree, is the stronger source preferred? (Runtime > stale docs; code > comments; human intent ≠ current behavior → mark mismatch)
 - "Should be fine" or similar unsupported confidence language present? → finding.
 
@@ -142,6 +147,8 @@ Note: isolation may cause the reviewer to propose alternatives that are impracti
 - **Low**: worthwhile correction without blocking effect
 
 ## Output Format
+
+Output in the same language the human uses. If the conversation is in Chinese, write findings in Chinese.
 
 Frame-level findings must be reported first. Do not output only detail-level fixes while omitting frame-level issues.
 

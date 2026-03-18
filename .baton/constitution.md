@@ -87,28 +87,17 @@ Transitions are explicit. Do not infer state from momentum.
 
 ### Evidence
 
-Label claims: `[CODE]` `[DOC]` `[RUNTIME]` `[HUMAN]` — status: `✅` `❌` `❓`.
-Extended: `[DESIGN]` `[EMPIRICAL]`.
+Mark material claims with confidence:
+
+- **✅** verified — state how (e.g., `✅ read parser.sh:35`, `✅ ran test suite`)
+- **❓** unverified — state why (e.g., `❓ no runtime access`, `❓ inferred from docs`)
+
+Only mark claims that matter. Common knowledge needs no marker.
 
 Keep Facts / Inferences / Judgments distinct. "Should be fine" is not evidence.
 
-When evidence types conflict: runtime > stale docs; code > comments; human intent ≠ current behavior → mark mismatch.
-
-Conflict resolution examples:
-
-1. **[DOC] says X, [CODE] says Y** → `[DOC]❌` `[CODE]✅` (assuming the code
-   path is executed). Docs may be stale; code is current truth. Exception:
-   dead code or non-executed paths.
-2. **[HUMAN] says "system does X", [RUNTIME] shows Y** → mark as
-   requirement/behavior mismatch. Record both. Do not override either.
-   Submit to human judgment.
-3. **[DOC]❓ + [CODE]❓ agree on X** → still `❓`. Two unverified sources
-   agreeing does not equal verification. Need `[RUNTIME]✅` or direct code trace.
-4. **[DESIGN] vs [CODE]** → [DESIGN] expresses intent, [CODE] expresses current
-   state. Conflict = tech debt or incomplete migration. Record both; do not
-   default either as "correct."
-
-Phase skills define detailed evidence requirements for their domains.
+When sources conflict: state both, mark the mismatch, submit to human judgment.
+Two unverified sources agreeing does not equal verification.
 
 ---
 
