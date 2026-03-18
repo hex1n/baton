@@ -112,11 +112,11 @@ Findings supported only by secondary sources are marked ❓ with explicit note.
 
 ## Self-Challenge
 
-> Follow baton-research Step 4: Self-Challenge
+> Follow baton-research Step 5: Self-Challenge
 
 ## Review
 
-> Follow baton-research Step 5: Review
+> Follow baton-research Step 6: Review
 
 ## One-Sentence Summary
 
