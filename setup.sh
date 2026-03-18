@@ -74,8 +74,7 @@ detect_ides() {
     [ -d "$PROJECT_DIR/.claude" ]   && _add "claude"
     [ -d "$PROJECT_DIR/.cursor" ]   && _add "cursor"
     [ -d "$PROJECT_DIR/.factory" ]  && _add "factory"
-    if [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -d "$PROJECT_DIR/.codex" ] || \
-       [ -d "$PROJECT_DIR/.agents" ]; then
+    if [ -f "$PROJECT_DIR/AGENTS.md" ] || [ -d "$PROJECT_DIR/.codex" ]; then
         _add "codex"
     fi
     # Check codex env
@@ -167,7 +166,15 @@ create_skill_junctions() {
 # --- Generate or merge settings.json for Claude Code / Factory ---
 generate_claude_settings() {
     _settings="$1"
-    _dispatch_cmd_prefix="bash .baton/hooks/dispatch.sh"
+    # OS-aware dispatch: use polyglot wrapper on Windows, direct bash on Unix
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            _dispatch_cmd_prefix=".baton/hooks/run-hook.cmd"
+            ;;
+        *)
+            _dispatch_cmd_prefix="bash .baton/hooks/dispatch.sh"
+            ;;
+    esac
 
     # All 8 event types with dispatch.sh
     _events="PreToolUse PostToolUse SessionStart Stop PreCompact SubagentStart TaskCompleted PostToolUseFailure"
@@ -178,7 +185,7 @@ generate_claude_settings() {
         {"event":"PreToolUse","matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","cmd":"PreToolUse"},
         {"event":"PreToolUse","matcher":"Bash","cmd":"PreToolUse"},
         {"event":"PostToolUse","matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","cmd":"PostToolUse"},
-        {"event":"SessionStart","matcher":"","cmd":"SessionStart"},
+        {"event":"SessionStart","matcher":"startup|clear|compact","cmd":"SessionStart"},
         {"event":"Stop","matcher":"","cmd":"Stop"},
         {"event":"PreCompact","matcher":"","cmd":"PreCompact"},
         {"event":"SubagentStart","matcher":"","cmd":"SubagentStart"},
@@ -211,7 +218,7 @@ generate_claude_settings() {
       {"matcher":"Edit|Write|MultiEdit|CreateFile|NotebookEdit","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix PostToolUse"}]}
     ],
     "SessionStart": [
-      {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix SessionStart"}]}
+      {"matcher":"startup|clear|compact","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix SessionStart"}]}
     ],
     "Stop": [
       {"matcher":"","hooks":[{"type":"command","command":"$_dispatch_cmd_prefix Stop"}]}

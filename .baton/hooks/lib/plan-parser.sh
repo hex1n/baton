@@ -375,13 +375,26 @@ parser_writeset_normalize() {
     [ -z "$_path" ] && return
     # Strip leading ./
     _path="${_path#./}"
+    # Detect absolute paths: /foo (POSIX) or C:/foo (Windows drive letter)
+    local _is_abs=0
+    case "$_path" in
+        /*) _is_abs=1 ;;
+        [A-Za-z]:/*) _is_abs=1 ;;
+    esac
     # If absolute, make relative to Baton project root / plan root
-    if [ "${_path#/}" != "$_path" ]; then
+    if [ "$_is_abs" -eq 1 ]; then
         local _root
         _root="${2:-}"
         [ -z "$_root" ] && _root="$(parser_project_root)"
-        if [ -n "$_root" ] && [ "${_path#"$_root"/}" != "$_path" ]; then
-            _path="${_path#"$_root"/}"
+        if [ -n "$_root" ]; then
+            # Normalize both to POSIX form for comparison on Windows
+            if command -v cygpath >/dev/null 2>&1; then
+                _path="$(cygpath -u "$_path" 2>/dev/null || printf '%s' "$_path")"
+                _root="$(cygpath -u "$_root" 2>/dev/null || printf '%s' "$_root")"
+            fi
+            if [ "${_path#"$_root"/}" != "$_path" ]; then
+                _path="${_path#"$_root"/}"
+            fi
         fi
     fi
     printf '%s\n' "$_path"

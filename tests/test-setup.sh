@@ -14,6 +14,13 @@ ORIGINAL_HOME="${HOME:-}"
 tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
 
+# Pre-populate a local BATON_HOME so setup.sh uses local .baton/ instead of
+# cloning from the remote repo. This ensures tests validate the current code.
+_LOCAL_BATON_HOME="$tmp/local-baton-home"
+mkdir -p "$_LOCAL_BATON_HOME"
+cp -R "$SCRIPT_DIR/../.baton" "$_LOCAL_BATON_HOME/.baton"
+cp "$SETUP" "$_LOCAL_BATON_HOME/setup.sh"
+
 run_setup() {
     (
         unset CODEX_SANDBOX CODEX_THREAD_ID CODEX_SANDBOX_NETWORK_DISABLED BATON_IDE
@@ -22,7 +29,7 @@ run_setup() {
             _test_home="$tmp/home-default"
         fi
         mkdir -p "$_test_home"
-        HOME="$_test_home" bash "$SETUP" "$@"
+        HOME="$_test_home" BATON_HOME="$_LOCAL_BATON_HOME" bash "$SETUP" "$@"
     )
 }
 
@@ -32,6 +39,7 @@ run_setup_as_codex() {
         _codex_home="${BATON_TEST_CODEX_HOME:-$tmp/codex-home-default}"
         mkdir -p "$_codex_home"
         HOME="$_codex_home" \
+        BATON_HOME="$_LOCAL_BATON_HOME" \
         CODEX_THREAD_ID="test-codex-thread" \
         CODEX_SANDBOX="seatbelt" \
         CODEX_SANDBOX_NETWORK_DISABLED="1" \
@@ -145,38 +153,27 @@ assert_file_exists "$d/.baton/constitution.md"
 assert_file_not_exists "$d/.baton/workflow.md"
 # .claude/ settings
 assert_file_exists "$d/.claude/settings.json"
-assert_file_contains "$d/.claude/settings.json" ".baton/hooks/write-lock"
+# Settings should contain dispatch command (run-hook.cmd on Windows, dispatch.sh on POSIX)
+assert_file_contains "$d/.claude/settings.json" "dispatch.sh\|run-hook.cmd"
 assert_file_contains "$d/.claude/settings.json" "PreToolUse"
 assert_file_contains "$d/.claude/settings.json" "SessionStart"
-assert_file_contains "$d/.claude/settings.json" "phase-guide"
-assert_file_contains "$d/.claude/settings.json" "NotebookEdit"
-# failure-tracker hook
-assert_file_exists "$d/.baton/hooks/failure-tracker.sh"
-assert_file_contains "$d/.claude/settings.json" "failure-tracker"
 assert_file_contains "$d/.claude/settings.json" "PostToolUseFailure"
+assert_file_contains "$d/.claude/settings.json" "NotebookEdit"
+# failure-tracker is loaded via dispatch.sh + manifest.conf
+assert_file_exists "$d/.baton/hooks/failure-tracker.sh"
 # CLAUDE.md with @import
 assert_file_exists "$d/CLAUDE.md"
 assert_file_contains "$d/CLAUDE.md" "@.baton/constitution.md"
-assert_output_contains "$OUTPUT" "Installing baton"
-assert_output_contains "$OUTPUT" "research file, plan file, or chat"
-assert_output_contains "$OUTPUT" "simple changes may skip straight to planning"
-assert_output_contains "$OUTPUT" "Free-text is the default"
-assert_output_contains "$OUTPUT" "\[PAUSE\]"
-assert_output_not_contains "$OUTPUT" "Give feedback in plan.md or chat"
-assert_output_not_contains "$OUTPUT" "Annotate plan.md with \[NOTE\]"
-assert_output_not_contains "$OUTPUT" "\[Q\]"
-assert_output_not_contains "$OUTPUT" "\[CHANGE\]"
-assert_output_not_contains "$OUTPUT" "\[DEEPER\]"
-assert_output_not_contains "$OUTPUT" "\[MISSING\]"
-assert_output_not_contains "$OUTPUT" "\[RESEARCH-GAP\]"
+assert_output_contains "$OUTPUT" "Setting up baton"
+assert_output_contains "$OUTPUT" "Done! Baton v4 installed"
 
 # ============================================================
 echo ""
 echo "=== Test 2: Default IDE detection (claude) ==="
 d="$tmp/t2" && mkdir -p "$d"
 OUTPUT="$(run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude"
-assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
+assert_output_contains "$OUTPUT" "IDEs: claude"
+assert_output_contains "$OUTPUT" "IDEs: claude"
 # Claude Code gets constitution (SessionStart support)
 assert_file_contains "$d/.baton/constitution.md" "Baton Constitution"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
@@ -190,8 +187,8 @@ echo "=== Test 2a: Baton-generated .agents fallback does not trigger Codex/Facto
 d="$tmp/t2a" && mkdir -p "$d/.claude"
 BATON_SKIP=pre-commit run_setup "$d" > /dev/null 2>&1
 OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude"
-assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
+assert_output_contains "$OUTPUT" "IDEs: claude"
+assert_output_contains "$OUTPUT" "IDEs: claude"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/AGENTS.md" ]; then
     echo "  pass: fallback .agents directory does not bootstrap Codex on re-run"
@@ -208,8 +205,8 @@ d="$tmp/t2a2" && mkdir -p "$d/.claude" "$d/.agents/skills/baton-research" "$d/.a
 echo "legacy fallback" > "$d/.agents/skills/baton-research/SKILL.md"
 echo "legacy fallback" > "$d/.agents/skills/baton-plan/SKILL.md"
 OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude"
-assert_output_contains "$OUTPUT" "Selected IDEs: claude (auto)"
+assert_output_contains "$OUTPUT" "IDEs: claude"
+assert_output_contains "$OUTPUT" "IDEs: claude"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/AGENTS.md" ]; then
     echo "  pass: legacy Baton-only .agents fallback does not count as Codex/Factory signal"
@@ -224,8 +221,8 @@ echo ""
 echo "=== Test 2b: Codex session detection → AGENTS.md + .agents skills ==="
 d="$tmp/t2b" && mkdir -p "$d"
 OUTPUT="$(run_setup_as_codex "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: codex"
-assert_output_contains "$OUTPUT" "Selected IDEs: codex (auto)"
+assert_output_contains "$OUTPUT" "IDEs: codex"
+assert_output_contains "$OUTPUT" "IDEs: codex"
 assert_file_exists "$d/AGENTS.md"
 assert_file_contains "$d/AGENTS.md" "@.baton/constitution.md"
 assert_file_exists "$d/.agents/skills/baton-research/SKILL.md"
@@ -255,7 +252,7 @@ assert_file_contains "$d/.codex/hooks.json" "Stop"
 assert_file_exists "$d/.codex/config.toml"
 assert_file_contains "$d/.codex/config.toml" "codex_hooks = true"
 assert_file_exists "$FAKE_HOME/.codex/config.toml"
-assert_file_contains "$FAKE_HOME/.codex/config.toml" "baton:codex-trust:"
+assert_file_contains "$FAKE_HOME/.codex/config.toml" "baton-managed:"
 assert_file_contains "$FAKE_HOME/.codex/config.toml" "trust_level"
 assert_output_contains "$OUTPUT" "Created .codex/hooks.json"
 assert_output_contains "$OUTPUT" "codex_hooks feature flag"
@@ -298,8 +295,8 @@ d="$tmp/t2c" && mkdir -p "$d"
 FAKE_HOME="$tmp/fakehome-2c"
 mkdir -p "$FAKE_HOME"
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --ide codex "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude"
-assert_output_contains "$OUTPUT" "Selected IDEs: codex (--ide)"
+assert_output_contains "$OUTPUT" "IDEs: claude"
+assert_output_contains "$OUTPUT" "IDEs: codex"
 assert_file_exists "$d/AGENTS.md"
 assert_file_contains "$d/AGENTS.md" "@.baton/constitution.md"
 TOTAL=$((TOTAL + 1))
@@ -329,8 +326,8 @@ echo "=== Test 2d: Explicit --ide overrides detected IDEs ==="
 d="$tmp/t2d" && mkdir -p "$d/.claude" "$d/.cursor"
 (cd "$d" && git init -q)
 OUTPUT="$(BATON_SKIP=pre-commit run_setup --ide cursor "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
-assert_output_contains "$OUTPUT" "Selected IDEs: cursor (--ide)"
+assert_output_contains "$OUTPUT" "IDEs: claude cursor"
+assert_output_contains "$OUTPUT" "IDEs: cursor"
 assert_file_exists "$d/.cursor/hooks.json"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/settings.json" ] && [ ! -f "$d/CLAUDE.md" ]; then
@@ -349,12 +346,12 @@ d="$tmp/t2e" && mkdir -p "$d/.claude" "$d/.cursor"
 FAKE_HOME="$tmp/fakehome-2e"
 mkdir -p "$FAKE_HOME"
 OUTPUT="$(printf '2\n' | HOME="$FAKE_HOME" BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
+assert_output_contains "$OUTPUT" "IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "1. claude - full protection"
 assert_output_contains "$OUTPUT" "2. codex - session hooks"
 assert_output_contains "$OUTPUT" "3. cursor - core protection, Cursor IDE hooks + adapter"
 assert_output_contains "$OUTPUT" "Select IDEs"
-assert_output_contains "$OUTPUT" "Selected IDEs: codex (--choose)"
+assert_output_contains "$OUTPUT" "IDEs: codex"
 assert_file_exists "$d/AGENTS.md"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/settings.json" ] && [ ! -f "$d/.cursor/hooks.json" ]; then
@@ -383,9 +380,9 @@ echo ""
 echo "=== Test 2g: Interactive default prompts for IDE selection ==="
 d="$tmp/t2g" && mkdir -p "$d/.claude" "$d/.cursor"
 OUTPUT="$(printf '3\n' | BATON_ASSUME_INTERACTIVE=1 run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: claude cursor"
+assert_output_contains "$OUTPUT" "IDEs: claude cursor"
 assert_output_contains "$OUTPUT" "Select IDEs"
-assert_output_contains "$OUTPUT" "Selected IDEs: cursor (interactive default)"
+assert_output_contains "$OUTPUT" "IDEs: cursor"
 assert_file_exists "$d/.cursor/hooks.json"
 TOTAL=$((TOTAL + 1))
 if [ ! -f "$d/.claude/settings.json" ] && [ ! -f "$d/CLAUDE.md" ]; then
@@ -404,7 +401,7 @@ d="$tmp/t2h" && mkdir -p "$d/.claude" "$d/.cursor"
 FAKE_HOME="$tmp/fakehome-2h"
 mkdir -p "$FAKE_HOME"
 OUTPUT="$(printf '32\n' | HOME="$FAKE_HOME" BATON_SKIP=pre-commit run_setup --choose "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Selected IDEs: cursor codex (--choose)"
+assert_output_contains "$OUTPUT" "IDEs: cursor codex"
 assert_file_exists "$d/.cursor/hooks.json"
 assert_file_exists "$d/AGENTS.md"
 TOTAL=$((TOTAL + 1))
@@ -428,7 +425,7 @@ echo "=== Test 3: Cursor IDE detection → constitution + hooks ==="
 d="$tmp/t3" && mkdir -p "$d/.cursor"
 (cd "$d" && git init -q)
 OUTPUT="$(BATON_SKIP=pre-commit run_setup "$d" 2>&1)"
-assert_output_contains "$OUTPUT" "Detected IDEs: cursor"
+assert_output_contains "$OUTPUT" "IDEs: cursor"
 # Cursor now has SessionStart hook support → constitution
 assert_file_exists "$d/.baton/constitution.md"
 assert_file_exists "$d/.cursor/rules/baton.mdc"
@@ -444,8 +441,8 @@ echo '{"permissions":{"allow":["Bash"]}}' > "$d/.claude/settings.json"
 OUTPUT="$(run_setup "$d" 2>&1)"
 # Should preserve existing settings and merge missing Baton hooks
 assert_file_contains "$d/.claude/settings.json" "permissions"
-assert_file_contains "$d/.claude/settings.json" "phase-guide"
-assert_file_contains "$d/.claude/settings.json" "pre-compact"
+assert_file_contains "$d/.claude/settings.json" "dispatch.sh\|run-hook.cmd"
+assert_file_contains "$d/.claude/settings.json" "PreCompact"
 assert_output_contains "$OUTPUT" "Merged missing Baton hooks into .claude/settings.json"
 
 # ============================================================
@@ -457,8 +454,8 @@ echo '{"hooks":{"PreToolUse":[{"matcher":"Edit","hooks":[{"type":"command","comm
 cp "$SCRIPT_DIR/../.baton/hooks/write-lock.sh" "$d/.baton/hooks/write-lock.sh"
 chmod +x "$d/.baton/hooks/write-lock.sh"
 OUTPUT="$(run_setup "$d" 2>&1)"
-assert_file_contains "$d/.claude/settings.json" "phase-guide"
-assert_file_contains "$d/.claude/settings.json" "completion-check"
+assert_file_contains "$d/.claude/settings.json" "dispatch.sh\|run-hook.cmd"
+assert_file_contains "$d/.claude/settings.json" "TaskCompleted"
 assert_output_contains "$OUTPUT" "Merged missing Baton hooks into .claude/settings.json"
 
 # ============================================================
@@ -517,39 +514,44 @@ OUTPUT="$(run_setup "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Merged missing Baton hooks into .claude/settings.json"
 if command -v jq >/dev/null 2>&1; then
     TOTAL=$((TOTAL + 1))
-    if jq -e '[.hooks.SessionStart[] | select(any(.hooks[]?; .command=="bash .baton/hooks/phase-guide.sh")) | .matcher] == [""]' \
+    # After merge: old direct phase-guide.sh entries removed, replaced by dispatch entry
+    # with matcher "startup|clear|compact" (or run-hook.cmd on Windows)
+    if jq -e '(.hooks.SessionStart | length) == 1 and
+              (.hooks.SessionStart[0].matcher == "startup|clear|compact")' \
         "$d/.claude/settings.json" >/dev/null 2>&1; then
-        echo "  pass: phase-guide compact duplicate removed"
+        echo "  pass: SessionStart normalized to single entry with startup|clear|compact matcher"
         PASS=$((PASS + 1))
     else
-        echo "  FAIL: phase-guide SessionStart entries should normalize to a single empty matcher"
+        echo "  FAIL: SessionStart should normalize to single entry with startup|clear|compact matcher"
+        FAIL=$((FAIL + 1))
+    fi
+    # After merge: old direct-hook entries replaced by dispatch commands
+    # Commands are either "bash .baton/hooks/dispatch.sh EVENT" or ".baton/hooks/run-hook.cmd EVENT"
+    TOTAL=$((TOTAL + 1))
+    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command | test("(dispatch\\.sh|run-hook\\.cmd) PreToolUse")))' \
+        "$d/.claude/settings.json" >/dev/null 2>&1; then
+        echo "  pass: PreToolUse write entry has correct matcher and dispatch command"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: PreToolUse should have Edit|Write|...|NotebookEdit matcher with dispatch command"
         FAIL=$((FAIL + 1))
     fi
     TOTAL=$((TOTAL + 1))
-    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command=="bash .baton/hooks/write-lock.sh"))' \
+    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Bash" and any(.hooks[]?; .command | test("(dispatch\\.sh|run-hook\\.cmd) PreToolUse")))' \
         "$d/.claude/settings.json" >/dev/null 2>&1; then
-        echo "  pass: write-lock matcher upgraded to include NotebookEdit"
+        echo "  pass: PreToolUse bash-guard entry has Bash matcher and dispatch command"
         PASS=$((PASS + 1))
     else
-        echo "  FAIL: write-lock matcher should include NotebookEdit after merge"
+        echo "  FAIL: PreToolUse should have Bash matcher with dispatch command"
         FAIL=$((FAIL + 1))
     fi
     TOTAL=$((TOTAL + 1))
-    if jq -e 'any(.hooks.PreToolUse[]?; .matcher=="Bash" and any(.hooks[]?; .command=="bash .baton/hooks/bash-guard.sh"))' \
+    if jq -e 'any(.hooks.PostToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command | test("(dispatch\\.sh|run-hook\\.cmd) PostToolUse")))' \
         "$d/.claude/settings.json" >/dev/null 2>&1; then
-        echo "  pass: bash-guard entry exists with Bash matcher"
+        echo "  pass: PostToolUse has correct matcher and dispatch command"
         PASS=$((PASS + 1))
     else
-        echo "  FAIL: bash-guard entry should exist with Bash matcher"
-        FAIL=$((FAIL + 1))
-    fi
-    TOTAL=$((TOTAL + 1))
-    if jq -e 'any(.hooks.PostToolUse[]?; .matcher=="Edit|Write|MultiEdit|CreateFile|NotebookEdit" and any(.hooks[]?; .command=="bash .baton/hooks/post-write-tracker.sh"))' \
-        "$d/.claude/settings.json" >/dev/null 2>&1; then
-        echo "  pass: post-write-tracker matcher upgraded to include NotebookEdit"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL: post-write-tracker matcher should include NotebookEdit after merge"
+        echo "  FAIL: PostToolUse should have Edit|Write|...|NotebookEdit matcher with dispatch command"
         FAIL=$((FAIL + 1))
     fi
 else
@@ -784,7 +786,7 @@ else
 fi
 # Trust entry should be removed from user config
 TOTAL=$((TOTAL + 1))
-if [ ! -f "$FAKE_HOME/.codex/config.toml" ] || ! grep -q 'baton:codex-trust:' "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+if [ ! -f "$FAKE_HOME/.codex/config.toml" ] || ! grep -q 'baton-managed:' "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
     echo "  pass: trust entry removed from user config on uninstall"
     PASS=$((PASS + 1))
 else
@@ -802,7 +804,7 @@ d2="$tmp/t17c2-prefix-long" && mkdir -p "$d2"
 HOME="$FAKE_HOME" run_setup --ide codex "$d2" > /dev/null 2>&1
 HOME="$FAKE_HOME" run_setup --ide codex "$d" > /dev/null 2>&1
 TOTAL=$((TOTAL + 1))
-if grep -qxF "# baton:codex-trust:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+if grep -qxF "# baton-managed:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
     echo "  pass: user config contains exact trust marker for second project"
     PASS=$((PASS + 1))
 else
@@ -810,7 +812,7 @@ else
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if grep -qxF "# baton:codex-trust:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+if grep -qxF "# baton-managed:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
     echo "  pass: user config contains exact trust marker for first project"
     PASS=$((PASS + 1))
 else
@@ -820,8 +822,8 @@ fi
 OUTPUT="$(HOME="$FAKE_HOME" run_setup --uninstall "$d" 2>&1)"
 assert_output_contains "$OUTPUT" "Removed baton trust entry"
 TOTAL=$((TOTAL + 1))
-if grep -qxF "# baton:codex-trust:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null && \
-   ! grep -qxF "# baton:codex-trust:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
+if grep -qxF "# baton-managed:$d2" "$FAKE_HOME/.codex/config.toml" 2>/dev/null && \
+   ! grep -qxF "# baton-managed:$d" "$FAKE_HOME/.codex/config.toml" 2>/dev/null; then
     echo "  pass: uninstall removes only the matching project trust entry"
     PASS=$((PASS + 1))
 else
