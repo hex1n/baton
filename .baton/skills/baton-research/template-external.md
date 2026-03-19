@@ -11,12 +11,15 @@ Cognitive progression: What am I looking for? → Where is trustworthy informati
 
 ## Frame
 
-- **Question**: What exactly is being investigated?
+- **Question**: What exactly is being investigated? (Frame as behavior or outcome — not mechanism or assumed solution)
 - **Why**: What later decision does this support?
 - **Scope**: What's in scope?
 - **Out of scope**: What is explicitly excluded?
 - **Target context**: Our specific constraints (version, platform, use case) — used for applicability assessment throughout
-- **Constraints**: Known constraints (repo, platform, tooling)
+- **Known constraints**: Known constraints (repo, platform, tooling)
+- **System goal being served**: What outcome this research enables
+- **Claimed framing from human/docs**: The framing as stated
+- **What must be validated before accepting that framing**: Assumptions to verify
 
 ## Orient
 
@@ -25,8 +28,6 @@ Cognitive progression: What am I looking for? → Where is trustworthy informati
   - If deep → state existing understanding + known authoritative sources, proceed to targeted investigation
 - **Evidence type**: external-primary
 - **Strategy**: Given my familiarity, how will I organize this investigation?
-
-**Read the template file before proceeding** — use the section structure below.
 
 ## Source Landscape
 
@@ -61,6 +62,10 @@ Which sources will I read in depth? Why these?
 
 What evidence acquisition methods were used? What did each return? Why sufficient?
 (Require ≥2 independent methods, independence level ≥ moderate)
+
+| Method | What it returned | Independence level |
+|--------|-----------------|-------------------|
+| ... | ... | strong / moderate / weak |
 
 ## Source Evaluations
 
@@ -104,19 +109,44 @@ Findings supported only by secondary sources are marked ❓ with explicit note.
 
 ## Counterexample Sweep
 
+> Active search required. "Found no contradictions" only passes if you name: the specific source or document section checked, what opposing viewpoint or failure case you searched for, and that you specifically went looking.
+> ❌ Passive: "no evidence found contradicting this conclusion"
+> ✅ Active: name which sources you searched for disagreement, what failure mode you looked for, and what a contradiction would look like
+
 - **Leading interpretation**: What is the current most likely conclusion?
-- **Disproving evidence sought**: What evidence would disprove it?
-- **What was checked**: What specific searches were done? (Did you search for opposing viewpoints?)
-- **Result**: disproving evidence found / not found / insufficient search
+- **Disproving evidence sought**: What specific evidence would disprove it?
+- **What was checked**: Which sources, docs, or search terms? What failure case or opposing view would falsify it?
+- **Result**: disproving evidence found / not found (confirmed active search) / insufficient search
 - **Effect on confidence**: How does this change confidence in the conclusion?
 
 ## Self-Challenge
 
-> Follow baton-research Step 5: Self-Challenge
+> Shallow answers ("no other alternatives" / "all assumptions verified") signal self-challenge was not genuine — fix before presenting.
+
+**Q1: Weakest conclusion** (required format — fill in all four fields):
+- **Conclusion**: [exact claim as stated in conclusions]
+- **Why weakest**: [specific gap in evidence making you least confident]
+- **Falsification condition**: If [specific, observable thing] were true or present, this conclusion would be wrong
+- **Checked for it**: [what you specifically searched, and what you found]
+
+**Q2: What did I NOT investigate that I should have?**
+[Specific omissions — not "nothing"]
+
+**Q3: What assumptions did I make without verifying?**
+[Specific unverified assumptions — not "all verified"]
 
 ## Review
 
-> Follow baton-research Step 6: Review
+Dispatch baton-review via Agent tool (context isolation) using `./review-prompt-external.md`.
+Fallback: self-review using that checklist.
+
+1. Record findings below.
+2. Per finding: accept with fix / reject with evidence / keep as ❓
+3. Re-review if materially rewritten.
+4. Circuit breaker: 3 cycles without passing → escalate to human.
+
+**Review findings:**
+(record here, process per Annotation Protocol)
 
 ## One-Sentence Summary
 
@@ -144,6 +174,12 @@ Each conclusion must include:
 **Can wait for implementation** — plan can proceed, decide during implementation:
 
 **Out of scope but related** — recorded but does not block:
+
+**Open unknowns** — classified by blocking severity:
+- [unknown]: blocks plan / does not block plan
+
+**Chat requirements captured** — informal requirements from conversation not yet formally documented:
+- `Human requirement (chat): ...`
 
 > Append content of `.baton/annotation-template.md`
 ```

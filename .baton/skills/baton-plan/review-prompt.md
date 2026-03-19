@@ -9,7 +9,13 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Is the problem stated without referencing a solution?
 - Are constraints explicitly listed (architecture, dependencies, backward compatibility)?
 - Were ≥2 fundamentally different solution categories enumerated (not variations)?
-- Does Self-Challenge name specific rejected alternatives, or is it generic? ("no alternatives" = not genuine)
+
+### Self-Challenge
+
+- Is `## Self-Challenge` present in the plan?
+- Does it name specific rejected alternatives (generic "no other alternatives" = FAIL)?
+- Does it include a closing block with all three fields: **Weakest assumption**, **If this assumption is wrong**, **How to verify before executing**?
+- Is a falsification criterion stated for the weakest assumption? ("Should be fine" without a concrete test = FAIL)
 
 ### Multi-Approach Presentation
 
@@ -18,6 +24,7 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Does each approach have: what, how, trade-offs, fit?
 - Is the recommendation traced to specific research findings and constraints?
 - Are rejection reasons for alternatives explicit (not just "the recommended one is better")?
+- Do rejection reasons cite a specific constraint *name* from Step 1? Vague reasoning ("it's better/simpler/cleaner") with no constraint reference = FAIL.
 
 ### Research Derivation
 
@@ -37,8 +44,11 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Is the Surface Scan evidence-based (tool invocations, file reads) or memory-based?
 - Do file paths in the Surface Scan come from actual grep/read results? (verifiable)
 - For each L1 file: are all importers/consumers identified (L2)?
+- Are L3 triggers evaluated (execution order/timing, runtime state, caller relying on side effects not visible in imports)?
+- Are L3 items explicitly flagged ❓ with a note that static analysis is insufficient?
 - Are any surfaces defaulted to "skip" without explicit justification?
 - Are there "modify" files whose references are only partially covered?
+- **Self-audit**: for each table row, can a specific tool invocation or file read from this session be identified as its source? Any row without a traceable source = fabricated entry = FAIL.
 
 ### Write Set Completeness
 

@@ -9,7 +9,6 @@ Step 0 is mandatory first. Step 1 only after Step 0 passes.
 
 - Does each change match the plan's stated intent?
 - Are all plan-listed files modified? Any missing from the diff?
-- Does the diff implement what was specified, not a reinterpretation?
 - Would a line-by-line comparison against plan intent show material deviation?
 - Would the plan author recognize this as their design?
 - Are there changes NOT in the plan's write set? If so, do they meet all three
@@ -22,6 +21,7 @@ reinterpretation during implementation.
 ### Step 1 — Code Quality (only after Step 0 passes)
 
 #### Correctness
+- Were modified files re-read with the Read tool after editing? (Mental recall or editor view does not count — tool invocation required)
 - Unintended side effects? Missed edge cases? Boundary conditions?
 - Consumers of changed files affected? Check imports/references.
 - Same bug pattern elsewhere in codebase?
@@ -63,6 +63,15 @@ reinterpretation during implementation.
 - Wrong dependency order? Would executing in order fail?
 - Are independent items marked for safe parallelization?
 - Are Files: fields present and accurate?
+
+### Step 5 — Completion (when reviewing completed implementation)
+
+- Is `## Retrospective` present (required when all Todo items are ✅ or `<!-- BATON:COMPLETE -->` is present)?
+- Does it contain ≥1 **wrong prediction** (must follow format: "I expected X but found Y")?
+- Does it contain ≥1 **unexpected discovery** (something not anticipated in the plan)?
+- Does it contain ≥1 **process improvement** for future research or planning?
+- Are generic statements absent? ("went smoothly" / "completed as planned" = FAIL — no concrete learning)
+- Is `<!-- BATON:COMPLETE -->` placed only after all five conditions satisfied: review passed, full test suite passed, retrospective recorded, scope finished, result matches approved objective?
 
 ## Should-Check (skip if hooks enforce)
 
