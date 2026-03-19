@@ -33,9 +33,7 @@ the plan or working document.
 | **Medium** | Cross-module, design decisions | Full process. Surface scan depth by impact uncertainty. |
 | **Large** | Architecture-level, multi-system | Full process + multi-method research + multi-approach plan mandatory. |
 
-When in doubt, size up. Phase skills may define finer-grained complexity
-adjustments within their domain, but cannot weaken the sizing level's minimum
-requirements.
+When in doubt, size up. If task conditions span two levels (e.g., < 50 lines but cross-module), the higher level applies — structural/behavioral criteria (cross-module scope, design decisions) override volume criteria (line count, file count). Phase skills may define finer-grained complexity adjustments within their domain, but cannot weaken the sizing level's minimum requirements.
 
 ---
 
@@ -61,7 +59,10 @@ Transitions:
 - **APPROVED → EXECUTING**: `BATON:GO` recorded in the plan. Plan approval alone is not enough.
 - **Any → BLOCKED**: approval assumptions invalidated, plan needs non-trivial change, or challenge cannot be resolved. Must state the blocking reason.
 - **While BLOCKED**: report blocking reason and impact. No plan-scope work or artifact modification. Information gathering permitted.
-- **BLOCKED → EXECUTING**: blocking reason resolved. If BATON:GO was invalidated, renewed BATON:GO required. Otherwise, human confirms existing BATON:GO still applies.
+- **BLOCKED → EXECUTING**: blocking reason resolved, plus:
+  - If BATON:GO was invalidated (stale authorization or plan changed): renewed BATON:GO required.
+  - If blocked by phase skill escalation (failure boundary, circuit breaker): human provides new approach direction; renewed BATON:GO required.
+  - Otherwise: human confirms existing BATON:GO still applies.
 - **When a phase skill's escalation triggers** (circuit breaker, debug escalation, failure boundary): result is BLOCKED.
 - **→ COMPLETE**: all completion conditions met + human confirms.
 
@@ -79,7 +80,11 @@ Transitions are explicit. Do not infer state from momentum.
 
 **Unexpected discoveries**: evaluate whether (1) approval assumptions still hold and (2) the plan still applies. If either is no → BLOCKED. Phase skills define the specific protocol.
 
+Approval assumptions have materially changed when: (a) new facts contradict a key premise of the approved plan; (b) the authorized write set must expand; or (c) the implementation approach differs fundamentally from what was approved. When any trigger fires: state the original assumption, the new fact, and the impact, then go BLOCKED.
+
 **Failure boundary**: same approach failing repeatedly (default ≥2 under same hypothesis) → stop and surface the pattern. Phase skills may set a different threshold.
+
+A **hypothesis** is the causal claim driving the attempt (e.g., "the bug is in module X"). Adjusting parameters within the same causal claim = same hypothesis. Changing the causal claim = new hypothesis; reset the counter and state the new hypothesis explicitly before continuing.
 
 **Human override**: `BATON:OVERRIDE` with reason, recorded in the plan or working document. AI must not act on a verbal override until the marker is recorded.
 
@@ -96,7 +101,12 @@ Only mark claims that matter. Common knowledge needs no marker.
 
 Keep Facts / Inferences / Judgments distinct. "Should be fine" is not evidence.
 
-When sources conflict: state both, mark the mismatch, submit to human judgment.
+When sources conflict:
+1. State both claims with confidence markers and source identifiers.
+2. Identify what would distinguish them (a file to read, a test to run, a third authoritative source).
+3. If the distinguishing check is within scope, perform it. If not, mark the conflict ❓ unresolved with reason.
+4. If still unresolved after step 3: BLOCK — report the conflicting claims, confidence of each, and the specific resolution needed from the human.
+
 Two unverified sources agreeing does not equal verification.
 
 ---
