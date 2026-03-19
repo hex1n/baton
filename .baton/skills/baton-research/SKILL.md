@@ -259,6 +259,7 @@ Default path: `baton-tasks/<topic>/research.md`. `mkdir -p` the target directory
 **Update policy**:
 - Same investigation → update in place, mark superseded with `→ Revised in [section]`
 - After `[PAUSE]` → append new findings, reconcile before handoff
+- After BLOCKED (implementation escalated back to research) → read any research supplement added by baton-debug (if present); append new findings as a named section (e.g., `## Findings: BLOCKED Escalation`); mark affected prior conclusions superseded; reconcile before handoff to plan phase.
 - New investigation on same topic → archive old file, create fresh research.md
 
 Preserve traceability when conclusions change.

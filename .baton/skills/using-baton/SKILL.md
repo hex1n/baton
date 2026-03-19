@@ -69,7 +69,8 @@ the minimum governance above.
 Every working document must satisfy these regardless of which skill produced it.
 **Sizing caveat**: For Trivial tasks (constitution §Task Sizing), an inline plan is used
 instead of a formal document — items 2–4 do not apply, and item 1 is N/A if no file
-is created.
+is created. BATON:GO for a Trivial task appears in the inline plan contract, placed by
+the human before any source modification is made.
 
 1. **Location**: `baton-tasks/<topic>/`
 2. **批注区**: research and plan documents end with `## 批注区`
@@ -108,17 +109,22 @@ checks governance compliance, not just code quality. Copy-paste templates:
 
 **Plan review:**
 ```
-Agent(prompt="<review-criteria>\n[paste .baton/skills/baton-plan/review-prompt.md]\n</review-criteria>\n\n<artifact>\n[paste plan text]\n</artifact>")
+Agent(prompt="[paste .baton/skills/baton-plan/review-prompt.md]\n\n---\n\nArtifact to review:\n\n[paste plan text]")
 ```
 
 **Implementation review:**
 ```
-Agent(prompt="<review-criteria>\n[paste .baton/skills/baton-implement/review-prompt.md]\n</review-criteria>\n\n<artifact>\n[paste git diff]\n</artifact>\n\n<plan>\n[paste plan text]\n</plan>")
+Agent(prompt="[paste .baton/skills/baton-implement/review-prompt.md]\n\n---\n\nArtifact to review:\n\n[paste git diff]\n\n---\n\nPlan:\n\n[paste plan text]")
 ```
 
-**Research review:**
+**Research review (codebase-primary):**
 ```
-Agent(prompt="<review-criteria>\n[paste .baton/skills/baton-research/review-prompt-codebase.md]\n</review-criteria>\n\n<artifact>\n[paste research text]\n</artifact>")
+Agent(prompt="[paste .baton/skills/baton-research/review-prompt-codebase.md]\n\n---\n\nArtifact to review:\n\n[paste research text]")
+```
+
+**Research review (external-primary):**
+```
+Agent(prompt="[paste .baton/skills/baton-research/review-prompt-external.md]\n\n---\n\nArtifact to review:\n\n[paste research text]")
 ```
 
 ## Annotation Protocol

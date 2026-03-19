@@ -157,6 +157,8 @@ with [confidence level] confidence, accepting [key uncertainty]."
 
 ## Final Conclusions
 
+Label each conclusion **C1, C2, C3...** so the plan phase can reference them by identifier.
+
 Mark superseded conclusions: `→ Revised in [section]`
 
 Each conclusion must include:

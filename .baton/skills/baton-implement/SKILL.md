@@ -18,6 +18,8 @@ VERIFY = VISIBLE OUTPUT. "I checked" is not evidence.
 DO NOT REFRAME THE TASK TO FIT AN EASIER IMPLEMENTATION.
 ```
 
+**Trivial caveat**: For Trivial tasks (constitution §Task Sizing), there is no plan.md. BATON:GO appears in the inline plan contract in chat, placed by the human before any source modification is made. The Iron Law still applies — no changes until that marker is present.
+
 Approved write set = files listed in plan/Todo, plus only those A/B-level additions that satisfy Step 4 criteria and are explicitly recorded during implementation.
 
 ## Red Flags
@@ -107,7 +109,7 @@ For each item:
 
 **A. Local completion aid** — does not change public contract; only serves current Todo item; no new cross-module dependency → continue, record in `## Implementation Notes` in plan (create section on first use).
 **B. Adjacent integration** — wires up already-approved changes; does not change requirement boundary or introduce new behavior branches → continue only after appending to write set and recording rationale in `## Implementation Notes`. Rationale must explicitly state: (1) what was added, (2) why it qualifies as B-level (no new behavior branch, purely serves the current Todo item's integration), and (3) which Todo item it belongs to.
-**C. Scope extension** — requires new capability, scenario, data flow, or file surface not listed in plan → STOP. Update plan. Wait for human. If scope expansion changes the file surface, data flow, or validation strategy assumed by the original plan, escalate to D-level.
+**C. Scope extension** — requires new capability, scenario, data flow, or file surface not listed in plan → STOP. Append a `## Implementation Notes` section to the plan (create on first use) recording: (1) what was discovered, (2) why it is C-level (which plan assumption it violates, what scope expansion is needed). Do NOT remove BATON:GO — the human decides whether to revise the plan and re-authorize or reject the scope expansion. Declare BLOCKED state explicitly to the human and wait for direction before any further source modification. When the human provides direction to revise the plan: update the plan, then confirm the original BATON:GO still covers the revised scope before resuming (per constitution §States BLOCKED→EXECUTING). If scope expansion changes the file surface, data flow, or validation strategy assumed by the original plan, escalate to D-level.
 **D. Design change** — requires changing established design assumptions, interface contracts, data models, or validation strategy → STOP. Record D-level discovery and rationale in `## Implementation Notes`. Human removes BATON:GO. Return to plan phase.
 
 **Constitution Discovery Protocol mapping:**
@@ -122,6 +124,7 @@ For each item:
 ### Step 5: Completion
 
 After ALL items verified:
+0. **批注区 check** — scan the plan's `## 批注区` (and the research artifact's `## 批注区` if referenced) for any annotation with Status = ❓ and Impact = "affects conclusions" or "blocks next phase". If any remain unresolved, surface them to the human before proceeding to review or BATON:COMPLETE.
 1. **Implementation review** — dispatch baton-review via Agent tool with `./review-prompt.md` + diff (`git diff` of all changes) + plan text.
    Fallback (when Agent tool is technically unavailable): explicit self-review using `./review-prompt.md` checklist against plan contract — work through each item with an explicit YES/NO answer; task simplicity is not a reason to use this fallback.
    Fix findings, then re-review. Repeat until baton-review passes or circuit breaker

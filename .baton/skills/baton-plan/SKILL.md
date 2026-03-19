@@ -81,6 +81,10 @@ derive from there. If the human stated requirements in chat, record them
 under `## Requirements`. If no formal research artifact exists, derive from
 validated user requirements and any directly verified evidence.
 
+**If resuming from a BLOCKED implementation**: before deriving, read `## Implementation Notes` in the plan (if present) and any research supplement added by baton-debug. Record which discovery caused the block and what assumption it invalidated — this determines whether plan revision is localized or requires upstream research revision.
+
+**Research 批注区 check**: before deriving conclusions from a research artifact, scan its `## 批注区` for any annotation whose Impact = "affects conclusions" or "blocks next phase" and Status = ❓. Unresolved annotations at these impact levels may invalidate conclusions used as plan inputs. Surface them to the human before proceeding.
+
 ### Step 3: Surface Scan
 
 **Any plan whose correctness depends on multi-surface impact analysis must show

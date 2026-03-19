@@ -28,7 +28,7 @@ the plan or working document.
 
 | Level | Conditions | Process |
 |-------|-----------|---------|
-| **Trivial** | < 5 lines, single file, no behavior change | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
+| **Trivial** | < 5 lines, single file, no behavior change | Write-lock: AI proposes the exact change as an inline plan (3-5 line contract) before execution; human confirms by adding BATON:GO to the inline plan. No research/plan template. Self-review sufficient. |
 | **Small** | < 50 lines, few files, clear change | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
 | **Medium** | Cross-module, design decisions | Full process. Surface scan depth by impact uncertainty. |
 | **Large** | Architecture-level, multi-system | Full process + multi-method research + multi-approach plan mandatory. |
