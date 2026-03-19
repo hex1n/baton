@@ -35,8 +35,11 @@ the reason to prefer it is quality, not prohibition.
 
 ## Phase Routing
 
-Assess task size first (see constitution.md §Task Sizing). Sizing determines
-which phases and process steps apply.
+Assess task size first (see constitution.md §Task Sizing). The decisive
+dimension is **verification complexity** — how hard is it to confirm the change
+is correct? Volume and structural signals are heuristics; when they conflict
+with verification complexity, verification complexity wins. Re-assess sizing
+at the research→plan transition (see constitution.md §Sizing Checkpoint).
 
 | Phase | Baton skill | Value over alternatives |
 |-------|------------|----------------------|
