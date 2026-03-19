@@ -60,6 +60,7 @@ These thoughts mean STOP — you're rationalizing:
 - Crosses 2+ modules AND requires reconstructing a behavior chain → use
 - Contradictory evidence sources or requirement statements → use
 - Comparing 2+ approaches/frameworks/design axes → use
+- Verification requires multi-step strategy or designed test scenarios → use
 - Only need to explain single file/function/concept → don't use
 
 ## Two-Phase Mode + Review Gate

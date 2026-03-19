@@ -49,6 +49,11 @@ contract rather than a full structured document.
 
 ### Complexity-Based Scope
 
+Complexity level is determined by verification complexity (see constitution.md
+§Task Sizing). When in doubt: how many independent steps are needed to confirm
+correctness? One step = Small. Multiple coordinated steps = Medium. Verification
+itself requires design = Large.
+
 - **Trivial**: 3-5 line contract. Surface scan and Steps 5-6 normally skipped.
 - **Small**: Requirements + 2 brief alternatives (1–2 sentences each, including trade-offs) + recommendation.
 - **Medium/Large**: Full process.
@@ -57,7 +62,9 @@ Surface scan depth is determined by impact uncertainty and surface breadth;
 see Step 3.
 
 Complexity is proposed by AI and may be corrected by the human if the scope,
-risk, or review depth appears misclassified.
+risk, or review depth appears misclassified. If the Sizing Checkpoint
+(constitution.md §Sizing Checkpoint) triggered a level change after research,
+record that change at the top of this plan and apply the higher level's process.
 
 ## The Process
 

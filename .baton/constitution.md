@@ -26,14 +26,38 @@ explicitly overrides via a `BATON:OVERRIDE` marker.
 AI assesses task size at entry; human may override. Record sizing at the top of
 the plan or working document.
 
-| Level | Conditions | Process |
-|-------|-----------|---------|
-| **Trivial** | < 5 lines, single file, no behavior change | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
-| **Small** | < 50 lines, few files, clear change | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
-| **Medium** | Cross-module, design decisions | Full process. Surface scan depth by impact uncertainty. |
-| **Large** | Architecture-level, multi-system | Full process + multi-method research + multi-approach plan mandatory. |
+**Sizing dimension**: verification complexity is the decisive factor — how hard
+is it to confirm the change is correct? Volume (line count, file count) and
+structure (cross-module, single-file) are heuristic signals that usually
+correlate with verification complexity, but when they conflict, verification
+complexity wins.
 
-When in doubt, size up. If task conditions span two levels (e.g., < 50 lines but cross-module), the higher level applies — structural/behavioral criteria (cross-module scope, design decisions) override volume criteria (line count, file count). Phase skills may define finer-grained complexity adjustments within their domain, but cannot weaken the sizing level's minimum requirements.
+| Level | 验证需求 | Process |
+|-------|---------|---------|
+| **Trivial** | 目视检查即可验证（改 typo、改注释、改格式） | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
+| **Small** | 单步验证（跑一个测试、grep 一个模式、检查一个输出） | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
+| **Medium** | 多步验证（测试套件 + 行为检查 + 跨文件一致性） | Full process. Surface scan depth by impact uncertainty. |
+| **Large** | 验证本身需要设计（构造测试场景、多环境验证、人工判断验证策略） | Full process + multi-method research + multi-approach plan mandatory. |
+
+When in doubt, size up. Phase skills may define finer-grained complexity
+adjustments within their domain, but cannot weaken the sizing level's minimum
+requirements.
+
+---
+
+### Sizing Checkpoint
+
+After research completes and before plan begins, re-assess sizing:
+
+- Did research reveal more verification requirements than anticipated at entry?
+- Were cross-module dependencies or interface impacts discovered?
+- Is the validation strategy more complex than originally assumed?
+
+If sizing increases: add the process steps required by the higher level (e.g.,
+Small → Medium requires Surface Scan in the plan).
+If sizing decreases: record the reason and simplify the remaining process.
+
+Record any sizing change at the top of the plan document with reason.
 
 ---
 

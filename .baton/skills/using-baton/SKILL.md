@@ -35,8 +35,11 @@ the reason to prefer it is quality, not prohibition.
 
 ## Phase Routing
 
-Assess task size first (see constitution.md §Task Sizing). Sizing determines
-which phases and process steps apply.
+Assess task size first (see constitution.md §Task Sizing). The decisive
+dimension is **verification complexity** — how hard is it to confirm the change
+is correct? Volume and structural signals are heuristics; when they conflict
+with verification complexity, verification complexity wins. Re-assess sizing
+at the research→plan transition (see constitution.md §Sizing Checkpoint).
 
 | Phase | Baton skill | Value over alternatives |
 |-------|------------|----------------------|
@@ -67,9 +70,9 @@ the minimum governance above.
 ## Output Compliance
 
 Every working document must satisfy these regardless of which skill produced it.
-**Sizing caveat**: For Trivial tasks (constitution §Task Sizing), an inline plan is used
-instead of a formal document — items 2–4 do not apply, and item 1 is N/A if no file
-is created.
+**Sizing caveat**: For Trivial tasks (constitution §Task Sizing — verification by
+visual inspection only), an inline plan is used instead of a formal document —
+items 2–4 do not apply, and item 1 is N/A if no file is created.
 
 1. **Location**: `baton-tasks/<topic>/`
 2. **批注区**: research and plan documents end with `## 批注区`
