@@ -106,8 +106,11 @@ doctor() {
     echo "  Skills:"
     # Determine if project should use junctions (not self-install, not copy-mode)
     _expect_junction=0
+    _is_copy_mode=0
     if [ -L "$_dir/.baton" ]; then
         _expect_junction=1
+    elif [ -f "$_dir/.baton/.copy-mode" ]; then
+        _is_copy_mode=1
     fi
     _skill_dirs=""
     [ -d "$_dir/.claude/skills" ] && _skill_dirs="$_skill_dirs .claude/skills"
@@ -133,6 +136,9 @@ doctor() {
         if [ "$_stale" -gt 0 ]; then
             printf "  ⚠ %-20s %s/6 are plain dirs (not junctions, run 'baton init' to fix)\n" "$_sdir" "$_stale"
             _issues=$((_issues + 1))
+        fi
+        if [ "$_is_copy_mode" = "1" ] && [ "$_smissing" -eq 0 ]; then
+            printf "  ℹ %-20s copy-mode — run 'baton update' to sync latest skills\n" "$_sdir"
         fi
     done
     [ -z "$_skill_dirs" ] && { echo "  ⚠ No skill directories found"; _issues=$((_issues + 1)); }
@@ -347,8 +353,12 @@ case "${1:-help}" in
                             _dst="$_ide_skills/$_name"
                             # Skip if already a junction/symlink
                             [ -L "$_dst" ] && continue
-                            # Replace plain dir with junction
+                            # Replace plain dir or create missing junction
                             if [ -d "$_dst" ]; then
+                                echo "    Replacing plain dir with junction: $_dst"
+                                atomic_junction "$_skill_dir" "$_dst" || true
+                                _fixed=$((_fixed + 1))
+                            elif [ ! -e "$_dst" ]; then
                                 atomic_junction "$_skill_dir" "$_dst" || true
                                 _fixed=$((_fixed + 1))
                             fi

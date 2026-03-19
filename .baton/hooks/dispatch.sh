@@ -33,6 +33,8 @@ fi
 _exit_code=0
 
 while IFS=: read -r _evt _matcher _script || [ -n "$_evt" ]; do
+    # Strip CR for Windows CRLF compatibility (core.autocrlf=true)
+    _evt="${_evt%$'\r'}"; _matcher="${_matcher%$'\r'}"; _script="${_script%$'\r'}"
     case "$_evt" in ''|\#*) continue ;; esac
     [ "$_evt" != "$_event" ] && continue
 

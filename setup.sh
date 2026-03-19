@@ -159,6 +159,7 @@ create_skill_junctions() {
             _dst="$_skills_dir/$_skill"
             # Only skip if already a junction/symlink; replace plain dirs
             [ -L "$_dst" ] && continue
+            [ -d "$_dst" ] && echo "    Replacing plain dir with junction: $_dst"
             atomic_junction "$_src" "$_dst" || true
             _count=$((_count + 1))
         done
@@ -172,6 +173,7 @@ create_skill_junctions() {
             _dst="$PROJECT_DIR/.agents/skills/$_skill"
             # Only skip if already a junction/symlink; replace plain dirs
             [ -L "$_dst" ] && continue
+            [ -d "$_dst" ] && echo "    Replacing plain dir with junction: $_dst"
             atomic_junction "$_src" "$_dst" || true
             _count=$((_count + 1))
         done

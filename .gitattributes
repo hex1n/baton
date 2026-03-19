@@ -1,0 +1,4 @@
+# Baton hook files must stay LF — bash on Windows breaks on CRLF
+.baton/hooks/*.sh text eol=lf
+.baton/hooks/*.conf text eol=lf
+.baton/adapters/**/*.sh text eol=lf

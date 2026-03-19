@@ -32,13 +32,25 @@ if [ ! -f "$HOOK_SCRIPT" ]; then
     exit 1
 fi
 
+# Prepend capability tier statement so Codex always sees enforcement level
+TIER_HEADER="[Baton capability: rules + guidance only (Codex)] Hard gates (write-lock, bash-guard) are not available. Enforcement relies on rules and guidance."
+
+if [ "$HOOK_NAME" = "stop-guard" ]; then
+    # Codex Stop hook stdout is a JSON protocol channel.
+    # Run stop-guard off-channel; save reminder text to file; emit valid JSON only.
+    _stop_msg="$(bash "$HOOK_SCRIPT" 2>&1 1>/dev/null || true)"
+    _project_dir="${BATON_PROJECT_DIR:-$(pwd)}"
+    if [ -n "$_stop_msg" ] && [ -d "$_project_dir/.codex" ]; then
+        printf '%s' "$_stop_msg" > "$_project_dir/.codex/stop-hook.message.txt"
+    fi
+    printf '{"continue":false}\n'
+    exit 0
+fi
+
 # Baton hooks output to stderr (for Claude Code which displays stderr to AI).
 # Codex reads stdout as additionalContext. Redirect stderr->stdout.
 RESULT=$(bash "$HOOK_SCRIPT" 2>&1)
 EXIT_CODE=$?
-
-# Prepend capability tier statement so Codex always sees enforcement level
-TIER_HEADER="[Baton capability: rules + guidance only (Codex)] Hard gates (write-lock, bash-guard) are not available. Enforcement relies on rules and guidance."
 
 if [ -n "$RESULT" ]; then
     printf '%s\n%s\n' "$TIER_HEADER" "$RESULT"
