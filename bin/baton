@@ -104,21 +104,34 @@ doctor() {
 
     # Skills
     echo "  Skills:"
+    # Determine if project should use junctions (not self-install, not copy-mode)
+    _expect_junction=0
+    if [ -L "$_dir/.baton" ]; then
+        _expect_junction=1
+    fi
     _skill_dirs=""
     [ -d "$_dir/.claude/skills" ] && _skill_dirs="$_skill_dirs .claude/skills"
     [ -d "$_dir/.cursor/skills" ] && _skill_dirs="$_skill_dirs .cursor/skills"
     [ -d "$_dir/.agents/skills" ] && _skill_dirs="$_skill_dirs .agents/skills"
     for _sdir in $_skill_dirs; do
         _smissing=0
+        _stale=0
         for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent; do
-            if [ ! -f "$_dir/$_sdir/$_skill/SKILL.md" ]; then
+            _spath="$_dir/$_sdir/$_skill"
+            if [ ! -f "$_spath/SKILL.md" ]; then
                 _smissing=$((_smissing + 1))
+            elif [ "$_expect_junction" = "1" ] && [ ! -L "$_spath" ]; then
+                _stale=$((_stale + 1))
             fi
         done
-        if [ "$_smissing" -eq 0 ]; then
+        if [ "$_smissing" -eq 0 ] && [ "$_stale" -eq 0 ]; then
             printf "  ✓ %-20s 6/6 skills\n" "$_sdir"
-        else
+        elif [ "$_smissing" -gt 0 ]; then
             printf "  ⚠ %-20s %s/6 missing\n" "$_sdir" "$_smissing"
+            _issues=$((_issues + 1))
+        fi
+        if [ "$_stale" -gt 0 ]; then
+            printf "  ⚠ %-20s %s/6 are plain dirs (not junctions, run 'baton init' to fix)\n" "$_sdir" "$_stale"
             _issues=$((_issues + 1))
         fi
     done
@@ -301,8 +314,9 @@ case "${1:-help}" in
             echo "⚠ Update failed. Check for local changes in $BATON_HOME"
             exit 1
         fi
-        # Copy-mode recovery
+        # Copy-mode and stale-junction recovery
         if [ -f "$REGISTRY" ]; then
+            . "$BATON_HOME/.baton/hooks/lib/junction.sh"
             while IFS= read -r _dir; do
                 [ -z "$_dir" ] && continue
                 [ ! -d "$_dir" ] && continue
@@ -320,6 +334,27 @@ case "${1:-help}" in
                             cp -r "$_skill_dir" "$_ide_skills/$_name"
                         done
                     done
+                elif [ -L "$_dir/.baton" ]; then
+                    # Junction/symlink project: fix skill dirs that are plain dirs instead of junctions
+                    _skill_src="$_dir/.baton/skills"
+                    [ ! -d "$_skill_src" ] && continue
+                    _fixed=0
+                    for _ide_skills in "$_dir/.claude/skills" "$_dir/.cursor/skills" "$_dir/.agents/skills"; do
+                        [ -d "$_ide_skills" ] || continue
+                        for _skill_dir in "$_skill_src"/baton-*; do
+                            [ ! -d "$_skill_dir" ] && continue
+                            _name="$(basename "$_skill_dir")"
+                            _dst="$_ide_skills/$_name"
+                            # Skip if already a junction/symlink
+                            [ -L "$_dst" ] && continue
+                            # Replace plain dir with junction
+                            if [ -d "$_dst" ]; then
+                                atomic_junction "$_skill_dir" "$_dst" || true
+                                _fixed=$((_fixed + 1))
+                            fi
+                        done
+                    done
+                    [ "$_fixed" -gt 0 ] && echo "  Fixed $_fixed stale skill dir(s) in: $_dir"
                 fi
             done < "$REGISTRY"
         fi
