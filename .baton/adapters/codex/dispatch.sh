@@ -11,10 +11,11 @@ _dispatch="$_dir/../../hooks/dispatch.sh"
 
 case "$_event" in
     SessionStart)
-        bash "$_dispatch" "$@" || true
+        # Close stdin — Codex may not send EOF, causing dispatch.sh's `cat` to hang
+        bash "$_dispatch" "$@" </dev/null || true
         ;;
     Stop)
-        _stop_msg="$(bash "$_dispatch" "$@" 2>&1 1>/dev/null || true)"
+        _stop_msg="$(bash "$_dispatch" "$@" </dev/null 2>&1 1>/dev/null || true)"
         _project_dir="$(pwd)"
         if [ -n "$_stop_msg" ] && [ -d "$_project_dir/.codex" ]; then
             printf '%s' "$_stop_msg" > "$_project_dir/.codex/stop-hook.message.txt"
@@ -22,7 +23,7 @@ case "$_event" in
         printf '{"continue":false}\n'
         ;;
     *)
-        bash "$_dispatch" "$@" 2>&1 || true
+        bash "$_dispatch" "$@" </dev/null 2>&1 || true
         ;;
 esac
 
