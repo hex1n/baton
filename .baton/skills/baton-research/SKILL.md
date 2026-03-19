@@ -95,7 +95,9 @@ not restructure existing content.
 
 Define at top of research file:
 
-- **Question**: what exactly is being investigated
+- **Question**: what exactly is being investigated — frame as *behavior or outcome*, not as mechanism or assumed solution
+  - ❌ "How does the pre-commit hook call baton?" (assumes the mechanism; forecloses alternatives)
+  - ✅ "What triggers governance checks when a git commit is made?" (behavior-neutral; keeps alternatives open)
 - **Why**: what later decision this supports
 - **Scope / Out of scope**: boundaries
 - **Known constraints**: repo, platform, tooling
@@ -179,9 +181,23 @@ findings reinforce, where in tension, what remains unresolved.
 - What was checked → result
 - Effect on confidence
 
+**Active search requirement**: "Found no contradictions" only passes if you name:
+1. The specific artifact, code path, or document section you checked for a bypass or failure
+2. What the contradiction *would have looked like* if present
+3. That you *specifically went looking* — not merely that you didn't encounter it
+
+❌ Passive: "Counterexample sweep: no evidence found contradicting this conclusion."
+✅ Active: "Leading interpretation: hook always runs on commit. Searched for: env-var bypass flag and `--no-verify` passthrough in `hooks.json` and `install.sh`. Found: neither. If `SKIP_BATON=1` were honored, conclusion would be false. Confidence: high, but git's own `--no-verify` at the command level remains unexamined."
+
 ### Step 4: Evidence Standards
 
 Mark material claims: `✅` verified (state how) / `❓` unverified (state why).
+
+Micro-examples — state *how*, not just that you did:
+- ✅ `read hooks.json:12–18` — not `✅ verified`
+- ✅ `ran test suite; output in §Test Results` — not `✅ tested`
+- ❓ `no runtime access — cannot verify execution order` — not `❓ unverified`
+- ❓ `official docs don't state this; inferred from source code` — not `❓ assumed`
 
 Conflict resolution: see constitution.md §Evidence (including combination examples).
 
@@ -198,6 +214,15 @@ Write `## Self-Challenge` into the research artifact — visible output, not int
 
 Shallow answers ("no other alternatives" / "all assumptions verified") signal
 that self-challenge was not genuine. Fix before presenting.
+
+**Required format for Q1** (weakest conclusion) — must include all four fields:
+- **Conclusion**: [exact claim as stated in conclusions]
+- **Why weakest**: [specific reason — what gap in evidence makes you least confident]
+- **Falsification condition**: If [specific, observable thing] were true or present, this conclusion would be wrong
+- **Checked for it**: [what you specifically searched, and what you found]
+
+❌ Shallow: "Weakest: the hook always fires. Disproof: I found no evidence against this."
+✅ Specific: "Weakest: the hook runs unconditionally on every commit. Why: I only traced the install path, not bypass surfaces. Falsification: if `git commit --no-verify` silently skips the hook. Checked: confirmed git itself supports `--no-verify`; whether baton's hook registration respects this flag was not verified (❓)."
 
 ### Step 6: Review
 

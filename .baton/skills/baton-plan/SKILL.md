@@ -50,7 +50,7 @@ contract rather than a full structured document.
 ### Complexity-Based Scope
 
 - **Trivial**: 3-5 line contract. Surface scan and Steps 5-6 normally skipped.
-- **Small**: Requirements + recommendation.
+- **Small**: Requirements + 2 brief alternatives (1–2 sentences each, including trade-offs) + recommendation.
 - **Medium/Large**: Full process.
 
 Surface scan depth is determined by impact uncertainty and surface breadth;
@@ -94,6 +94,12 @@ the evidence.**
 **L3 — Behavioral equivalence** (human-assisted): Flag as ❓ for explicit
 human confirmation; record why static evidence is insufficient.
 
+L3 triggers (static analysis cannot answer these — must flag):
+- Does the change preserve the *semantics* of a contract, not just its signature?
+- Does correctness depend on execution order, timing, or runtime state?
+- Does a caller rely on a side effect that won't appear in its import graph?
+- Does "this looks compatible" depend on an assumption about current behavior that you have not directly observed running?
+
 | File | Level | Disposition | Reason |
 |------|-------|-------------|--------|
 | ... | L1/L2/L3 | modify / skip | ... |
@@ -101,11 +107,23 @@ human confirmation; record why static evidence is insufficient.
 Do not default uncovered surfaces to "skip". Any "skip" decision requires
 explicit justification.
 
+**Self-audit before finalizing the table**: For each row, identify the exact
+tool call or file read from the current session that produced it. Any row you
+cannot point to must be removed or replaced with a ❓ entry noting it was
+inferred, not verified. A partially-fabricated table is worse than a shorter
+honest one — it creates false confidence about coverage.
+
 ### Step 4: Present Approaches & Recommend
 
 **Present 2-3 fundamentally different approaches to the human** with trade-offs
 before converging on one. Do not internally enumerate and silently reject — the
 human must see the alternatives and the reasoning.
+
+> **What makes approaches "fundamentally different"**: they impose different
+> control points, abstraction layers, or responsibility allocations. Storage
+> format variations (JSON vs YAML vs SQLite for the same state model) are NOT
+> fundamentally different. Ask: "Does this approach change *who or what owns the
+> logic* or *where control decisions are made*?"
 
 For each approach:
 - **What**: one-sentence description
@@ -116,7 +134,7 @@ For each approach:
 Then state your recommendation with reasoning:
 - Which approach and why
 - Which research findings support it
-- Why the main alternatives were rejected (trace to specific constraints or evidence)
+- Why the main alternatives were rejected — cite the specific constraint *name* from Step 1, not "it's better/simpler/cleaner." Example: "Approach B rejected because it violates the [shell-only execution] constraint from Step 1." Vague rejection reasoning is a red flag that evaluation was not genuine.
 
 ### Step 5: Self-Challenge (write into artifact, not just think)
 
@@ -124,6 +142,15 @@ Write `## Self-Challenge` into the plan. Plan-specific questions:
 1. Is this the best approach, or the first one I thought of? What alternatives did I not consider?
 2. What assumptions did I make without verifying? Which ones could be wrong?
 3. What would a skeptic challenge first about this plan?
+
+After the 3 questions, add a required closing block:
+
+> **Weakest assumption**: [name the single most load-bearing unverified assumption]
+> **If this assumption is wrong**: [specific impact — what would need to change in the plan]
+> **How to verify before executing**: [what evidence or test would confirm or refute it]
+
+If you cannot state a falsification criterion, the assumption is too vague to
+trust — re-examine the plan.
 
 These answers are VISIBLE OUTPUT — the human judges their depth. Shallow
 answers ("no other alternatives" / "all assumptions verified") signal that

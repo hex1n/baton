@@ -66,12 +66,17 @@ the minimum governance above.
 
 ## Output Compliance
 
-Every working document must satisfy these regardless of which skill produced it:
+Every working document must satisfy these regardless of which skill produced it.
+**Sizing caveat**: For Trivial tasks (constitution §Task Sizing), an inline plan is used
+instead of a formal document — items 2–4 do not apply, and item 1 is N/A if no file
+is created.
 
 1. **Location**: `baton-tasks/<topic>/`
 2. **批注区**: research and plan documents end with `## 批注区`
 3. **Evidence markers**: `✅` verified (state how) / `❓` unverified (state why)
-4. **Self-Challenge**: `## Self-Challenge` with ≥3 substantive answers
+4. **Self-Challenge**: `## Self-Challenge` with ≥3 substantive answers — if the
+   external skill did not produce one, generate it from the document's content before
+   presenting to the human.
 5. **BATON:GO gate**: no source code changes without BATON:GO in the plan
 
 If a skill produces non-compliant output, fix before presenting to the human.

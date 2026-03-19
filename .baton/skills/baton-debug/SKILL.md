@@ -57,7 +57,11 @@ and low blast radius (e.g. normal red-green-refactor cycle).
 
 ### Phase 1: Reproduce
 
-1. Record exact error — full output, not summary
+1. Record failure evidence — full output, not summary:
+   - **Error present**: capture complete stdout/stderr, never truncate
+   - **Silent failure** (process runs, "succeeds", but expected output is missing or
+     empty): extract and log the raw return value, response payload, or output
+     artifact — "it returned nothing" is not yet evidence; capturing the raw value is
 2. Reproduce the failure
 3. Isolate — minimal reproduction case?
 
@@ -80,6 +84,11 @@ changelogs, known-issues pages) for matching symptoms before escalating.
 2. Predict: "If I change Y, result should be Z"
 3. Test: one change, observe
 4. Record: confirmed or refuted, with evidence. Note what was eliminated.
+
+   **Multi-component failures**: identify which layer produced the unexpected
+   result *before* forming hypotheses. Test outermost observable symptom first
+   (outside-in): confirm what the failing component actually outputs, then trace
+   inward. Avoids spending hypothesis tests on healthy layers.
 
 **Timeboxing:** If reproduction or environment investigation exceeds 10
 distinct diagnostic steps without progress, treat as equivalent to a failed
@@ -107,8 +116,10 @@ produces the expected result:
    log capture as appropriate
 2. Minimal fix addressing root cause
 3. Verify — verification artifact passes, existing tests pass
-4. Grep for same pattern elsewhere. Fix siblings only if within approved
-   scope; otherwise annotate and escalate
+4. Grep for the underlying root pattern elsewhere — not the surface symptom
+   (e.g., for a result-parsing bug: grep the parsing logic pattern, not "empty
+   result"; for a path bug: grep the path construction pattern, not "file missing").
+   Fix siblings only if within approved scope; otherwise annotate and escalate
 
 ## Escalation Criteria
 

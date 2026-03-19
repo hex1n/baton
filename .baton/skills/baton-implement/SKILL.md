@@ -58,7 +58,7 @@ If `## Todo` doesn't exist and human said "generate Todo list":
 
 **After generating, review the Todo list:**
 - Preferred: independent review — dispatch baton-review via Agent tool with `./review-prompt.md` (Todo List section) + Todo list + plan text
-- Fallback: explicit self-review using `./review-prompt.md` Todo List checklist
+- Fallback (when Agent tool is technically unavailable): explicit self-review using `./review-prompt.md` Todo List checklist — work through each item with an explicit YES/NO answer; task simplicity is not a reason to use this fallback
 - If neither review method performed: do not claim reviewed
 
 Resolve review findings in the Todo list before presenting it.
@@ -98,7 +98,7 @@ For each item:
 
 ### Self-Checks (4 essential)
 
-1. **Re-read code, not from memory** — after every edit
+1. **Re-read code using the Read tool** — open the file and read it after every edit; mental recall or editor view does not count as a re-read
 2. **Check behavior against plan contract** — does the change match the approved interface, restrictions, and boundary conditions? Not just "does the code work" but "does it do what the plan said"
 3. **Grep for same bug elsewhere** — after fixing any bug
 4. **Run the required validation commands before marking done** — no exceptions
@@ -106,7 +106,7 @@ For each item:
 ### Step 4: Unexpected Discoveries
 
 **A. Local completion aid** — does not change public contract; only serves current Todo item; no new cross-module dependency → continue, record in `## Implementation Notes` in plan (create section on first use).
-**B. Adjacent integration** — wires up already-approved changes; does not change requirement boundary or introduce new behavior branches → continue only after appending to write set and recording rationale in `## Implementation Notes`.
+**B. Adjacent integration** — wires up already-approved changes; does not change requirement boundary or introduce new behavior branches → continue only after appending to write set and recording rationale in `## Implementation Notes`. Rationale must explicitly state: (1) what was added, (2) why it qualifies as B-level (no new behavior branch, purely serves the current Todo item's integration), and (3) which Todo item it belongs to.
 **C. Scope extension** — requires new capability, scenario, data flow, or file surface not listed in plan → STOP. Update plan. Wait for human. If scope expansion changes the file surface, data flow, or validation strategy assumed by the original plan, escalate to D-level.
 **D. Design change** — requires changing established design assumptions, interface contracts, data models, or validation strategy → STOP. Record D-level discovery and rationale in `## Implementation Notes`. Human removes BATON:GO. Return to plan phase.
 
@@ -123,12 +123,11 @@ For each item:
 
 After ALL items verified:
 1. **Implementation review** — dispatch baton-review via Agent tool with `./review-prompt.md` + diff (`git diff` of all changes) + plan text.
-   Fallback: explicit self-review using `./review-prompt.md` checklist against plan contract.
+   Fallback (when Agent tool is technically unavailable): explicit self-review using `./review-prompt.md` checklist against plan contract — work through each item with an explicit YES/NO answer; task simplicity is not a reason to use this fallback.
    Fix findings, then re-review. Repeat until baton-review passes or circuit breaker
    triggers (3 rounds of high severity findings → escalate to human).
 2. **Full test suite** — run the project's complete suite (as defined by repo conventions or plan), not just per-item tests
-3. **Retrospective** — append `## Retrospective` to plan (≥3 lines: wrong predictions,
-   surprises, research improvements)
+3. **Retrospective** — append `## Retrospective` to plan. Must include: ≥1 **wrong prediction** (format: "I expected X but found Y"), ≥1 **unexpected discovery** (something not anticipated in the plan), ≥1 **process improvement** for future research or planning. Generic statements like "went smoothly" or "completed as planned" do not satisfy this requirement.
 4. **Mark complete** — add `<!-- BATON:COMPLETE -->` on its own line in the plan file. Only after steps 1-3 above are all satisfied (review passed, full suite passed, retrospective recorded).
 5. **Branch disposition** — present options (merge/PR/keep/discard) with status only; do not merge, open PR, or discard without explicit human choice
 

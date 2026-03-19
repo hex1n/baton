@@ -74,7 +74,10 @@ paths or upstream framing issues.
    approaches the author did not consider. "Variations of the same approach"
    don't count. A genuinely different category must change the control point,
    abstraction layer, responsibility assignment, or validation mechanism.
-   Otherwise it is a same-category variant.
+   Otherwise it is a same-category variant. (See Observability Checks: use
+   the first check — "genuinely different paradigms, or variations of the same
+   approach?" — to verify that enumerated categories are not just relabeled
+   variants.)
 
 4. **Does each piece serve the stated problem?** — For each section/item in
    the artifact, ask: does this serve the problem, or is it inherited baggage
@@ -153,6 +156,15 @@ Output in the same language the human uses. If the conversation is in Chinese, w
 Frame-level findings must be reported first. Do not output only detail-level fixes while omitting frame-level issues.
 
 ```markdown
+## First-Principles Check
+
+| Q | Result |
+|---|--------|
+| Q1: Actual problem (root vs symptom / solution-anchoring?) | pass — [one-line evidence] |
+| Q2: Right problem (root cause vs inherited frame?) | pass — [one-line evidence] |
+| Q3: Other solution categories (genuinely different paradigms?) | pass — [one-line evidence] |
+| Q4: Each piece serves the stated problem? | pass — [one-line evidence] |
+
 ## Frame-Level Findings
 
 ### [severity: high/medium/low] Finding title
@@ -169,7 +181,14 @@ Frame-level findings must be reported first. Do not output only detail-level fix
 **Suggested fix**: concrete recommendation
 ```
 
-**If no findings**: explicitly state that all four first-principles questions were checked and briefly justify why no frame-level concerns remain. "Looks good" without evidence of review depth is not an acceptable pass.
+**First-Principles Check table format rules:**
+
+- `pass — [one-line evidence]` — cite specific artifact text examined or explicit check performed. "pass — problem statement names root cause without prescribing a fix" is acceptable; "pass — problem statement looks reasonable" is not. "Looks good" or "appears sound" are not acceptable.
+- **Q3 specifically**: evidence must name the alternative paradigm categories that were considered and explain why they were rejected or why none apply. "pass — no alternatives identified" without naming what was actually considered is not acceptable. Acceptable example: "pass — considered [paradigm A] and [paradigm B]; both reduce to the same control point as the chosen approach." Unacceptable: "pass — the approach covers the problem space."
+- `finding — see Frame-Level Findings` — when the question produced a finding.
+- `n/a-impl — [reason]` — Q2/Q3 only, for implementation review when both questions were evaluated and no upstream framing issues detected. Not valid for research or plan artifacts.
+
+The table is mandatory in every review output. Omitting it or collapsing it into prose is not acceptable.
 
 ## Review Outcome
 

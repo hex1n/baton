@@ -50,25 +50,27 @@ From the Todo list, identify parallelizable items:
 
 1. **Dependency analysis** — items with `Deps: none` or whose dependencies are already complete
 2. **Write set analysis** — compare `Files:` fields. Any write-write overlap = sequential.
-3. **Group** — partition into parallel batches and sequential chains. Write-read conflicts checked after Step 2.
+3. **Group (provisional)** — partition into parallel batches and sequential chains based on write-write analysis only. This partition is provisional; it may be revised after the write-read conflict check in Step 2.
 
 File-level conflict granularity by default. Region-level only when provably non-overlapping with no shared state.
 
 ### Step 2: Context Construction
 
-Each subagent receives: plan summary, single Todo item, write set with file content, read set with file content, and verification method.
+Each subagent receives: plan summary (objective, constraints, and architectural decisions relevant to this item only — not other items' status or unrelated context), single Todo item, write set with file content, read set with file content, and verification method.
 
 Read set = files subagent needs to understand but NOT modify. Trace dependencies of write set files (imports, types, interfaces, config). When modifying public APIs, include representative consumers.
 
 Do NOT send the full plan or full Todo list.
 
-**Write-read conflict check** — after constructing read sets, verify no item's write set overlaps another's read set. Conflicts force sequential execution (writer before reader).
+**Write-read conflict check (revises Step 1 grouping)** — after constructing read sets for ALL items in the batch, verify no item's write set overlaps another's read set. Any conflict forces sequential execution (writer before reader); revise the provisional Step 1 grouping accordingly before proceeding to Step 3.
 
 ### Step 3: Dispatch
 
 Use the Agent tool with: write set boundary, verification command, and discovery handling rule ("record and return NEEDS_CONTEXT or BLOCKED; do not attempt to resolve").
 
 Choose the lightest executor that reliably satisfies the item's difficulty; when in doubt, use more capable.
+
+For sequential items: construct context immediately before dispatch — re-read write set and read set files from disk after preceding items complete. Do not build all sequential contexts upfront; earlier items' outputs must be reflected in later items' file content.
 
 Required return format — include this in the subagent prompt:
 
@@ -92,7 +94,7 @@ If the subagent's response lacks this report after one retry, fall back to seque
 
 ### Step 4: Completion Review
 
-Check: report completeness, spec compliance (Summary matches Todo intent), write set adherence, verification PASS, and discoveries.
+Check: report completeness, spec compliance (actual changes match Todo intent — use Summary as entry point, verify directly against write set content if Summary is ambiguous or partial), write set adherence, verification PASS, and discoveries.
 
 Failure handling:
 - **Verification re-run fails** → revert, fall back to sequential. Do not re-dispatch.
