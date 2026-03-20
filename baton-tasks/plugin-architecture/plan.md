@@ -162,7 +162,7 @@ github.com/hex1n/baton/
 │   # （review-prompt.md, template-*.md, references/ 等），均随目录整体迁移
 │
 ├── hooks/                        # Claude Code 通过 hooks.json 自动加载
-│   ├── hooks.json                # 声明 9 个事件的 hook 配置
+│   ├── hooks.json                # 声明 8 个事件的 hook 配置
 │   ├── run-hook.cmd              # polyglot bash/cmd wrapper
 │   ├── dispatch.sh               # 事件分发器（现有架构保留）
 │   ├── manifest.conf             # hook 路由表
@@ -619,7 +619,7 @@ baton 仓库本身是 marketplace 仓库。开发者在仓库内工作时：
 
 20. 本地注册为 marketplace，安装插件
 21. 验证 skills 被正确发现
-22. 验证 hooks 在 9 个事件上正常触发（重点测试 Windows cmd.exe/PowerShell）
+22. 验证 hooks 在 8 个事件上正常触发（重点测试 Windows cmd.exe/PowerShell）
 23. 验证 `/baton-init` 工作正常
 24. 验证 `baton init --ide cursor` 工作正常
 25. 验证 `baton init --ide codex` 工作正常
