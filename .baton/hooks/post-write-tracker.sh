@@ -82,7 +82,7 @@ if [ -n "$_writeset" ]; then
     _normalized="$(parser_writeset_normalize "$TARGET")"
     if ! printf '%s\n' "$_writeset" | grep -qxF "$_normalized"; then
         # Track repeat violations per file (prefer session_id from JSON or env var, fall back to PPID)
-        _session_id="${CLAUDE_SESSION_ID:-${PPID:-unknown}}"
+        _session_id="${CLAUDE_SESSION_ID:-${CURSOR_SESSION_ID:-${WINDSURF_SESSION_ID:-${CODEX_SESSION_ID:-${PPID:-unknown}}}}}"
         if [ -n "$STDIN" ] && command -v jq >/dev/null 2>&1; then
             _sid="$(printf '%s' "$STDIN" | jq -r '.session_id // empty' 2>/dev/null)"
             [ -n "$_sid" ] && _session_id="$_sid"
