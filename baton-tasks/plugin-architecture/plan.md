@@ -602,7 +602,7 @@ baton 仓库本身是 marketplace 仓库。开发者在仓库内工作时：
 8. 确认 `dispatch.sh` 路径解析在插件缓存目录下正常工作
 9. 确认 `lib/common.sh` 相对路径正常
 10. 调整 `BATON_PROJECT_DIR` 设置方式（$PWD 应该就是项目目录）
-11. 验证所有 hook 脚本可以从插件目录访问项目文件
+11. **增加 baton-project 检测**：在 `dispatch.sh` 的 `_manifest` 检查后、hook 循环前，增加 `[ -f "$BATON_PROJECT_DIR/.baton/constitution.md" ] || exit 0`。确保非 baton 项目不触发任何 hook（当前 write-lock.sh:134-138 无 plan 时 exit 2 会阻断所有写入，bash-guard.sh 也可能误触发）。验证方式：在无 `.baton/` 的项目中触发 PreToolUse，确认 dispatch.sh 直接 exit 0
 12. **适配 `_scan_all_skills()`**（phase-guide.sh:72-83）：当前只扫 `$BATON_PROJECT_DIR/{.baton,.claude,.cursor,.agents}/skills/*/`，在插件模式下找不到 skills。需增加对 `${CLAUDE_PLUGIN_ROOT}/skills/` 的扫描（dispatch.sh 可通过 `$_dir/../skills/` 推导插件 skills 路径，并 export 为 `BATON_PLUGIN_SKILLS_DIR`）
 13. **适配 `parser_has_skill()`**（lib/plan-parser.sh:204-217）：当前沿项目目录向上遍历 `.baton/skills`、`.claude/skills` 等。需增加 `$BATON_PLUGIN_SKILLS_DIR` 作为额外搜索路径
 14. **移除 phase-guide.sh 的 junction 自动创建块**（phase-guide.sh:50-66）：该块 source 了 `junction.sh` 来自动创建 skill junctions。插件模式下不再需要 junction，需删除或条件跳过（检查 `junction.sh` 是否存在）
@@ -656,7 +656,7 @@ Phase 1-3 在独立分支 `plugin-architecture` 上进行，不合入 master。
 |------|------|------|
 | `${CLAUDE_PLUGIN_ROOT}` 不展开 .cmd 文件路径 | hooks 无法定位脚本 | Phase 4 step 19 验证；降级方案：settings.json 中 hardcode 绝对路径 |
 | 插件 hooks 与项目 settings.json hooks 冲突 | 事件重复触发 | 迁移时清理项目 settings.json 中的旧 hook 条目 |
-| 非 baton 项目也触发 baton hooks | 误触发 write-lock 等 | Hook 脚本已有保护：无 constitution/plan 时 exit 0 |
+| 非 baton 项目也触发 baton hooks | write-lock 阻断所有非 baton 项目的源码写入（exit 2） | Phase 2 step 11 增加 baton-project 检测：dispatch.sh 开头检查 `$BATON_PROJECT_DIR/.baton/constitution.md` 是否存在，不存在则 exit 0 跳过所有 hook。✅ 已验证 write-lock.sh:134-138 无 plan 时 exit 2（非 exit 0） |
 | Claude Code 更新改变插件 API | 插件失效 | 跟踪 Claude Code changelog；hooks.json 格式已稳定 |
 | Cursor/Codex 无法使用插件系统 | 需要维护 adapter | adapter 代码量小（每个 ~100 行），可接受 |
 | PortableGit `CreateFileMapping error 5` | hook 启动失败 | hook 脚本 fail-open (trap exit 0)；文档注明 PortableGit 白名单要求 |
