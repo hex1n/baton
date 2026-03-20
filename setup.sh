@@ -184,15 +184,9 @@ create_skill_junctions() {
 # --- Generate or merge settings.json for Claude Code / Factory ---
 generate_claude_settings() {
     _settings="$1"
-    # OS-aware dispatch: use polyglot wrapper on Windows, direct bash on Unix
-    case "$(uname -s 2>/dev/null)" in
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            _dispatch_cmd_prefix=".baton/hooks/run-hook.cmd"
-            ;;
-        *)
-            _dispatch_cmd_prefix="bash .baton/hooks/dispatch.sh"
-            ;;
-    esac
+    # Use polyglot wrapper on all platforms — settings.json is git-tracked and
+    # must work across OSes. run-hook.cmd works in both bash and cmd.exe.
+    _dispatch_cmd_prefix=".baton/hooks/run-hook.cmd"
 
     # All 8 event types with dispatch.sh
     _events="PreToolUse PostToolUse SessionStart Stop PreCompact SubagentStart TaskCompleted PostToolUseFailure"

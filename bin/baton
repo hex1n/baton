@@ -316,8 +316,6 @@ case "${1:-help}" in
         echo "Updating baton..."
         if git -C "$BATON_HOME" pull --ff-only; then
             echo "✓ Updated to latest"
-            # Whitelist: remove gitignored files from BATON_HOME (e.g. baton-tasks/)
-            git -C "$BATON_HOME" clean -fdX 2>/dev/null || true
         else
             echo "⚠ Update failed. Check for local changes in $BATON_HOME"
             exit 1

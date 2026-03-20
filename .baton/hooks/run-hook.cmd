@@ -29,13 +29,7 @@ if exist "%LOCALAPPDATA%\Programs\Git\bin\bash.exe" (
     exit /b %ERRORLEVEL%
 )
 
-REM Portable Git (e.g. D:\App\PortableGit)
-if exist "D:\App\PortableGit\usr\bin\bash.exe" (
-    "D:\App\PortableGit\usr\bin\bash.exe" "%HOOK_DIR%dispatch.sh" %*
-    exit /b %ERRORLEVEL%
-)
-
-REM Try bash on PATH
+REM Try bash on PATH (covers PortableGit, MSYS2, Cygwin, etc.)
 where bash >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     bash "%HOOK_DIR%dispatch.sh" %*

@@ -12,7 +12,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh PreToolUse"
+            "command": ".baton/hooks/run-hook.cmd PreToolUse"
           }
         ]
       },
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh PreToolUse"
+            "command": ".baton/hooks/run-hook.cmd PreToolUse"
           }
         ]
       }
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh PostToolUse"
+            "command": ".baton/hooks/run-hook.cmd PostToolUse"
           }
         ]
       }
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh SessionStart"
+            "command": ".baton/hooks/run-hook.cmd SessionStart"
           }
         ]
       }
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh Stop"
+            "command": ".baton/hooks/run-hook.cmd Stop"
           }
         ]
       }
@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh PreCompact"
+            "command": ".baton/hooks/run-hook.cmd PreCompact"
           }
         ]
       }
@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh SubagentStart"
+            "command": ".baton/hooks/run-hook.cmd SubagentStart"
           }
         ]
       }
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh TaskCompleted"
+            "command": ".baton/hooks/run-hook.cmd TaskCompleted"
           }
         ]
       }
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .baton/hooks/dispatch.sh PostToolUseFailure"
+            "command": ".baton/hooks/run-hook.cmd PostToolUseFailure"
           }
         ]
       }
