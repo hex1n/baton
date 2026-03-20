@@ -32,6 +32,101 @@ Baton 往每个项目投递 4 类东西：
 
 ---
 
+## 插件系统验证（研究证据）
+
+以下证据来自对本机已安装插件的实际文件读取（2026-03-20）：
+
+### Marketplace 注册机制 ✅
+
+- `~/.claude/settings.json` 包含 `extraKnownMarketplaces` 字段，支持自定义 marketplace 注册 ✅ 已读取确认
+- autoresearch 插件通过 `{"source": {"source": "github", "repo": "uditgoenka/autoresearch"}}` 注册为自定义 marketplace ✅ 已读取 settings.json
+- marketplace 仓库克隆到 `~/.claude/plugins/marketplaces/<name>/` ✅ 已确认目录存在
+- 插件缓存在 `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` ✅ 已确认目录存在
+
+### marketplace.json 格式 ✅
+
+```json
+// 来源：~/.claude/plugins/marketplaces/autoresearch/.claude-plugin/marketplace.json
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "autoresearch",
+  "version": "1.7.5",
+  "plugins": [{
+    "name": "autoresearch",
+    "source": "./claude-plugin",     // 相对路径指向插件根
+    "category": "productivity"
+  }]
+}
+```
+
+✅ 已读取文件原文确认。单插件 marketplace 模式：`"source": "."` 或 `"source": "./subdir"`。
+
+### plugin.json 格式 ✅
+
+```json
+// 来源：~/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/.claude-plugin/plugin.json
+{
+  "name": "superpowers",
+  "description": "Core skills library...",
+  "version": "5.0.5",
+  "author": { "name": "Jesse Vincent", "email": "jesse@fsck.com" },
+  "repository": "https://github.com/obra/superpowers",
+  "license": "MIT",
+  "keywords": [...]
+}
+```
+
+✅ 已读取文件原文确认。
+
+### 插件 hooks.json — 与 settings.json hooks 格式一致 ✅
+
+```json
+// 来源：~/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/hooks/hooks.json
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "startup|clear|compact",
+      "hooks": [{
+        "type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start"
+      }]
+    }]
+  }
+}
+```
+
+✅ 已读取文件原文确认。`${CLAUDE_PLUGIN_ROOT}` 由 Claude Code 在执行时展开为插件缓存路径。
+
+### Skills 自动发现 ✅
+
+superpowers 插件的 `skills/` 目录包含 14 个 skill 子目录（brainstorming、systematic-debugging、test-driven-development 等），在本会话中均被 Claude Code 自动发现并列入可用 skills。
+
+✅ 已确认：本会话的 system-reminder 中列出了 `superpowers:brainstorming`、`superpowers:test-driven-development` 等 skill。
+
+### 插件目录标准结构 ✅
+
+superpowers 5.0.5 的完整结构（已 `find` 列出）：
+
+```
+.claude-plugin/plugin.json          # 插件元数据
+hooks/hooks.json                    # hook 声明
+hooks/run-hook.cmd                  # polyglot wrapper
+hooks/session-start                 # hook 脚本（无 .sh 扩展名）
+skills/*/SKILL.md                   # 14 个 skills
+commands/*.md                       # 3 个 slash commands
+agents/*.md                         # 1 个 agent type
+```
+
+✅ 已列出完整目录确认。
+
+### 未验证项 ❓
+
+- `/install-plugin` 命令是否存在 ❓ — 可能需要通过 Claude Code UI 或 `claude plugin add` 安装
+- 插件 hooks 是否能与项目 settings.json hooks 共存且不冲突 ❓ — superpowers 只有 SessionStart，未验证多事件场景
+- `${CLAUDE_PLUGIN_ROOT}` 是否在所有 shell（cmd/powershell/bash）中都能正确展开 ❓ — superpowers 用引号包裹路径，暗示需要处理空格
+
+---
+
 ## 方案
 
 将 baton 重构为 Claude Code Plugin。插件系统自动处理 skills 发现、hooks 加载、版本更新。项目只保留 constitution（治理规则）和 baton-tasks（工作产物）。
