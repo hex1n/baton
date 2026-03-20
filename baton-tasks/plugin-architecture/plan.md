@@ -308,6 +308,10 @@ project/
 }
 ```
 
+### SessionStart matcher 设计决策
+
+hooks.json 的 SessionStart 使用 `"matcher": ""`（匹配所有触发类型），而非 superpowers 的 `"matcher": "startup|clear|compact"`。原因：baton 的 phase-guide hook 需要在每次会话恢复时注入 governance 上下文（包括 compact 后的重新注入），空 matcher 确保不遗漏任何需要 governance 的场景。trade-off：可能在不需要 governance 的 session 事件中产生少量额外开销，但 phase-guide 在非 baton 项目中已通过 dispatch.sh 的 constitution 检测跳过（Phase 2 step 11）。
+
 ### Hook 脚本适配
 
 当前 hook 脚本通过 `$PWD` 获取项目目录（`BATON_PROJECT_DIR`），通过环境变量 `$BATON_PLAN` 定位 plan 文件。这些在插件模式下完全不变——插件 hooks 的工作目录就是当前项目。
@@ -521,17 +525,21 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 | `hooks/hooks.json` | ~60 | 8 事件 hook 声明 |
 | `commands/baton-init.md` | ~80 | /baton-init slash command |
 | `adapters/codex/run-hook.cmd` | ~50 | Codex polyglot wrapper |
+| `templates/constitution.md` | ~40 | constitution 模板（从 `.baton/constitution.md` 复制）|
 | `adapters/cursor/run-hook.cmd` | ~50 | Cursor polyglot wrapper |
 
-**修改**（随移动一起进行）：
+**修改**（随移动一起进行，或就地重写）：
 
 | 文件 | 修改内容 | 对应步骤 |
 |------|----------|----------|
 | `hooks/dispatch.sh` | 增加 baton-project 检测（constitution 检查）| Phase 2 step 11 |
 | `hooks/phase-guide.sh` | 适配 `_scan_all_skills()` 扫描插件 skills 路径 + 移除 junction 自动创建块 | Phase 2 step 12, 14, 15 |
 | `hooks/lib/plan-parser.sh` | 适配 `parser_has_skill()` 增加 `$BATON_PLUGIN_SKILLS_DIR` 搜索路径 | Phase 2 step 13 |
+| `install.sh` | 重写：移除 `setup.sh` 调用（92 行→~60 行），增加 marketplace 注册逻辑（向 `~/.claude/settings.json` 写入 `extraKnownMarketplaces` + `enabledPlugins`）| Phase 3 |
 
-**净效果**：删除 ~871 行，新增 ~275 行，修改 3 个文件，净减 ~596 行。移动 ~4200 行（不变）。
+**净效果**：删除 ~871 行，新增 ~315 行，修改 4 个文件（含 `install.sh` 重写净减 ~32 行、`bin/baton` 精简净减 ~243 行），净减 ~831 行。移动 ~4200 行（不变）。
+
+> 注：`bin/baton` 从 393 行精简到 ~150 行（-243 行）和 `install.sh` 从 92 行重写到 ~60 行（-32 行）计入修改栏而非删除栏，因为文件保留。
 
 ---
 
