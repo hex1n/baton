@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # completion-check.sh — Block task completion until retrospective is written
-# Version: 1.1
+# Version: 1.2
 #
 # Hook: TaskCompleted
 # Exit 0 = allow completion
@@ -59,6 +59,12 @@ if ! parser_retro_valid; then
     echo "   · What surprised you during implementation?" >&2
     echo "   · What would you research differently next time?" >&2
     exit 2
+fi
+
+# --- Check for unresolved ❓ markers (advisory) ---
+_unresolved="$(grep -c '❓' "$PLAN" 2>/dev/null || echo 0)"
+if [ "${_unresolved:-0}" -gt 0 ] 2>/dev/null; then
+    echo "⚠️ $PLAN_NAME has ${_unresolved} unresolved ❓ marker(s) — constitution requires blockers and contradictions closed before completion." >&2
 fi
 
 # --- Check for test suite execution (advisory) ---

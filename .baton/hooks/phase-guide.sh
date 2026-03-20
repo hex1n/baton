@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # phase-guide.sh — Detect current phase, output phase-specific guidance
-# Version: 7.0
+# Version: 7.1
 # Hook: SessionStart
 # Skills-first: prompts skill invocation when baton skills are available
 # Fallback: hardcoded summaries per phase
@@ -228,6 +228,12 @@ if [ -n "$RESEARCH" ]; then
     if [ "$_dim_count" -gt 2 ] 2>/dev/null; then
         echo "📊 Research has ${_dim_count} investigation dimensions — verify complexity classification is Medium+ before planning." >&2
     fi
+    # Sizing Checkpoint (constitution requirement: re-assess after research, before planning)
+    echo "📐 Sizing Checkpoint — before creating the plan, re-assess sizing:" >&2
+    echo "   · Did research reveal more verification steps than assumed at entry?" >&2
+    echo "   · Were cross-module dependencies or interface impacts discovered?" >&2
+    echo "   · Is the validation strategy more complex than originally assumed?" >&2
+    echo "   If sizing increases: record reason at top of plan; add process steps for the higher level." >&2
     exit 0
 fi
 
@@ -252,7 +258,7 @@ if [ -n "$_research_skills" ]; then
     echo "   Create in baton-tasks/<topic>/research.md." >&2
 else
     echo "📍 RESEARCH phase — create in baton-tasks/<topic>/research.md. Investigate with evidence." >&2
-    echo "   Simple changes may skip research and go straight to $PLAN_NAME." >&2
 fi
+echo "   💡 Trivial tasks (verification by visual inspection only) may skip research — use an inline plan instead." >&2
 
 exit 0

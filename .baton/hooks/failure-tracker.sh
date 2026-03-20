@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # failure-tracker.sh — Session-total PostToolUseFailure counter with threshold alerts
-# Version: 1.0
+# Version: 1.1
 #
 # Hook: PostToolUseFailure (matcher: "")
 # Advisory only — always exit 0
 #
-# Counts cumulative tool failures per session. Alerts at threshold =3 and =5 only.
-# Does not attempt root-cause analysis — provides "failures accumulating" signal.
+# Counts cumulative tool failures per session. Alerts at =3 and =5.
+# NOTE: This is a session-total proxy. The constitution's failure boundary is
+# per-hypothesis (≥2 failures under the same causal claim → stop and surface).
+# Hooks cannot track hypothesis identity; per-hypothesis enforcement is AI-layer.
 
 # --- Read stdin JSON (supports dispatch mode and direct invocation) ---
 if [ -n "${BATON_STDIN+x}" ]; then
@@ -53,9 +55,9 @@ echo "${TOOL_NAME:-unknown} $(date +%s)" >> "$COUNT_FILE"
 COUNT=$(wc -l < "$COUNT_FILE" 2>/dev/null | tr -d ' ')
 
 if [ "$COUNT" -eq 3 ] 2>/dev/null; then
-    echo "⚠️ 3 tool failures this session — check if failures share a root cause (default ≥2; active phase skill may override to 3). If yes, invoke /baton-debug." >&2
+    echo "⚠️ 3 tool failures this session — check if any two share the same root-cause hypothesis. Constitution: ≥2 failures under the same hypothesis → stop and surface. If yes, invoke /baton-debug." >&2
 elif [ "$COUNT" -eq 5 ] 2>/dev/null; then
-    echo "⚠️ 5 tool failures this session — failure boundary likely applies. Stop and investigate." >&2
+    echo "⚠️ 5 tool failures this session — failure boundary very likely applies. Stop, identify the hypothesis driving repeated attempts, and surface to the human." >&2
 fi
 
 exit 0

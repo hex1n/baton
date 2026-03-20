@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # pre-compact.sh — Preserve key context before context compression
-# Version: 1.1
+# Version: 1.2
 #
 # Hook: PreCompact
 # Always exit 0 — PreCompact cannot block
@@ -44,9 +44,26 @@ else
     echo "   Phase: PLAN/ANNOTATION (awaiting BATON:GO)" >&2
 fi
 
-# --- Output last Annotation Log round (if exists) ---
+# --- Output authorized write set ---
+_writeset="$(parser_writeset_extract 2>/dev/null)"
+if [ -n "$_writeset" ]; then
+    echo "   Authorized write set:" >&2
+    printf '%s\n' "$_writeset" | head -10 | while IFS= read -r _f; do
+        echo "     $_f" >&2
+    done
+fi
+
+# --- Output last Annotation Log content (if exists) ---
 if grep -q '## Annotation Log' "$PLAN" 2>/dev/null; then
-    echo "   Recent decisions from Annotation Log available in $PLAN_NAME." >&2
+    _anno_content="$(awk '/^## Annotation Log/{f=1; next} /^## [^#]/{if(f) exit} f{print}' "$PLAN" 2>/dev/null | tail -10)"
+    if [ -n "$_anno_content" ]; then
+        echo "   Recent Annotation Log:" >&2
+        printf '%s\n' "$_anno_content" | while IFS= read -r _line; do
+            echo "     $_line" >&2
+        done
+    else
+        echo "   Annotation Log: present but no recent content." >&2
+    fi
 fi
 
 exit 0

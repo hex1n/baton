@@ -143,9 +143,20 @@ fi
 
 # --- Check GO marker ---
 if parser_has_go; then
-    # Plan-approved write — inject self-check reminder via additionalContext
+    # Write-set enforcement: if plan defines a write set, target must be in it
+    _writeset="$(parser_writeset_extract "$PLAN" 2>/dev/null)"
+    if [ -n "$_writeset" ]; then
+        _target_norm="$(parser_writeset_normalize "$TARGET" "$PROJECT_DIR")"
+        if ! printf '%s\n' "$_writeset" | grep -qxF "$_target_norm"; then
+            echo "🔒 Blocked: $(basename "$TARGET") is not in the approved write set." >&2
+            echo "   Approved files in $PLAN_NAME:" >&2
+            printf '%s\n' "$_writeset" | head -10 | sed 's/^/   · /' >&2
+            echo "📍 Add this file to the plan write set, or record BATON:OVERRIDE with reason before proceeding." >&2
+            exit 2
+        fi
+    fi
     cat <<'HOOKJSON'
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"Baton: verify this file is in the approved write set. Self-check after writing."}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"Baton: write-set approved. Self-check: confirm scope matches plan before writing."}}
 HOOKJSON
     exit 0
 fi

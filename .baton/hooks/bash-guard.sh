@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # bash-guard.sh — Block explicit shell writes when plan gate is closed
-# Version: 3.2
+# Version: 3.3
 # Hook: PreToolUse (Bash)
 # Exit 0 = allow, Exit 2 = block
 #
@@ -141,6 +141,8 @@ elif [ -z "$_blocked" ] && _is_cmd_token 'install'; then
     _blocked="install (file install)"
 elif [ -z "$_blocked" ] && _is_cmd_token 'truncate'; then
     _blocked="truncate"
+elif [ -z "$_blocked" ] && _is_cmd_token 'patch'; then
+    _blocked="patch (in-place diff application)"
 fi
 
 if [ -n "$_blocked" ]; then
@@ -150,6 +152,9 @@ if [ -n "$_blocked" ]; then
 fi
 
 # --- Phase-1 warn-only: ambiguous patterns ---
+if _is_cmd_token 'rm'; then
+    echo "⚠️ Bash guard: 'rm' detected while plan gate is closed (destructive — verify intent)." >&2
+fi
 case "$_SCAN_CMD" in
     *"touch "*)
         echo "⚠️ Bash guard: 'touch' detected while plan gate is closed (allowed, but verify intent)." >&2
