@@ -32,12 +32,12 @@ structure (cross-module, single-file) are heuristic signals that usually
 correlate with verification complexity, but when they conflict, verification
 complexity wins.
 
-| Level | 验证需求 | Process |
-|-------|---------|---------|
-| **Trivial** | 目视检查即可验证（改 typo、改注释、改格式） | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
-| **Small** | 单步验证（跑一个测试、grep 一个模式、检查一个输出） | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
-| **Medium** | 多步验证（测试套件 + 行为检查 + 跨文件一致性） | Full process. Surface scan depth by impact uncertainty. |
-| **Large** | 验证本身需要设计（构造测试场景、多环境验证、人工判断验证策略） | Full process + multi-method research + multi-approach plan mandatory. |
+| Level | Verification Requirements | Process |
+|-------|--------------------------|---------|
+| **Trivial** | Visual inspection sufficient (typo, comment, formatting changes) | Write-lock applies. No research/plan template. Inline plan (3-5 line contract). Self-review sufficient. |
+| **Small** | Single-step verification (run one test, grep one pattern, check one output) | Research without template (evidence labels required). Plan required, surface scan optional. Review must dispatch. |
+| **Medium** | Multi-step verification (test suite + behavior check + cross-file consistency) | Full process. Surface scan depth by impact uncertainty. |
+| **Large** | Verification requires design (construct test scenarios, multi-environment validation, human-judgment verification strategy) | Full process + multi-method research + multi-approach plan mandatory. |
 
 When in doubt, size up. Phase skills may define finer-grained complexity
 adjustments within their domain, but cannot weaken the sizing level's minimum

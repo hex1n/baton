@@ -81,8 +81,8 @@ if [ -n "$_writeset" ]; then
     # Exact path matching against Files: fields in ## Todo section
     _normalized="$(parser_writeset_normalize "$TARGET")"
     if ! printf '%s\n' "$_writeset" | grep -qxF "$_normalized"; then
-        # Track repeat violations per file (prefer session_id from JSON or env var, fall back to PPID)
-        _session_id="${CLAUDE_SESSION_ID:-${PPID:-unknown}}"
+        # Track repeat violations per file (prefer session_id from JSON, then generic env var, fall back to PPID)
+        _session_id="${BATON_SESSION_ID:-${CLAUDE_SESSION_ID:-${PPID:-unknown}}}"
         if [ -n "$STDIN" ] && command -v jq >/dev/null 2>&1; then
             _sid="$(printf '%s' "$STDIN" | jq -r '.session_id // empty' 2>/dev/null)"
             [ -n "$_sid" ] && _session_id="$_sid"
