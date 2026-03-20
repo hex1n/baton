@@ -662,7 +662,7 @@ Phase 1-3 在独立分支 `plugin-architecture` 上进行，不合入 master。
 
 | 风险 | 影响 | 缓解 |
 |------|------|------|
-| `${CLAUDE_PLUGIN_ROOT}` 不展开 .cmd 文件路径 | hooks 无法定位脚本 | Phase 4 step 19 验证；降级方案：settings.json 中 hardcode 绝对路径 |
+| `${CLAUDE_PLUGIN_ROOT}` 不展开 .cmd 文件路径 | hooks 无法定位脚本 | Phase 4 step 20-22 验证；降级方案：settings.json 中 hardcode 绝对路径 |
 | 插件 hooks 与项目 settings.json hooks 冲突 | 事件重复触发 | 迁移时清理项目 settings.json 中的旧 hook 条目 |
 | 非 baton 项目也触发 baton hooks | write-lock 阻断所有非 baton 项目的源码写入（exit 2） | Phase 2 step 11 增加 baton-project 检测：dispatch.sh 开头检查 `$BATON_PROJECT_DIR/.baton/constitution.md` 是否存在，不存在则 exit 0 跳过所有 hook。✅ 已验证 write-lock.sh:134-138 无 plan 时 exit 2（非 exit 0） |
 | Claude Code 更新改变插件 API | 插件失效 | 跟踪 Claude Code changelog；hooks.json 格式已稳定 |
