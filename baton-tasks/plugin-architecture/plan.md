@@ -523,7 +523,15 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 | `adapters/codex/run-hook.cmd` | ~50 | Codex polyglot wrapper |
 | `adapters/cursor/run-hook.cmd` | ~50 | Cursor polyglot wrapper |
 
-**净效果**：删除 ~871 行，新增 ~275 行，净减 ~596 行。移动 ~4200 行（不变）。
+**修改**（随移动一起进行）：
+
+| 文件 | 修改内容 | 对应步骤 |
+|------|----------|----------|
+| `hooks/dispatch.sh` | 增加 baton-project 检测（constitution 检查）| Phase 2 step 11 |
+| `hooks/phase-guide.sh` | 适配 `_scan_all_skills()` 扫描插件 skills 路径 + 移除 junction 自动创建块 | Phase 2 step 12, 14, 15 |
+| `hooks/lib/plan-parser.sh` | 适配 `parser_has_skill()` 增加 `$BATON_PLUGIN_SKILLS_DIR` 搜索路径 | Phase 2 step 13 |
+
+**净效果**：删除 ~871 行，新增 ~275 行，修改 3 个文件，净减 ~596 行。移动 ~4200 行（不变）。
 
 ---
 
