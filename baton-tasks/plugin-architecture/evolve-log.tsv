@@ -1,2 +1,4 @@
 iteration	commit	score	blocking	major	minor	delta	status	hypothesis
 0	3b54074	-62	3	9	5	0	baseline	initial state
+1	11a1b35	-62	3	9	5	0	keep	add verified plugin system evidence section (scored with iter 2)
+2	19d609b	-25	0	6	7	+37	keep	fix skill discovery, line counts, rollback, phase ordering

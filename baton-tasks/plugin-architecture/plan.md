@@ -230,14 +230,14 @@ project/
         "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd PreToolUse"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" PreToolUse"
         }]
       },
       {
         "matcher": "Bash",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd PreToolUse"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" PreToolUse"
         }]
       }
     ],
@@ -246,7 +246,7 @@ project/
         "matcher": "Edit|Write|MultiEdit|CreateFile|NotebookEdit",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd PostToolUse"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" PostToolUse"
         }]
       }
     ],
@@ -255,7 +255,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd SessionStart"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" SessionStart"
         }]
       }
     ],
@@ -264,7 +264,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd Stop"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" Stop"
         }]
       }
     ],
@@ -273,7 +273,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd PreCompact"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" PreCompact"
         }]
       }
     ],
@@ -282,7 +282,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd SubagentStart"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" SubagentStart"
         }]
       }
     ],
@@ -291,7 +291,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd TaskCompleted"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" TaskCompleted"
         }]
       }
     ],
@@ -300,7 +300,7 @@ project/
         "matcher": "",
         "hooks": [{
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd PostToolUseFailure"
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" PostToolUseFailure"
         }]
       }
     ]
@@ -396,7 +396,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
         "name": "hex1n",
         "url": "https://github.com/hex1n"
       },
-      "source": ".",
+      "source": "./",
       "category": "development"
     }
   ]
@@ -423,6 +423,36 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 }
 ```
 
+### Marketplace 注册方式
+
+用户安装 baton 插件有两种路径：
+
+**路径 1：CLI 自动注册**（推荐）
+
+`install.sh` 或 `baton init` 向 `~/.claude/settings.json` 写入：
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "baton": {
+      "source": {
+        "source": "github",
+        "repo": "hex1n/baton"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "baton@baton": true
+  }
+}
+```
+
+写入方式：jq merge（与现有 settings 合并）。无 jq 时输出手动操作指引。
+
+**路径 2：手动**
+
+用户在 Claude Code 内执行安装（具体命令待验证 ❓，可能是 `/install-plugin` 或 Claude Code UI 操作）。
+
 ---
 
 ## /baton-init 命令设计
@@ -442,7 +472,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 
 ## CLI 精简
 
-`bin/baton` 从当前 ~380 行精简为 ~150 行：
+`bin/baton` 从当前 393 行精简为 ~150 行：
 
 | 命令 | 变化 |
 |------|------|
@@ -478,7 +508,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 
 | 文件 | 实际行数 | 操作 |
 |------|----------|------|
-| `.baton/hooks/` (整个目录) | 1731 | **移动**到仓库根 `hooks/` |
+| `.baton/hooks/` (整个目录，不含 junction.sh) | 1695 | **移动**到仓库根 `hooks/` |
 | `.baton/skills/` (整个目录) | 2370 | **移动**到仓库根 `skills/` |
 | `.baton/adapters/` | ~100 | **移动**到仓库根 `adapters/`（迁移现有 adapter.sh + dispatch.sh） |
 
@@ -488,7 +518,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 |------|----------|------|
 | `.claude-plugin/marketplace.json` | ~20 | marketplace 注册 |
 | `.claude-plugin/plugin.json` | ~15 | 插件元数据 |
-| `hooks/hooks.json` | ~60 | 9 事件 hook 声明 |
+| `hooks/hooks.json` | ~60 | 8 事件 hook 声明 |
 | `commands/baton-init.md` | ~80 | /baton-init slash command |
 | `adapters/codex/run-hook.cmd` | ~50 | Codex polyglot wrapper |
 | `adapters/cursor/run-hook.cmd` | ~50 | Cursor polyglot wrapper |
@@ -576,7 +606,7 @@ baton 仓库本身是 marketplace 仓库。开发者在仓库内工作时：
 12. **适配 `_scan_all_skills()`**（phase-guide.sh:72-83）：当前只扫 `$BATON_PROJECT_DIR/{.baton,.claude,.cursor,.agents}/skills/*/`，在插件模式下找不到 skills。需增加对 `${CLAUDE_PLUGIN_ROOT}/skills/` 的扫描（dispatch.sh 可通过 `$_dir/../skills/` 推导插件 skills 路径，并 export 为 `BATON_PLUGIN_SKILLS_DIR`）
 13. **适配 `parser_has_skill()`**（lib/plan-parser.sh:204-217）：当前沿项目目录向上遍历 `.baton/skills`、`.claude/skills` 等。需增加 `$BATON_PLUGIN_SKILLS_DIR` 作为额外搜索路径
 14. **移除 phase-guide.sh 的 junction 自动创建块**（phase-guide.sh:50-66）：该块 source 了 `junction.sh` 来自动创建 skill junctions。插件模式下不再需要 junction，需删除或条件跳过（检查 `junction.sh` 是否存在）
-15. **适配 `using-baton` governance 上下文路径**（phase-guide.sh:28）：当前通过 `$SCRIPT_DIR/../skills/using-baton/SKILL.md` 读取。在插件模式下 `$SCRIPT_DIR` = `<plugin-root>/hooks/`，`../skills/` = `<plugin-root>/skills/` — 路径应正常解析，但需显式验证
+15. **适配 `using-baton` governance 上下文路径**（phase-guide.sh:28）：当前通过 `$SCRIPT_DIR/../skills/using-baton/SKILL.md` 读取。在插件模式下 `$SCRIPT_DIR` = `<plugin-root>/hooks/`，`../skills/` = `<plugin-root>/skills/` — 路径应正常解析，但需显式验证。**注意**：phase-guide.sh:35 已包含 `CLAUDE_PLUGIN_ROOT` 条件分支（输出格式切换），说明已有部分插件感知代码，需验证其在完整插件模式下的正确性
 
 ### Phase 3: CLI 与 Adapter
 
@@ -592,19 +622,20 @@ baton 仓库本身是 marketplace 仓库。开发者在仓库内工作时：
 22. 验证 hooks 在 9 个事件上正常触发（重点测试 Windows cmd.exe/PowerShell）
 23. 验证 `/baton-init` 工作正常
 24. 验证 `baton init --ide cursor` 工作正常
-25. 测试现有项目迁移流程
+25. 验证 `baton init --ide codex` 工作正常
+26. 测试现有项目迁移流程
 
 **Go/No-Go 检查点**：步骤 20-22 通过后才继续 Phase 5。如果插件方案验证失败（`${CLAUDE_PLUGIN_ROOT}` 不展开、hooks 不触发等），执行回滚：从 `evolve-baseline` 分支恢复。
 
 ### Phase 5: 清理（仅在 Phase 4 通过后执行）
 
-26. 删除 `setup.sh`
-27. 删除 `junction.sh`
-28. 删除旧 `.baton/hooks/`、`.baton/skills/`、`.baton/adapters/` 目录（已移到根）
-29. 更新 `.gitignore`
-30. 更新 README.md
-31. 删除 `tests/test-junction.sh`
-32. 更新现有 hook 测试的路径引用
+27. 删除 `setup.sh`
+28. 删除 `junction.sh`
+29. 删除旧 `.baton/hooks/`、`.baton/skills/`、`.baton/adapters/` 目录（已移到根）
+30. 更新 `.gitignore`
+31. 更新 README.md
+32. 删除 `tests/test-junction.sh`
+33. 更新现有 hook 测试的路径引用
 
 ---
 
@@ -656,7 +687,7 @@ Windows 环境里 bash 实际解析到的是 PortableGit 的 D:\App\PortableGit\
 2. `.codex/hooks.json` 改为 `.baton/adapters/codex/run-hook.cmd SessionStart`（去掉 `bash` 前缀）
 3. `adapters/codex/dispatch.sh` 内部调用 `../../hooks/dispatch.sh` 时也走 polyglot 或直接用绝对路径的 bash
 
-在 plan 的 Phase 3 step 14 中覆盖。
+在 plan 的 Phase 3 step 18 中覆盖。
 
 **问题 B：PortableGit bash 的 `CreateFileMapping Win32 error 5`**
 
@@ -677,10 +708,6 @@ Windows 环境里 bash 实际解析到的是 PortableGit 的 D:\App\PortableGit\
 
 根据批注 #1，追加以下改动：
 
-**Phase 3 step 14 扩展**：`adapters/codex/setup.sh` 生成的 `.codex/hooks.json` 必须用 `run-hook.cmd` polyglot 模式，不写死 `bash`。
+**Phase 3 step 18 扩展**：`adapters/codex/setup.sh` 生成的 `.codex/hooks.json` 必须用 `run-hook.cmd` polyglot 模式，不写死 `bash`。
 
-**风险表追加**：
-
-| 风险 | 影响 | 缓解 |
-|------|------|------|
-| PortableGit CreateFileMapping error 5 | hook 启动失败 | hook 脚本 fail-open (trap exit 0)；文档中注明 PortableGit 白名单要求 |
+**风险表已更新**：PortableGit error 5 和 Codex bash 写死问题已纳入主风险表（不再重复）。
