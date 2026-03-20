@@ -9,9 +9,13 @@ _event="${1:-}"
 _dir="$(cd "$(dirname "$0")" && pwd)"
 _dispatch="$_dir/../../hooks/dispatch.sh"
 
+_TIER_HEADER="[Baton capability: rules + guidance only (Codex)] Hard gates (write-lock, bash-guard) are not available. Enforcement relies on rules and guidance."
+
 case "$_event" in
     SessionStart)
         # Close stdin — Codex may not send EOF, causing dispatch.sh's `cat` to hang
+        # Prepend tier header so Codex knows enforcement mode at session start
+        printf '%s\n' "$_TIER_HEADER"
         bash "$_dispatch" "$@" </dev/null || true
         ;;
     Stop)

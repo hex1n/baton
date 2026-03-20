@@ -573,6 +573,20 @@ C4, C6, C8（hook 层已一致）, C10, C11, B2, B3, B4, B5, B11, B12, B13, B14,
   Deps: 8（phase-guide 去重后）
   Artifacts: none
 
+### Autoresearch — Infrastructure & Adapters
+
+- [x] ✅ 18. Change: dispatch.sh 非致命错误上报 + junction.sh 空路径安全守卫 + run-hook.cmd Git 路径补全 + common.sh 注释澄清（autoresearch）
+  Files: `.baton/hooks/dispatch.sh`, `.baton/hooks/lib/junction.sh`, `.baton/hooks/run-hook.cmd`, `.baton/hooks/lib/common.sh`
+  Verify: 读取每个文件确认改动精准
+  Deps: none
+  Artifacts: baton-tasks/autoresearch/infra-adapters-changelog.md
+
+- [x] ✅ 19. Change: codex/dispatch.sh TIER_HEADER 一致性（autoresearch）
+  Files: `.baton/adapters/codex/dispatch.sh`, `.baton/adapters/codex/adapter.sh`, `.baton/adapters/cursor/adapter.sh`, `.baton/adapters/cursor/dispatch.sh`
+  Verify: 读取每个 adapter 确认改动精准
+  Deps: none
+  Artifacts: baton-tasks/autoresearch/infra-adapters-changelog.md
+
 ---
 
 <!-- BATON:COMPLETE -->

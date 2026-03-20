@@ -23,6 +23,11 @@ if exist "C:\Program Files (x86)\Git\bin\bash.exe" (
     "C:\Program Files (x86)\Git\bin\bash.exe" "%SCRIPT_DIR%dispatch.sh" %* & exit /b !ERRORLEVEL!
 )
 
+:: Modern winget/Windows Store installs Git here
+if exist "%LOCALAPPDATA%\Programs\Git\bin\bash.exe" (
+    "%LOCALAPPDATA%\Programs\Git\bin\bash.exe" "%SCRIPT_DIR%dispatch.sh" %* & exit /b !ERRORLEVEL!
+)
+
 :: Fallback: bash on PATH
 where bash >nul 2>&1
 if !ERRORLEVEL! equ 0 (

@@ -17,8 +17,9 @@ fi
 # --- Legacy wrappers (delegate to parser) ---
 
 # resolve_plan_name — backward-compatible shim
-# No longer needed as a separate call; parser_find_plan handles name resolution.
-# Kept for hooks that call resolve_plan_name before find_plan.
+# Still called explicitly by write-lock.sh (and any hook that needs PLAN_NAME set
+# before calling find_plan). parser_find_plan also performs name resolution internally,
+# so new hooks can skip this call — but do not remove it while write-lock.sh depends on it.
 resolve_plan_name() {
     if [ -n "${BATON_PLAN:-}" ]; then
         PLAN_NAME="$BATON_PLAN"

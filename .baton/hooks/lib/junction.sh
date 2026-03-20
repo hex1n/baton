@@ -8,6 +8,9 @@
 atomic_junction() {
     local _src="$1" _dst="$2"
 
+    # Guard against empty destination — rm -rf "" would delete CWD
+    [ -n "$_dst" ] || return 1
+
     # Remove existing target (old install, stale symlink, partial copy)
     if [ -e "$_dst" ] || [ -L "$_dst" ]; then
         rm -rf "$_dst"

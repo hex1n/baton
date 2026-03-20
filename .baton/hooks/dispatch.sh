@@ -55,6 +55,10 @@ while IFS=: read -r _evt _matcher _script || [ -n "$_evt" ]; do
     if [ "$_rc" -eq 2 ] && [ "$_exit_code" -ne 2 ]; then
         _exit_code=2
     fi
+    # Surface unexpected exit codes (not 0=ok, not 2=block) so hook crashes aren't silent
+    if [ "$_rc" -ne 0 ] && [ "$_rc" -ne 2 ]; then
+        echo "⚠️ BATON dispatch: $_script.sh exited with unexpected code $_rc (expected 0 or 2)" >&2
+    fi
 done < "$_manifest"
 
 exit "$_exit_code"

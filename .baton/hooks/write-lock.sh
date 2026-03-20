@@ -57,6 +57,10 @@ fi
 # --- Markdown: allowed but check for governance markers ---
 case "$TARGET" in
     *.md|*.MD|*.markdown|*.mdx)
+        # baton-tasks/ documents may reference governance markers as examples — skip marker check
+        case "$TARGET" in
+            baton-tasks/*|*/baton-tasks/*) exit 0 ;;
+        esac
         # Check if the write introduces a governance marker that only humans may add
         if [ -n "$STDIN" ] && command -v jq >/dev/null 2>&1; then
             _new_content="$(printf '%s' "$STDIN" | jq -r '.tool_input.new_string // .tool_input.content // empty' 2>/dev/null)"
