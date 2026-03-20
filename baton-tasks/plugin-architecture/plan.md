@@ -504,7 +504,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 |------|----------|------|
 | `setup.sh` | 683 | **删除**（Claude Code 部分由 /baton-init 替代，Cursor/Codex 部分移入 adapters/） |
 | `.baton/hooks/lib/junction.sh` | 36 | **删除** |
-| `bin/baton` 中 junction/copy-mode/settings-merge 逻辑 | ~80 | **删除** |
+| `bin/baton` 精简（393→~150 行） | ~243 | **重写**（含 junction/copy-mode/settings-merge 删除） |
 | `bin/baton` 中 `git clean` | 1 | **已删除** |
 | `tests/test-junction.sh` | 71 | **删除** |
 
@@ -514,7 +514,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 |------|----------|------|
 | `.baton/hooks/` (整个目录，不含 junction.sh) | 1695 | **移动**到仓库根 `hooks/` |
 | `.baton/skills/` (整个目录) | 2370 | **移动**到仓库根 `skills/` |
-| `.baton/adapters/` | ~100 | **移动**到仓库根 `adapters/`（迁移现有 adapter.sh + dispatch.sh） |
+| `.baton/adapters/` | 165 | **移动**到仓库根 `adapters/`（迁移现有 adapter.sh + dispatch.sh） |
 
 **新增**：
 
@@ -522,7 +522,7 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 |------|----------|------|
 | `.claude-plugin/marketplace.json` | ~20 | marketplace 注册 |
 | `.claude-plugin/plugin.json` | ~15 | 插件元数据 |
-| `hooks/hooks.json` | ~60 | 8 事件 hook 声明 |
+| `hooks/hooks.json` | ~83 | 8 事件 hook 声明 |
 | `commands/baton-init.md` | ~80 | /baton-init slash command |
 | `adapters/codex/run-hook.cmd` | ~50 | Codex polyglot wrapper |
 | `templates/constitution.md` | ~40 | constitution 模板（从 `.baton/constitution.md` 复制）|
@@ -536,10 +536,13 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 | `hooks/phase-guide.sh` | 适配 `_scan_all_skills()` 扫描插件 skills 路径 + 移除 junction 自动创建块 | Phase 2 step 12, 14, 15 |
 | `hooks/lib/plan-parser.sh` | 适配 `parser_has_skill()` 增加 `$BATON_PLUGIN_SKILLS_DIR` 搜索路径 | Phase 2 step 13 |
 | `install.sh` | 重写：移除 `setup.sh` 调用（92 行→~60 行），增加 marketplace 注册逻辑（向 `~/.claude/settings.json` 写入 `extraKnownMarketplaces` + `enabledPlugins`）| Phase 3 |
+| `bin/baton` | 精简：移除 junction/copy-mode/settings-merge 逻辑（393 行→~150 行）| Phase 3 step 16 |
 
-**净效果**：删除 ~871 行，新增 ~315 行，修改 4 个文件（含 `install.sh` 重写净减 ~32 行、`bin/baton` 精简净减 ~243 行），净减 ~831 行。移动 ~4200 行（不变）。
-
-> 注：`bin/baton` 从 393 行精简到 ~150 行（-243 行）和 `install.sh` 从 92 行重写到 ~60 行（-32 行）计入修改栏而非删除栏，因为文件保留。
+**净效果**：
+- 删除：683（setup.sh）+ 36（junction.sh）+ 1（git clean）+ 71（test-junction.sh）= **791 行**
+- 新增：~20（marketplace.json）+ ~15（plugin.json）+ ~83（hooks.json）+ ~80（baton-init.md）+ ~40（constitution 模板）+ ~50×2（adapter run-hook.cmd）= **~338 行**
+- 重写净减：~243（bin/baton 393→150）+ ~32（install.sh 92→60）= **~275 行**
+- **净减 ~728 行**。移动 ~4230 行（不变）。
 
 ---
 
