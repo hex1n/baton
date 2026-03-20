@@ -664,6 +664,30 @@ Phase 1-3 在独立分支 `plugin-architecture` 上进行，不合入 master。
 
 ---
 
+## 自我质疑
+
+### 最弱假设
+
+**`${CLAUDE_PLUGIN_ROOT}` 在所有 hook 执行上下文中正确展开**。这是整个方案的基石——如果此变量不展开，hooks.json 中的所有命令路径都无效，插件的 hook 系统完全失效。
+
+- 证据来源：superpowers 插件使用相同的 `"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd"` 模式 ✅ 已读取 hooks.json
+- 未验证场景：cmd.exe 和 PowerShell 中的展开行为 ❓，Claude Code 源码中展开逻辑的实现方式 ❓
+- 降级方案：如果不展开，可退回 settings.json hardcode 绝对路径模式（功能等价，仅失去自动路径管理）
+- **Go/No-Go 绑定**：Phase 4 step 20-22 必须在 macOS + Windows 两环境验证此变量展开，未通过则触发回滚
+
+### 次弱假设
+
+**插件 hooks 与项目 settings.json hooks 不冲突**。迁移期间两套 hooks 可能并存——插件 hooks（来自 hooks.json）和旧的 settings.json hooks。如果 Claude Code 对同一事件同时触发两者，write-lock 可能执行两次、产生重复输出或竞争条件。
+
+- 证据：superpowers 只有 SessionStart hook，未验证多事件共存场景 ❓
+- 缓解：迁移流程（baton uninstall）先清理旧 hooks，再安装插件。但用户可能跳过步骤
+
+### 已知盲区
+
+1. `/install-plugin` 命令的具体语法和可用性 ❓ — 影响安装路径文档的准确性
+2. 插件缓存更新机制（Claude Code 何时拉取新版本）❓ — 影响版本更新策略
+3. 多插件 hooks 执行顺序 ❓ — 如果用户同时启用 superpowers 和 baton，SessionStart 的执行顺序是否确定
+
 ## 批注区
 
 ### 批注 #1（人类）
