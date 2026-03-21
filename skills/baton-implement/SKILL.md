@@ -229,6 +229,11 @@ After ALL items verified:
 4. **Mark complete** — add `<!-- BATON:COMPLETE -->` on its own line in the plan file. Only after steps 1-3 above are all satisfied (review passed, full suite passed, retrospective recorded).
 5. **Branch disposition** — present options (merge/PR/keep/discard) with status only; do not merge, open PR, or discard without explicit human choice
 
+**Cross-model review**: For Medium+ tasks, recommend cross-model review (e.g.,
+Codex via /plan-eng-review Step 0.5) before or after baton-review. Same-model
+review catches structural/consistency issues but shares blind spots with the
+generator.
+
 **NO BATON:COMPLETE WITHOUT FULL TEST SUITE PASS. NO MERGE WITHOUT FULL TEST SUITE PASS.**
 
 ### Session Handoff

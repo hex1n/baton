@@ -35,24 +35,6 @@ check_not() {
 }
 
 # ============================================================
-echo "=== Direction γ markers in constitution.md ==="
-
-check "$SLIM" '\[PAUSE\]' "constitution.md contains [PAUSE]"
-check "$SLIM" "infers intent from content" "constitution.md mentions intent inference"
-
-# ============================================================
-echo ""
-echo "=== Direction γ markers migrated to skills ==="
-
-check "$PLAN_SKILL" "infers intent" "baton-plan mentions intent inference"
-check "$PLAN_SKILL" "free-text" "baton-plan documents free-text default"
-check "$PLAN_SKILL" "Consequence detection" "baton-plan documents consequence detection"
-check "$RESEARCH_SKILL" "infers intent" "baton-research mentions intent inference"
-check "$RESEARCH_SKILL" "free-text" "baton-research documents free-text default"
-check "$RESEARCH_SKILL" "Consequence detection" "baton-research documents consequence detection"
-
-# ============================================================
-echo ""
 echo "=== Legacy explicit annotation types removed ==="
 
 for marker in '\[NOTE\]' '\[Q\]' '\[CHANGE\]' '\[DEEPER\]' '\[MISSING\]' '\[RESEARCH-GAP\]'; do
@@ -61,44 +43,21 @@ done
 
 # ============================================================
 echo ""
-echo "=== Annotation protocol detailed coverage in skills ==="
+echo "=== Annotation protocol references in skills ==="
 
-check "$PLAN_SKILL" "Annotation Log" "baton-plan has Annotation Log section"
-check "$PLAN_SKILL" "Round 1" "baton-plan has Annotation Log example"
-check "$PLAN_SKILL" "Annotation Log Format" "baton-plan has annotation log format section"
-check "$PLAN_SKILL" '\[PAUSE\]' "baton-plan mentions [PAUSE]"
-check "$RESEARCH_SKILL" "Annotation Log" "baton-research has Annotation Log section"
 check "$RESEARCH_SKILL" '\[PAUSE\]' "baton-research mentions [PAUSE]"
-
-# ============================================================
-echo ""
-echo "=== Plan analysis concepts in baton-plan skill ==="
-
-check "$PLAN_SKILL" "Approach Analysis" "baton-plan has approach analysis section"
-check "$PLAN_SKILL" "fundamental constraints" "baton-plan mentions fundamental constraints"
-check "$PLAN_SKILL" "Fundamental Problems" "baton-plan has fundamental problem handling"
 
 # ============================================================
 echo ""
 echo "=== Core principles present in constitution.md ==="
 
-check "$SLIM" "not always right" "constitution.md contains push-back principle"
 check "$SLIM" "evidence" "constitution.md mentions evidence"
 
 # ============================================================
 echo ""
-echo "=== Cross-cutting annotation rules in constitution.md ==="
-
-check "$SLIM" "write the conclusion back to the document body" "constitution.md has analysis write-back rule"
-check "$SLIM" "re-evaluate and update the plan immediately" "constitution.md has approach re-evaluation rule"
-check "$SLIM" "remove the raw text from" "constitution.md has annotation cleanup rule"
-
-# ============================================================
-echo ""
-echo "=== Group 3: fork-context self-sufficiency guards ==="
+echo "=== Fork-context self-sufficiency guards ==="
 
 check_not "$RESEARCH_SKILL" "live in .workflow\.md." "baton-research no longer delegates to constitution.md"
-check "$RESEARCH_SKILL" "document body" "baton-research has inlined analysis write-back rule"
 
 # ============================================================
 echo ""

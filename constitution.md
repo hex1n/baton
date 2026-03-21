@@ -162,9 +162,17 @@ AI may propose completion; add the marker only after human confirms.
 
 Hooks enforce structure. Review enforces quality. Neither is sufficient alone.
 
-The defense is layered: self-challenge (self-check) + context-isolated review
-(independent check) + human annotation cycle (human check). Each layer can fail;
-no single-layer failure should defeat governance.
+The defense is layered:
+1. Same-model review (self-check + context-isolated review) — catches structural,
+   consistency, and format issues. Context isolation reduces generation bias but
+   does not eliminate shared model blind spots.
+2. Cross-source review (cross-model evaluation or human annotation) — catches
+   assumption errors, external system mismatches, and reasoning blind spots that
+   same-model review cannot detect.
+
+Layer 1 alone is insufficient for plans and implementations with external
+system dependencies or novel design assumptions. Cross-source review is
+recommended for Medium+ tasks.
 
 Adding more structural checks (hooks) does not solve quality problems — it
 incentivizes mechanical compliance. Quality improvement comes from sharper

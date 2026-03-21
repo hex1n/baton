@@ -309,6 +309,12 @@ For non-trivial plans:
 
 If no review mechanism is available, state that explicitly rather than silently skipping it.
 
+**Cross-model review**: For Medium+ tasks, recommend cross-model review (e.g.,
+Codex via /plan-eng-review Step 0.5) in addition to baton-review. Same-model
+review catches structural/consistency issues but shares blind spots with the
+generator. Cross-model review catches assumption errors and external system
+mismatches that same-model review systematically misses.
+
 ## Plan Structure
 
 The plan MUST communicate: **What** (changes), **Why** (rationale),

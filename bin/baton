@@ -47,7 +47,7 @@ doctor() {
     echo "  Skills (~/.claude/skills/):"
     _smissing=0
     _broken=0
-    for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+    for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent using-baton; do
         _spath="$CLAUDE_DIR/skills/$_skill"
         if [ -L "$_spath" ]; then
             if [ -f "$_spath/SKILL.md" ]; then
@@ -64,10 +64,10 @@ doctor() {
         fi
     done
     if [ "$_smissing" -eq 0 ] && [ "$_broken" -eq 0 ]; then
-        printf "  ✓ 8/8 skills symlinked\n"
+        printf "  ✓ 7/7 skills symlinked\n"
     else
-        [ "$_smissing" -gt 0 ] && { printf "  ✗ %s/8 missing\n" "$_smissing"; _issues=$((_issues + 1)); }
-        [ "$_broken" -gt 0 ] && { printf "  ⚠ %s/8 broken\n" "$_broken"; _issues=$((_issues + 1)); }
+        [ "$_smissing" -gt 0 ] && { printf "  ✗ %s/7 missing\n" "$_smissing"; _issues=$((_issues + 1)); }
+        [ "$_broken" -gt 0 ] && { printf "  ⚠ %s/7 broken\n" "$_broken"; _issues=$((_issues + 1)); }
     fi
     echo ""
 

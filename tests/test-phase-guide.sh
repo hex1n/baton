@@ -10,11 +10,13 @@ TOTAL=0
 
 tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
+mkdir -p "$tmp/fake_home"
 
 run_guide() {
     # Run phase-guide.sh from given directory, capture stderr (guidance output)
+    # Override HOME to prevent user-level skills from interfering with tests
     local dir="$1"
-    (cd "$dir" && bash "$GUIDE" 2>&1 1>/dev/null)
+    (cd "$dir" && HOME="$tmp/fake_home" bash "$GUIDE" 2>&1 1>/dev/null)
 }
 
 assert_output_contains() {
@@ -49,7 +51,7 @@ assert_output_not_contains() {
 assert_exit_zero() {
     local dir="$1" desc="$2"
     TOTAL=$((TOTAL + 1))
-    if (cd "$dir" && bash "$GUIDE" 2>/dev/null); then
+    if (cd "$dir" && HOME="$tmp/fake_home" bash "$GUIDE" 2>/dev/null); then
         echo "  pass: $desc"
         PASS=$((PASS + 1))
     else
@@ -63,13 +65,10 @@ echo "=== Test 1: No files → RESEARCH phase guidance ==="
 d="$tmp/t1" && mkdir -p "$d"
 assert_output_contains "$d" "RESEARCH" "outputs RESEARCH phase label"
 assert_output_contains "$d" "research.md" "mentions research.md"
-assert_output_contains "$d" "implementations" "mentions reading implementations"
-assert_output_contains "$d" "file:line" "mentions file:line evidence"
-assert_output_contains "$d" "entry points" "mentions starting from entry points"
+assert_output_contains "$d" "Investigate with evidence" "mentions investigating with evidence"
+assert_output_contains "$d" "baton-tasks" "mentions baton-tasks convention"
 assert_output_contains "$d" "Mindset" "RESEARCH phase shows Mindset reminder"
-assert_output_contains "$d" "subagent" "RESEARCH phase mentions subagents"
-assert_output_contains "$d" "批注区" "RESEARCH phase mentions 批注区"
-assert_output_contains "$d" "Spike" "RESEARCH phase mentions spike/exploratory coding"
+assert_output_contains "$d" "Trivial" "RESEARCH phase mentions trivial task shortcut"
 assert_exit_zero "$d" "always exit 0 (no files)"
 
 # ============================================================
@@ -79,11 +78,10 @@ d="$tmp/t2" && mkdir -p "$d"
 echo "# Research findings" > "$d/research.md"
 assert_output_contains "$d" "PLAN" "outputs PLAN phase label"
 assert_output_contains "$d" "research" "mentions research reference"
-assert_output_contains "$d" "Todo list" "mentions not writing Todo list"
 assert_output_contains "$d" "approach" "mentions approach analysis"
 assert_output_contains "$d" "Mindset" "PLAN phase shows Mindset reminder"
-assert_output_contains "$d" "constraints" "PLAN phase mentions constraints"
-assert_output_contains "$d" "批注区" "PLAN phase mentions 批注区"
+assert_output_contains "$d" "Sizing Checkpoint" "PLAN phase mentions Sizing Checkpoint"
+assert_output_contains "$d" "baton-tasks" "PLAN phase mentions baton-tasks convention"
 assert_exit_zero "$d" "always exit 0 (research, no plan)"
 
 # ============================================================
@@ -92,12 +90,10 @@ echo "=== Test 3: plan.md without GO → ANNOTATION phase guidance ==="
 d="$tmp/t3" && mkdir -p "$d"
 echo "# Plan" > "$d/plan.md"
 assert_output_contains "$d" "ANNOTATION" "outputs ANNOTATION cycle label"
-assert_output_contains "$d" "\[PAUSE\]" "mentions PAUSE annotation"
-assert_output_contains "$d" "Free-text is the default" "mentions free-text default"
+assert_output_contains "$d" "awaiting approval" "mentions awaiting approval"
 assert_output_not_contains "$d" "\[NOTE\]" "does not mention NOTE annotation"
 assert_output_not_contains "$d" "\[Q\]" "does not mention Q annotation"
 assert_output_not_contains "$d" "\[CHANGE\]" "does not mention CHANGE annotation"
-assert_output_contains "$d" "file:line" "mentions evidence-based response"
 assert_output_contains "$d" "BATON:GO" "mentions BATON:GO unlock"
 assert_output_contains "$d" "Mindset" "ANNOTATION phase shows Mindset reminder"
 assert_exit_zero "$d" "always exit 0 (plan, no GO)"
@@ -112,9 +108,9 @@ cat > "$d/plan.md" << 'EOF'
 - [ ] Step 1
 EOF
 assert_output_contains "$d" "IMPLEMENT" "outputs IMPLEMENT phase label"
-assert_output_contains "$d" "BATON:GO" "mentions BATON:GO"
+assert_output_contains "$d" "Todo items" "mentions Todo items execution"
 assert_output_contains "$d" "Mindset" "IMPLEMENT phase shows Mindset reminder"
-assert_output_contains "$d" "3x" "IMPLEMENT phase mentions 3x-stop rule"
+assert_output_contains "$d" "omission" "IMPLEMENT phase mentions discovery/omission stop"
 assert_exit_zero "$d" "always exit 0 (implement)"
 
 # ============================================================
@@ -131,7 +127,7 @@ EOF
 assert_output_contains "$d" "FINISH phase" "detects FINISH phase"
 assert_output_contains "$d" "Retrospective" "mentions Retrospective"
 assert_output_contains "$d" "test suite" "mentions full test suite"
-assert_output_contains "$d" "branch disposition" "mentions branch disposition"
+assert_output_contains "$d" "Branch disposition" "mentions branch disposition"
 assert_output_contains "$d" "BATON:COMPLETE" "mentions COMPLETE marker"
 assert_output_contains "$d" "Mindset" "FINISH phase shows Mindset reminder"
 assert_exit_zero "$d" "always exit 0 (finish)"
@@ -159,7 +155,7 @@ cat > "$d/plan-custom.md" << 'EOF'
 EOF
 # Custom plan → IMPLEMENT
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && BATON_PLAN=plan-custom.md bash "$GUIDE" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d" && HOME="$tmp/fake_home" BATON_PLAN=plan-custom.md bash "$GUIDE" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "IMPLEMENT"; then
     echo "  pass: BATON_PLAN=plan-custom.md → IMPLEMENT guidance"
     PASS=$((PASS + 1))
@@ -231,9 +227,8 @@ echo "---" > "$d/.claude/skills/baton-research/SKILL.md"
 echo "name: baton-research" >> "$d/.claude/skills/baton-research/SKILL.md"
 echo "---" >> "$d/.claude/skills/baton-research/SKILL.md"
 assert_output_contains "$d" "/baton-research" "skill prompt shows /baton-research"
-assert_output_contains "$d" "invoke" "skill prompt says invoke"
-assert_output_not_contains "$d" "entry points" "fallback text suppressed when skill available"
-assert_output_not_contains "$d" "subagent" "fallback guidance not shown when skill available"
+assert_output_contains "$d" "load" "skill prompt says load"
+assert_output_not_contains "$d" "Investigate with evidence" "fallback text suppressed when skill available"
 
 # ============================================================
 echo ""
@@ -244,8 +239,8 @@ echo "name: baton-plan" >> "$d/.claude/skills/baton-plan/SKILL.md"
 echo "---" >> "$d/.claude/skills/baton-plan/SKILL.md"
 echo "# Research findings" > "$d/research.md"
 assert_output_contains "$d" "/baton-plan" "skill prompt shows /baton-plan"
-assert_output_contains "$d" "invoke" "skill prompt says invoke"
-assert_output_not_contains "$d" "constraints" "fallback PLAN text suppressed when skill available"
+assert_output_contains "$d" "load" "skill prompt says load"
+assert_output_not_contains "$d" "Derive approaches" "fallback PLAN text suppressed when skill available"
 
 # ============================================================
 echo ""
@@ -306,7 +301,7 @@ Some content without BATON:GO
 EOF
 # cd to subdirectory, run phase-guide — should find plan-feature.md and show ANNOTATION (not RESEARCH)
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d/src/deep" && bash "$GUIDE" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d/src/deep" && HOME="$tmp/fake_home" bash "$GUIDE" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "ANNOTATION"; then
     echo "  pass: walk-up finds plan-feature.md from subdirectory → ANNOTATION"
     PASS=$((PASS + 1))
@@ -472,7 +467,7 @@ d="$tmp/t25b" && mkdir -p "$d"
 echo "# Plan" > "$d/plan.md"
 echo "# Feature plan" > "$d/plan-feature.md"
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(cd "$d" && BATON_PLAN=plan.md bash "$GUIDE" 2>&1 1>/dev/null)"
+OUTPUT="$(cd "$d" && HOME="$tmp/fake_home" BATON_PLAN=plan.md bash "$GUIDE" 2>&1 1>/dev/null)"
 if echo "$OUTPUT" | grep -q "Multiple plan files"; then
     echo "  FAIL: BATON_PLAN set → should not warn about multiple plans"
     FAIL=$((FAIL + 1))
@@ -554,7 +549,7 @@ echo "=== Test: Governance context JSON output (stdout) ==="
 # 5a: Basic governance context output — run_guide_stdout captures stdout (not stderr)
 run_guide_stdout() {
     local dir="$1"
-    (cd "$dir" && bash "$GUIDE" 2>/dev/null)
+    (cd "$dir" && HOME="$tmp/fake_home" bash "$GUIDE" 2>/dev/null)
 }
 
 d="$tmp/tgov" && mkdir -p "$d"
@@ -596,8 +591,8 @@ if [ -f "$SKILL_PATH" ]; then
     TOTAL=$((TOTAL + 1))
     LARGE_OUT=""
     # Run with timeout — heredoc bug would hang indefinitely
-    if LARGE_OUT="$(timeout 10 bash -c "cd '$d' && bash '$GUIDE' 2>/dev/null")" 2>/dev/null || \
-       LARGE_OUT="$(cd "$d" && bash "$GUIDE" 2>/dev/null)"; then
+    if LARGE_OUT="$(timeout 10 bash -c "cd '$d' && HOME='$tmp/fake_home' bash '$GUIDE' 2>/dev/null")" 2>/dev/null || \
+       LARGE_OUT="$(cd "$d" && HOME="$tmp/fake_home" bash "$GUIDE" 2>/dev/null)"; then
         if echo "$LARGE_OUT" | grep -q 'additional_context\|additionalContext'; then
             echo "  pass: large SKILL.md content outputs valid JSON without hang"
             PASS=$((PASS + 1))

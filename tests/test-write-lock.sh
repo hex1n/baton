@@ -379,8 +379,12 @@ cat > "$d/plan.md" << 'EOF'
 ## Todo
 - [ ] Step 1
 EOF
-echo "# Other plan" > "$d/plan-feature.md"
-# Multi-plan without BATON_PLAN → blocked
+cat > "$d/plan-feature.md" << 'EOF2'
+<!-- BATON:GO -->
+## Todo
+- [ ] Feature step
+EOF2
+# Multi-plan without BATON_PLAN → blocked (both have GO, genuine ambiguity)
 TOTAL=$((TOTAL + 1))
 EXIT_CODE=0
 (cd "$d" && BATON_TARGET="src/app.ts" bash "$LOCK" < /dev/null 2>/dev/null) || EXIT_CODE=$?

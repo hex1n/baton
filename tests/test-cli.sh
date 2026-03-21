@@ -30,7 +30,7 @@ cp "$BATON_CLI" "$BATON_HOME/bin/baton"
 
 # Set up fake user-level install for doctor tests
 mkdir -p "$HOME/.claude/skills"
-for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent using-baton; do
     ln -s "$BATON_HOME/skills/$_skill" "$HOME/.claude/skills/$_skill"
 done
 # Minimal settings.json with baton hook reference
@@ -113,11 +113,11 @@ else
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q '8/8 skills'; then
-    echo "  pass: doctor reports all 8 skills"
+if echo "$OUTPUT" | grep -q '7/7 skills'; then
+    echo "  pass: doctor reports all 7 skills"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should report 8/8 skills"
+    echo "  FAIL: doctor should report 7/7 skills"
     echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
@@ -284,7 +284,7 @@ else
 fi
 # Restore test fixtures after uninstall
 mkdir -p "$HOME/.claude/skills"
-for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent using-baton; do
     ln -s "$BATON_HOME/skills/$_skill" "$HOME/.claude/skills/$_skill" 2>/dev/null || true
 done
 printf '{"hooks":{"PreToolUse":[{"matcher":"","hooks":["bash \\"%s/hooks/run-hook.cmd\\" bash-guard"]}]}}\n' "$BATON_HOME" > "$HOME/.claude/settings.json"

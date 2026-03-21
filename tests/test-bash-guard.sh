@@ -232,8 +232,12 @@ cat > "$d/plan.md" << 'EOF'
 ## Todo
 - [ ] Step 1
 EOF
-echo "# Other plan" > "$d/plan-feature.md"
-# Multi-plan without BATON_PLAN → gate-closed
+cat > "$d/plan-feature.md" << 'EOF2'
+<!-- BATON:GO -->
+## Todo
+- [ ] Feature step
+EOF2
+# Multi-plan without BATON_PLAN → gate-closed (both have GO, genuine ambiguity)
 assert_blocked "$d" "echo hello > file.txt"
 assert_blocked "$d" "cp src dst"
 

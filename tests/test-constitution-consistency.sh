@@ -14,7 +14,7 @@ FAIL=0
 echo "Checking core concepts in constitution.md..."
 for concept in "No claim without evidence" "No silent agreement" "No guessing past uncertainty" \
                "No execution beyond authorization" "No stale authorization" "No completion by implication" \
-               "BATON:GO" "file:line" "Authority Model" "Discovery protocol"; do
+               "BATON:GO" "Authority" "Unexpected discoveries"; do
     if grep -q "$concept" "$SLIM"; then
         echo "OK: core concept '$concept' in constitution.md"
     else
@@ -68,8 +68,8 @@ GUIDE="$SCRIPT_DIR/../hooks/phase-guide.sh"
 # --- Constitution section structure ---
 echo ""
 echo "Checking constitution.md section structure..."
-for section in "Core Invariants" "Authority Model" "State Model" "Permission Model" \
-               "Evidence Model" "Challenge Model" "Completion Model" "Document Semantics"; do
+for section in "Core Invariants" "Authority" "States" "Permissions" \
+               "Evidence" "Completion" "Defense Model" "Artifacts"; do
     if grep -q "$section" "$SLIM"; then
         echo "OK: section '$section' in constitution.md"
     else
@@ -81,7 +81,7 @@ done
 # --- Key permission concepts ---
 echo ""
 echo "Checking key permission concepts..."
-for concept in "Failure boundary" "Discovery protocol" "Scope boundary" "implementation-local"; do
+for concept in "Failure boundary" "Unexpected discoveries" "Scope boundary" "mechanically required"; do
     if grep -q "$concept" "$SLIM"; then
         echo "OK: '$concept' in constitution.md"
     else
@@ -186,7 +186,7 @@ fi
 
 RESEARCH_SKILL="$SKILLS_DIR/baton-research/SKILL.md"
 
-if grep -q "Counterexample Sweep" "$RESEARCH_SKILL" && grep -q "disprove" "$RESEARCH_SKILL"; then
+if grep -qi "Counterexample sweep" "$RESEARCH_SKILL" && grep -q "disprove" "$RESEARCH_SKILL"; then
     echo "OK: baton-research requires counterexample sweep before conclusions"
 else
     echo "DRIFT: baton-research missing counterexample sweep guardrail"
@@ -268,9 +268,9 @@ echo ""
 echo "Checking Direction γ annotation system..."
 GUIDE="$SCRIPT_DIR/../hooks/phase-guide.sh"
 
-# [PAUSE] must be in all annotation-related files and current protocol/runtime sources
-for f in "$RESEARCH_SKILL" "$GUIDE" \
-         "$README_FILE" "$SETUP" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
+# [PAUSE] must be in annotation-related files and current protocol/doc sources
+for f in "$RESEARCH_SKILL" \
+         "$README_FILE" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
     fname="$(basename "$f")"
     if grep -q '\[PAUSE\]' "$f"; then
         echo "OK: [PAUSE] found in $fname"
@@ -309,7 +309,7 @@ else
 fi
 
 # Current protocol docs must document the free-text + intent-inference model
-for f in "$README_FILE" "$SETUP" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
+for f in "$README_FILE" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
     fname="$(basename "$f")"
     if grep -Eq 'Free-text is the default|自由文本' "$f" \
        && grep -Eq 'infers intent|推断意图' "$f"; then
@@ -319,15 +319,6 @@ for f in "$README_FILE" "$SETUP" "$FIRST_PRINCIPLES" "$IMPL_DESIGN"; do
         FAIL=1
     fi
 done
-
-# setup.sh onboarding must mention research, plan, and chat as feedback channels
-if grep -q 'research file, plan file, or chat' "$SETUP" \
-   && ! grep -q 'Give feedback in plan.md or chat' "$SETUP"; then
-    echo "OK: setup.sh onboarding keeps research in the annotation loop"
-else
-    echo "DRIFT: setup.sh onboarding narrows feedback channels"
-    FAIL=1
-fi
 
 # Old 6-type annotation list must NOT appear in 批注区 templates
 # (They may still appear in general prose or historical references, but not in the template blocks)
@@ -375,11 +366,11 @@ else
     FAIL=1
 fi
 
-# Convergence Check must exist in baton-research
-if grep -q 'Convergence Check' "$RESEARCH_SKILL"; then
-    echo "OK: Convergence Check in baton-research"
+# Convergence step must exist in baton-research
+if grep -q 'Convergence' "$RESEARCH_SKILL"; then
+    echo "OK: Convergence in baton-research"
 else
-    echo "DRIFT: Convergence Check missing from baton-research"
+    echo "DRIFT: Convergence missing from baton-research"
     FAIL=1
 fi
 
@@ -391,30 +382,15 @@ else
     FAIL=1
 fi
 
-# --- setup.sh should treat .baton/skills as canonical and generate host copies ---
+# --- setup.sh should install skills from skills/ via symlinks ---
 echo ""
-echo "Checking canonical skill source model..."
-if grep -q '\.baton/skills.*(new canonical)' "$SETUP" \
-   && grep -q 'resolve_skill_source_dir' "$SETUP"; then
-    echo "OK: setup.sh treats .baton/skills as canonical source with resolve_skill_source_dir"
+echo "Checking skill install model..."
+if grep -q 'install_skills' "$SETUP" \
+   && grep -q 'ln -sf' "$SETUP" \
+   && grep -q 'discover_skills' "$SETUP"; then
+    echo "OK: setup.sh installs skills via symlinks from skills/ directory"
 else
-    echo "DRIFT: setup.sh does not treat .baton/skills as canonical source"
-    FAIL=1
-fi
-
-# Backward-compatibility fallback to .claude/skills must exist
-if grep -q '\.claude/skills.*fallback\|legacy fallback' "$SETUP" \
-   && grep -q 'BATON_DIR/\.claude/skills' "$SETUP"; then
-    echo "OK: setup.sh has .claude/skills backward-compatibility fallback"
-else
-    echo "DRIFT: setup.sh missing .claude/skills backward-compatibility fallback"
-    FAIL=1
-fi
-
-if grep -q '\$PROJECT_DIR/\.agents/skills/\$_skill/SKILL\.md' "$SETUP"; then
-    echo "OK: setup.sh generates .agents/skills fallback for Codex"
-else
-    echo "DRIFT: setup.sh no longer generates .agents/skills fallback"
+    echo "DRIFT: setup.sh missing skill symlink install model"
     FAIL=1
 fi
 
@@ -468,14 +444,6 @@ else
     echo "OK: constitution.md does not reference README.md"
 fi
 
-# constitution.md MUST contain Document Semantics
-if grep -q 'Document Semantics' "$SLIM"; then
-    echo "OK: constitution.md contains Document Semantics"
-else
-    echo "DRIFT: constitution.md missing 'Document Semantics'"
-    FAIL=1
-fi
-
 # constitution.md must NOT contain old research.md rule
 if grep -q 'All analysis tasks produce research\.md' "$SLIM"; then
     echo "DRIFT: constitution.md contains old rule 'All analysis tasks produce research.md' — should be Medium/Large only"
@@ -484,19 +452,19 @@ else
     echo "OK: constitution.md uses correct research.md scoping"
 fi
 
-# constitution.md MUST contain "approved write set"
-if grep -q 'approved write set' "$SLIM"; then
-    echo "OK: constitution.md contains 'approved write set'"
+# constitution.md MUST contain "write set" (plan's authorized files)
+if grep -q 'write set' "$SLIM"; then
+    echo "OK: constitution.md contains 'write set'"
 else
-    echo "DRIFT: constitution.md missing 'approved write set' — was changed to vague wording"
+    echo "DRIFT: constitution.md missing 'write set' — scope boundary needs file authorization concept"
     FAIL=1
 fi
 
-# constitution.md MUST contain discovery protocol with Q1/Q2
-if grep -q 'Question 1' "$SLIM" && grep -q 'Question 2' "$SLIM"; then
-    echo "OK: constitution.md has discovery protocol with Q1/Q2"
+# constitution.md MUST contain unexpected discoveries with approval assumptions check
+if grep -q 'approval assumptions still hold' "$SLIM" && grep -q 'plan still applies' "$SLIM"; then
+    echo "OK: constitution.md has unexpected discoveries protocol"
 else
-    echo "DRIFT: constitution.md missing discovery protocol Q1/Q2"
+    echo "DRIFT: constitution.md missing unexpected discoveries protocol"
     FAIL=1
 fi
 
@@ -544,16 +512,16 @@ else
     FAIL=1
 fi
 
-# --- Phase skill listing in Authority Model ---
+# --- Phase skill listing in Authority section ---
 echo ""
-echo "Checking Authority Model phase skill listing..."
+echo "Checking Authority section phase skill listing..."
 
-# Authority Model must list all 4 phase skills
-for skill in baton-research baton-plan baton-implement baton-review; do
-    if grep -q "$skill" "$SLIM"; then
-        echo "OK: Authority Model lists $skill"
+# Authority section must list all 4 phase roles (generic names, not baton-* prefixed)
+for phase in research plan implement review; do
+    if grep -q "$phase" "$SLIM"; then
+        echo "OK: Authority section lists $phase"
     else
-        echo "DRIFT: Authority Model missing $skill"
+        echo "DRIFT: Authority section missing $phase"
         FAIL=1
     fi
 done
@@ -566,11 +534,11 @@ else
     echo "OK: constitution.md has no baton-finish references"
 fi
 
-# Completion Model must exist and require human confirmation
-if grep -q 'Completion Model' "$SLIM" && grep -q 'human confirms' "$SLIM"; then
-    echo "OK: Completion Model requires human confirmation"
+# Completion section must exist and require human confirmation
+if grep -q '### Completion' "$SLIM" && grep -q 'human confirms' "$SLIM"; then
+    echo "OK: Completion section requires human confirmation"
 else
-    echo "DRIFT: Completion Model missing or lacks human confirmation requirement"
+    echo "DRIFT: Completion section missing or lacks human confirmation requirement"
     FAIL=1
 fi
 

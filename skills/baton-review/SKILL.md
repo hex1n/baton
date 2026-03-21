@@ -183,6 +183,13 @@ Note: isolation may cause the reviewer to propose alternatives that are impracti
 - **Medium**: meaningful defect or risk, but locally containable
 - **Low**: worthwhile correction without blocking effect
 
+## Output Compression
+
+- HIGH/MEDIUM findings: full finding block (severity, description, evidence, fix)
+- LOW findings: compress to a single "Minor notes" section at the end.
+  Each LOW finding = one line: `file:line — issue`. No detailed block.
+  If a LOW finding has no clear action, omit it entirely.
+
 ## Output Format
 
 Output in the same language the human uses. If the conversation is in Chinese, write findings in Chinese.

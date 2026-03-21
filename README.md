@@ -115,7 +115,6 @@ Baton v5 uses a **user-level flat install** — zero files in your project direc
 │   ├── baton-review/
 │   ├── baton-debug/
 │   ├── baton-subagent/
-│   ├── baton-evolve/
 │   └── using-baton/
 ├── hooks/                            # Hook scripts
 │   ├── dispatch.sh                    (event-based hook dispatcher)
