@@ -218,6 +218,28 @@ project/
 
 对比现在每个项目需要：`.baton/` junction + `.claude/skills/baton-*` junctions + `.claude/settings.json` hook 条目 — 插件方案只需要 `.baton/constitution.md` + CLAUDE.md 引用。
 
+### Cursor/Codex 项目结构（安装后）
+
+Cursor 和 Codex 不支持 Claude Code 插件系统，仍需 adapter。Adapter 引用 `$BATON_HOME/hooks/dispatch.sh`（不依赖项目内 hook 文件）：
+
+```
+project/
+├── .baton/
+│   └── constitution.md           # 从 templates/ 复制，可定制
+├── .cursor/rules/                # Cursor 规则（adapter.sh 生成）
+│   └── baton.mdc
+├── .codex/
+│   └── hooks.json                # Codex hooks（adapter setup.sh 生成，引用 BATON_HOME）
+├── baton-tasks/
+├── CLAUDE.md
+└── .gitignore
+```
+
+Adapter 的 `dispatch.sh` 路径引用从相对路径 `../../hooks/dispatch.sh` 改为 `$BATON_HOME/hooks/dispatch.sh`：
+- **优点**：adapter 不依赖项目内的 hook 文件，项目只需 `.baton/constitution.md`
+- **约束**：需要 `BATON_HOME` 环境变量已设置（`install.sh` 在 `~/.bashrc` / `~/.zshrc` 中导出）
+- **降级**：如果 `BATON_HOME` 未设置，adapter 自动降级到 `$HOME/.baton`（与 `bin/baton` 相同逻辑）
+
 ---
 
 ## hooks.json 设计
@@ -431,31 +453,19 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 
 用户安装 baton 插件有两种路径：
 
-**路径 1：CLI 自动注册**（推荐）
+**路径 1：使用 Claude Code 内置命令**（推荐）
 
-`install.sh` 或 `baton init` 向 `~/.claude/settings.json` 写入：
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "baton": {
-      "source": {
-        "source": "github",
-        "repo": "hex1n/baton"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "baton@baton": true
-  }
-}
+Phase 0 骨架验证中确认实际命令语法。预期为：
+```bash
+claude plugin install hex1n/baton
+# 或在 Claude Code 内：/install-plugin baton
 ```
 
-写入方式：jq merge（与现有 settings 合并）。无 jq 时输出手动操作指引。
+不自行修改 `~/.claude/settings.json` — 使用 Claude Code 提供的插件管理命令，避免造轮子。
 
-**路径 2：手动**
+**路径 2：手动注册**（降级）
 
-用户在 Claude Code 内执行安装（具体命令待验证 ❓，可能是 `/install-plugin` 或 Claude Code UI 操作）。
+如果内置命令不可用，`install.sh` 向 `~/.claude/settings.json` 写入 `extraKnownMarketplaces` + `enabledPlugins`（jq merge）。此路径仅作为降级方案，Phase 0 验证后决定是否需要。
 
 ---
 
@@ -483,8 +493,8 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 | `baton init` | Claude Code: 提示用 `/baton-init`。Cursor/Codex: 调用 adapters/ 中的 setup |
 | `baton update` | Claude Code: 提示用 `/install-plugin baton`。Cursor/Codex: 更新 adapter 文件 |
 | `baton uninstall` | Claude Code: 只删 `.baton/` + CLAUDE.md 引用。Cursor/Codex: 完整清理 |
-| `baton doctor` | 检查 constitution 存在 + 插件是否启用 |
-| `baton status` | 不变 |
+| `baton doctor` | 检查 constitution 存在 + 插件是否启用 + CLI 与插件版本一致性 |
+| `baton status` | 改为从 `$BATON_HOME/hooks/lib/plan-parser.sh` 加载 parser（当前从项目内 `.baton/hooks/lib/` 加载，该路径迁移后不存在） |
 | `baton list` | 不变 |
 
 删除的逻辑：
@@ -532,11 +542,12 @@ exec bash "${SCRIPT_DIR}/dispatch.sh" "$@"
 
 | 文件 | 修改内容 | 对应步骤 |
 |------|----------|----------|
-| `hooks/dispatch.sh` | 增加 baton-project 检测（constitution 检查）| Phase 2 step 11 |
-| `hooks/phase-guide.sh` | 适配 `_scan_all_skills()` 扫描插件 skills 路径 + 移除 junction 自动创建块 | Phase 2 step 12, 14, 15 |
-| `hooks/lib/plan-parser.sh` | 适配 `parser_has_skill()` 增加 `$BATON_PLUGIN_SKILLS_DIR` 搜索路径 | Phase 2 step 13 |
-| `install.sh` | 重写：移除 `setup.sh` 调用（92 行→~60 行），增加 marketplace 注册逻辑（向 `~/.claude/settings.json` 写入 `extraKnownMarketplaces` + `enabledPlugins`）| Phase 3 |
-| `bin/baton` | 精简：移除 junction/copy-mode/settings-merge 逻辑（393 行→~150 行）| Phase 3 step 16 |
+| `hooks/dispatch.sh` | 增加 baton-project 检测（`parser_project_root` walk-up + constitution 检查）| Phase 2 step 17 |
+| `hooks/phase-guide.sh` | 适配 `_scan_all_skills()` 扫描插件 skills 路径 + 移除 junction 自动创建块 + 命名空间适配 | Phase 2 step 18, 20, 21, 22 |
+| `hooks/lib/plan-parser.sh` | 适配 `parser_has_skill()` 增加 `$BATON_PLUGIN_SKILLS_DIR` 搜索路径 | Phase 2 step 19 |
+| `install.sh` | 重写：移除 `setup.sh` 调用（92 行→~60 行），优先使用 `claude plugin install`，降级方案才写 settings.json | Phase 3 |
+| `bin/baton` | 精简：移除 junction/copy-mode/settings-merge 逻辑（393 行→~150 行）；`status()` 改为从 `$BATON_HOME/hooks/lib/` 加载 parser；`doctor` 增加版本一致性检查 | Phase 3 step 23-25 |
+| `adapters/*/dispatch.sh` | 路径引用从 `../../hooks/dispatch.sh` 改为 `$BATON_HOME/hooks/dispatch.sh` | Phase 3 step 28 |
 
 **净效果**：
 - 删除：683（setup.sh）+ 36（junction.sh）+ 1（git clean）+ 71（test-junction.sh）= **791 行**
@@ -606,55 +617,81 @@ baton 仓库本身是 marketplace 仓库。开发者在仓库内工作时：
 
 ## 实施步骤
 
-### Phase 1: 仓库结构重组
+### Phase 0: 插件骨架验证（先验证再重构）
 
-1. 创建 `.claude-plugin/marketplace.json` 和 `plugin.json`
-2. 移动 `.baton/skills/baton-*` → `skills/baton-*`（仓库根）
-3. 移动 `.baton/hooks/*` → `hooks/*`（仓库根）
-4. 创建 `hooks/hooks.json`
-5. 更新 `hooks/run-hook.cmd`（已完成 polyglot 修复）
-6. 创建 `templates/constitution.md`（从 `.baton/constitution.md` 复制）
-7. 创建 `commands/baton-init.md`
+1. 创建最小插件骨架（临时目录）：1 个 skill（hello-world）+ 1 个 hook（SessionStart echo）
+2. 注册为 marketplace，安装插件，确认 `claude plugin install` 或等效命令的实际语法
+3. 验证 `${CLAUDE_PLUGIN_ROOT}` 在 hook 命令中正确展开（macOS 必测，Windows 有条件测）
+4. 确认 skill 命名空间格式（`baton:baton-review` 还是 `/baton-review`），记录实际格式
+5. 验证插件 hooks 与项目 settings.json hooks 共存行为
+6. 删除骨架，记录验证结果
+
+**Gate**: 步骤 2-4 任一失败 → 停止，重新评估方案
+
+### Phase 1: 仓库结构重组（复制优先，保留旧目录）
+
+7. 创建 `.claude-plugin/marketplace.json` 和 `plugin.json`
+8. **复制**（非移动）`.baton/skills/baton-*` → `skills/baton-*`（仓库根）
+9. **复制**（非移动）`.baton/hooks/*` → `hooks/*`（仓库根）
+10. 创建 `hooks/hooks.json`
+11. 更新 `hooks/run-hook.cmd`（已完成 polyglot 修复）
+12. 创建 `templates/constitution.md`（从 `.baton/constitution.md` 复制）
+13. 创建 `commands/baton-init.md`
+
+> 注：此阶段旧目录 `.baton/hooks/`、`.baton/skills/` 完整保留，确保现有 setup.sh、bin/baton、adapters 不中断。
 
 ### Phase 2: Hook 脚本适配
 
-8. 确认 `dispatch.sh` 路径解析在插件缓存目录下正常工作
-9. 确认 `lib/common.sh` 相对路径正常
-10. 调整 `BATON_PROJECT_DIR` 设置方式（$PWD 应该就是项目目录）
-11. **增加 baton-project 检测**：在 `dispatch.sh` 的 `_manifest` 检查后、hook 循环前，增加 `[ -f "$BATON_PROJECT_DIR/.baton/constitution.md" ] || exit 0`。确保非 baton 项目不触发任何 hook（当前 write-lock.sh:134-138 无 plan 时 exit 2 会阻断所有写入，bash-guard.sh 也可能误触发）。验证方式：在无 `.baton/` 的项目中触发 PreToolUse，确认 dispatch.sh 直接 exit 0
-12. **适配 `_scan_all_skills()`**（phase-guide.sh:72-83）：当前只扫 `$BATON_PROJECT_DIR/{.baton,.claude,.cursor,.agents}/skills/*/`，在插件模式下找不到 skills。需增加对 `${CLAUDE_PLUGIN_ROOT}/skills/` 的扫描（dispatch.sh 可通过 `$_dir/../skills/` 推导插件 skills 路径，并 export 为 `BATON_PLUGIN_SKILLS_DIR`）
-13. **适配 `parser_has_skill()`**（lib/plan-parser.sh:204-217）：当前沿项目目录向上遍历 `.baton/skills`、`.claude/skills` 等。需增加 `$BATON_PLUGIN_SKILLS_DIR` 作为额外搜索路径
-14. **移除 phase-guide.sh 的 junction 自动创建块**（phase-guide.sh:50-66）：该块 source 了 `junction.sh` 来自动创建 skill junctions。插件模式下不再需要 junction，需删除或条件跳过（检查 `junction.sh` 是否存在）
-15. **适配 `using-baton` governance 上下文路径**（phase-guide.sh:28）：当前通过 `$SCRIPT_DIR/../skills/using-baton/SKILL.md` 读取。在插件模式下 `$SCRIPT_DIR` = `<plugin-root>/hooks/`，`../skills/` = `<plugin-root>/skills/` — 路径应正常解析，但需显式验证。**注意**：phase-guide.sh:35 已包含 `CLAUDE_PLUGIN_ROOT` 条件分支（输出格式切换），说明已有部分插件感知代码，需验证其在完整插件模式下的正确性
+14. 确认 `dispatch.sh` 路径解析在插件缓存目录下正常工作
+15. 确认 `lib/common.sh` 相对路径正常
+16. 调整 `BATON_PROJECT_DIR` 设置方式（$PWD 应该就是项目目录）
+17. **增加 baton-project 检测**：在 `dispatch.sh` 的 `_manifest` 检查后、hook 循环前，先用 `parser_project_root` 向上遍历推导项目根目录，再检查 constitution 是否存在：
+    ```bash
+    . "$_dir/lib/common.sh"
+    _proj_root="$(parser_project_root "$BATON_PROJECT_DIR")"
+    [ -f "$_proj_root/.baton/constitution.md" ] || exit 0
+    export BATON_PROJECT_DIR="$_proj_root"
+    ```
+    确保：(a) 非 baton 项目不触发任何 hook；(b) 在子目录中启动 Claude 时仍能正确定位项目根。验证方式：在无 `.baton/` 的项目中触发 PreToolUse，确认 dispatch.sh 直接 exit 0；在 baton 项目的子目录中触发，确认 hooks 正常工作
+18. **适配 `_scan_all_skills()`**（phase-guide.sh:72-83）：当前只扫 `$BATON_PROJECT_DIR/{.baton,.claude,.cursor,.agents}/skills/*/`，在插件模式下找不到 skills。需增加对 `${CLAUDE_PLUGIN_ROOT}/skills/` 的扫描（dispatch.sh 可通过 `$_dir/../skills/` 推导插件 skills 路径，并 export 为 `BATON_PLUGIN_SKILLS_DIR`）
+19. **适配 `parser_has_skill()`**（lib/plan-parser.sh:204-217）：当前沿项目目录向上遍历 `.baton/skills`、`.claude/skills` 等。需增加 `$BATON_PLUGIN_SKILLS_DIR` 作为额外搜索路径
+20. **移除 phase-guide.sh 的 junction 自动创建块**（phase-guide.sh:50-66）：该块 source 了 `junction.sh` 来自动创建 skill junctions。插件模式下不再需要 junction，需删除或条件跳过（检查 `junction.sh` 是否存在）
+21. **适配 `using-baton` governance 上下文路径**（phase-guide.sh:28）：当前通过 `$SCRIPT_DIR/../skills/using-baton/SKILL.md` 读取。在插件模式下 `$SCRIPT_DIR` = `<plugin-root>/hooks/`，`../skills/` = `<plugin-root>/skills/` — 路径应正常解析，但需显式验证
+22. **适配命名空间**：根据 Phase 0 step 4 的验证结果，更新 phase-guide.sh 中所有 skill 引用格式（如 `/baton-review` → `baton:baton-review`），更新 constitution 和文档中的 skill 引用
 
 ### Phase 3: CLI 与 Adapter
 
-16. 重写 `bin/baton`：移除 junction/copy-mode/settings-merge 逻辑
-17. 迁移 `.baton/adapters/cursor/` → `adapters/cursor/`：保留现有 adapter.sh + dispatch.sh，增加 `run-hook.cmd` polyglot wrapper
-18. 迁移 `.baton/adapters/codex/` → `adapters/codex/`：保留现有 adapter.sh + dispatch.sh，增加 `run-hook.cmd` polyglot wrapper（.codex/hooks.json 不再写死 `bash`）
-19. 创建 `adapters/cursor/setup.sh` 和 `adapters/codex/setup.sh`（从 setup.sh 提取对应 IDE 部分）
+23. 重写 `bin/baton`：移除 junction/copy-mode/settings-merge 逻辑
+24. **修复 `baton status` 的 parser 路径**：当前从 `$_dir/.baton/hooks/lib/plan-parser.sh` 加载，迁移后改为从 `$BATON_HOME/hooks/lib/plan-parser.sh` 加载（BATON_HOME 指向 baton 仓库根，hooks/ 在仓库根）
+25. **修复版本一致性**：`baton doctor` 增加检查——比对 CLI 版本（`$BATON_HOME` 的 git tag）与插件缓存版本（`~/.claude/plugins/cache/baton/*/`），不一致时提示 `baton update`
+26. 迁移 `.baton/adapters/cursor/` → `adapters/cursor/`：保留现有 adapter.sh + dispatch.sh，增加 `run-hook.cmd` polyglot wrapper
+27. 迁移 `.baton/adapters/codex/` → `adapters/codex/`：保留现有 adapter.sh + dispatch.sh，增加 `run-hook.cmd` polyglot wrapper（.codex/hooks.json 不再写死 `bash`）
+28. **适配 adapter 路径引用**：adapter 的 dispatch.sh 当前用 `../../hooks/dispatch.sh`（相对路径引用项目内 hooks），改为引用 `$BATON_HOME/hooks/dispatch.sh`。这使 adapter 自包含于 BATON_HOME，不依赖项目内的 hook 文件
+29. 创建 `adapters/cursor/setup.sh` 和 `adapters/codex/setup.sh`（从 setup.sh 提取对应 IDE 部分）
 
 ### Phase 4: 测试（Go/No-Go 决策点）
 
-20. 本地注册为 marketplace，安装插件
-21. 验证 skills 被正确发现
-22. 验证 hooks 在 8 个事件上正常触发（重点测试 Windows cmd.exe/PowerShell）
-23. 验证 `/baton-init` 工作正常
-24. 验证 `baton init --ide cursor` 工作正常
-25. 验证 `baton init --ide codex` 工作正常
-26. 测试现有项目迁移流程
+30. 本地注册为 marketplace，安装插件
+31. 验证 skills 被正确发现（含命名空间格式验证）
+32. 验证 hooks 在 8 个事件上正常触发（重点测试 Windows cmd.exe/PowerShell）
+33. 验证 `/baton-init` 工作正常（含命名空间格式）
+34. 验证 `baton init --ide cursor` 工作正常
+35. 验证 `baton init --ide codex` 工作正常
+36. 测试现有项目迁移流程
+37. 验证子目录启动时 baton-project 检测正常（walk-up 正确定位项目根）
+38. 验证 `baton doctor` 版本一致性检查
 
-**Go/No-Go 检查点**：步骤 20-22 通过后才继续 Phase 5。如果插件方案验证失败（`${CLAUDE_PLUGIN_ROOT}` 不展开、hooks 不触发等），执行回滚：从 `evolve-baseline` 分支恢复。
+**Go/No-Go 检查点**：步骤 30-32 通过后才继续 Phase 5。如果插件方案验证失败（`${CLAUDE_PLUGIN_ROOT}` 不展开、hooks 不触发等），执行回滚：从 `evolve-baseline` 分支恢复。
 
 ### Phase 5: 清理（仅在 Phase 4 通过后执行）
 
-27. 删除 `setup.sh`
-28. 删除 `junction.sh`
-29. 删除旧 `.baton/hooks/`、`.baton/skills/`、`.baton/adapters/` 目录（已移到根）
-30. 更新 `.gitignore`
-31. 更新 README.md
-32. 删除 `tests/test-junction.sh`
-33. 更新现有 hook 测试的路径引用
+39. 删除 `setup.sh`
+40. 删除 `junction.sh`
+41. 删除旧 `.baton/hooks/`、`.baton/skills/`、`.baton/adapters/` 目录（Phase 1 的复制源）
+42. 更新 `.gitignore`
+43. 更新 README.md
+44. 删除 `tests/test-junction.sh`
+45. 更新现有 hook 测试的路径引用
 
 ---
 
@@ -673,11 +710,14 @@ Phase 1-3 在独立分支 `plugin-architecture` 上进行，不合入 master。
 
 | 风险 | 影响 | 缓解 |
 |------|------|------|
-| `${CLAUDE_PLUGIN_ROOT}` 不展开 .cmd 文件路径 | hooks 无法定位脚本 | Phase 4 step 20-22 验证；降级方案：settings.json 中 hardcode 绝对路径 |
-| 插件 hooks 与项目 settings.json hooks 冲突 | 事件重复触发 | 迁移时清理项目 settings.json 中的旧 hook 条目 |
-| 非 baton 项目也触发 baton hooks | write-lock 阻断所有非 baton 项目的源码写入（exit 2） | Phase 2 step 11 增加 baton-project 检测：dispatch.sh 开头检查 `$BATON_PROJECT_DIR/.baton/constitution.md` 是否存在，不存在则 exit 0 跳过所有 hook。✅ 已验证 write-lock.sh:134-138 无 plan 时 exit 2（非 exit 0） |
+| `${CLAUDE_PLUGIN_ROOT}` 不展开 .cmd 文件路径 | hooks 无法定位脚本 | **Phase 0 step 3 提前验证**；降级方案：settings.json 中 hardcode 绝对路径 |
+| 插件 hooks 与项目 settings.json hooks 冲突 | 事件重复触发 | **Phase 0 step 5 验证共存行为**；迁移时清理项目 settings.json 中的旧 hook 条目 |
+| 非 baton 项目也触发 baton hooks | write-lock 阻断所有非 baton 项目的源码写入（exit 2） | Phase 2 step 17：dispatch.sh 用 `parser_project_root` 向上遍历推导项目根，检查 constitution 存在。✅ 已验证 write-lock.sh:134-138 无 plan 时 exit 2（非 exit 0） |
+| Skill 命名空间变化 | phase-guide 输出错误的 skill 引用，用户无法调用 | **Phase 0 step 4 验证实际格式**；Phase 2 step 22 更新所有引用 |
+| CLI 与插件版本不一致 | `baton doctor/status` 检查的版本与 Claude 执行的版本不同 | Phase 3 step 25：`baton doctor` 增加版本一致性检查 |
+| 迁移过程中仓库中断 | 旧路径的调用方在 Phase 1 后失效 | Phase 1 使用复制（非移动），旧目录在 Phase 5 才删除 |
 | Claude Code 更新改变插件 API | 插件失效 | 跟踪 Claude Code changelog；hooks.json 格式已稳定 |
-| Cursor/Codex 无法使用插件系统 | 需要维护 adapter | adapter 代码量小（每个 ~100 行），可接受 |
+| Cursor/Codex adapter 依赖 BATON_HOME | BATON_HOME 未设置时 adapter 失效 | adapter 降级到 `$HOME/.baton`；install.sh 在 shell profile 中导出 BATON_HOME |
 | PortableGit `CreateFileMapping error 5` | hook 启动失败 | hook 脚本 fail-open (trap exit 0)；文档注明 PortableGit 白名单要求 |
 | Codex hooks.json 写死 `bash` | Windows 下 Codex hook 不触发 | adapter 统一用 run-hook.cmd polyglot（Phase 3 覆盖） |
 
@@ -692,20 +732,33 @@ Phase 1-3 在独立分支 `plugin-architecture` 上进行，不合入 master。
 - 证据来源：superpowers 插件使用相同的 `"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd"` 模式 ✅ 已读取 hooks.json
 - 未验证场景：cmd.exe 和 PowerShell 中的展开行为 ❓，Claude Code 源码中展开逻辑的实现方式 ❓
 - 降级方案：如果不展开，可退回 settings.json hardcode 绝对路径模式（功能等价，仅失去自动路径管理）
-- **Go/No-Go 绑定**：Phase 4 step 20-22 必须在 macOS + Windows 两环境验证此变量展开，未通过则触发回滚
+- **Phase 0 提前验证**：step 3 在最小骨架上验证此假设，失败则在任何仓库变动之前就终止
 
 ### 次弱假设
+
+**Skill 命名空间在迁移后不会破坏现有工作流**。插件模式下 skills 可能变为 `baton:baton-review` 格式，而当前 phase-guide、constitution、用户习惯都使用无前缀的 `/baton-review`。
+
+- 未验证：Claude Code 实际使用的命名空间格式 ❓
+- 影响范围：phase-guide.sh（~10 处 skill 引用）、constitution.md、用户文档
+- **Phase 0 提前验证**：step 4 确认实际格式
+
+### 第三弱假设
 
 **插件 hooks 与项目 settings.json hooks 不冲突**。迁移期间两套 hooks 可能并存——插件 hooks（来自 hooks.json）和旧的 settings.json hooks。如果 Claude Code 对同一事件同时触发两者，write-lock 可能执行两次、产生重复输出或竞争条件。
 
 - 证据：superpowers 只有 SessionStart hook，未验证多事件共存场景 ❓
 - 缓解：迁移流程（baton uninstall）先清理旧 hooks，再安装插件。但用户可能跳过步骤
+- **Phase 0 提前验证**：step 5 测试共存行为
 
 ### 已知盲区
 
-1. `/install-plugin` 命令的具体语法和可用性 ❓ — 影响安装路径文档的准确性
+1. 插件安装命令的具体语法 ❓ — Phase 0 step 2 验证
 2. 插件缓存更新机制（Claude Code 何时拉取新版本）❓ — 影响版本更新策略
 3. 多插件 hooks 执行顺序 ❓ — 如果用户同时启用 superpowers 和 baton，SessionStart 的执行顺序是否确定
+
+### 框架级反思（来自 Codex 跨模型评审）
+
+**"是否选错了控制点？"** — Codex 指出消灭 junction 可以通过更简单的复制式配置实现，不需要插件架构。评估后决定继续插件方案，原因：自动分发 + 自动更新的价值在多项目场景下大于引入的复杂度。但通过 Phase 0 提前验证 + 使用 Claude 内置插件命令（不造轮子）来控制复杂度。
 
 ## 批注区
 
