@@ -47,31 +47,13 @@ else
 fi
 MINDSET_LINE="⚠️ Mindset: verify before claiming · disagree with evidence · stop when uncertain"
 
-# --- Auto-create missing skill junctions ---
-if [ -d "$SCRIPT_DIR/../skills" ]; then
-    _skill_src="$(cd "$SCRIPT_DIR/../skills" 2>/dev/null && pwd)" 2>/dev/null || true
-    if [ -n "${_skill_src:-}" ]; then
-        . "$SCRIPT_DIR/lib/junction.sh" 2>/dev/null || true
-        for _skill_dir in "$_skill_src"/baton-*; do
-            [ ! -d "$_skill_dir" ] && continue
-            _name="$(basename "$_skill_dir")"
-            _proj="${BATON_PROJECT_DIR:-$(pwd)}"
-            for _ide_skills in "$_proj/.claude/skills" "$_proj/.cursor/skills" "$_proj/.agents/skills"; do
-                [ -d "$_ide_skills" ] || continue
-                _target="$_ide_skills/$_name"
-                [ -d "$_target" ] && continue
-                atomic_junction "$_skill_dir" "$_target" 2>/dev/null || true
-            done
-        done
-    fi
-fi
-
 # --- Scan all installed skills (not just baton-*) ---
 # Returns space-separated list of skill names found across all IDE skill dirs
-# Uses parser_project_root for walk-up when BATON_PROJECT_DIR is not set
+# Checks both project-local directories and user-level ~/.claude/skills/
 _scan_all_skills() {
     local _d="${BATON_PROJECT_DIR:-$(parser_project_root)}" _seen="" _name
-    for _ide in .baton .claude .cursor .agents; do
+    # Project-local skill directories
+    for _ide in .claude .cursor .agents; do
         for _skill_dir in "$_d/$_ide/skills"/*/; do
             [ -f "$_skill_dir/SKILL.md" ] || continue
             _name="$(basename "$_skill_dir")"
@@ -79,6 +61,15 @@ _scan_all_skills() {
             _seen="$_seen $_name"
         done
     done
+    # User-level skills (v5 flat install)
+    if [ -d "$HOME/.claude/skills" ]; then
+        for _skill_dir in "$HOME/.claude/skills"/*/; do
+            [ -f "$_skill_dir/SKILL.md" ] || continue
+            _name="$(basename "$_skill_dir")"
+            case " $_seen " in *" $_name "*) continue ;; esac
+            _seen="$_seen $_name"
+        done
+    fi
     echo "$_seen"
 }
 

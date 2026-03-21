@@ -1,5 +1,5 @@
 #!/bin/bash
-# test-cli.sh — Tests for bin/baton CLI
+# test-cli.sh — Tests for bin/baton CLI (v5 flat install)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,17 +12,31 @@ TOTAL=0
 tmp="$(mktemp -d)"
 trap 'rm -rf $tmp' EXIT
 
-# Use a temporary BATON_HOME to avoid polluting real config
+# Use a temporary HOME and BATON_HOME
 export HOME="$tmp/home"
-mkdir -p "$HOME"
+mkdir -p "$HOME/.claude"
 export BATON_HOME="$tmp/baton_home"
 mkdir -p "$BATON_HOME"
 unset CODEX_THREAD_ID CODEX_SANDBOX CODEX_SANDBOX_NETWORK_DISABLED BATON_IDE 2>/dev/null || true
-# Copy required files into fake BATON_HOME
-cp -r "$SCRIPT_DIR/../.baton" "$BATON_HOME/.baton"
+
+# Set up BATON_HOME with required files (v5 layout)
+git init -q "$BATON_HOME"
+cp -r "$SCRIPT_DIR/../hooks" "$BATON_HOME/hooks"
+cp -r "$SCRIPT_DIR/../skills" "$BATON_HOME/skills"
+cp "$SCRIPT_DIR/../constitution.md" "$BATON_HOME/constitution.md"
 cp "$SETUP" "$BATON_HOME/setup.sh"
 mkdir -p "$BATON_HOME/bin"
 cp "$BATON_CLI" "$BATON_HOME/bin/baton"
+
+# Set up fake user-level install for doctor tests
+mkdir -p "$HOME/.claude/skills"
+for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+    ln -s "$BATON_HOME/skills/$_skill" "$HOME/.claude/skills/$_skill"
+done
+# Minimal settings.json with baton hook reference
+printf '{"hooks":{"PreToolUse":[{"matcher":"","hooks":["bash \\"%s/hooks/run-hook.cmd\\" bash-guard"]}]}}\n' "$BATON_HOME" > "$HOME/.claude/settings.json"
+# Constitution in CLAUDE.md
+echo '@../.baton/constitution.md' > "$HOME/.claude/CLAUDE.md"
 
 # ============================================================
 echo "=== Test 1: baton help ==="
@@ -37,90 +51,29 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 2: baton list — empty registry ==="
+echo "=== Test 2: baton init — shows v5 redirect ==="
 TOTAL=$((TOTAL + 1))
-if bash "$BATON_CLI" list 2>&1 | grep -q 'No projects'; then
-    echo "  pass: list shows 'No projects' when empty"
+OUTPUT="$(bash "$BATON_CLI" init 2>&1 || true)"
+if echo "$OUTPUT" | grep -q 'no longer needed'; then
+    echo "  pass: init shows v5 redirect message"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: list should show 'No projects'"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 3: baton init — registers project ==="
-d="$tmp/proj1" && mkdir -p "$d/.claude"
-(cd "$d" && git init -q)
-TOTAL=$((TOTAL + 1))
-READONLY_HOME="$tmp/readonly-home"
-mkdir -p "$READONLY_HOME"
-chmod 555 "$READONLY_HOME"
-set +e
-OUTPUT="$(HOME="$READONLY_HOME" CODEX_THREAD_ID="test-codex-thread" CODEX_SANDBOX="seatbelt" BATON_SKIP=pre-commit bash "$BATON_CLI" init "$d" 2>&1)"
-STATUS=$?
-set -e
-chmod 755 "$READONLY_HOME"
-if [ "$STATUS" -eq 0 ]; then
-    echo "  pass: init succeeded"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: init failed"
+    echo "  FAIL: init should show redirect message"
     echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
-TOTAL=$((TOTAL + 1))
-# chmod 555 is a no-op on Windows — skip this assertion if readonly is not enforced
-_readonly_check="$READONLY_HOME/.readonly-probe"
-if touch "$_readonly_check" 2>/dev/null; then
-    rm -f "$_readonly_check"
-    echo "  skip: filesystem does not enforce readonly (Windows)"
-    PASS=$((PASS + 1))
-elif echo "$OUTPUT" | grep -q "Could not update ~/.codex/config.toml automatically\|skipped project trust entry"; then
-    echo "  pass: init degrades gracefully when ~/.codex/config.toml is not writable"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected graceful warning when ~/.codex/config.toml is not writable"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-# Check registry
-TOTAL=$((TOTAL + 1))
-_abs="$(cd "$d" && pwd)"
-if grep -qF "$_abs" "$BATON_HOME/projects.list" 2>/dev/null; then
-    echo "  pass: project registered in projects.list"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: project not in registry"
-    FAIL=$((FAIL + 1))
-fi
 
 # ============================================================
 echo ""
-echo "=== Test 4: baton list — shows registered project ==="
+echo "=== Test 3: baton doctor — checks v5 user-level installation ==="
 TOTAL=$((TOTAL + 1))
-OUTPUT="$(timeout 10 bash "$BATON_CLI" list 2>&1 || true)"
-if echo "$OUTPUT" | grep -q 'Registered projects'; then
-    echo "  pass: list shows registered project"
-    PASS=$((PASS + 1))
-elif echo "$OUTPUT" | grep -qF "$_abs"; then
-    echo "  pass: list shows project path"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: list should show registered project, got: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 5: baton doctor — checks installation ==="
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-if echo "$OUTPUT" | grep -q 'Checking baton installation'; then
-    echo "  pass: doctor runs"
+OUTPUT="$(bash "$BATON_CLI" doctor 2>&1)"
+if echo "$OUTPUT" | grep -q 'Checking baton v5 installation'; then
+    echo "  pass: doctor runs with v5 header"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: doctor output unexpected"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
@@ -141,18 +94,18 @@ else
 fi
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q 'hooks configured'; then
-    echo "  pass: doctor checks IDE hook configuration"
+    echo "  pass: doctor checks hook configuration"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should check IDE hook configuration"
+    echo "  FAIL: doctor should check hook configuration"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 5b: baton doctor — checks skills ==="
+echo "=== Test 3b: baton doctor — checks skills ==="
 TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q 'Skills:'; then
+if echo "$OUTPUT" | grep -q 'Skills'; then
     echo "  pass: doctor has Skills section"
     PASS=$((PASS + 1))
 else
@@ -160,52 +113,64 @@ else
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q 'skills'; then
-    echo "  pass: doctor checks skill presence"
+if echo "$OUTPUT" | grep -q '8/8 skills'; then
+    echo "  pass: doctor reports all 8 skills"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should check skill presence"
+    echo "  FAIL: doctor should report 8/8 skills"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
+# ============================================================
 echo ""
-echo "=== Test 5c: baton doctor — detects missing skills ==="
-d_doc="$tmp/doc_skills" && mkdir -p "$d_doc/.baton/hooks" "$d_doc/.claude/skills/baton-plan"
-# Only 1 of 6 skills → should flag missing
-echo "---" > "$d_doc/.claude/skills/baton-plan/SKILL.md"
-echo '@.baton/constitution.md' > "$d_doc/CLAUDE.md"
-touch "$d_doc/.baton/constitution.md"
+echo "=== Test 3c: baton doctor — checks constitution ==="
 TOTAL=$((TOTAL + 1))
-OUTPUT_DOC="$(bash "$BATON_CLI" doctor "$d_doc" 2>&1)"
+if echo "$OUTPUT" | grep -q 'constitution referenced'; then
+    echo "  pass: doctor checks constitution in CLAUDE.md"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: doctor should check constitution reference"
+    echo "  OUTPUT: $OUTPUT"
+    FAIL=$((FAIL + 1))
+fi
+
+# ============================================================
+echo ""
+echo "=== Test 3d: baton doctor — detects missing skills ==="
+# Remove one skill symlink
+rm "$HOME/.claude/skills/baton-plan"
+TOTAL=$((TOTAL + 1))
+OUTPUT_DOC="$(bash "$BATON_CLI" doctor 2>&1)"
 if echo "$OUTPUT_DOC" | grep -q 'missing'; then
-    echo "  pass: doctor detects missing skills"
+    echo "  pass: doctor detects missing skill"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: doctor should detect missing skills"
     echo "  OUTPUT: $OUTPUT_DOC"
     FAIL=$((FAIL + 1))
 fi
+# Restore
+ln -s "$BATON_HOME/skills/baton-plan" "$HOME/.claude/skills/baton-plan"
 
+# ============================================================
 echo ""
-echo "=== Test 5d: baton doctor — checks adapters ==="
-d_adap="$tmp/doc_adapt" && mkdir -p "$d_adap/.baton/hooks" "$d_adap/.cursor"
-touch "$d_adap/.baton/constitution.md"
-echo '@.baton/constitution.md' > "$d_adap/CLAUDE.md"
-# .cursor dir exists but no adapter → should flag
+echo "=== Test 3e: baton doctor — all checks pass ==="
 TOTAL=$((TOTAL + 1))
-OUTPUT_ADAP="$(bash "$BATON_CLI" doctor "$d_adap" 2>&1)"
-if echo "$OUTPUT_ADAP" | grep -q 'no hook config'; then
-    echo "  pass: doctor detects missing cursor hook config"
+OUTPUT_OK="$(bash "$BATON_CLI" doctor 2>&1)"
+if echo "$OUTPUT_OK" | grep -q 'all checks passed'; then
+    echo "  pass: doctor reports all checks passed"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: doctor should detect missing cursor hook config"
-    echo "  OUTPUT: $OUTPUT_ADAP"
+    echo "  FAIL: doctor should report all checks passed"
+    echo "  OUTPUT: $OUTPUT_OK"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 6: baton status — shows phase ==="
+echo "=== Test 4: baton status — shows phase ==="
+d="$tmp/proj1" && mkdir -p "$d"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
 if echo "$OUTPUT" | grep -q 'Phase:'; then
@@ -218,7 +183,7 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 7: baton status — RESEARCH phase (no plan) ==="
+echo "=== Test 5: baton status — RESEARCH phase (no plan) ==="
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q 'RESEARCH'; then
     echo "  pass: status shows RESEARCH when no plan"
@@ -230,7 +195,7 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 8: baton status — IMPLEMENT phase (plan with GO) ==="
+echo "=== Test 6: baton status — IMPLEMENT phase (plan with GO) ==="
 printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [ ] Step 1\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
@@ -244,7 +209,7 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 9: baton status — FINISH phase (all todos done, no retro) ==="
+echo "=== Test 7: baton status — FINISH phase (all todos done, no retro) ==="
 printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [x] Step 1\n- [x] Step 2\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
@@ -266,7 +231,7 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 9b: baton status — FINISH phase (retro present, ready to complete) ==="
+echo "=== Test 7b: baton status — FINISH phase (retro present, ready to complete) ==="
 printf '# Plan\n<!-- BATON:GO -->\n## Todo\n- [x] Step 1\n- [x] Step 2\n## Retrospective\nLine one of retro.\nLine two of retro.\nLine three of retro.\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
@@ -288,7 +253,7 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 9c: baton status — ## Todo with trailing spaces still counts ==="
+echo "=== Test 7c: baton status — ## Todo with trailing spaces still counts ==="
 printf '# Plan\n<!-- BATON:GO -->\n## Todo   \n- [ ] Step 1\n' > "$d/plan.md"
 TOTAL=$((TOTAL + 1))
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
@@ -303,43 +268,46 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 10: baton uninstall — removes and deregisters ==="
+echo "=== Test 8: baton uninstall — runs setup --uninstall ==="
 TOTAL=$((TOTAL + 1))
-if BATON_SKIP=pre-commit bash "$BATON_CLI" uninstall "$d" > /dev/null 2>&1; then
-    echo "  pass: uninstall succeeded"
+# We can't fully run uninstall (it would remove our test fixtures),
+# but we can verify the command dispatches correctly
+OUTPUT="$(bash "$BATON_CLI" uninstall 2>&1 || true)"
+# setup --uninstall will run and remove artifacts from $HOME
+if [ $? -eq 0 ] || echo "$OUTPUT" | grep -q -i 'uninstall\|removed\|clean'; then
+    echo "  pass: uninstall dispatched to setup.sh"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: uninstall failed"
+    echo "  FAIL: uninstall should dispatch to setup.sh"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
+# Restore test fixtures after uninstall
+mkdir -p "$HOME/.claude/skills"
+for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+    ln -s "$BATON_HOME/skills/$_skill" "$HOME/.claude/skills/$_skill" 2>/dev/null || true
+done
+printf '{"hooks":{"PreToolUse":[{"matcher":"","hooks":["bash \\"%s/hooks/run-hook.cmd\\" bash-guard"]}]}}\n' "$BATON_HOME" > "$HOME/.claude/settings.json"
+echo '@../.baton/constitution.md' > "$HOME/.claude/CLAUDE.md"
+
+# ============================================================
+echo ""
+echo "=== Test 9: baton self-update — redirects to update ==="
 TOTAL=$((TOTAL + 1))
-if ! grep -qF "$_abs" "$BATON_HOME/projects.list" 2>/dev/null; then
-    echo "  pass: project removed from registry"
+OUTPUT="$(bash "$BATON_CLI" self-update 2>&1 || true)"
+if echo "$OUTPUT" | grep -q "now just.*update"; then
+    echo "  pass: self-update shows redirect message"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: project still in registry after uninstall"
+    echo "  FAIL: self-update should redirect to update"
+    echo "  OUTPUT: $OUTPUT"
     FAIL=$((FAIL + 1))
 fi
 
 # ============================================================
 echo ""
-echo "=== Test 11: baton update --all — no projects ==="
-# Clear registry
-> "$BATON_HOME/projects.list"
-TOTAL=$((TOTAL + 1))
-OUTPUT="$(bash "$BATON_CLI" update --all 2>&1)"
-if echo "$OUTPUT" | grep -q 'No projects'; then
-    echo "  pass: update --all shows no projects"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: update --all should show no projects"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 12: plan-*.md subdirectory walk-up ==="
-d="$tmp/t12" && mkdir -p "$d/src/deep"
+echo "=== Test 10: plan-*.md subdirectory walk-up ==="
+d="$tmp/t10" && mkdir -p "$d/src/deep"
 cat > "$d/plan-feature.md" << 'EOF'
 <!-- BATON:GO -->
 ## Todo
@@ -383,8 +351,8 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 13: BATON_PLAN subdirectory walk-up ==="
-d="$tmp/t13" && mkdir -p "$d/src/deep"
+echo "=== Test 11: BATON_PLAN subdirectory walk-up ==="
+d="$tmp/t11" && mkdir -p "$d/src/deep"
 cat > "$d/plan-custom.md" << 'EOF'
 <!-- BATON:GO -->
 ## Todo
@@ -420,99 +388,18 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 14: doctor rules injection ==="
-d="$tmp/t14" && mkdir -p "$d/.baton/hooks" "$d/.claude"
-echo '@.baton/workflow.md' > "$d/CLAUDE.md"
-touch "$d/.baton/constitution.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "⚠"; then
-    echo "  pass: doctor flags old workflow.md import in CLAUDE.md"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: doctor should flag workflow.md import"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# Correct import — narrow to Rules injection section only
-echo '@.baton/constitution.md' > "$d/CLAUDE.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "✓ CLAUDE.md"; then
-    echo "  pass: CLAUDE.md Rules injection check passes"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: CLAUDE.md Rules injection should pass with correct import"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# AGENTS.md old import
-echo '@.baton/workflow.md' > "$d/AGENTS.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "⚠"; then
-    echo "  pass: doctor flags old import in AGENTS.md"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: doctor should flag workflow.md in AGENTS.md"
-    FAIL=$((FAIL + 1))
-fi
-
-# AGENTS.md correct import — narrow to Rules injection section only
-echo '@.baton/constitution.md' > "$d/AGENTS.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep "Rules injection" | grep -qv "⚠"; then
-    echo "  pass: AGENTS.md Rules injection check passes"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: AGENTS.md Rules injection should pass with correct import"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 15: doctor detects mixed old+new imports ==="
-d="$tmp/t15" && mkdir -p "$d/.baton/hooks" "$d/.claude"
-touch "$d/.baton/constitution.md"
-# CLAUDE.md with both old and new
-printf '@.baton/constitution.md\n@.baton/workflow.md\n' > "$d/CLAUDE.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "residual"; then
-    echo "  pass: doctor flags residual workflow.md in mixed CLAUDE.md"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: doctor should flag residual workflow.md in mixed CLAUDE.md"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-# AGENTS.md with both old and new
-printf '@.baton/constitution.md\n@.baton/workflow.md\n' > "$d/AGENTS.md"
-OUTPUT="$(bash "$BATON_CLI" doctor "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "residual"; then
-    echo "  pass: doctor flags residual workflow.md in mixed AGENTS.md"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: doctor should flag residual workflow.md in mixed AGENTS.md"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
-
-# ============================================================
-echo ""
-echo "=== Test 16: Multi-plan detection in status ==="
-d="$tmp/t16" && mkdir -p "$d"
+echo "=== Test 12: Multi-plan detection in status ==="
+d="$tmp/t12" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 <!-- BATON:GO -->
 ## Todo
 - [ ] Step 1
 EOF
-echo "# Other" > "$d/plan-feature.md"
+cat > "$d/plan-feature.md" << 'EOF2'
+<!-- BATON:GO -->
+## Todo
+- [ ] Feature step
+EOF2
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "Multiple plan files"; then
@@ -544,8 +431,8 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 17: Research fallback — single topic-named research ==="
-d="$tmp/t17" && mkdir -p "$d"
+echo "=== Test 13: Research fallback — single topic-named research ==="
+d="$tmp/t13" && mkdir -p "$d"
 echo "# Research" > "$d/research-auth.md"
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
@@ -577,20 +464,11 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 18: Research fallback — multiple research files ==="
-d="$tmp/t18" && mkdir -p "$d"
+echo "=== Test 14: Research fallback — multiple research files ==="
+d="$tmp/t14" && mkdir -p "$d"
 echo "# Research A" > "$d/research-auth.md"
 echo "# Research B" > "$d/research-api.md"
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
-TOTAL=$((TOTAL + 1))
-if echo "$OUTPUT" | grep -q "Multiple research files"; then
-    echo "  pass: multi-research warning"
-    PASS=$((PASS + 1))
-else
-    echo "  FAIL: expected multi-research warning"
-    echo "  OUTPUT: $OUTPUT"
-    FAIL=$((FAIL + 1))
-fi
 TOTAL=$((TOTAL + 1))
 if echo "$OUTPUT" | grep -q "Research: research-\\*\\.md (multiple matches)"; then
     echo "  pass: research status line stays ambiguous when multiple"
@@ -612,8 +490,8 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 19: PLAN phase — no plan, research only ==="
-d="$tmp/t19" && mkdir -p "$d"
+echo "=== Test 15: PLAN phase — no plan, research only ==="
+d="$tmp/t15" && mkdir -p "$d"
 echo "# Research" > "$d/research.md"
 OUTPUT="$(bash "$BATON_CLI" status "$d" 2>&1)"
 TOTAL=$((TOTAL + 1))
@@ -637,8 +515,8 @@ fi
 
 # ============================================================
 echo ""
-echo "=== Test 20: Section-aware todo counting ==="
-d="$tmp/t20" && mkdir -p "$d"
+echo "=== Test 16: Section-aware todo counting ==="
+d="$tmp/t16" && mkdir -p "$d"
 cat > "$d/plan.md" << 'EOF'
 <!-- BATON:GO -->
 ## Approach

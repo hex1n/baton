@@ -26,8 +26,7 @@ TESTS=(
     "test-new-hooks.sh"
     "test-adapters.sh"
     "test-annotation-protocol.sh"
-    "test-workflow-consistency.sh"
-    "test-ide-capability-consistency.sh"
+    "test-constitution-consistency.sh"
 )
 
 for test_name in "${TESTS[@]}"; do

@@ -1,1 +1,1 @@
-@.baton/constitution.md
+@constitution.md

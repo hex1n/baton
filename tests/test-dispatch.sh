@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BATON_DIR="$SCRIPT_DIR/.."
-DISPATCH="$BATON_DIR/.baton/hooks/dispatch.sh"
+DISPATCH="$BATON_DIR/hooks/dispatch.sh"
 PASS=0
 FAIL=0
 TOTAL=0

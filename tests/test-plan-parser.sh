@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARSER="$SCRIPT_DIR/../.baton/hooks/lib/plan-parser.sh"
+PARSER="$SCRIPT_DIR/../hooks/lib/plan-parser.sh"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -282,14 +282,14 @@ assert_rc "$rc" 1 "returns 1 when PLAN is empty"
 echo ""
 echo "=== parser_has_skill ==="
 
-# --- skill in .baton/skills ---
-echo "--- skill in .baton/skills ---"
+# --- skill in .claude/skills (project-local) ---
+echo "--- skill in .claude/skills (project-local) ---"
 source_parser
-d="$tmp/skill-baton"
-mkdir -p "$d/.baton/skills/baton-implement"
-echo "# skill" > "$d/.baton/skills/baton-implement/SKILL.md"
+d="$tmp/skill-claude-local"
+mkdir -p "$d/.claude/skills/baton-implement"
+echo "# skill" > "$d/.claude/skills/baton-implement/SKILL.md"
 JSON_CWD="$d" parser_has_skill "baton-implement"; rc=$?
-assert_rc "$rc" 0 "finds skill in .baton/skills"
+assert_rc "$rc" 0 "finds skill in project .claude/skills"
 
 # --- skill in .claude/skills ---
 echo "--- skill in .claude/skills ---"
@@ -330,22 +330,23 @@ assert_rc "$rc" 1 "returns 1 for nonexistent skill"
 echo "--- skill walk-up ---"
 source_parser
 d="$tmp/skill-walkup"
-mkdir -p "$d/.baton/skills/baton-debug"
-echo "# skill" > "$d/.baton/skills/baton-debug/SKILL.md"
+mkdir -p "$d/.claude/skills/baton-debug"
+echo "# skill" > "$d/.claude/skills/baton-debug/SKILL.md"
 mkdir -p "$d/sub/deep"
 JSON_CWD="$d/sub/deep" parser_has_skill "baton-debug"; rc=$?
 assert_rc "$rc" 0 "walks up to find skill in ancestor"
 
-# --- .baton/skills takes priority (checked first) ---
-echo "--- .baton priority ---"
+# --- user-level ~/.claude/skills fallback ---
+echo "--- user-level fallback ---"
 source_parser
-d="$tmp/skill-priority"
-mkdir -p "$d/.baton/skills/baton-plan"
-mkdir -p "$d/.claude/skills/baton-plan"
-echo "# baton version" > "$d/.baton/skills/baton-plan/SKILL.md"
-echo "# claude version" > "$d/.claude/skills/baton-plan/SKILL.md"
+d="$tmp/skill-userlevel"
+mkdir -p "$d"
+# No project-local skills — should fall back to $HOME/.claude/skills
+mkdir -p "$HOME/.claude/skills/baton-plan"
+echo "# user skill" > "$HOME/.claude/skills/baton-plan/SKILL.md"
 JSON_CWD="$d" parser_has_skill "baton-plan"; rc=$?
-assert_rc "$rc" 0 ".baton/skills checked (both present, .baton first)"
+assert_rc "$rc" 0 "falls back to ~/.claude/skills when not in project"
+rm -rf "$HOME/.claude/skills/baton-plan"
 
 # ============================================================
 echo ""
@@ -368,7 +369,7 @@ echo "=== common.sh integration ==="
 
 # Verify that sourcing common.sh makes parser functions available
 echo "--- common.sh sources parser ---"
-COMMON="$SCRIPT_DIR/../.baton/hooks/lib/common.sh"
+COMMON="$SCRIPT_DIR/../hooks/lib/common.sh"
 (
     unset _BATON_PARSER_LOADED
     SCRIPT_DIR_INNER="$(cd "$(dirname "$COMMON")" && pwd)"
@@ -377,8 +378,8 @@ COMMON="$SCRIPT_DIR/../.baton/hooks/lib/common.sh"
     mkdir -p "$d"
     echo "# plan" > "$d/plan.md"
     printf '<!-- BATON:GO -->\n' >> "$d/plan.md"
-    mkdir -p "$d/.baton/skills/baton-test"
-    echo "# skill" > "$d/.baton/skills/baton-test/SKILL.md"
+    mkdir -p "$d/.claude/skills/baton-test"
+    echo "# skill" > "$d/.claude/skills/baton-test/SKILL.md"
 
     # Legacy wrappers
     JSON_CWD="$d" resolve_plan_name
@@ -414,15 +415,15 @@ else
 fi
 TOTAL=$((TOTAL + 1))
 if echo "$_co" | grep -q "SKILL_RC=0"; then
-    echo "  pass: parser_has_skill finds .baton/skills through common.sh"
+    echo "  pass: parser_has_skill finds .claude/skills through common.sh"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL: parser_has_skill through common.sh (got: $_co)"
+    echo "  FAIL: parser_has_skill through common.sh .claude/skills (got: $_co)"
     FAIL=$((FAIL + 1))
 fi
 TOTAL=$((TOTAL + 1))
 if echo "$_co" | grep -q "LEGACY_SKILL_RC=0"; then
-    echo "  pass: legacy has_skill delegates to parser (finds .baton/skills)"
+    echo "  pass: legacy has_skill delegates to parser (finds .claude/skills)"
     PASS=$((PASS + 1))
 else
     echo "  FAIL: legacy has_skill delegation (got: $_co)"

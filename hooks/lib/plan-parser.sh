@@ -197,22 +197,25 @@ parser_has_go() {
 }
 
 # parser_has_skill — check if baton skill exists by name
-# Walks up from JSON_CWD/cwd checking .baton/skills, .claude/skills,
-# .cursor/skills, .agents/skills at each directory level.
+# Walks up from JSON_CWD/cwd checking .claude/skills, .cursor/skills,
+# .agents/skills at each directory level, then checks user-level ~/.claude/skills/.
 # Args:    $1 = skill name
 # Returns: 0 if found, 1 if not
 parser_has_skill() {
     local _name="$1"
     local _d="${JSON_CWD:-$(pwd)}"
+    # Walk up project directories
     while true; do
-        for _ide in .baton .claude .cursor .agents; do
+        for _ide in .claude .cursor .agents; do
             [ -f "$_d/$_ide/skills/$_name/SKILL.md" ] && return 0
         done
         local _p
         _p="$(dirname "$_d")"
-        [ "$_p" = "$_d" ] && return 1
+        [ "$_p" = "$_d" ] && break
         _d="$_p"
     done
+    # Check user-level skills (v5 flat install)
+    [ -f "$HOME/.claude/skills/$_name/SKILL.md" ] && return 0
     return 1
 }
 

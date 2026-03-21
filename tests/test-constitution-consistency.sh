@@ -3,7 +3,7 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SLIM="$SCRIPT_DIR/../.baton/constitution.md"
+SLIM="$SCRIPT_DIR/../constitution.md"
 README_FILE="$SCRIPT_DIR/../README.md"
 SETUP="$SCRIPT_DIR/../setup.sh"
 FIRST_PRINCIPLES="$SCRIPT_DIR/../docs/first-principles.md"
@@ -26,7 +26,7 @@ done
 # --- common.sh: shared functions must exist and be sourced by all hooks ---
 echo ""
 echo "Checking common.sh shared library..."
-COMMON="$SCRIPT_DIR/../.baton/hooks/lib/common.sh"
+COMMON="$SCRIPT_DIR/../hooks/lib/common.sh"
 
 # common.sh must define the shared functions
 for func in resolve_plan_name find_plan has_skill; do
@@ -41,7 +41,7 @@ done
 # All hooks must source lib/common.sh
 for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
               post-write-tracker.sh completion-check.sh pre-compact.sh subagent-context.sh; do
-    path="$SCRIPT_DIR/../.baton/hooks/$script"
+    path="$SCRIPT_DIR/../hooks/$script"
     if grep -q 'lib/common\.sh' "$path"; then
         echo "OK: $script sources lib/common.sh"
     else
@@ -55,7 +55,7 @@ echo ""
 echo "Checking no residual SYNCED comments..."
 for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
               post-write-tracker.sh completion-check.sh pre-compact.sh subagent-context.sh; do
-    path="$SCRIPT_DIR/../.baton/hooks/$script"
+    path="$SCRIPT_DIR/../hooks/$script"
     if grep -q 'SYNCED:' "$path"; then
         echo "DRIFT: $script still has SYNCED comment"
         FAIL=1
@@ -63,7 +63,7 @@ for script in write-lock.sh phase-guide.sh stop-guard.sh bash-guard.sh \
         echo "OK: $script no SYNCED comments"
     fi
 done
-GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
+GUIDE="$SCRIPT_DIR/../hooks/phase-guide.sh"
 
 # --- Constitution section structure ---
 echo ""
@@ -91,8 +91,8 @@ for concept in "Failure boundary" "Discovery protocol" "Scope boundary" "impleme
 done
 
 # Canonical skill source: .baton/skills/ (new canonical), .claude/skills/ (legacy fallback)
-if [ -d "$SCRIPT_DIR/../.baton/skills" ]; then
-    SKILLS_DIR="$SCRIPT_DIR/../.baton/skills"
+if [ -d "$SCRIPT_DIR/../skills" ]; then
+    SKILLS_DIR="$SCRIPT_DIR/../skills"
 else
     SKILLS_DIR="$SCRIPT_DIR/../.claude/skills"
 fi
@@ -100,7 +100,7 @@ fi
 # --- Retrospective keyword consistency ---
 echo ""
 echo "Checking Retrospective keyword consistency..."
-STOP="$SCRIPT_DIR/../.baton/hooks/stop-guard.sh"
+STOP="$SCRIPT_DIR/../hooks/stop-guard.sh"
 if grep -q "Retrospective" "$STOP"; then
     echo "OK: Retrospective in stop-guard.sh"
 else
@@ -266,7 +266,7 @@ fi
 # --- Direction γ: [PAUSE] as only explicit type ---
 echo ""
 echo "Checking Direction γ annotation system..."
-GUIDE="$SCRIPT_DIR/../.baton/hooks/phase-guide.sh"
+GUIDE="$SCRIPT_DIR/../hooks/phase-guide.sh"
 
 # [PAUSE] must be in all annotation-related files and current protocol/runtime sources
 for f in "$RESEARCH_SKILL" "$GUIDE" \
@@ -503,7 +503,7 @@ fi
 # --- Canonical .baton/skills/ directory structure ---
 echo ""
 echo "Checking .baton/skills/ directory structure..."
-BATON_SKILLS_DIR="$SCRIPT_DIR/../.baton/skills"
+BATON_SKILLS_DIR="$SCRIPT_DIR/../skills"
 for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent; do
     if [ -f "$BATON_SKILLS_DIR/$_skill/SKILL.md" ]; then
         echo "OK: .baton/skills/$_skill/SKILL.md exists"

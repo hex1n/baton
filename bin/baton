@@ -1,93 +1,41 @@
 #!/usr/bin/env bash
 # baton — CLI entry point for baton plan-first workflow
-# Version: 2.0
+# Version: 3.0 (v5 flat install)
 set -eu
 
 BATON_HOME="${BATON_HOME:-$HOME/.baton}"
 SETUP="$BATON_HOME/setup.sh"
-REGISTRY="$BATON_HOME/projects.list"
+CLAUDE_DIR="$HOME/.claude"
 
-# --- Registry management ---
-
-registry_add() {
-    _dir="$(cd "$1" && pwd)"
-    touch "$REGISTRY"
-    if grep -qxF "$_dir" "$REGISTRY" 2>/dev/null; then
-        return 0
-    fi
-    echo "$_dir" >> "$REGISTRY"
-}
-
-registry_remove() {
-    _dir="$(cd "$1" && pwd)" 2>/dev/null || _dir="$1"
-    [ ! -f "$REGISTRY" ] && return 0
-    _tmp="$REGISTRY.tmp"
-    grep -vxF "$_dir" "$REGISTRY" > "$_tmp" 2>/dev/null || true
-    mv "$_tmp" "$REGISTRY"
-}
-
-registry_list() {
-    if [ ! -f "$REGISTRY" ] || [ ! -s "$REGISTRY" ]; then
-        echo "No projects registered. Run 'baton init' in a project."
-        return 0
-    fi
-    echo "Registered projects:"
-    while IFS= read -r _dir; do
-        [ -z "$_dir" ] && continue
-        if [ -d "$_dir" ]; then
-            _ver=""
-            if [ -f "$_dir/.baton/hooks/write-lock.sh" ]; then
-                _ver="$(sed -n 's/^# Version: *//p' "$_dir/.baton/hooks/write-lock.sh" 2>/dev/null)"
-            fi
-            _ides=""
-            [ -d "$_dir/.claude" ]     && _ides="${_ides} claude"
-            [ -d "$_dir/.factory" ]    && _ides="${_ides} factory"
-            [ -d "$_dir/.cursor" ]     && _ides="${_ides} cursor"
-            [ -f "$_dir/AGENTS.md" ]   && _ides="${_ides} codex"
-            _ides="$(echo "$_ides" | sed 's/^ //')"
-            printf "  %-50s v%-6s [%s]\n" "$_dir" "${_ver:-?}" "${_ides:-none}"
-        else
-            printf "  %-50s (not found)\n" "$_dir"
-        fi
-    done < "$REGISTRY"
-}
-
-# --- Doctor ---
+# --- Doctor (v5: checks user-level artifacts) ---
 
 doctor() {
-    _dir="${1:-.}"
-    _dir="$(cd "$_dir" && pwd)"
     _issues=0
 
-    echo "Checking baton installation in $_dir..."
+    echo "Checking baton v5 installation..."
     echo ""
 
-    # .baton directory
-    echo "  Installation:"
-    if [ -L "$_dir/.baton" ]; then
-        printf "  ✓ .baton/ is junction/symlink (v4 architecture)\n"
-    elif [ -f "$_dir/.baton/.copy-mode" ]; then
-        printf "  ⚠ .baton/ is copy-mode (updates need 'baton update')\n"
-    elif [ -d "$_dir/.baton" ]; then
-        if [ -d "$_dir/.baton/skills" ] && [ -f "$_dir/.baton/hooks/dispatch.sh" ]; then
-            printf "  ✓ .baton/ is source directory (self-install)\n"
-        else
-            printf "  ⚠ .baton/ is old-style copy (run 'baton init' to upgrade)\n"
-            _issues=$((_issues + 1))
-        fi
+    # Source installation
+    echo "  Source:"
+    if [ -d "$BATON_HOME/.git" ]; then
+        _ver="$(sed -n 's/^# Version: *//p' "$BATON_HOME/hooks/write-lock.sh" 2>/dev/null || echo "?")"
+        printf "  ✓ ~/.baton is git repo (hook version: %s)\n" "$_ver"
+    elif [ -d "$BATON_HOME" ]; then
+        printf "  ⚠ ~/.baton exists but not a git repo\n"
+        _issues=$((_issues + 1))
     else
-        printf "  ✗ .baton/ not found\n"
+        printf "  ✗ ~/.baton not found\n"
         _issues=$((_issues + 1))
     fi
 
     # Dispatch system
-    if [ -f "$_dir/.baton/hooks/dispatch.sh" ]; then
+    if [ -f "$BATON_HOME/hooks/dispatch.sh" ]; then
         printf "  ✓ dispatch.sh present\n"
     else
         printf "  ✗ dispatch.sh missing\n"
         _issues=$((_issues + 1))
     fi
-    if [ -f "$_dir/.baton/hooks/manifest.conf" ]; then
+    if [ -f "$BATON_HOME/hooks/manifest.conf" ]; then
         printf "  ✓ manifest.conf present\n"
     else
         printf "  ✗ manifest.conf missing\n"
@@ -95,84 +43,64 @@ doctor() {
     fi
     echo ""
 
-    # IDE configs
-    echo "  IDE configuration:"
-    _check_ide_config "$_dir" "claude" ".claude/settings.json" "dispatch.sh"
-    [ -d "$_dir/.cursor" ]   && _check_ide_config "$_dir" "cursor" ".cursor/hooks.json" "dispatch"
-    [ -f "$_dir/AGENTS.md" ] && _check_ide_config "$_dir" "codex" "AGENTS.md" "constitution"
-    echo ""
-
-    # Skills
-    echo "  Skills:"
-    # Determine if project should use junctions (not self-install, not copy-mode)
-    _expect_junction=0
-    _is_copy_mode=0
-    if [ -L "$_dir/.baton" ]; then
-        _expect_junction=1
-    elif [ -f "$_dir/.baton/.copy-mode" ]; then
-        _is_copy_mode=1
-    fi
-    _skill_dirs=""
-    [ -d "$_dir/.claude/skills" ] && _skill_dirs="$_skill_dirs .claude/skills"
-    [ -d "$_dir/.cursor/skills" ] && _skill_dirs="$_skill_dirs .cursor/skills"
-    [ -d "$_dir/.agents/skills" ] && _skill_dirs="$_skill_dirs .agents/skills"
-    for _sdir in $_skill_dirs; do
-        _smissing=0
-        _stale=0
-        for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent; do
-            _spath="$_dir/$_sdir/$_skill"
-            if [ ! -f "$_spath/SKILL.md" ]; then
-                _smissing=$((_smissing + 1))
-            elif [ "$_expect_junction" = "1" ] && [ ! -L "$_spath" ]; then
-                _stale=$((_stale + 1))
-            fi
-        done
-        if [ "$_smissing" -eq 0 ] && [ "$_stale" -eq 0 ]; then
-            printf "  ✓ %-20s 6/6 skills\n" "$_sdir"
-        elif [ "$_smissing" -gt 0 ]; then
-            printf "  ⚠ %-20s %s/6 missing\n" "$_sdir" "$_smissing"
-            _issues=$((_issues + 1))
-        fi
-        if [ "$_stale" -gt 0 ]; then
-            printf "  ⚠ %-20s %s/6 are plain dirs (not junctions, run 'baton init' to fix)\n" "$_sdir" "$_stale"
-            _issues=$((_issues + 1))
-        fi
-        if [ "$_is_copy_mode" = "1" ] && [ "$_smissing" -eq 0 ]; then
-            printf "  ℹ %-20s copy-mode — run 'baton update' to sync latest skills\n" "$_sdir"
-        fi
-    done
-    [ -z "$_skill_dirs" ] && { echo "  ⚠ No skill directories found"; _issues=$((_issues + 1)); }
-    echo ""
-
-    # Rules
-    echo "  Rules injection:"
-    for _md in CLAUDE.md AGENTS.md; do
-        if [ -f "$_dir/$_md" ]; then
-            if grep -q '@\.baton/constitution\.md' "$_dir/$_md" 2>/dev/null; then
-                printf "  ✓ %s has constitution\n" "$_md"
+    # User-level skills (symlinks in ~/.claude/skills/)
+    echo "  Skills (~/.claude/skills/):"
+    _smissing=0
+    _broken=0
+    for _skill in baton-plan baton-implement baton-review baton-research baton-debug baton-subagent baton-evolve using-baton; do
+        _spath="$CLAUDE_DIR/skills/$_skill"
+        if [ -L "$_spath" ]; then
+            if [ -f "$_spath/SKILL.md" ]; then
+                : # ok
             else
-                printf "  ⚠ %s missing constitution import\n" "$_md"
-                _issues=$((_issues + 1))
+                printf "  ⚠ %s symlink broken\n" "$_skill"
+                _broken=$((_broken + 1))
             fi
+        elif [ -d "$_spath" ]; then
+            printf "  ⚠ %s is directory (not symlink, run setup.sh)\n" "$_skill"
+            _broken=$((_broken + 1))
+        else
+            _smissing=$((_smissing + 1))
         fi
     done
+    if [ "$_smissing" -eq 0 ] && [ "$_broken" -eq 0 ]; then
+        printf "  ✓ 8/8 skills symlinked\n"
+    else
+        [ "$_smissing" -gt 0 ] && { printf "  ✗ %s/8 missing\n" "$_smissing"; _issues=$((_issues + 1)); }
+        [ "$_broken" -gt 0 ] && { printf "  ⚠ %s/8 broken\n" "$_broken"; _issues=$((_issues + 1)); }
+    fi
+    echo ""
+
+    # User-level hooks (in ~/.claude/settings.json)
+    echo "  Hooks (~/.claude/settings.json):"
+    if [ -f "$CLAUDE_DIR/settings.json" ] && grep -q 'run-hook\.cmd' "$CLAUDE_DIR/settings.json" 2>/dev/null; then
+        printf "  ✓ baton hooks configured\n"
+    elif [ -f "$CLAUDE_DIR/settings.json" ]; then
+        printf "  ⚠ settings.json exists but no baton hooks\n"
+        _issues=$((_issues + 1))
+    else
+        printf "  ✗ settings.json not found\n"
+        _issues=$((_issues + 1))
+    fi
+    echo ""
+
+    # Constitution (in ~/.claude/CLAUDE.md)
+    echo "  Constitution (~/.claude/CLAUDE.md):"
+    if [ -f "$CLAUDE_DIR/CLAUDE.md" ] && grep -q 'constitution\.md' "$CLAUDE_DIR/CLAUDE.md" 2>/dev/null; then
+        printf "  ✓ constitution referenced\n"
+    elif [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
+        printf "  ⚠ CLAUDE.md exists but no constitution reference\n"
+        _issues=$((_issues + 1))
+    else
+        printf "  ✗ CLAUDE.md not found\n"
+        _issues=$((_issues + 1))
+    fi
     echo ""
 
     if [ "$_issues" -gt 0 ]; then
-        echo "  Result: $_issues issue(s) found. Run 'baton init' to fix."
+        echo "  Result: $_issues issue(s) found. Run 'bash ~/.baton/setup.sh' to fix."
     else
         echo "  Result: all checks passed."
-    fi
-}
-
-_check_ide_config() {
-    _cdir="$1" _cide="$2" _cfile="$3" _cpattern="$4"
-    if [ -f "$_cdir/$_cfile" ] && grep -q "$_cpattern" "$_cdir/$_cfile" 2>/dev/null; then
-        printf "  ✓ %-12s hooks configured\n" "$_cide"
-    elif [ -f "$_cdir/$_cfile" ]; then
-        printf "  ⚠ %-12s config exists but no baton hooks\n" "$_cide"
-    else
-        printf "  ⚠ %-12s no hook config\n" "$_cide"
     fi
 }
 
@@ -182,44 +110,36 @@ status() {
     _dir="${1:-.}"
     _dir="$(cd "$_dir" && pwd)"
 
-    # Source parser from target project or BATON_HOME
+    # Source parser from BATON_HOME (v5 layout)
     _parser=""
-    [ -f "$_dir/.baton/hooks/lib/plan-parser.sh" ] && _parser="$_dir/.baton/hooks/lib/plan-parser.sh"
-    [ -z "$_parser" ] && [ -f "$BATON_HOME/.baton/hooks/lib/plan-parser.sh" ] && _parser="$BATON_HOME/.baton/hooks/lib/plan-parser.sh"
+    [ -f "$BATON_HOME/hooks/lib/plan-parser.sh" ] && _parser="$BATON_HOME/hooks/lib/plan-parser.sh"
     if [ -z "$_parser" ]; then
-        echo "⚠️ Parser not found in project or BATON_HOME" >&2
+        echo "⚠️ Parser not found in BATON_HOME" >&2
         return 1
     fi
-    # Reset parser loaded guard so re-sourcing works for different projects
     _BATON_PARSER_LOADED=""
     . "$_parser"
 
-    # Discovery — set JSON_CWD for both parser calls
     JSON_CWD="$_dir"
     parser_find_plan
     parser_find_research
 
-    # Phase detection
     _phase="RESEARCH"
     _plan_status="not found"
     _research_status="not found"
     _todos="0/0"
 
-    # Research status
     if [ -n "$RESEARCH" ]; then
         _research_status="exists"
     elif [ "${RESEARCH_FALLBACK_COUNT:-0}" -gt 1 ] 2>/dev/null; then
         _research_status="multiple matches"
         RESEARCH_NAME="research-*.md"
-        echo "⚠️ Multiple research files found (research-*.md). Name your plan to match the primary research file, or consolidate." >&2
     fi
 
-    # Phase from research
     if [ -z "$PLAN" ] && { [ -n "$RESEARCH" ] || [ "${RESEARCH_FALLBACK_COUNT:-0}" -gt 1 ] 2>/dev/null; }; then
         _phase="PLAN"
     fi
 
-    # Plan-based phase
     if [ -n "$PLAN" ]; then
         _plan_status="exists, no BATON:GO"
         _phase="ANNOTATION"
@@ -260,16 +180,14 @@ status() {
 
 usage() {
     cat << 'EOF'
-baton — plan-first workflow for AI coding assistants
+baton — plan-first workflow for AI coding assistants (v5)
 
 Usage:
-  baton init [dir]         Install baton into a project (junction-based)
-  baton update             Update baton source (git pull, all projects see changes)
-  baton update --check     Verify junction health across projects
-  baton uninstall [dir]    Remove baton from a project
-  baton list               List registered projects
-  baton doctor [dir]       Check installation health
+  baton doctor             Check installation health (user-level)
   baton status [dir]       Show workflow phase and progress
+  baton update             Update baton source (git pull + re-run setup)
+  baton migrate [dir]      Migrate a v4 project to v5 (remove project-local artifacts)
+  baton uninstall          Remove baton from user-level config
   baton help               Show this help
 
 Environment:
@@ -282,37 +200,13 @@ EOF
 # --- Main ---
 
 case "${1:-help}" in
-    init)
-        _target="${2:-.}"
-        if [ ! -d "$_target" ]; then
-            echo "Error: $_target is not a directory" >&2
-            exit 1
-        fi
-        bash "$SETUP" "$_target" && registry_add "$_target"
+    doctor)
+        doctor
+        ;;
+    status)
+        status "${2:-.}"
         ;;
     update)
-        if [ "${2:-}" = "--check" ]; then
-            # Verify junction health across registered projects
-            if [ ! -f "$REGISTRY" ] || [ ! -s "$REGISTRY" ]; then
-                echo "No projects registered."
-                exit 0
-            fi
-            echo "Junction health check:"
-            while IFS= read -r _dir; do
-                [ -z "$_dir" ] && continue
-                if [ ! -d "$_dir" ]; then
-                    printf "  ✗ %-50s (not found)\n" "$_dir"
-                elif [ -L "$_dir/.baton" ]; then
-                    printf "  ✓ %-50s (junction)\n" "$_dir"
-                elif [ -f "$_dir/.baton/.copy-mode" ]; then
-                    printf "  ⚠ %-50s (copy-mode)\n" "$_dir"
-                elif [ -d "$_dir/.baton" ]; then
-                    printf "  ⚠ %-50s (old-style, run baton init)\n" "$_dir"
-                fi
-            done < "$REGISTRY"
-            exit 0
-        fi
-        # Default: git pull + copy-mode recovery
         echo "Updating baton..."
         if git -C "$BATON_HOME" pull --ff-only; then
             echo "✓ Updated to latest"
@@ -320,72 +214,23 @@ case "${1:-help}" in
             echo "⚠ Update failed. Check for local changes in $BATON_HOME"
             exit 1
         fi
-        # Copy-mode and stale-junction recovery
-        if [ -f "$REGISTRY" ]; then
-            . "$BATON_HOME/.baton/hooks/lib/junction.sh"
-            while IFS= read -r _dir; do
-                [ -z "$_dir" ] && continue
-                [ ! -d "$_dir" ] && continue
-                if [ -f "$_dir/.baton/.copy-mode" ]; then
-                    echo "  Refreshing copy-mode project: $_dir"
-                    rm -rf "$_dir/.baton"
-                    cp -r "$BATON_HOME/.baton" "$_dir/.baton"
-                    touch "$_dir/.baton/.copy-mode"
-                    for _skill_dir in "$BATON_HOME/.baton/skills"/baton-*; do
-                        [ ! -d "$_skill_dir" ] && continue
-                        _name="$(basename "$_skill_dir")"
-                        for _ide_skills in "$_dir/.claude/skills" "$_dir/.cursor/skills" "$_dir/.agents/skills"; do
-                            [ -d "$_ide_skills" ] || continue
-                            rm -rf "$_ide_skills/$_name"
-                            cp -r "$_skill_dir" "$_ide_skills/$_name"
-                        done
-                    done
-                elif [ -L "$_dir/.baton" ]; then
-                    # Junction/symlink project: fix skill dirs that are plain dirs instead of junctions
-                    _skill_src="$_dir/.baton/skills"
-                    [ ! -d "$_skill_src" ] && continue
-                    _fixed=0
-                    for _ide_skills in "$_dir/.claude/skills" "$_dir/.cursor/skills" "$_dir/.agents/skills"; do
-                        [ -d "$_ide_skills" ] || continue
-                        for _skill_dir in "$_skill_src"/baton-*; do
-                            [ ! -d "$_skill_dir" ] && continue
-                            _name="$(basename "$_skill_dir")"
-                            _dst="$_ide_skills/$_name"
-                            # Skip if already a junction/symlink
-                            [ -L "$_dst" ] && continue
-                            # Replace plain dir or create missing junction
-                            if [ -d "$_dst" ]; then
-                                echo "    Replacing plain dir with junction: $_dst"
-                                atomic_junction "$_skill_dir" "$_dst" || true
-                                _fixed=$((_fixed + 1))
-                            elif [ ! -e "$_dst" ]; then
-                                atomic_junction "$_skill_dir" "$_dst" || true
-                                _fixed=$((_fixed + 1))
-                            fi
-                        done
-                    done
-                    [ "$_fixed" -gt 0 ] && echo "  Fixed $_fixed stale skill dir(s) in: $_dir"
-                fi
-            done < "$REGISTRY"
-        fi
+        bash "$SETUP"
+        ;;
+    migrate)
+        bash "$SETUP" --migrate "${2:-.}"
+        ;;
+    init)
+        # v4 compat: redirect to setup
+        echo "Note: 'baton init' is no longer needed. Baton v5 installs user-level."
+        echo "Running setup.sh..."
+        bash "$SETUP"
         ;;
     uninstall)
-        _target="${2:-.}"
-        bash "$SETUP" --uninstall "$_target" && registry_remove "$_target"
+        bash "$SETUP" --uninstall
         ;;
     self-update)
-        # Backward compat alias
         echo "Note: 'baton self-update' is now just 'baton update'"
         exec "$0" update
-        ;;
-    list)
-        registry_list
-        ;;
-    doctor)
-        doctor "${2:-.}"
-        ;;
-    status)
-        status "${2:-.}"
         ;;
     help|--help|-h|*)
         usage

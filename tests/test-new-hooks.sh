@@ -294,7 +294,11 @@ Plan was fine.
 One surprise.
 Would research differently.
 EOF
-echo "# Other" > "$d/plan-feature.md"
+cat > "$d/plan-feature.md" << 'EOF2'
+<!-- BATON:GO -->
+## Todo
+- [ ] Feature step
+EOF2
 assert_exit_code 2 "completion-check.sh" "$d"
 
 echo "--- Test 10e: Multi-plan + BATON_PLAN → exit 0 (retro OK) ---"

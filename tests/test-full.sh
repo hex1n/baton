@@ -35,10 +35,9 @@ TESTS=(
     "test-new-hooks.sh"
     "test-adapters.sh"
     "test-annotation-protocol.sh"
-    "test-workflow-consistency.sh"
-    "test-ide-capability-consistency.sh"
+    "test-constitution-consistency.sh"
     "test-setup.sh"
-    "test-multi-ide.sh"
+    "test-dispatch.sh"
     "test-cli.sh"
 )
 

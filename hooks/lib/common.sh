@@ -35,7 +35,7 @@ find_plan() {
 }
 
 # has_skill — delegates to parser_has_skill
-# Note: parser_has_skill adds .baton/skills to the search path
+# Note: parser_has_skill walks up project dirs + checks ~/.claude/skills/
 has_skill() {
     parser_has_skill "$1"
 }
