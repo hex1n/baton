@@ -3,8 +3,13 @@ normative-status: Implementation-time investigation protocol, not a standalone p
 name: baton-debug
 description: >
   Use when hitting test failures, unexpected behavior, or repeated implementation
-  failures during IMPLEMENT. Provides systematic root cause analysis. Also use
-  when stop-guard or failure-tracker signals repeated failures.
+  failures during IMPLEMENT. Trigger on: test failures not immediately obvious,
+  "debug", "investigate", "why is this failing", "root cause", "调试", "排查",
+  repeated implementation attempts without progress, or when stop-guard /
+  failure-tracker signals repeated failures. Provides systematic root cause
+  analysis: reproduce → pattern analysis → hypothesis → fix. Do NOT use for:
+  first-time failures with obvious cause (normal red-green-refactor),
+  planning (use baton-plan), or research (use baton-research).
 user-invocable: true
 ---
 
@@ -37,8 +42,23 @@ These thoughts mean STOP — you're rationalizing:
 
 ## Gotchas
 
-> Operational failure patterns. Add entries when observed in real usage.
-> Empty until then — do not pre-fill with theory.
+> Operational failure patterns observed in real usage.
+
+1. **Skipping Phase 1 (Reproduce).** The most common anti-pattern: jumping
+   to "I know the fix" without first confirming the failure is reproducible
+   and isolated. Even for "obvious" bugs, Phase 1 takes 30 seconds and
+   prevents fixing the wrong thing.
+
+2. **Parameter tweaks counted as new hypotheses.** Changing a flag value
+   or adjusting a timeout is NOT a new hypothesis — it's the same causal
+   claim with different parameters. The failure counter should not reset.
+   A new hypothesis must change the causal claim (e.g., "the bug is in
+   module X" → "the bug is in module Y").
+
+3. **Environment-as-excuse.** "The test environment must be broken" without
+   evidence is not an explanation. If reproduction fails, investigate the
+   environment as a first-class hypothesis — diff configurations, check
+   versions, compare paths.
 
 ## When to Use
 

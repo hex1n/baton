@@ -11,14 +11,15 @@ Cognitive progression: What is this system? → What am I investigating? → How
 
 ## Frame
 
+> Medium tasks: use the first 3 fields only. Large tasks: use all fields.
+
 - **Question**: What exactly is being investigated? (Frame as behavior or outcome — not mechanism or assumed solution)
 - **Why**: What later decision does this support?
-- **Scope**: What's in scope?
-- **Out of scope**: What is explicitly excluded?
-- **Known constraints**: Known constraints (repo, platform, tooling)
-- **System goal being served**: What outcome this research enables
-- **Claimed framing from human/docs**: The framing as stated
-- **What must be validated before accepting that framing**: Assumptions to verify
+- **Scope / Out of scope**: What's in scope, what's excluded?
+- **Known constraints**: Known constraints (repo, platform, tooling) *(Large only)*
+- **System goal being served**: What outcome this research enables *(Large only)*
+- **Claimed framing from human/docs**: The framing as stated *(Large only)*
+- **What must be validated before accepting that framing**: Assumptions to verify *(Large only)*
 
 ## Orient
 
@@ -33,6 +34,10 @@ Cognitive progression: What is this system? → What am I investigating? → How
 > Required when familiarity = none or partial. Skip only when familiarity = deep.
 > Every answer must cite evidence ✅ (read file:line).
 > Goal: a reader who doesn't know this system can sketch its architecture after reading this.
+
+**Architecture overview**: Start with an ASCII diagram or layered list showing
+the components and their relationships. This anchors the baseline and makes
+the rest immediately scannable.
 
 **1. What does this system do?**
 (Purpose, domain, users, core problem being solved)
@@ -62,7 +67,9 @@ What evidence acquisition methods were used? What did each return? Why sufficien
 
 ## Investigation
 
-Organize by investigation move. For each move:
+Organize by investigation move. The 4-field template below is a minimum, not
+a straitjacket — if a move naturally produces a comparison table, signal flow
+diagram, or behavioral edge-case list, use that format instead.
 
 ### [Move N]: [name]
 - **Question**: What uncertainty does this move address?
@@ -70,6 +77,12 @@ Organize by investigation move. For each move:
 - **What was found**: Findings with evidence labels + status
 - **What remains unresolved**: Open items
 - **Next**: continue / switch direction / stop
+
+**Output format guidance:**
+- Use **tables** for comparisons (N items × M dimensions)
+- Use **bullet lists** for behavioral edge cases and boundary conditions
+- After investigating a hook, API, or subsystem, list its **boundary behaviors**
+  (empty input, missing files, multiple matches, error states)
 
 When investigation direction materially changes, record:
 - Previous uncertainty →

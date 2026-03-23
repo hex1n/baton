@@ -1,0 +1,37 @@
+{
+  "eval_name": "git-archaeology",
+  "prompt": "Was write-lock.sh fail-open always the case, or did it originally fail closed?",
+  "expectations": [
+    {
+      "text": "Uses git history as primary research tool (git log, git blame, git show)",
+      "passed": true,
+      "evidence": "38 tool uses, traced through 6+ commits from 5bafc84 to current, cited specific commit hashes"
+    },
+    {
+      "text": "Answers the question directly with evidence",
+      "passed": true,
+      "evidence": "'write-lock.sh has always failed open on errors — from the very first version (v1.0, commit 5bafc84)'"
+    },
+    {
+      "text": "Distinguishes error conditions from governance decisions",
+      "passed": true,
+      "evidence": "Two separate tables: fail-open conditions (3 rows) vs fail-closed conditions (5 rows)"
+    },
+    {
+      "text": "Traces evolution across versions with evidence",
+      "passed": true,
+      "evidence": "Three eras table (v1.0/v2.0/v3.0) with commit hashes, key characteristics, and code excerpts"
+    },
+    {
+      "text": "Identifies design rationale (why fail-open)",
+      "passed": true,
+      "evidence": "Infrastructure failures = no user action path → fail-open. Governance decisions = clear path forward → fail-closed. BATON_BYPASS confirms guardrail not security boundary."
+    },
+    {
+      "text": "Standard depth — structured document with overview and open questions",
+      "passed": true,
+      "evidence": "114 lines, overview + findings + version history, depth stated at top"
+    }
+  ],
+  "pass_rate": 1.0
+}

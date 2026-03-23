@@ -49,6 +49,13 @@ Use for research artifacts where evidence type = codebase-primary.
 - If a systematic coverage matrix was used, does every cell have evidence or explicit `❓`?
 - Are asymmetries highlighted (not just parity)?
 
+### Presentation Quality
+
+- Does the output start with an **architecture overview** (ASCII diagram or layered list) before diving into investigation details?
+- Are **comparisons** presented as **tables** (not buried in prose)?
+- Are **behavioral edge cases** collected in one place per component (not scattered across moves)?
+- Is the **move format used flexibly** — tables for comparisons, bullet lists for edge cases, narrative for causal chains — or does every move use the same rigid 4-field template?
+
 ### Evidence Gaps
 
 - What wasn't investigated that should have been?

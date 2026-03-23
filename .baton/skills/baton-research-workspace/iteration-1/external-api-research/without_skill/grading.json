@@ -1,0 +1,32 @@
+{
+  "eval_id": 1,
+  "eval_name": "external-api-research",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "events-listed-per-ide",
+      "passed": true,
+      "evidence": "Lists specific events for all three IDEs with tables: 21 for Claude Code, 6 for Cursor, 3 stable + 8 in-PR for Codex."
+    },
+    {
+      "text": "structured-comparison",
+      "passed": true,
+      "evidence": "Cross-Platform Comparison Matrix table, plus per-IDE tables and baton hook availability matrix."
+    },
+    {
+      "text": "source-provenance",
+      "passed": true,
+      "evidence": "Sources listed at top with URLs. Confidence Assessment table at end with per-claim verification status."
+    },
+    {
+      "text": "governance-recommendation",
+      "passed": true,
+      "evidence": "7-point Recommendations section with specific guidance on hard-gate hooks, SessionStart, Stop, UserPromptSubmit, and graceful degradation model."
+    },
+    {
+      "text": "gaps-acknowledged",
+      "passed": true,
+      "evidence": "Question-mark markers for Codex PRs vs shipped releases. Notes Cursor event count discrepancy with GitButler blog. Confidence table distinguishes verified vs unverified."
+    }
+  ]
+}

@@ -21,7 +21,8 @@ reinterpretation during implementation.
 ### Step 1 — Code Quality (only after Step 0 passes)
 
 #### Correctness
-- Were modified files re-read with the Read tool after editing? (Mental recall or editor view does not count — tool invocation required)
+- Were modified files re-read **in context** (±10-20 surrounding lines) after editing — not just the changed lines? A change correct in isolation may break surrounding flow. (Mental recall does not count — Read tool invocation required)
+- Does the actual diff match the **predicted diff** from the plan? If it deviates, is the deviation recorded as an unexpected discovery?
 - Unintended side effects? Missed edge cases? Boundary conditions?
 - Consumers of changed files affected? Check imports/references.
 - Same bug pattern elsewhere in codebase?

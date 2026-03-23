@@ -1,0 +1,23 @@
+[
+  {"query": "How does the dispatch system route PreToolUse events to write-lock vs bash-guard? I need to understand the full flow before adding a new hook.", "should_trigger": true},
+  {"query": "Research what hook events Claude Code supports as of 2026 — I want to compare against what baton uses", "should_trigger": true},
+  {"query": "What are the tradeoffs between fail-open and fail-closed for the write-lock hook? Other governance tools might handle this differently", "should_trigger": true},
+  {"query": "I need to understand how the Cursor adapter translates between Cursor's JSON protocol and baton's exit code protocol before deciding on the Windsurf adapter design", "should_trigger": true},
+  {"query": "investigate why setup.sh creates .agents/skills/ junctions even when codex isn't selected as a target IDE", "should_trigger": true},
+  {"query": "How does React Server Components handle data fetching compared to getServerSideProps? I'm deciding which pattern to use", "should_trigger": true},
+  {"query": "trace the behavior of phase-guide.sh from SessionStart to phase detection — I think there's a bug in the FINISH state detection", "should_trigger": true},
+  {"query": "compare approaches for distributing baton — plugin system vs npm package vs git submodule. What are the tradeoffs?", "should_trigger": true},
+  {"query": "深入调查一下 write-lock 的 governance marker injection check 在没有 jq 时是否真的被跳过", "should_trigger": true},
+  {"query": "research whether Claude Code's PreToolUse hook fires for MCP tool invocations — this affects our security model", "should_trigger": true},
+
+  {"query": "fix the bug in write-lock.sh line 42 where the path comparison fails on Windows", "should_trigger": false},
+  {"query": "add a new hook script called dependency-check.sh that blocks npm install without lockfile", "should_trigger": false},
+  {"query": "read bash-guard.sh and tell me what line the quote stripping function starts at", "should_trigger": false},
+  {"query": "review my PR — I changed dispatch.sh to support async hooks", "should_trigger": false},
+  {"query": "run the test suite and tell me if anything fails", "should_trigger": false},
+  {"query": "refactor the junction.sh script to use functions instead of inline code", "should_trigger": false},
+  {"query": "write a README section explaining how to install baton", "should_trigger": false},
+  {"query": "commit these changes with a good message", "should_trigger": false},
+  {"query": "translate this error message to Chinese", "should_trigger": false},
+  {"query": "update the version number in setup.sh to 5.0", "should_trigger": false}
+]

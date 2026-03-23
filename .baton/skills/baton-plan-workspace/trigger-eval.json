@@ -1,0 +1,20 @@
+[
+  {"query": "ok research is done, I need a plan for how to add the UserPromptSubmit hook. The research found it's available on all 3 IDEs. Let's design the implementation approach.", "should_trigger": true},
+  {"query": "I want to plan out the changes needed to fix the Cursor adapter inconsistency — the deny vs block issue and the missing matchers. Give me a structured proposal with alternatives.", "should_trigger": true},
+  {"query": "please write a plan for refactoring dispatch.sh to support hook priorities — some hooks should run before others on the same event", "should_trigger": true},
+  {"query": "I need an implementation design for adding a new IDE adapter for Windsurf. Research is done, I know what events they support. Now I need the plan.", "should_trigger": true},
+  {"query": "propose a plan for migrating from junction-based distribution to git submodules. I want to see the tradeoffs and a recommended approach before we start coding.", "should_trigger": true},
+  {"query": "plan how to add write-set drift detection that warns when implementation modifies files not listed in the Todo items", "should_trigger": true},
+  {"query": "help me design the approach for making setup.sh idempotent — running it twice shouldn't duplicate hook registrations", "should_trigger": true},
+  {"query": "give me a proposal for splitting the monolithic test-write-lock.sh into focused test files", "should_trigger": true},
+  {"query": "research how the write-lock mechanism works across IDE adapters", "should_trigger": false},
+  {"query": "fix the typo in README.md", "should_trigger": false},
+  {"query": "the plan is approved with BATON:GO, start implementing the prompt-guard hook", "should_trigger": false},
+  {"query": "generate the todo list from the plan and begin execution", "should_trigger": false},
+  {"query": "run the test suite and tell me what fails", "should_trigger": false},
+  {"query": "review my implementation against the plan — check if the diff matches what was approved", "should_trigger": false},
+  {"query": "explain what dispatch.sh does on line 42", "should_trigger": false},
+  {"query": "I want to understand the tradeoffs of using junctions vs symlinks before deciding. Let me investigate first.", "should_trigger": false},
+  {"query": "debug this test failure — test-bash-guard.sh assertion 15 is failing unexpectedly", "should_trigger": false},
+  {"query": "commit these changes with a descriptive message", "should_trigger": false}
+]

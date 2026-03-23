@@ -11,15 +11,16 @@ Cognitive progression: What am I looking for? → Where is trustworthy informati
 
 ## Frame
 
+> Medium tasks: use the first 4 fields only. Large tasks: use all fields.
+
 - **Question**: What exactly is being investigated? (Frame as behavior or outcome — not mechanism or assumed solution)
 - **Why**: What later decision does this support?
-- **Scope**: What's in scope?
-- **Out of scope**: What is explicitly excluded?
+- **Scope / Out of scope**: What's in scope, what's excluded?
 - **Target context**: Our specific constraints (version, platform, use case) — used for applicability assessment throughout
-- **Known constraints**: Known constraints (repo, platform, tooling)
-- **System goal being served**: What outcome this research enables
-- **Claimed framing from human/docs**: The framing as stated
-- **What must be validated before accepting that framing**: Assumptions to verify
+- **Known constraints**: Known constraints (repo, platform, tooling) *(Large only)*
+- **System goal being served**: What outcome this research enables *(Large only)*
+- **Claimed framing from human/docs**: The framing as stated *(Large only)*
+- **What must be validated before accepting that framing**: Assumptions to verify *(Large only)*
 
 ## Orient
 

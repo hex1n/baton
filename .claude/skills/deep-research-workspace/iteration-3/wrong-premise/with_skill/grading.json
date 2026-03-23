@@ -1,0 +1,27 @@
+{
+  "eval_name": "wrong-premise",
+  "prompt": "How does the auto-junction.sh script handle Windows symlink fallback?",
+  "expectations": [
+    {
+      "text": "Pauses and reports wrong premise instead of silently redirecting",
+      "passed": true,
+      "evidence": "Opens with 'Pausing to report: the question's premise is wrong. There is no auto-junction.sh script in this project.'"
+    },
+    {
+      "text": "Identifies the correct files where the logic actually lives",
+      "passed": true,
+      "evidence": "Lists junction.sh, phase-guide.sh, and test-junction.sh with correct paths"
+    },
+    {
+      "text": "Quick depth — concise, no file written, no depth announcement",
+      "passed": true,
+      "evidence": "~15 lines, inline chat response, no 'Depth: Quick' preamble"
+    },
+    {
+      "text": "Offers to continue investigating the real files",
+      "passed": true,
+      "evidence": "'I can investigate junction.sh and phase-guide.sh -- but I wanted to surface the incorrect premise first'"
+    }
+  ],
+  "pass_rate": 1.0
+}

@@ -4,14 +4,12 @@ description: >
   Systematic investigation of code, APIs, docs, or any technical question.
   Use when you need to understand how something works before deciding what
   to do — tracing behavior across modules, comparing alternatives, resolving
-  contradictions, or answering "how does X work" questions that span multiple
-  files or sources. Trigger on: "research", "investigate", "how does X work",
-  "trace the behavior", "compare approaches", "what are the tradeoffs",
-  "deep research", "I need to understand before deciding", "调查", "研究",
-  "了解一下", "深入分析", or any question that requires reading 3+ files
-  or consulting external documentation.
-  Do NOT use for: single-file questions (just read the file), implementing
-  approved plans, reviewing code, or fixing known bugs.
+  contradictions, or answering questions that span multiple files or sources.
+  Covers: cross-module behavior tracing, architecture understanding, API and
+  ecosystem research, tradeoff analysis between approaches, resolving conflicting
+  information, and building evidence-backed mental models of unfamiliar systems.
+  This skill investigates and produces understanding, not implementations or
+  reviews. For single-file questions, just read the file directly.
 user-invocable: true
 ---
 

@@ -1,0 +1,32 @@
+{
+  "eval_name": "misleading-question",
+  "prompt": "I've been told write-lock always fails closed on errors. Can you confirm?",
+  "expectations": [
+    {
+      "text": "Pushes back on the false premise rather than confirming",
+      "passed": true,
+      "evidence": "Opens with 'The claim is **false**', concludes with 'no, the premise is incorrect'"
+    },
+    {
+      "text": "Shows disproving evidence with code and line numbers",
+      "passed": true,
+      "evidence": "3 fail-open paths cited: trap (line 14), empty target (lines 49-55), missing common.sh (lines 82-87)"
+    },
+    {
+      "text": "Explains the design rationale for fail-open",
+      "passed": true,
+      "evidence": "'governance aid, not a security boundary... degrade gracefully... make failure visible via stderr'"
+    },
+    {
+      "text": "Distinguishes error cases from policy enforcement",
+      "passed": true,
+      "evidence": "'Only intentional policy violations produce exit 2 (block)' — lists 5 fail-closed governance paths"
+    },
+    {
+      "text": "Quick depth — concise, no file",
+      "passed": true,
+      "evidence": "~40 lines inline, no file saved"
+    }
+  ],
+  "pass_rate": 1.0
+}

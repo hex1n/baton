@@ -1,0 +1,95 @@
+{
+  "skill_name": "first-principles-planner",
+  "iteration": 6,
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_name": "plugin-marketplace",
+          "assertions_passed": 6,
+          "assertions_total": 6,
+          "pass_rate": 1.0,
+          "tokens": 58892,
+          "duration_seconds": 261.3
+        },
+        {
+          "eval_name": "rewrite-to-python",
+          "assertions_passed": 6,
+          "assertions_total": 6,
+          "pass_rate": 1.0,
+          "tokens": 72219,
+          "duration_seconds": 283.6
+        },
+        {
+          "eval_name": "hook-dispatch-improvement",
+          "assertions_passed": 6,
+          "assertions_total": 6,
+          "pass_rate": 1.0,
+          "tokens": 60655,
+          "duration_seconds": 262.0
+        },
+        {
+          "eval_name": "light-depth-simple",
+          "assertions_passed": 6,
+          "assertions_total": 6,
+          "pass_rate": 1.0,
+          "tokens": 23612,
+          "duration_seconds": 103.6
+        }
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 53844.5,
+        "stddev_tokens": 18152.3,
+        "mean_duration_seconds": 227.6,
+        "stddev_duration_seconds": 72.1
+      }
+    }
+  ],
+  "comparison_to_iteration_4": {
+    "pass_rate_delta": 0.0,
+    "mean_tokens_delta": {
+      "iter4": 43356.25,
+      "iter6": 53844.5,
+      "delta": "+24.2%",
+      "note": "Increase mainly from eval-2 (72K vs 57K) due to deeper codebase audit and fuller dissenting path"
+    },
+    "mean_duration_delta": {
+      "iter4": 195.7,
+      "iter6": 227.6,
+      "delta": "+16.3%"
+    }
+  },
+  "iter6_specific_validation": {
+    "self_check_quality": {
+      "eval1": "Genuine insight: network effect cold-start as failure mode + root problem trace. 2 relevant follow-ups.",
+      "eval2": "Genuine insight: user's bash fatigue might be the real issue. Alternative middle-ground proposal.",
+      "eval3": "Genuine insight: ROI concern + counter-argument about establishing correct responsibility boundary. Single focused paragraph.",
+      "eval4": "Genuine: single point about行内注释 as hidden need. Appropriately concise for Light depth.",
+      "verdict": "PASS — all 4 produce genuine insights, zero formulaic 5-question checklists"
+    },
+    "inversion_test_calibration": {
+      "eval1_standard": "Present: 3 failure scenarios for Git-based distribution. Focused.",
+      "eval2_deep": "Present: when structural optimization would be worst (complexity growth). Focused.",
+      "eval3_standard": "Absent (approach is straightforward refactoring). Defensible skip.",
+      "eval4_light": "Absent. Correctly skipped per skill instruction.",
+      "verdict": "PASS — skipped where appropriate, focused where present"
+    },
+    "plan_structure_flexibility": {
+      "eval1": "TL;DR → 行动计划 → P1-P4 details → 不应该做 → 风险 → 自查 → 分析. No comparison table (not needed).",
+      "eval2": "TL;DR → 不应该做 → 推荐方案(comparison table) → 行动方案(code) → 反对方案 → 分析 → 自检. Includes dissenting path.",
+      "eval3": "TL;DR → 改进方案 → P1-P4 details → 不应该做 → 风险 → 自检 → 分析.",
+      "eval4": "TL;DR → 行动计划(empty) → 关键假设(inline) → 自检 → 分析. Minimal Light.",
+      "verdict": "PASS — all 4 adapt structure to context, no forced Mode A/B"
+    },
+    "constraints_conventions_without_examples": {
+      "eval1": "Clear separation with principle-based reasoning. No generic example lists.",
+      "eval2": "Full table with 5 constraints classified. Principle-based.",
+      "eval3": "Analysis explains why flat manifest is design choice, not problem. Principle-based.",
+      "eval4": "Inline assumptions with ✅ markers. Appropriate for Light.",
+      "verdict": "PASS — principle-based separation works without canned examples"
+    }
+  }
+}

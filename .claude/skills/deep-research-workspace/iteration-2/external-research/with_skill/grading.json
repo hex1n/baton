@@ -1,0 +1,37 @@
+{
+  "eval_name": "external-research",
+  "prompt": "Research what hook events Claude Code supports as of 2026",
+  "expectations": [
+    {
+      "text": "Uses WebFetch or WebSearch for external sources",
+      "passed": true,
+      "evidence": "Output states 'verified: WebFetch 2026-03-23' and sourced from code.claude.com/docs/en/hooks"
+    },
+    {
+      "text": "Source provenance marked on claims",
+      "passed": true,
+      "evidence": "All major sections cite official docs with dates. Unverified claims marked with '(unverified: inferred from docs structure)'"
+    },
+    {
+      "text": "Structured comparison table present",
+      "passed": true,
+      "evidence": "22-event table with Phase, Blocking, Matcher columns. Plus handler types, exit codes, and blocking effects tables"
+    },
+    {
+      "text": "Depth correctly chosen (Standard)",
+      "passed": true,
+      "evidence": "Line 3: 'Depth: Standard -- external docs question spanning 3 dimensions'"
+    },
+    {
+      "text": "Has Open Questions section",
+      "passed": true,
+      "evidence": "3 well-reasoned open questions: event count discrepancy, handler format, version history"
+    },
+    {
+      "text": "Evidence discipline followed throughout",
+      "passed": true,
+      "evidence": "Clear (verified: WebFetch...) and (unverified: ...) markers on material claims"
+    }
+  ],
+  "pass_rate": 1.0
+}

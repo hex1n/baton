@@ -52,6 +52,12 @@ Use for research artifacts where evidence type = external-primary.
 - When investigation direction changed, is the following recorded: previous uncertainty, new uncertainty, why the switch, what the new line is expected to clarify?
 - When multiple investigation moves used, are cross-move findings reconciled before final conclusions — where reinforcing, where in tension, what remains unresolved?
 
+### Presentation Quality
+
+- Are **comparisons** presented as **tables** (N sources × M claims), not buried in prose?
+- Are source evaluations collected per-source (not scattered across topics)?
+- Is the output format flexible — tables for comparisons, bullet lists for applicability caveats, narrative for causal chains?
+
 ### Evidence Gaps
 
 - What wasn't investigated that should have been?

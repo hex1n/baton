@@ -1,0 +1,32 @@
+{
+  "eval_id": 1,
+  "eval_name": "external-api-research",
+  "prompt": "I want to understand what hook events are available across Claude Code, Cursor, and Codex. Research the official documentation and compare capabilities. I need this to decide which events baton should rely on for its core governance.",
+  "assertions": [
+    {
+      "name": "events-listed-per-ide",
+      "description": "Lists specific hook events available for each IDE (not just 'several events' but actual event names)",
+      "type": "content_check"
+    },
+    {
+      "name": "structured-comparison",
+      "description": "Presents a structured comparison (table, matrix, or side-by-side) rather than prose-only",
+      "type": "content_check"
+    },
+    {
+      "name": "source-provenance",
+      "description": "Identifies where the information came from (specific docs, code files, official references) per claim",
+      "type": "content_check"
+    },
+    {
+      "name": "governance-recommendation",
+      "description": "Makes a specific recommendation about which events baton should rely on for core governance, with reasoning",
+      "type": "content_check"
+    },
+    {
+      "name": "gaps-acknowledged",
+      "description": "Acknowledges gaps or uncertainties (e.g., Codex limited events, unverifiable external docs) rather than presenting all claims with equal confidence",
+      "type": "content_check"
+    }
+  ]
+}

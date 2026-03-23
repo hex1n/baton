@@ -2,9 +2,13 @@
 normative-status: Authoritative specification for the IMPLEMENT phase.
 name: baton-implement
 description: >
-  Use when plan.md contains BATON:GO and the user says "implement", "generate
-  Todo list", "start building", "实施", or "开始实施". Also use when resuming
-  implementation mid-session.
+  Use when a plan is approved (BATON:GO present) and the user wants to start
+  coding. Trigger on: "implement", "generate Todo list", "start building",
+  "start coding", "execute the plan", "let's build this", "实施", "开始实施",
+  "开始写代码", or when resuming mid-session (unchecked Todo items or Lessons
+  Learned section exists). Also trigger when the user says "implement" with
+  a clear approved plan in context. Do NOT use for: planning (use baton-plan),
+  research (use baton-research), or when no BATON:GO marker is present.
 user-invocable: true
 ---
 
@@ -34,12 +38,31 @@ These thoughts mean STOP — you're rationalizing:
 | "Three failures in a row but I'm close" | 3-failure rule. Stop and report |
 | "I'll just fix this one more thing" | Is it in the write set? Is it A/B-level? If not, stop |
 | "The plan implied this change" | Implied ≠ approved. If it's not in the write set, it's a discovery |
-| "I can skip the review, the changes are small" | Completion review is mandatory. Prefer independent review; otherwise explicit self-review. No exceptions |
+| "I can skip the review, the changes are small" | For Medium/Large: completion review is mandatory. For Small: self-review is sufficient |
 
 ## Gotchas
 
-> Operational failure patterns. Add entries when observed in real usage.
-> Empty until then — do not pre-fill with theory.
+> Operational failure patterns observed in real usage.
+
+1. **Forced retrospective produces fabricated insights.** Requiring "≥1 wrong
+   prediction + ≥1 unexpected discovery + ≥1 process improvement" for a typo
+   fix forces the model to invent insights that don't exist. Retrospective
+   is valuable for Medium/Large tasks where genuine surprises occur.
+   *(Observed: eval-0 iteration-1 retrospective for a typo fix was entirely
+   manufactured. Fixed by making retrospective Medium/Large only.)*
+
+2. **Full completion process for trivial changes.** A typo fix got: formal
+   5-field Todo list, Todo list review with YES/NO table, 4 essential
+   self-checks, implementation review with Spec Compliance + Code Quality
+   tables, full test suite, forced retrospective (196 lines total).
+   Baseline: read → edit → verify → done (40 lines).
+   *(Fixed by adding Trivial/Small execution paths.)*
+
+3. **Self-check #1 reads only the changed lines.** Re-reading just the
+   modified lines misses context bugs — indentation mismatches, broken
+   control flow continuity, or variable scope issues in surrounding code.
+   *(Fixed by changing self-check to "re-read in context" with ±10-20
+   surrounding lines.)*
 
 ## When to Use
 
@@ -48,7 +71,59 @@ These thoughts mean STOP — you're rationalizing:
 
 **When NOT to use**: No plan, no BATON:GO, or during research/planning.
 
-## The Process
+## Sizing Gate
+
+Assess task size to determine the execution path. The sizing from the plan
+carries forward — do not re-assess unless new information changes it.
+
+| Size | Execution Path | Completion Path |
+|------|---------------|-----------------|
+| **Trivial** | **Just do it**: make the change, re-read to verify, done. No formal Todo list. No 4 self-checks protocol. | **Minimal**: verify the change visually. No review dispatch, no full test suite, no retrospective. |
+| **Small** | **Light execution**: 1-2 Todo items (Change/Files/Verify sufficient, skip Deps/Artifacts if obvious). Self-checks: re-read + verify. | **Light completion**: run relevant tests (not full suite unless plan says otherwise). Self-review against plan contract. No forced retrospective. |
+| **Medium/Large** | **Full execution**: Steps 1-5 below. | **Full completion**: Step 5 below (review + full suite + retrospective). |
+
+---
+
+## Trivial Execution
+
+Make the change. Re-read the file to confirm. Done.
+
+No Todo list generation. No self-check protocol. No review dispatch. No
+retrospective. No full test suite. Mark `BATON:COMPLETE` after human confirms.
+
+---
+
+## Small Execution
+
+### Todo List
+
+Generate 1-2 items with at minimum: **Change**, **Files**, **Verify**.
+Skip Deps/Artifacts if they're obvious (single item, no artifacts).
+
+No formal review of the Todo list — for Small tasks, the plan IS the review.
+
+### Execute
+
+For each item:
+1. **Implement** — make the change
+2. **Re-read** — use Read tool to verify the change looks correct
+3. **Verify** — run the verification from the Verify field
+4. **Mark complete** — `- [x] ✅`
+
+### Complete
+
+1. **Run relevant tests** — the test file that covers the change, not the
+   full project suite (unless the plan specifies otherwise)
+2. **Self-review against plan** — does the change match what was approved?
+   Any files modified outside the write set?
+3. **Mark `BATON:COMPLETE`** after human confirms
+4. **Branch disposition** — present options
+
+No forced retrospective. No dispatched baton-review.
+
+---
+
+## Full Execution (Medium/Large tasks)
 
 ### Step 1: Generate Todo List
 
@@ -84,7 +159,8 @@ rely on immediate plan marking (Step 2 point 5) for progress visibility.
 
 For each item:
 1. **Understand intent** — re-read the plan section this Todo item implements and identify the specific contract, restrictions, and boundary conditions it must preserve
-2. **Implement** — make the change
+2. **Implement** — make the change. When the plan includes a predicted diff,
+   follow it closely. Deviations are unexpected discoveries (classify per Step 4).
 3. **Self-check** — perform the 4 essential self-checks listed below
 4. **Verify** — run the verification method specified
 5. **Mark complete immediately** — after self-check and verify both pass,
@@ -100,10 +176,21 @@ For each item:
 
 ### Self-Checks (4 essential)
 
-1. **Re-read code using the Read tool** — open the file and read it after every edit; mental recall or editor view does not count as a re-read
-2. **Check behavior against plan contract** — does the change match the approved interface, restrictions, and boundary conditions? Not just "does the code work" but "does it do what the plan said"
-3. **Grep for same bug elsewhere** — after fixing any bug
-4. **Run the required validation commands before marking done** — no exceptions
+1. **Re-read code in context** — after every edit, Read the file with enough
+   surrounding lines (±10-20 lines around the change) to see how the change
+   fits its neighbors. Check indentation, variable names, and control flow
+   continuity. A change that's correct in isolation but breaks the surrounding
+   flow is the most common implementation bug.
+2. **Check behavior against plan contract** — does the change match the approved
+   interface, restrictions, and boundary conditions? Not just "does the code
+   work" but "does it do what the plan said." Compare the actual diff to the
+   predicted diff in the plan — flag any deviation.
+3. **Grep for same pattern elsewhere** — after fixing any bug, grep for the
+   same pattern in other files. After adding a new feature, grep for similar
+   features to check for consistency.
+4. **Run the required validation commands before marking done** — no exceptions.
+   Read the output. A passing test suite with a warning buried in stderr is
+   not "passing."
 
 ### Step 4: Unexpected Discoveries
 
@@ -121,14 +208,22 @@ For each item:
 | C | Q2 (execution plan needs change) | BLOCKED | Invalidated |
 | D | Q1 (assumptions invalid) | BLOCKED | Invalidated |
 
-### Step 5: Completion
+### Step 5: Completion (Medium/Large only)
 
 After ALL items verified:
 0. **批注区 check** — scan the plan's `## 批注区` (and the research artifact's `## 批注区` if referenced) for any annotation with Status = ❓ and Impact = "affects conclusions" or "blocks next phase". If any remain unresolved, surface them to the human before proceeding to review or BATON:COMPLETE.
-1. **Implementation review** — dispatch baton-review via Agent tool with `./review-prompt.md` + diff (`git diff` of all changes) + plan text.
-   Fallback (when Agent tool is technically unavailable): explicit self-review using `./review-prompt.md` checklist against plan contract — work through each item with an explicit YES/NO answer; task simplicity is not a reason to use this fallback.
-   Fix findings, then re-review. Repeat until baton-review passes or circuit breaker
-   triggers (3 rounds of high severity findings → escalate to human).
+1. **Implementation review** — dispatch baton-review via Agent tool with
+   unified artifact text in this format:
+   ```
+   Agent(prompt="[content of ./review-prompt.md]\n\n---\n\nPlan:\n\n[plan text]\n\n---\n\nDiff:\n\n[git diff output]")
+   ```
+   Pass text content, not file paths (paths break context isolation).
+   Fallback (when Agent tool is technically unavailable): explicit self-review
+   using `./review-prompt.md` checklist against plan contract — work through
+   each item with an explicit YES/NO answer; task simplicity is not a reason
+   to use this fallback.
+   Fix findings, then re-review. Repeat until baton-review passes or circuit
+   breaker triggers (3 rounds of high severity findings → escalate to human).
 2. **Full test suite** — run the project's complete suite (as defined by repo conventions or plan), not just per-item tests
 3. **Retrospective** — append `## Retrospective` to plan. Must include: ≥1 **wrong prediction** (format: "I expected X but found Y"), ≥1 **unexpected discovery** (something not anticipated in the plan), ≥1 **process improvement** for future research or planning. Generic statements like "went smoothly" or "completed as planned" do not satisfy this requirement.
 4. **Mark complete** — add `<!-- BATON:COMPLETE -->` on its own line in the plan file. Only after steps 1-3 above are all satisfied (review passed, full suite passed, retrospective recorded).

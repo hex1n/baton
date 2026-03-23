@@ -2,10 +2,15 @@
 normative-status: Authoritative specification for the PLAN phase.
 name: baton-plan
 description: >
-  Use when the task has moved from investigation into change design: translating
-  validated findings and user requirements into an implementation contract
-  covering scope, approach, impact, risks, and approval gates. Also use when the
-  user explicitly asks for a plan, proposal, design, or implementation approach.
+  Use when the user needs an implementation plan before coding — designing the
+  approach, comparing alternatives, and defining the write set. Trigger on:
+  "plan", "design", "propose", "how should we implement", "what's the approach",
+  "write a plan", "implementation proposal", "let's plan this out", or when
+  research is done and the next step is deciding HOW to change the code.
+  Also use when the user asks to evaluate multiple approaches or create a
+  structured proposal with tradeoffs. Do NOT use for: pure research (use
+  baton-research), implementing approved plans (use baton-implement), or
+  reviewing existing code.
 user-invocable: true
 ---
 
@@ -34,8 +39,28 @@ These thoughts mean STOP — you're rationalizing:
 
 ## Gotchas
 
-> Operational failure patterns. Add entries when observed in real usage.
-> Empty until then — do not pre-fill with theory.
+> Operational failure patterns observed in real usage.
+
+1. **Plans describe behavior but don't show code.** Without a code skeleton,
+   the human cannot predict the diff. Baseline outputs included 50-76 line
+   code skeletons; with-skill outputs described behavior in prose only.
+   *(Observed: eval-0 iteration-1. Fixed by adding code skeleton guidance.)*
+
+2. **Approach comparisons in prose bury the signal.** When comparing 3+
+   approaches, a table (mechanism × pros × cons × constraint fit) is far
+   more scannable than paragraphs per approach.
+   *(Observed: iteration-1 used prose; iteration-2 switched to tables after
+   prompt improvement.)*
+
+3. **Small bugfix gets full First Principles Decomposition.** A 2-line code
+   change got 4 constraints, 2 solution categories, and a 3-question
+   Self-Challenge (136 lines total). Baseline did the same job in 91 lines.
+   *(Observed in eval-1 iteration-1. Fixed by adding Sizing Gate + Light Path.)*
+
+4. **Surface Scan tables grow large without proportional value.** 10+ row
+   tables where most entries are "skip — no changes needed" add length but
+   not coverage insight. Keep tables lean: only include files that ARE
+   impacted or have a non-obvious skip reason.
 
 ## When to Use
 
@@ -44,35 +69,103 @@ These thoughts mean STOP — you're rationalizing:
 
 **When NOT to use**: Pure research (use baton-research).
 
-For trivial changes, the plan artifact may collapse to a brief 3-5 line
-contract rather than a full structured document.
+## Sizing Gate
 
-### Complexity-Based Scope
+Assess task size **before** choosing the process path. The sizing determines
+how much structure is warranted. Use verification complexity as the decisive
+factor (see constitution.md §Task Sizing).
 
-Complexity level is determined by verification complexity (see constitution.md
-§Task Sizing). When in doubt: how many independent steps are needed to confirm
-correctness? One step = Small. Multiple coordinated steps = Medium. Verification
-itself requires design = Large.
+| Size | Signal | Process Path |
+|------|--------|-------------|
+| **Trivial** | Typo, comment, formatting. Visual inspection sufficient. | **Inline contract**: 3-5 lines (What/Why/Impact/Risks/Verify). No Steps 1-6. |
+| **Small** | Single file, one test, clear fix. | **Light path**: Problem → Fix → Predicted Diff → Write Set → Verify. Under 80 lines. No First Principles Decomposition, no Self-Challenge, no Surface Scan. Include 2 brief alternatives (1-2 sentences each) only if the choice is non-obvious. |
+| **Medium** | 2+ modules, multi-step verification. | **Standard path**: Full Steps 1-6. |
+| **Large** | Design verification, multi-env, manual judgment. | **Full path**: Full Steps 1-6 + multi-approach mandatory + Surface Scan L3. |
 
-- **Trivial**: 3-5 line contract. Surface scan and Steps 5-6 normally skipped.
-- **Small**: Requirements + 2 brief alternatives (1–2 sentences each, including trade-offs) + recommendation.
-- **Medium/Large**: Full process.
+When in doubt, size up. But **do not size up reflexively** — a task that
+touches one file and answers one question is Small regardless of how
+interesting the fix is.
 
-Surface scan depth is determined by impact uncertainty and surface breadth;
-see Step 3.
+Complexity is proposed by AI and may be corrected by the human. If the Sizing
+Checkpoint (constitution.md §Sizing Checkpoint) triggered a level change after
+research, record that change at the top of the plan and apply the higher
+level's process.
 
-Complexity is proposed by AI and may be corrected by the human if the scope,
-risk, or review depth appears misclassified. If the Sizing Checkpoint
-(constitution.md §Sizing Checkpoint) triggered a level change after research,
-record that change at the top of this plan and apply the higher level's process.
+## Two-Phase Mode
 
-## The Process
+When analysis has already been done in chat (comparison tables, code examples,
+conclusions), the skill's role shifts from **process guide** to **quality
+checklist**. Do not rewrite existing analysis into the template — enhance it.
+
+---
+
+## Inline Contract (Trivial)
+
+```
+- **What**: <one-line change description>
+- **Why**: <reason>
+- **Impact**: <file(s) only; no behavior change>
+- **Risks**: None
+- **Verify**: <how to confirm>
+```
+
+No Steps 1-6. No Self-Challenge. No Review Pass. End with `## 批注区`.
+
+---
+
+## Light Path (Small tasks)
+
+For Small tasks, write a direct plan document focused on clarity and
+diff-predictability. The value of the plan for Small tasks is **making the
+change reviewable** — the human should be able to approve or reject based on
+the plan alone.
+
+**Output structure** (aim for under 80 lines):
+
+```
+# Plan: <title>
+
+**Sizing**: Small
+
+## Problem
+<What's wrong and why it needs fixing — 2-3 sentences>
+
+## Fix
+<What to change and how — specific enough to predict the diff>
+<Include the predicted diff (before → after) when possible>
+
+## Alternatives (if choice is non-obvious)
+<1-2 sentences per alternative with why rejected>
+
+## Write Set
+| File | Change |
+|------|--------|
+| ... | ... |
+
+## Verify
+<How to confirm the fix works — test command or expected behavior>
+
+## Risks
+<1-2 bullet points, or "None" for trivial-risk changes>
+
+## 批注区
+```
+
+No First Principles Decomposition. No Surface Scan. No Self-Challenge.
+No Review Pass. Just answer: what changes, why, what could go wrong, how
+to verify.
+
+**Include predicted diffs**: For Small tasks, the plan should show the
+approximate code change (current → proposed). This is the most valuable
+part for reviewability.
+
+---
+
+## Standard + Full Path (Medium/Large tasks)
 
 ### Step 1: First Principles Decomposition
 
 Before proposing any approach, decompose at a depth appropriate to complexity:
-trivial = implicit, small = 1-2 sentences, medium/large = full decomposition
-in artifact.
 
 1. **Problem statement** — state the problem without referencing any solution
 2. **Constraints** — architecture, dependencies, backward compatibility, conventions
@@ -84,9 +177,13 @@ in artifact.
 
 Plans MUST derive approaches from validated inputs — don't jump to "how"
 without tracing back to "why". If a `## Final Conclusions` section exists,
-derive from there. If the human stated requirements in chat, record them
-under `## Requirements`. If no formal research artifact exists, derive from
-validated user requirements and any directly verified evidence.
+derive from there — each conclusion has: Confidence, Evidence, Verification
+path, Uncertainty, and Plan implication (actionable/watchlist/judgment-needed/
+blocked). Use the plan implication field to determine which conclusions are
+actionable inputs vs. watchlist items. If the human stated requirements in
+chat, record them under `## Requirements`. If no formal research artifact
+exists, derive from validated user requirements and any directly verified
+evidence.
 
 **If resuming from a BLOCKED implementation**: before deriving, read `## Implementation Notes` in the plan (if present) and any research supplement added by baton-debug. Record which discovery caused the block and what assumption it invalidated — this determines whether plan revision is localized or requires upstream research revision.
 
@@ -124,6 +221,10 @@ cannot point to must be removed or replaced with a ❓ entry noting it was
 inferred, not verified. A partially-fabricated table is worse than a shorter
 honest one — it creates false confidence about coverage.
 
+**Keep the table lean.** The Surface Scan's value is coverage completeness,
+not exhaustive detail per row. One line per file with evidence marker is
+sufficient. Save detailed analysis for the approach section.
+
 ### Step 4: Present Approaches & Recommend
 
 **Present 2-3 fundamentally different approaches to the human** with trade-offs
@@ -142,10 +243,38 @@ For each approach:
 - **Trade-offs**: pros, cons, risks relative to constraints from Step 1
 - **Fit**: how well it serves the stated problem (not a different problem)
 
+**Use a comparison table** when presenting 3+ approaches — prose comparisons
+bury the signal. Example:
+
+| | Approach A | Approach B | Approach C |
+|---|---|---|---|
+| Mechanism | ... | ... | ... |
+| Pro | ... | ... | ... |
+| Con | ... | ... | ... |
+| Constraint fit | ... | ... | ... |
+
 Then state your recommendation with reasoning:
 - Which approach and why
 - Which research findings support it
 - Why the main alternatives were rejected — cite the specific constraint *name* from Step 1, not "it's better/simpler/cleaner." Example: "Approach B rejected because it violates the [shell-only execution] constraint from Step 1." Vague rejection reasoning is a red flag that evaluation was not genuine.
+
+**Show the recommended approach concretely.** After selecting an approach,
+include a code skeleton or pseudo-code showing the key mechanism. The human
+should be able to predict the approximate diff from reading the plan. A
+plan that describes behavior without showing code leaves too much
+interpretation to the implementation phase.
+
+Example for a shell hook:
+```bash
+# Skeleton: prompt-guard.sh (key logic only)
+source lib/common.sh
+find_plan; parser_has_go && exit 0  # gate open → allow
+PROMPT="$(extract_prompt)"
+case "$PROMPT_LOWER" in
+    *bypass-pattern*) exit 2 ;;  # block
+esac
+exit 0
+```
 
 ### Step 5: Self-Challenge (write into artifact, not just think)
 
@@ -186,6 +315,10 @@ The plan MUST communicate: **What** (changes), **Why** (rationale),
 **Impact** (files, callers), **Risks** (mitigation strategy).
 The human should predict the diff from reading the plan — key files, key
 behavior changes, and verification path should be explicit enough for that.
+
+**Predicted diffs**: For any plan, include the approximate code change (current
+→ proposed) for the most important modifications. This is the most valuable
+element for the human's review decision.
 
 ### Todo List Format
 

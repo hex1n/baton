@@ -22,6 +22,7 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Are 2-3 approaches presented with trade-offs visible to the human?
 - Or did the author internally enumerate and silently reject, presenting only the winner?
 - Does each approach have: what, how, trade-offs, fit?
+- For 3+ approaches: is a **comparison table** used (mechanism × pros × cons × constraint fit), or are approaches buried in prose paragraphs?
 - Is the recommendation traced to specific research findings and constraints?
 - Are rejection reasons for alternatives explicit (not just "the recommended one is better")?
 - Do rejection reasons cite a specific constraint *name* from Step 1? Vague reasoning ("it's better/simpler/cleaner") with no constraint reference = FAIL.
@@ -55,6 +56,8 @@ Apply baton-review first-principles framework (Q1-Q4) AND the checklist below.
 - Are all affected files identified with dispositions?
 - Are test files included for modified source files?
 - Could the human predict the diff from reading this plan?
+- Does the plan include a **code skeleton or pseudo-code** for the recommended approach? A plan that describes behavior without showing code leaves too much interpretation to the implementation phase.
+- Are **predicted diffs** shown for the most important modifications (before → after)?
 
 ### Risk Assessment
 

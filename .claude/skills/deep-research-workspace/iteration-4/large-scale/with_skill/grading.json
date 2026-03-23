@@ -1,0 +1,37 @@
+{
+  "eval_name": "large-scale",
+  "prompt": "Complete inventory of every file setup.sh touches for all IDEs",
+  "expectations": [
+    {
+      "text": "Complete file inventory across all 4 IDEs",
+      "passed": true,
+      "evidence": "13 files catalogued in 5 sections (Shared, Claude, Factory, Cursor, Codex) with per-file tables"
+    },
+    {
+      "text": "Per-file metadata: contents, generated/copied, gitignored, IDE scope",
+      "passed": true,
+      "evidence": "Each table has columns: File, Generated/Copied, Contents, Gitignored, Source (with setup.sh line numbers)"
+    },
+    {
+      "text": "Found real cross-IDE inconsistencies",
+      "passed": true,
+      "evidence": "8 inconsistencies: Cursor tool matcher gap, gitignore gaps, timeout disparity, dead code, .agents/ always created"
+    },
+    {
+      "text": "Maintained focus without over-investigating",
+      "passed": true,
+      "evidence": "193 lines, 20 tool calls — focused on the file inventory task, didn't wander into unrelated hook logic"
+    },
+    {
+      "text": "Architecture diagram for orientation",
+      "passed": true,
+      "evidence": "ASCII tree showing setup.sh → ensure_baton_home → create_junction → per-IDE config → gitignore"
+    },
+    {
+      "text": "Source line references for traceability",
+      "passed": true,
+      "evidence": "Every file entry has setup.sh line numbers (e.g., setup.sh:185-282, setup.sh:285-346)"
+    }
+  ],
+  "pass_rate": 1.0
+}

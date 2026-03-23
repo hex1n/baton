@@ -2,10 +2,13 @@
 normative-status: Adversarial first-principles review via subagent. Provides context-isolated review of artifacts before human presentation.
 name: baton-review
 description: >
-  Adversarial review of research, plan, Todo list, or post-completion implementation
-  artifacts using first-principles framework. AI-initiated: dispatched via Agent
-  tool for context isolation (no generation reasoning). Human-initiated: invoked
-  directly via /baton-review.
+  Adversarial review of research, plan, Todo list, or implementation artifacts.
+  Trigger on: dispatched by other baton skills for context-isolated review,
+  or when the user says "review", "/baton-review", "审查", "检查质量",
+  "review the plan", "review my research", "check my implementation".
+  Uses first-principles framework to find what the author missed — especially
+  frame-level errors. Do NOT use for: writing plans (use baton-plan),
+  doing research (use baton-research), or implementing code (use baton-implement).
 user-invocable: true
 context: fork
 ---
@@ -38,8 +41,39 @@ These thoughts mean STOP — you're rationalizing:
 
 ## Gotchas
 
-> Operational failure patterns. Add entries when observed in real usage.
-> Empty until then — do not pre-fill with theory.
+> Operational failure patterns observed in real usage.
+
+1. **Detail findings without frame-level analysis.** The reviewer produces
+   a long list of low/medium findings (missing evidence marker, vague
+   wording) while missing the frame-level question: "Is this solving the
+   right problem?" The first-principles check table should catch this,
+   but reviewers sometimes fill it with "pass — looks reasonable" instead
+   of citing specific evidence.
+
+2. **Reviewing proportionality mismatch.** A Trivial artifact (typo fix
+   plan) does not need Q1-Q4 first-principles analysis. Apply review depth
+   proportional to artifact complexity — see "When Review is Mandatory"
+   for skip conditions.
+
+3. **Findings that challenge the plan during implementation review.**
+   Implementation review assumes the approved plan as spec baseline.
+   Challenges to the plan itself belong in prior plan review. If the
+   reviewer spots a genuine plan flaw during implementation review,
+   report it as a frame-level finding with note that it's an upstream
+   issue, not an implementation defect.
+
+## Review Depth by Task Size
+
+Review depth follows the task's assessed size from the generating phase:
+
+| Task Size | Review Depth |
+|-----------|-------------|
+| **Trivial** | Self-check only (visual inspection). No dispatched review. |
+| **Small** | Self-review by the phase skill (explicit checklist, not dispatched). |
+| **Medium/Large** | Dispatched baton-review (context-isolated, mandatory). |
+
+When dispatched by a phase skill's mandatory review step, the phase skill's
+requirement takes precedence over these defaults.
 
 ## When Review is Mandatory
 

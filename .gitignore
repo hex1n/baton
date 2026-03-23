@@ -8,6 +8,8 @@ baton-tasks/
 **/CLAUDE.md
 !CLAUDE.md
 *.stackdump
+CLAUDE.local.md
 .claude/skills/baton-*
 .cursor/skills/baton-*
 .agents/skills/baton-*
+autoresearch-results.tsv

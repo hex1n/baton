@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "rewrite-to-python",
+  "configuration": "without_skill",
+  "expectations": [
+    {"text": "Identifies 'rewrite to Python' as a solution masquerading as a problem", "passed": false, "evidence": "Opens with 'Recommendation: Do Not Proceed' and 'The Request Contradicts a Core Design Principle'. Correctly pushes back but frames it as a policy violation, not as misdiagnosis of the problem."},
+    {"text": "Decomposes 'hard to maintain' into 2+ specific possible root causes", "passed": false, "evidence": "Mentions 'governance logic changes, not bash infrastructure changes' and lists 4 alternatives (consolidate parser, ShellCheck, test readability, documentation) but doesn't systematically decompose the root cause."},
+    {"text": "Surfaces the conflict with 'zero compiled dependencies' principle", "passed": true, "evidence": "Point 1: 'Introduce a compiled dependency. Python is not guaranteed on all target environments.' Clear and detailed."},
+    {"text": "Recommends investigation before committing to rewrite", "passed": false, "evidence": "Recommends 'Do Not Proceed' outright and provides 'if you still want to proceed' plan. Doesn't recommend investigating the actual pain point first."},
+    {"text": "Provides comparison table between approaches", "passed": false, "evidence": "No comparison table. Lists 4 reasons to not proceed + 4 alternatives at the end, but not in a structured comparison format."},
+    {"text": "Includes conditional path — what would justify a rewrite", "passed": true, "evidence": "Self-Challenge section: 'What if the codebase grows 10x? The Python argument becomes much stronger.' Also provides detailed 5-phase migration plan 'if proceeding anyway'."}
+  ]
+}

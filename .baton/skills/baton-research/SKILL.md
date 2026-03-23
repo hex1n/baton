@@ -2,12 +2,16 @@
 normative-status: Authoritative specification for the RESEARCH phase.
 name: baton-research
 description: >
-  Use for Medium/Large tasks that require systematic investigation before
-  planning or implementation: reducing key uncertainties, validating framing,
-  tracing behavior, reconciling contradictions, comparing alternatives, or
-  building evidence-backed understanding across multiple surfaces.
-  Also use for [PAUSE] investigations and when the user explicitly asks to
-  research.
+  Use when the user needs to understand how something works across multiple
+  files or modules before making changes — tracing behavior chains, comparing
+  alternatives, reconciling contradictions, or building evidence-backed
+  understanding. Trigger on: "research", "investigate", "understand how X
+  works", "trace the behavior", "compare approaches", "what are the
+  tradeoffs", "I need to understand before deciding", cross-module behavior
+  questions, contradictory evidence that needs resolution, or [PAUSE]
+  annotations. Also use for external research (docs, APIs, ecosystem).
+  Do NOT use for: single-file questions, quick lookups, explaining one
+  function, implementing approved plans, or reviewing code.
 user-invocable: true
 ---
 
@@ -39,8 +43,27 @@ These thoughts mean STOP — you're rationalizing:
 
 ## Gotchas
 
-> Operational failure patterns. Add entries when observed in real usage.
-> Empty until then — do not pre-fill with theory.
+> Operational failure patterns observed in real usage.
+
+1. **Investigation moves become formulaic.** The 4-field move template
+   (Question/Checked/Found/Status) is a floor, not a ceiling. When a move
+   naturally produces a comparison table or architecture diagram, use that
+   format. Forcing everything into the template buries the signal.
+   *(Observed: eval agents produced rigid move-by-move output even when a
+   single comparison table would have been clearer.)*
+
+2. **Missing boundary behavior lists.** When investigating a hook or API,
+   the most valuable findings are often edge cases (empty input, missing
+   files, error states). Without explicit prompting, these get scattered
+   across moves instead of collected in one place.
+   *(Observed: baseline outputs listed behavioral edge cases as bullet
+   points; with-skill outputs embedded them in moves where they were harder
+   to find.)*
+
+3. **Small tasks trigger full process.** Before the Sizing Gate was added,
+   a single-file investigation produced 204 lines with Frame/Orient/
+   Self-Challenge — 2x the baseline's 95 lines, with no quality improvement.
+   *(Observed in eval-2 iteration-1. Fixed by adding Sizing Gate + Light Path.)*
 
 ## When to Use
 
@@ -53,7 +76,7 @@ These thoughts mean STOP — you're rationalizing:
 - User says "research" or "deep research"
 - After `[PAUSE]` annotation
 
-**When NOT to use**: Quick lookups, single-file explanations, Trivial/Small tasks
+**When NOT to use**: Quick lookups, single-file explanations, Trivial tasks
 (see constitution.md §Task Sizing).
 
 **Trigger heuristics**:
@@ -62,6 +85,24 @@ These thoughts mean STOP — you're rationalizing:
 - Comparing 2+ approaches/frameworks/design axes → use
 - Verification requires multi-step strategy or designed test scenarios → use
 - Only need to explain single file/function/concept → don't use
+
+## Sizing Gate
+
+Assess task size **before** choosing the process path. The sizing determines
+how much structure is warranted — not whether evidence discipline applies
+(evidence markers always apply).
+
+| Size | Signal | Process Path |
+|------|--------|-------------|
+| **Small** | 1-2 files, single question, one verification step | **Light path**: investigate → findings document. No Frame/Orient/Self-Challenge/Counterexample Sweep. Keep output under 100 lines. |
+| **Medium** | 2+ modules, behavior chain, multi-step verification | **Standard path**: Frame (3 fields) → Orient → Investigate → Self-Challenge (brief) → Review → Convergence |
+| **Large** | Design verification, multi-env, manual judgment needed | **Full path**: Frame (all fields) → Orient → Investigate → Self-Challenge (full format) → Review → Convergence |
+
+When in doubt, size up. But **do not size up reflexively** — a task that
+touches one file and answers one question is Small regardless of how
+interesting the file is.
+
+The sizing decision itself is evidence: state which signal you observed.
 
 ## Two-Phase Mode + Review Gate
 
@@ -90,21 +131,55 @@ gaps that self-enhancement misses.
 Preserve the original structure. The checklist adds missing elements — it does
 not restructure existing content.
 
-## The Process
+---
+
+## Light Path (Small tasks)
+
+For Small tasks: investigate directly, write a concise findings document.
+The value of this skill for Small tasks is **evidence discipline only** —
+mark claims with ✅/❓, reference specific files and lines.
+
+**Output structure** (aim for under 100 lines):
+
+```
+# <Topic>
+
+## Question
+<What is being investigated and why>
+
+## Findings
+<Direct investigation results with evidence markers>
+<Reference specific files:lines>
+
+## False Positive / Edge Case Surfaces (if applicable)
+<Where issues might arise>
+
+## 批注区
+```
+
+No Frame/Orient/Self-Challenge/Counterexample Sweep/Questions for Human Judgment.
+Just answer the question with evidence.
+
+---
+
+## Standard + Full Path (Medium/Large tasks)
 
 ### Step 0: Frame the Investigation
 
-Define at top of research file:
-
+**Medium** — 3 fields:
 - **Question**: what exactly is being investigated — frame as *behavior or outcome*, not as mechanism or assumed solution
-  - ❌ "How does the pre-commit hook call baton?" (assumes the mechanism; forecloses alternatives)
-  - ✅ "What triggers governance checks when a git commit is made?" (behavior-neutral; keeps alternatives open)
 - **Why**: what later decision this supports
 - **Scope / Out of scope**: boundaries
+
+**Large** — add these fields:
 - **Known constraints**: repo, platform, tooling
 - **System goal being served**: what outcome this research enables
 - **Claimed framing**: the framing as stated by human/docs
 - **Assumptions to validate**: what must be verified before accepting that framing
+
+Framing examples:
+- ❌ "How does the pre-commit hook call baton?" (assumes the mechanism; forecloses alternatives)
+- ✅ "What triggers governance checks when a git commit is made?" (behavior-neutral; keeps alternatives open)
 
 ### Step 1: Orient
 
@@ -133,6 +208,12 @@ If constrained to single source, state why and compensate with deeper cross-chec
 
 ### Step 3: Investigate
 
+**Start with an overview before diving in.** When investigating a system or
+subsystem, first produce a brief architecture sketch (ASCII diagram, layered
+list, or data flow) showing the components and their relationships. This
+anchors the investigation and makes the output immediately scannable. Then
+dive into the details.
+
 Drive by the most blocking uncertainty, not by fixed categories.
 
 At each point:
@@ -144,6 +225,16 @@ At each point:
 Use whatever move fits: trace behavior, test claims, compare alternatives, resolve
 contradictions, build systematic coverage, probe assumptions. AI already knows how
 to investigate code — the value of this skill is in constraining the failure modes below.
+
+**Output format guidance:**
+- Use **tables** for comparisons (N items × M dimensions). Prose comparisons
+  bury the signal.
+- Use **bullet lists** for behavioral edge cases and boundary conditions.
+  Don't scatter these across moves — collect them in one place per component.
+- Use **narrative** for causation chains and design rationale.
+- After investigating a hook, API, or subsystem, list its **boundary behaviors**
+  (what happens at edges: empty input, missing files, multiple matches,
+  error states). These are often the most valuable findings.
 
 **AI failure modes to guard against:**
 
@@ -173,16 +264,25 @@ Name each, state why distinct, preserve reconciliation step before conclusions.
 - Status: ✅ / ❌ / ❓
 - What remains unresolved
 
+The move format is a minimum, not a straitjacket. If a move naturally produces
+a comparison table, a signal flow diagram, or a behavioral edge-case list,
+use that format instead of forcing everything into the 4-field template.
+
 **Synthesis**: when multiple moves used, reconcile before conclusions — where
 findings reinforce, where in tension, what remains unresolved.
 
 **Counterexample sweep** (before forming conclusions):
+
+**Medium** — one paragraph: state the leading interpretation, name one thing you
+checked that could have disproved it, and the result.
+
+**Large** — full active search:
 - State the leading interpretation
 - What disproving evidence was sought
 - What was checked → result
 - Effect on confidence
 
-**Active search requirement**: "Found no contradictions" only passes if you name:
+**Active search requirement** (Large only): "Found no contradictions" only passes if you name:
 1. The specific artifact, code path, or document section you checked for a bypass or failure
 2. What the contradiction *would have looked like* if present
 3. That you *specifically went looking* — not merely that you didn't encounter it
@@ -207,7 +307,10 @@ the original evidence path becomes unclear.
 
 ### Step 5: Self-Challenge
 
-Write `## Self-Challenge` into the research artifact — visible output, not internal reasoning.
+**Medium** — write 2-3 sentences at the end of the research document:
+what's the weakest conclusion, what would disprove it, what did you skip?
+
+**Large** — write `## Self-Challenge` into the research artifact with full format:
 
 1. What's the weakest conclusion and why? What evidence would disprove it?
 2. What did I NOT investigate that I should have?
@@ -216,7 +319,7 @@ Write `## Self-Challenge` into the research artifact — visible output, not int
 Shallow answers ("no other alternatives" / "all assumptions verified") signal
 that self-challenge was not genuine. Fix before presenting.
 
-**Required format for Q1** (weakest conclusion) — must include all four fields:
+**Required format for Q1** (weakest conclusion, Large only) — must include all four fields:
 - **Conclusion**: [exact claim as stated in conclusions]
 - **Why weakest**: [specific reason — what gap in evidence makes you least confident]
 - **Falsification condition**: If [specific, observable thing] were true or present, this conclusion would be wrong
@@ -256,6 +359,7 @@ Before transitioning to plan:
 Default path: `baton-tasks/<topic>/research.md`. `mkdir -p` the target directory.
 
 **Template**: determined by Orient — codebase-primary or external-primary.
+**Small tasks**: use Light Path structure directly (no template file needed).
 
 **Update policy**:
 - Same investigation → update in place, mark superseded with `→ Revised in [section]`
