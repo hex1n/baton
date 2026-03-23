@@ -147,7 +147,9 @@ different structure (e.g., a single comparison table with commentary), use that.
 **Deep depth** adds whichever of these the investigation warrants:
 - **Contradictions & tensions** — where sources disagree (don't smooth over)
 - **Challenge** — weakest conclusion, what would disprove it, what you skipped
-- **Recommendations** — if the question implies a decision
+- **Recommendations** — if the question implies a decision. Prioritize by
+  impact: separate blockers from improvements, state what the assessment
+  assumes (environment, team size, trust model)
 
 ### 4. Challenge yourself.
 
