@@ -1,21 +1,16 @@
 ---
 name: deep-research
 description: >
-  Systematic investigation of code, APIs, docs, or any technical question.
-  Use when you need to understand how something works before deciding what
-  to do. Trigger this skill whenever the user asks to "调研", "research",
-  "investigate", "figure out why", "trace", "compare", or "evaluate" something
-  across multiple files or sources. Specifically covers: cross-module behavior
-  tracing, architecture understanding, API and ecosystem research, tradeoff
-  analysis between approaches (e.g., "should we use X or Y"), resolving
-  conflicting information, git archaeology ("why was this changed", "when did
-  this break"), technology upgrade evaluation ("is it worth upgrading to vN"),
-  codebase audits ("where do we use X", "why are there two approaches"),
-  confirming or disproving suspected bugs across multiple files, and building
-  evidence-backed mental models of unfamiliar systems. This skill investigates
-  and produces understanding, not implementations or reviews. For single-file
-  questions, just read the file directly. When in doubt about whether this
-  skill applies, use it — the calibration step will determine the right depth.
+  Systematic investigation of code, APIs, docs, or any technical question
+  spanning multiple files or sources. Trigger whenever the user asks to
+  "调研", "research", "investigate", "figure out why", "trace", "compare",
+  or "evaluate". Covers: cross-module behavior tracing, architecture
+  understanding, technology comparison ("should we use X or Y"), git
+  archaeology ("why was this changed"), upgrade evaluation, codebase audits
+  ("where do we use X"), confirming/disproving suspected bugs, and building
+  evidence-backed mental models. Produces understanding, not implementations
+  or reviews. For single-file questions, just read the file. When in doubt,
+  use it — the calibration step determines the right depth.
 user-invocable: true
 ---
 
