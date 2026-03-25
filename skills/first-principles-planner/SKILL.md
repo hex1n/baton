@@ -143,17 +143,14 @@ Skip for Light depth or when the approach is obvious.
 
 ### 2.3 — Recommend with Reasoning
 
-If the analysis confirms the user's original approach, say so directly with
-the supporting evidence. The goal is truth, not novelty — don't force a
-reframe when the user's instinct is already correct. If no approach is
-viable under the true constraints, say that too — state what would need
-to change before the problem becomes solvable.
+Truth over novelty: confirm the user's approach if evidence supports it.
+If no approach is viable under true constraints, say so — state what must change.
 
-When recommending, state the specific reasoning chain:
-- Which root problem does it solve (trace to Phase 1)?
-- Which true constraints does it satisfy?
-- Which conventions does it deliberately break, and why that's acceptable?
-- What's the primary risk, and how to mitigate it?
+Reasoning chain for recommendations:
+- Root problem solved (trace to Phase 1)
+- True constraints satisfied
+- Conventions deliberately broken, and why
+- Primary risk + mitigation
 
 ### 2.4 — Dissenting Path
 
