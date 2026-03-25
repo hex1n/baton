@@ -50,6 +50,9 @@ conclusions, unresolved questions. From conversation: what the user wants,
 tried, and what feels wrong. Verify document claims against reality — stale
 data and omissions are findings themselves.
 
+**Missing critical info**: if unknowns could change the root problem, stop
+and ask. If they affect only implementation details, proceed with ❓ markers.
+
 ### 1.1 — The Five Whys (adapted)
 
 Start with the stated problem or goal. Ask "why" iteratively until the
