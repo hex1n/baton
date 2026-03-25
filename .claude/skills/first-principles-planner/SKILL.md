@@ -90,23 +90,14 @@ dashboard page. Solved = P95 < 500ms without sacrificing data freshness."
 
 ### 1.3 — Surface Assumptions
 
-Every situation carries assumptions — some are load-bearing facts, others are
-inherited conventions nobody questions. The most dangerous assumptions are the
-ones that feel like facts.
-
 For **Light** depth: list 3-5 key assumptions inline, note which are
 constraints vs. conventions, and move on. No table needed.
 
-For **Standard/Deep** depth: use the full process below.
-
-List assumptions embedded in:
-- The problem statement itself
-- The current approach (if one exists)
-- The constraints the user mentioned
-- Your own reasoning so far
-
-Focus on **load-bearing** assumptions — the ones where "if wrong, the plan
-collapses." Don't exhaustively catalog every minor assumption.
+For **Standard/Deep** depth: list assumptions embedded in the problem
+statement, current approach, user's constraints, and your own reasoning.
+Focus on **load-bearing** assumptions — the ones where "if wrong, the
+plan collapses." The most dangerous assumptions are the ones that feel
+like facts.
 
 | # | Assumption | Type | If wrong... |
 |---|-----------|------|-------------|
@@ -171,11 +162,10 @@ When recommending, state the specific reasoning chain:
 
 ### 2.4 — Dissenting Path
 
-When recommending against the user's stated approach (e.g., "don't rewrite
-to Python"), always provide: (a) what conditions WOULD justify the user's
-approach, and (b) a concrete "if you still want to proceed" plan. This
-respects the user's autonomy — they may have context you don't. The goal is
-an informed decision, not a veto.
+When recommending against the user's stated approach, always provide:
+(a) conditions that WOULD justify their approach, and (b) a concrete
+"if you still want to proceed" plan. The goal is an informed decision,
+not a veto.
 
 ---
 
@@ -243,10 +233,8 @@ A Deep plan might need all sections. Let the content drive the structure.
 
 ## Self-Check (include in the plan artifact)
 
-Write a Self-Check section INTO the plan. This is visible output — the
-user judges whether the self-examination was genuine.
-
-The self-check has one core question and context-dependent follow-ups:
+Write a visible Self-Check section in the plan. One core question plus
+context-dependent follow-ups:
 
 **Core**: "What is this plan's most likely failure mode, and what would
 I do differently if I knew it would fail?"
