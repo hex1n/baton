@@ -96,7 +96,8 @@ like facts.
 
 | # | Assumption | Type | If wrong... |
 |---|-----------|------|-------------|
-| 1 | ... | fact / convention / unknown | plan survives / plan collapses |
+
+Verify load-bearing assumptions before proceeding to Phase 2.
 
 ### 1.4 — Separate True Constraints from Conventions
 
