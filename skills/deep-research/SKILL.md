@@ -39,11 +39,13 @@ no certainty without verification.
 boundary.** "How does the auth middleware work?" is clear. "Research the
 auth system" is not — research *what about it*, for *what decision*?
 
-If the decision boundary is unclear, define it — not by listing topics to
-cover (that's scope expansion), but by naming the decision: "This
-investigation will determine [what] so that [who] can decide [what action]."
-If you can't name a decision-maker or action, the question is too broad —
-narrow it before proceeding, don't expand into "cover everything."
+If the boundary is unclear, define it — not by listing topics to cover
+(that's scope expansion), but by naming what the investigation should
+answer. For decision-oriented questions: "This investigation will determine
+[what] so that [who] can decide [what action]." For understanding-oriented
+questions: "This investigation will explain [how/why X works] to the depth
+needed to [build on it / debug it / teach it]." If you can't articulate
+either framing, the question is too broad — narrow it before proceeding.
 If a prior conversation or task context already makes this obvious, skip it.
 
 | Signal | Depth | Output |
@@ -56,6 +58,12 @@ For Standard/Deep, state your depth choice and why in one line before
 starting. For Quick, just answer — don't announce the depth. If you chose
 wrong, adjust mid-investigation — don't force a light investigation into
 depth or a deep one into brevity.
+
+**Depth change mid-investigation**: if you discover the question is more
+(or less) complex than expected, say so explicitly: "Originally Standard,
+upgrading to Deep because [cross-module dependencies / contradictions
+found / design implications]" or "Originally Standard, this is actually
+Quick — [answer is straightforward]." Don't silently change depth.
 
 ### 2. Investigate.
 
@@ -80,15 +88,22 @@ Then follow the uncertainty:
 **Don't investigate in a fixed order.** Follow what matters most, not
 a predetermined sequence of sections to fill.
 
-**Convergence checkpoint (Standard/Deep):** After 3 rounds of the loop
-above, pause and assess: are you converging (each round narrows uncertainty)
-or diverging (each round opens new questions)? If diverging — or if you've
-spent 2+ rounds without materially changing your conclusion — surface what
-you have so far and ask the human whether to continue, narrow scope, or
-stop. The goal is to prevent runaway investigation, not to impose a hard
-cap: if you're clearly converging, keep going. But if you catch yourself
-thinking "just one more thing," that's the signal to checkpoint. For Deep
-depth, the threshold extends to 5 rounds before mandatory checkpoint.
+**Convergence checkpoint (Standard/Deep):** Periodically pause and assess:
+are you converging (each round narrows uncertainty) or diverging (each
+round opens new questions)? If diverging — or if recent rounds haven't
+materially changed your conclusion — surface what you have so far and ask
+the human whether to continue, narrow scope, or stop. The right time to
+checkpoint depends on the weight of each round: three quick file reads
+don't warrant a checkpoint, but two substantial web research rounds that
+both opened new questions do. The signal is not a round count but the
+pattern: diminishing returns or expanding scope. If you catch yourself
+thinking "just one more thing," that's the signal to checkpoint.
+
+**Parallel investigation**: when a Standard/Deep investigation has
+multiple independent sub-questions (e.g., "compare A vs B" where A and B
+can be researched separately), consider dispatching parallel subagents for
+each. Merge findings afterward. This is faster and avoids the bias of
+investigating one option first and anchoring on it.
 
 **Pause and report early if:**
 - The question's premise is wrong
@@ -107,6 +122,7 @@ depth, the threshold extends to 5 rounds before mandatory checkpoint.
 | How does technology X work? | Official docs first (use structured doc tools if available, otherwise fetch docs by URL). |
 | Which library/tool should we use? | Define evaluation criteria → search for candidates → read official docs for each → check adoption signals (package registry downloads, GitHub activity, release cadence). |
 | What's the state of technology X? | Package registry, GitHub repo (issues, releases, contributors), official roadmap, community forums. Adoption ≠ quality — check both. |
+| Something else? | Start from what you *do* know and work outward. Grep for keywords, check git history, search docs. The table above is a cheat sheet, not a menu — if your question doesn't fit, investigate from first principles. |
 
 These are starting points, not exclusive sources. Cross-reference codebase
 evidence with external docs when the question touches both.
@@ -194,19 +210,20 @@ headers) unless the answer naturally calls for it.
 These aren't mandatory section headers. If the answer is better served by a
 different structure (e.g., a single comparison table with commentary), use that.
 
-**Deep depth** adds whichever of these the investigation warrants:
-- **Contradictions & tensions** — where sources disagree (don't smooth over)
-- **Challenge** — weakest conclusion, what would disprove it, what you skipped
-- **Recommendations** — if the question implies a decision. Prioritize by
-  impact: separate blockers from improvements, state what the assessment
-  assumes (environment, team size, trust model)
+**Deep depth** adds whatever the investigation warrants. Common sections
+include contradictions & tensions, challenge (weakest conclusion),
+recommendations, risk matrices, or timelines — but don't treat this as a
+checklist. Pick the sections that serve your specific findings. If the
+question implies a decision, prioritize by impact: separate blockers from
+improvements, state what the assessment assumes.
 
-### 4. Source audit (Standard/Deep with external claims).
+### 4. Source audit (Standard/Deep).
 
-If your investigation includes claims about the external world (company
-news, version numbers, performance benchmarks, release dates, funding,
-acquisitions), add a source audit before finalizing. This is a structural
-defense — it makes every external claim auditable in one place.
+If your investigation includes material claims that a reviewer might want
+to spot-check — external facts (version numbers, benchmarks, company news)
+or codebase claims that depend on specific evidence (e.g., "this was
+refactored in v2.3") — add a source audit before finalizing. This is a
+structural defense that makes key claims auditable in one place.
 
 Append a table at the end of your findings:
 
@@ -214,21 +231,27 @@ Append a table at the end of your findings:
 ## Source Audit
 | Claim | Source | How obtained |
 |-------|--------|-------------|
-| Bun starts in ~18ms | bun.sh/docs/cli/run | Fetched in this session |
-| DuckDB 1.0 released 2024 | Recalled from training data | ❓ Not fetched |
+| Bun starts in ~18ms | https://bun.sh/docs/cli/run | Fetched: read this URL in this session |
+| DuckDB 1.0 released 2024 | — | ❓ Recalled from training data |
 ```
 
 Rules:
 - **"Fetched in this session"** = you read a URL, file, or command output
-  that explicitly states this claim. You can point to the source.
+  that explicitly states this claim. **You must include the specific URL or
+  file path in the Source column.** If you can't point to a concrete URL or
+  path, you didn't actually fetch it — downgrade to "Recalled."
 - **"Recalled from training data"** = you believe this is true but didn't
-  fetch a source. Mark with ❓.
+  fetch a source. Mark with ❓. No URL required (you don't have one).
 - If a claim is important to your conclusion and you only have "recalled,"
   try to fetch a source now. If you can't, keep it as ❓ and note it.
 
+The URL requirement is the key constraint — it's easy to write "fetched"
+but hard to fabricate a URL that a reviewer can actually click and verify.
+
 This table is not busywork — it's a reviewer's shortcut. One glance tells
-them which claims to trust and which to spot-check. Skip this step only
-if your investigation has zero external factual claims (pure codebase work).
+them which claims to trust and which to spot-check. Skip this step if
+every material claim in your answer is backed by inline evidence (file
+paths, command output) that the reader can already verify from context.
 
 ### 5. Challenge yourself.
 
@@ -273,13 +296,14 @@ queue but never removed it. Fix: remove the `setTimeout` retry in
 faster `setTimeout` retry timing? Need to check consumer SLAs before
 removing it.
 
-## Example: Technology Evaluation
+## Example: Technology Evaluation (Deep)
 
 > **Question**: "Should we use SQLite or DuckDB for our analytics
 > dashboard's local data layer?"
 
 **Calibration**: Decision boundary is clear — pick one for the local data
-layer. Two candidates, multiple evaluation dimensions. → **Standard** depth.
+layer. Two candidates, multiple evaluation dimensions, external sources
+needed, deployment implications. → **Deep** depth.
 
 **Investigation** (abbreviated):
 
@@ -296,8 +320,7 @@ layer. Two candidates, multiple evaluation dimensions. → **Standard** depth.
    - ✅ Fetched DuckDB official benchmarks page — 10-100x faster than SQLite
      on analytical queries (❓ vendor benchmark — may be cherry-picked)
    - ✅ Fetched SQLite docs on columnar extensions — no native columnar mode
-   - ❓ Recalled that DuckDB can read Parquet natively — did not verify in
-     this session
+   - ❓ Recalled that DuckDB can read Parquet natively — did not verify
 
 4. *Adoption check*:
    - ✅ Fetched npm registry — `duckdb` ~50k weekly downloads, `better-sqlite3`
@@ -305,13 +328,30 @@ layer. Two candidates, multiple evaluation dimensions. → **Standard** depth.
    - ✅ Fetched DuckDB GitHub — active development, but v1.0 released only
      recently. API stability less proven than SQLite.
 
+**Contradiction**: DuckDB official docs claim "drop-in replacement for
+analytical SQLite workloads," but the Node.js binding API is substantially
+different (async-only vs SQLite's sync option). "Drop-in" applies to SQL
+dialect, not application code. This matters for our codebase which uses
+sync SQLite calls in `src/queries/`.
+
 **Answer**: DuckDB for the primary query path (analytical aggregations
 are the dominant pattern, and the 10-100x advantage is decisive). Keep
 SQLite for config storage (point lookups, well-understood, tiny footprint).
+Migration requires refactoring sync calls to async in `src/queries/`.
+
+**Source Audit**:
+| Claim | Source | How obtained |
+|-------|--------|-------------|
+| DuckDB 10-100x faster on analytics | https://duckdb.org/docs/guides/performance | Fetched |
+| SQLite no native columnar mode | https://sqlite.org/docs.html | Fetched |
+| DuckDB Parquet support | — | ❓ Recalled |
+| duckdb npm ~50k weekly downloads | https://www.npmjs.com/package/duckdb | Fetched |
+| better-sqlite3 npm ~800k weekly | https://www.npmjs.com/package/better-sqlite3 | Fetched |
 
 **Weakest conclusion**: The DuckDB benchmark advantage comes from vendor
 benchmarks — independent confirmation on our actual query shapes would
-strengthen the recommendation.
+strengthen the recommendation. Also didn't verify DuckDB's Node.js binding
+stability in production environments.
 
 ---
 
@@ -333,8 +373,9 @@ These are the failure modes this skill exists to prevent:
 
 When the investigation is substantial enough to save (Standard or Deep depth):
 
-- Save to a location appropriate for the project (e.g., `docs/research-<topic>.md`
-  or a project-specific research directory).
+- Save to whatever location fits the project's conventions. Look for
+  existing research docs, a `docs/` directory, or a project-specific
+  research folder. If none exist, ask the human where to put it.
 - Start the document with a brief header so the next investigator can assess
   relevance without reading the full document:
   ```
