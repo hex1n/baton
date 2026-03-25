@@ -1,0 +1,39 @@
+{
+  "skill_name": "first-principles-planner",
+  "iteration": 7,
+  "focus": "blind-spot coverage — non-code, confirm-approach, no-viable-approach",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "non-technical-process", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 20919, "duration_seconds": 205.1},
+        {"eval_name": "confirm-user-approach", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 19353, "duration_seconds": 140.5},
+        {"eval_name": "no-viable-approach", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 20979, "duration_seconds": 179.0}
+      ],
+      "aggregate": {"mean_pass_rate": 1.0, "mean_tokens": 20417, "mean_duration_seconds": 174.9}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "non-technical-process", "tokens": 16108, "duration_seconds": 170.7},
+        {"eval_name": "confirm-user-approach", "tokens": 15681, "duration_seconds": 129.3},
+        {"eval_name": "no-viable-approach", "tokens": 15385, "duration_seconds": 119.7}
+      ],
+      "aggregate": {"mean_tokens": 15725, "mean_duration_seconds": 139.9}
+    }
+  ],
+  "qualitative_comparison": {
+    "eval-5-non-technical-process": {
+      "with_skill_advantage": "Formal Five Whys, 6-item assumption audit table, constraints-vs-conventions table, 'what NOT to do' section, WIP-limits Self-Check insight. Baseline has good root cause but no structured framework.",
+      "baseline_advantage": "Slightly more concise"
+    },
+    "eval-6-confirm-user-approach": {
+      "with_skill_advantage": "Explicitly confirms approach ('用户的判断是正确的') with verified evidence for all 3 pain points. Structured assumption audit. Risk table. Self-Check focused on schedule slippage.",
+      "baseline_advantage": "Also correctly confirms ('有条件同意'), similar adjusted estimate (3-4d vs 2.5-3d)"
+    },
+    "eval-7-no-viable-approach": {
+      "with_skill_advantage": "Quantified 7x gap with detailed breakdown. 5 'clever workaround' rebuttals. 3-priority constraint negotiation hierarchy. Political-risk Self-Check. 'If boss insists' fallback with email+POC strategy.",
+      "baseline_advantage": "Also identifies infeasibility. Slightly simpler structure."
+    }
+  }
+}

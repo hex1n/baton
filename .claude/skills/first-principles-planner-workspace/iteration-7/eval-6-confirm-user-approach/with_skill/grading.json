@@ -1,0 +1,13 @@
+{
+  "eval_id": 6,
+  "eval_name": "confirm-user-approach",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Confirms the user's approach rather than forcing a reframe", "passed": true, "evidence": "TL;DR: '方案合理，建议执行'. Analysis conclusion: '用户的判断是正确的'. Does NOT reframe argparse→click as solution-masquerading-as-problem."},
+    {"text": "Verifies the three stated pain points with evidence", "passed": true, "evidence": "Analysis section verifies all 3: subcommand support (✅), help formatting (✅), test isolation (✅) with specific technical details for each"},
+    {"text": "Provides adjusted effort estimate (identifies 2-day as optimistic)", "passed": true, "evidence": "TL;DR: '预估2天偏乐观，建议按2.5-3天规划'. Total row: '约15-23h（2.5-3天）'"},
+    {"text": "Identifies migration-specific risks", "passed": true, "evidence": "3-row risk table: parameter behavior differences (nargs), help text format changes, team unfamiliarity"},
+    {"text": "Includes 'what NOT to do' section", "passed": true, "evidence": "'不要做的事': no simultaneous refactoring, no manual help formatting (use rich-click), no keeping argparse as fallback"},
+    {"text": "Self-Check addresses the right concern (schedule slippage, not technology)", "passed": true, "evidence": "Failure mode = 工期滑坡 from complex commands. Mitigation built into P1: migrate most complex command first."}
+  ]
+}

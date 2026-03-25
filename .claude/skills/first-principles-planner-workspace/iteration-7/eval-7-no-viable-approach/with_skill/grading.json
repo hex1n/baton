@@ -1,0 +1,13 @@
+{
+  "eval_id": 7,
+  "eval_name": "no-viable-approach",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Explicitly states the task is not viable under given constraints", "passed": true, "evidence": "TL;DR: '在当前约束下，这个任务不可执行。没有任何可行的方案能在给定条件内完成。'"},
+    {"text": "Shows quantitative infeasibility (person-days math)", "passed": true, "evidence": "Detailed table: 164 person-days minimum vs 21 person-days available = 7x+ gap. Also debunks 5 'clever' workarounds."},
+    {"text": "Identifies 'rewrite to Go' as solution masquerading as problem", "passed": true, "evidence": "Depth: 'Deep — 表面问题（\"迁移到 Go\"）是一个解决方案伪装成了问题'. Five Whys traces to unspecified performance concern."},
+    {"text": "Proposes constraint negotiation rather than impossible execution", "passed": true, "evidence": "3 priorities: P1 challenge premise (does perf problem exist?), P2 negotiate timeline (3-6 months), P3 change scope (optimize existing stack)"},
+    {"text": "Provides fallback if boss insists despite infeasibility", "passed": true, "evidence": "Section '如果老板坚持要做': email confirmation + POC of 1-2 APIs + use POC data to negotiate — respectful but protective"},
+    {"text": "Self-Check addresses political/organizational risk", "passed": true, "evidence": "Identifies risk of being seen as '推脱' vs '专业判断'. Notes that if boss's motivation is political, engineering arguments won't work."}
+  ]
+}
