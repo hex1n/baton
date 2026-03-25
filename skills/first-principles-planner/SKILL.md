@@ -125,12 +125,9 @@ For each category:
 
 ### 2.2 — Inversion Test
 
-For the leading candidate, ask: **"Under what conditions would this be
-the worst possible approach?"** If the pre-mortem reveals a plausible
-failure, mitigate it or reconsider. Every approach has a failure mode —
-if you can't find one, you haven't looked hard enough.
-
-Skip for Light depth or when the approach is obvious.
+For the leading candidate: **"Under what conditions would this be the worst
+possible approach?"** If the pre-mortem reveals a plausible failure, mitigate
+or reconsider. Skip for Light depth or obvious approaches.
 
 ### 2.3 — Recommend with Reasoning
 
