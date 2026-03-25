@@ -124,10 +124,9 @@ evidence with external docs when the question touches both.
 
 **External research tips:**
 - **Source hierarchy depends on the question.** For "what API does X expose?": official docs > source code. For "what does X actually do?": source code > docs (docs describe intent; code describes reality). Blog posts are leads, not evidence.
-- **Discovery vs. targeted fetch.** Use broad search when you don't know *where* the answer lives ("what libraries support X?", "how do others solve Y?"). Use direct URL fetch when you have a specific page to read. Use structured documentation tools (library doc fetchers, API reference tools) when available — they return versioned, indexed content that's more reliable than raw web fetches.
-- **Version mismatch is a silent killer.** Before citing external docs, check which version the project actually uses (package.json, go.mod, requirements.txt, etc.). If the docs version doesn't match the project version, note the discrepancy — don't silently apply v3 docs to a v2 codebase.
-- **Cross-validate external claims.** A single external source is a lead. Two independent sources agreeing is stronger but still not verified. When possible, confirm external claims against the actual codebase or a runnable test.
-- **Multi-source synthesis**: state which claims come from which source. Don't merge codebase evidence and external docs into ambiguous prose.
+- **Discovery vs. targeted fetch.** Broad search when you don't know where the answer lives. Direct URL fetch when you have a specific page. Structured doc tools (library doc fetchers) when available — versioned content beats raw web fetches.
+- **Version mismatch is a silent killer.** Check which version the project actually uses before citing external docs. Don't silently apply v3 docs to a v2 codebase.
+- **Cross-validate and attribute.** A single source is a lead, not evidence. State which claims come from which source — don't merge codebase evidence and external docs into ambiguous prose.
 - **For technology evaluations**: don't just compare feature lists. Check: (1) Does the project's actual use case match the tool's sweet spot? (2) What's the maintenance trajectory — growing, stable, or declining? (3) What do migration/adoption stories from similar projects say? Feature parity on paper often hides major differences in practice.
 
 #### Format guidance
