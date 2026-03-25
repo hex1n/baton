@@ -45,14 +45,10 @@ Dig below the stated problem to find the real one.
 
 ### 1.0 — Input Gathering
 
-Before analysis, gather all available context. From documents: read and
-extract goals, constraints, evidence, conclusions, unresolved questions.
-From conversation: extract what the user is trying to achieve, what they've
-tried, what feels wrong.
-
-**When working from a document**: verify claims against reality — documents
-go stale. Mismatches between document and reality are findings in themselves.
-Go beyond stated issues: what did the document miss?
+Gather all context first. From documents: goals, constraints, evidence,
+conclusions, unresolved questions. From conversation: what the user wants,
+tried, and what feels wrong. Verify document claims against reality — stale
+data and omissions are findings themselves.
 
 ### 1.1 — The Five Whys (adapted)
 
