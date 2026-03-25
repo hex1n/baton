@@ -1,0 +1,26 @@
+{
+  "skill_name": "deep-research",
+  "evals": [
+    {
+      "id": 1,
+      "name": "bun-vs-deno-evaluation",
+      "prompt": "我在考虑用 Bun 还是 Deno 来写一个新的 CLI 工具，项目需要快速启动、支持 TypeScript、能方便地打包成单个可执行文件。帮我调研一下该选哪个。",
+      "expected_output": "Structured comparison with evidence from official docs, adoption signals, and a clear recommendation tied to the stated criteria",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "hooks-system-investigation",
+      "prompt": "这个 baton 项目的 hooks 系统是怎么工作的？所有的 hook 是怎么被触发的，有哪些失败模式？",
+      "expected_output": "Architecture trace of hook system with evidence from actual code, identification of failure modes, convergence checkpoint if investigation expands",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "zod-usage-audit",
+      "prompt": "我们项目用了 zod 做 schema validation，但我看到有些地方用的是手写的 type guard。调研一下 zod 在这个项目里的使用现状，以及是否应该统一。",
+      "expected_output": "Codebase audit of zod usage vs manual type guards, with file references and recommendation. Should use generic tool descriptions, not specific tool names like Context7/WebFetch",
+      "files": []
+    }
+  ]
+}
