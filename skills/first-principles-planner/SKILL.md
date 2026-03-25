@@ -188,11 +188,8 @@ Use a priority table (Priority | Change | Effort | Risk | Value) with a
 
 ### Artifact Structure: Conclusion First
 
-Lead with actionable content — the reader should know what to DO within
-the first 20 lines. Analysis (Phase 1-2 reasoning) goes last as a
-supporting section. No redundancy: Analysis adds the *why*, Action Plan
-contains the *what and how*. Reference earlier code examples instead of
-repeating them.
+Lead with actionable content (what to DO) in the first 20 lines. Analysis
+goes last. No redundancy between Analysis (*why*) and Action Plan (*what/how*).
 
 ### Plan Template
 
