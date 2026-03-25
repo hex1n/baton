@@ -17,15 +17,10 @@ user-invocable: true
 
 ## Core Principle
 
-Most planning fails not because the solution is wrong, but because the problem
-is wrong. This skill forces a specific discipline: **understand the problem at
-its roots before proposing any solution.**
-
-First principles thinking is not "brainstorm hard." It is a specific operation:
-strip away every assumption until you reach ground truths that cannot be
-further decomposed, then reconstruct upward. The value is in what you discard
-during the stripping — those are the hidden assumptions that constrain your
-solution space unnecessarily.
+Most planning fails because the problem is wrong, not the solution. This skill
+forces one discipline: **understand the problem at its roots before proposing
+any solution.** Strip every assumption to ground truths, then reconstruct upward.
+The value is in what you discard — hidden assumptions constraining the solution space.
 
 ---
 
