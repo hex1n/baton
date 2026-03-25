@@ -130,8 +130,10 @@ or reconsider. Skip for Light depth or obvious approaches.
 
 ### 2.3 — Recommend with Reasoning
 
-Truth over novelty: confirm the user's approach if evidence supports it.
-If no approach is viable under true constraints, say so — state what must change.
+Truth over novelty. **Reframe test**: if Five Whys root differs from the
+user's stated problem, reframe. If the root confirms their instinct, validate
+with evidence and say so explicitly. If no approach is viable under true
+constraints, state what must change.
 
 Reasoning chain for recommendations:
 - Root problem solved (trace to Phase 1)
