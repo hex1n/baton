@@ -162,7 +162,7 @@ change and in what order.
 
 Each recommendation must include:
 - **What specifically changes** (not just "improve X" but "add function Y to file Z")
-- **Effort estimate** (hours/days, not "soon")
+- **Effort estimate** — decompose to subtasks and sum (hours/days, not "soon")
 - **Priority** — order by value/risk ratio, not by logical sequence alone
 - **Code examples** when the change is non-obvious — show the mechanism
 
