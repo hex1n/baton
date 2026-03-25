@@ -32,8 +32,8 @@ Not every plan needs full decomposition. Match depth to uncertainty:
 |--------|-------|--------------|
 | Problem well-understood, narrow solution space | **Light** — skip to Phase 2 | Phase 1 assumption audit (brief inline instead of table) |
 | Multiple viable approaches, unclear which is best | **Standard** — full phases | Nothing |
-| Recurring problem, existing solutions feel wrong | **Deep** — emphasize Phase 1 | Nothing; expand assumption audit |
-| "We've always done it this way" energy | **Deep** | Nothing; assumption audit is the whole point |
+| User states a solution, not a problem | **Standard+** — full Phase 1 | Nothing; Five Whys must reach a root that isn't a solution |
+| Recurring problem, "we've always done it this way" energy | **Deep** — emphasize Phase 1 | Nothing; expand assumption audit |
 
 State the chosen depth and why at the start. The user can override.
 
