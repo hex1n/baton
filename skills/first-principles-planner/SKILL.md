@@ -115,15 +115,14 @@ Build on Phase 1's root problem and true constraints to design solutions.
 
 ### 2.1 — Solution Categories
 
-Enumerate fundamentally different approaches. "Fundamentally different" means
-they differ in **mechanism or responsibility allocation**, not in parameters.
+Enumerate 2+ fundamentally different approaches — different in **mechanism
+or responsibility allocation**, not just parameters. If only one is viable,
+explain why alternatives were rejected.
 
 For each category:
 - **Mechanism**: How does it solve the root problem?
 - **Why it might be best**: What conditions favor it?
 - **Why it might fail**: What risks or costs does it carry?
-- **Which conventions does it challenge**: What "normal" things would you
-  stop doing?
 
 ### 2.2 — Inversion Test
 
