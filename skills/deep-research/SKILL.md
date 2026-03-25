@@ -70,6 +70,12 @@ research directories). Build on what's already known rather than re-deriving it.
 (architecture diagram, component list, or source inventory) before diving
 into details. For Quick, skip this — just read and answer.
 
+**Plan before you dive (Standard/Deep).** After sketching the landscape,
+write 3-5 lines naming the key unknowns and where you'll look for each.
+Order by importance — resolve first what would most change the conclusion.
+This is a compass, not a contract: update it as evidence arrives. If the
+plan survives first contact unchanged, you probably aren't learning anything.
+
 Then follow the uncertainty:
 
 1. What is the most important thing I don't know?
@@ -83,16 +89,19 @@ Then follow the uncertainty:
 **Don't investigate in a fixed order.** Follow what matters most, not
 a predetermined sequence of sections to fill.
 
-**Convergence checkpoint (Standard/Deep):** Periodically pause and assess:
-are you converging (each round narrows uncertainty) or diverging (each
-round opens new questions)? If diverging — or if recent rounds haven't
-materially changed your conclusion — surface what you have so far and ask
-the human whether to continue, narrow scope, or stop. The right time to
-checkpoint depends on the weight of each round: three quick file reads
-don't warrant a checkpoint, but two substantial web research rounds that
-both opened new questions do. The signal is not a round count but the
-pattern: diminishing returns or expanding scope. If you catch yourself
-thinking "just one more thing," that's the signal to checkpoint.
+**Reflection gate (Standard/Deep):** After completing each step in your
+plan (not each file read — each planned investigation step), assess: did
+this step narrow uncertainty toward the answer, or open new questions?
+
+- **Continue** — uncertainty narrowed, next step is clear.
+- **Replan** — evidence changed the question or the next planned step no
+  longer makes sense. Update the plan explicitly, then continue.
+- **Stop and report** — two consecutive steps haven't materially changed
+  your conclusion, or scope is expanding faster than converging. Surface
+  what you have and ask the human.
+
+The signal is not a round count but the pattern. "Just one more thing"
+means stop.
 
 **Parallel investigation**: when a Standard/Deep investigation has
 multiple independent sub-questions (e.g., "compare A vs B" where A and B

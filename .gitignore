@@ -13,3 +13,4 @@ CLAUDE.local.md
 .cursor/skills/baton-*
 .agents/skills/baton-*
 autoresearch-results.tsv
+autoresearch-quality-results.tsv
