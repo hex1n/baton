@@ -52,9 +52,9 @@ data and omissions are findings themselves.
 
 ### 1.1 — The Five Whys (adapted)
 
-Start with the stated problem or goal. Ask "why" iteratively — not
-mechanically five times, but until you hit a ground truth that the user
-recognizes as the actual root.
+Start with the stated problem or goal. Ask "why" iteratively until the
+answer is a circumstance or past decision — not another actionable problem.
+That's the root.
 
 ```
 Stated: "We need to migrate from X to Y"
