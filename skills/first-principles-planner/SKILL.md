@@ -65,8 +65,7 @@ Root:    The real problem is architectural mismatch with current scale,
          not "migration" per se. Migration is one solution category.
 ```
 
-The goal is to separate **the problem** (architectural mismatch) from
-**a solution** (migration) that may have been stated as if it were the problem.
+Separate **the problem** from **a solution** that was stated as the problem.
 
 ### 1.2 — Problem Statement
 
