@@ -183,17 +183,8 @@ Each recommendation must include:
 - **Priority** — order by value/risk ratio, not by logical sequence alone
 - **Code examples** when the change is non-obvious — show the mechanism
 
-Use a priority table with a **total row** to make execution order and
-overall scope scannable:
-
-```markdown
-| Priority | Change | Effort | Risk | Value |
-|----------|--------|--------|------|-------|
-| P1 | ... | 1h | Low | High — fixes root cause |
-| P2 | ... | 2d | Med | Med — reduces duplication |
-| P3 | ... | ... | ... | Low — nice-to-have |
-| **Total** | | **~Xh** | | |
-```
+Use a priority table (Priority | Change | Effort | Risk | Value) with a
+**Total** row for scannable scope.
 
 ### Artifact Structure: Conclusion First
 
