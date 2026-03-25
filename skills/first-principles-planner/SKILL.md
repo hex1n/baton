@@ -69,6 +69,8 @@ Root:    The real problem is architectural mismatch with current scale,
 ```
 
 Separate **the problem** from **a solution** that was stated as the problem.
+If multiple independent roots emerge, note each — they may need separate
+solution paths.
 
 ### 1.2 — Problem Statement
 
@@ -207,8 +209,7 @@ Then address whichever of these are relevant (skip the rest):
   reading the plan alone?
 
 Don't answer questions that don't apply. A 2-line self-check for a
-Light-depth plan is fine. A genuine single insight beats 5 formulaic
-answers.
+Light-depth plan is fine.
 
 ---
 
