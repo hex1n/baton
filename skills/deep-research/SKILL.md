@@ -150,33 +150,20 @@ Use the format that fits the content, not a one-size-fits-all template:
 These are not separate sections to write — they're habits to follow while
 investigating:
 
-**Mark confidence on material claims.** Use whatever notation is natural:
-- `✅ verified` or `(verified: ...)` — **only** for claims you confirmed
-  during this investigation by reading a file, fetching a URL, or running a
-  command. "Verified" means "I saw the source text with my own eyes in this
-  session." If you didn't fetch it now, you can't mark it verified — period.
-- `❓ unverified` — for claims you believe are true but didn't confirm in
-  this session. This includes anything from training data, memory, or
-  inference. Common examples: version numbers you didn't check, company
-  news you didn't fetch, performance figures you didn't benchmark.
-- Don't mark obvious facts. Mark claims that someone might question.
-- In evidence markers, reference the **source** (official docs, file path,
-  URL), not the **tool** you used to reach it. Write
-  `(verified: Bun official docs)` not `(verified: via some-internal-tool)`.
-  The reader cares where the fact came from, not which tool fetched it.
+**Mark confidence on material claims.** Two levels, one bright line:
+- `✅ verified` — you read a file, fetched a URL, or ran a command **in
+  this session** that explicitly states this claim. Reference the source
+  (file path, URL), not the tool you used. If you didn't fetch it now, you
+  can't mark it verified — period. This applies equally to codebase facts
+  and external facts (company news, version numbers, benchmarks). External
+  claims are especially hallucination-prone: "Did I fetch a page that says
+  this, or do I just believe it?" If just believe → not verified.
+- `❓ unverified` — anything from training data, memory, or inference.
+  Mark it `❓ recalled, not verified` if it matters to your conclusion.
+- Don't mark obvious facts. Reference the source, not the tool.
 
 **Trace to primary sources.** A blog post is a lead, not evidence. Official
 docs are evidence. Source code is evidence. "I remember" is not evidence.
-
-**External factual claims require fetched sources.** Claims about the
-external world — company acquisitions, funding rounds, version numbers,
-release dates, organizational changes — are especially hallucination-prone.
-Before writing any such claim as verified, ask: "Did I actually fetch a
-page that states this, or do I just believe it?" If you didn't fetch it,
-either (a) fetch a primary source now, or (b) mark it
-`❓ recalled, not verified — could not confirm from a fetched source`.
-Never mark an external factual claim as verified based on training data
-alone, no matter how confident you feel — confidence is not evidence.
 
 **Resolve contradictions, don't just note them.** When two sources disagree:
 1. State both claims with their source and confidence level.
