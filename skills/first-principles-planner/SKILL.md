@@ -213,7 +213,7 @@ answers.
 ## Output Conventions
 
 - **Language**: Match the user's language (prose + headings). Code/technical terms stay English.
-- Save plans where user specifies, or propose a location
 - Include depth level and input sources used
-- Evidence markers: ✅ verified, ❓ unverified
+- Evidence: ✅ verified, ❓ unverified. Quantify claims about feasibility,
+  scale, or effort — show the math (e.g., person-days arithmetic, gap ratios)
 - Multiple viable approaches → present tradeoff honestly, don't force a pick
