@@ -355,6 +355,7 @@ These are the failure modes this skill exists to prevent:
 | **Template filling** (writing sections because the template has them, not because the answer needs them) | Write what the question needs, not what a template expects |
 | **Premature convergence** ("this is obviously how it works") | If it's obvious, the counterexample check takes 30 seconds. Do it. |
 | **Investigating past the point of relevance** (chasing details that won't change the answer) | Ask: "would knowing this change my conclusion?" If no, stop and note it as an open question. |
+| **Scope creep** (investigation keeps expanding: "while I'm here, I should also check…") | Stay within the decision boundary you defined in Step 1. New questions go into Open Questions, not into the current investigation. |
 
 ## Saving Research
 
