@@ -68,8 +68,8 @@ Quick — [answer is straightforward]." Don't silently change depth.
 ### 2. Investigate.
 
 **Check for prior work first.** Before starting from scratch, scan for
-existing research in the project (`docs/research-*`, prior investigation
-notes, design docs). Build on what's already known rather than re-deriving it.
+existing research in the project (prior investigation notes, design docs,
+research directories). Build on what's already known rather than re-deriving it.
 
 **For Standard/Deep: start with the big picture.** Sketch the landscape
 (architecture diagram, component list, or source inventory) before diving
