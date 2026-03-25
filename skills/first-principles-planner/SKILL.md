@@ -205,29 +205,17 @@ repeating them.
 
 ### Plan Template
 
-The plan structure adapts to the situation. These are the building blocks
-— use what fits, skip what doesn't:
+Adapt structure to situation — use what fits, skip what doesn't:
 
-**Always include:**
-- **TL;DR** (3-5 lines: problem, insight, recommendation)
-- **Action Plan / Proposed Changes** (priority table with total row)
-- **Self-Check** (see below)
+**Required:** TL;DR (3-5 lines) → Action Plan (priority table + total row) → Self-Check
 
-**Include when relevant:**
-- **What NOT to Do/Change** — when alternatives were considered and rejected,
-  or when over-correction is a risk
-- **Risks & Mitigations** — when the plan has non-obvious failure modes
-- **Comparison table** — when improving something existing (current vs proposed)
-- **Dissenting Path** — when recommending against the user's stated approach
-- **Code examples** — for P1/P2 changes where the mechanism isn't obvious
+**When relevant:** What NOT to Do, Risks & Mitigations, Comparison table
+(current vs proposed), Dissenting Path, Code examples (P1/P2 non-obvious)
 
-**Always last:**
-- **Analysis** section — Phase 1-2 reasoning that supports the plan.
-  Reference the Action Plan's code examples rather than repeating them.
+**Always last:** Analysis — Phase 1-2 reasoning. Reference Action Plan's
+code examples, don't repeat.
 
-Don't force sections that don't apply. A Light-depth plan might be just
-TL;DR + "no action needed" + Self-Check.
-A Deep plan might need all sections. Let the content drive the structure.
+Light = TL;DR + Self-Check. Deep may need all sections.
 
 ---
 
