@@ -340,6 +340,19 @@ benchmarks — independent confirmation on our actual query shapes would
 strengthen the recommendation. Also didn't verify DuckDB's Node.js binding
 stability in production environments.
 
+## Example: Wrong Premise (Quick)
+
+> **Question**: "Our zod validation and hand-written type guards are
+> inconsistent — should we unify them?"
+
+**Investigation**: Searched for `*.ts`, `*.js`, `package.json`, and
+`zod` imports. Zero results — the project is pure shell scripts and
+markdown. There is no TypeScript, no zod, and no type guards.
+
+**Answer**: The premise is incorrect. This project has no TypeScript code.
+The question doesn't apply to this codebase. *(Investigation stopped at
+Step 2 — premise check.)*
+
 ---
 
 ## Anti-Patterns
