@@ -242,6 +242,9 @@ paths, command output) that the reader can already verify from context.
 
 ### 5. Challenge yourself.
 
+Step 4 asked "can the reader verify my claims?" This step asks "where
+might I be wrong?"
+
 For **Standard/Deep**: before finalizing, name your weakest conclusion or
 the most important thing you didn't check. One honest sentence is enough —
 "I didn't verify whether X holds at runtime" or "This assumes Y, which I
