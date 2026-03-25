@@ -100,19 +100,14 @@ like facts.
 
 ### 1.4 — Separate True Constraints from Conventions
 
-This is the core move of first principles thinking. For each constraint
-the user or situation imposes, ask: **"Can this be changed within scope,
-and what would happen if it were?"**
+For each constraint, ask: **"Can this be changed within scope, and what
+would happen if it were?"**
 
-- If it cannot be changed (external contract, physical limit, legal
-  requirement): it's a **true constraint**. Design around it.
-- If it could be changed but hasn't been questioned: it's a **convention**.
-  Conventions are candidates for removal — but only when removing them
-  produces a better solution, not for the sake of being contrarian.
+- **True constraint** (external contract, physical limit, legal): design around it.
+- **Convention** (changeable but unquestioned): candidate for removal — only
+  when it produces a better solution, not for contrarianism.
 
-The test is simple: "Who decided this, when, and does the reason still
-hold?" Decisions made under old conditions often survive as constraints
-long after the conditions change.
+Litmus test: "Who decided this, when, and does the reason still hold?"
 
 ---
 
