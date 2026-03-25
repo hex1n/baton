@@ -156,16 +156,16 @@ not a veto.
 
 ## Phase 3: Plan Synthesis
 
-Convert the recommended approach into an actionable plan. The plan must be
-**operationally specific** — the user should be able to predict what will
-change and in what order.
+Convert the recommended approach into an **operationally specific** plan —
+the user should predict what changes and in what order.
 
 ### Operational Granularity
 
 Each recommendation must include:
 - **What specifically changes** (not just "improve X" but "add function Y to file Z")
 - **Effort estimate** — decompose to subtasks and sum (hours/days, not "soon")
-- **Priority** — order by value/risk ratio, not by logical sequence alone
+- **Priority** — order by value/risk ratio. When items have dependencies,
+  respect execution order but note value justification
 - **Code examples** when the change is non-obvious — show the mechanism
 
 Use a priority table (Priority | Change | Effort | Risk | Value) with a
