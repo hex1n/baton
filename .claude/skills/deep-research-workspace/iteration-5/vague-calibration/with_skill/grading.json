@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a decision boundary or investigation scope before diving into code",
+      "passed": true,
+      "evidence": "Metadata header refines the vague question: '**Question**: How does baton's hook system work — architecture, dispatch mechanism, hook lifecycle, and IDE integration?' — this IS the calibration step."
+    },
+    {
+      "text": "Does not immediately start reading files without calibration",
+      "passed": true,
+      "evidence": "Output begins with metadata header (Question, Depth, Key finding, Open questions) before any investigation content. Calibration precedes code reading."
+    },
+    {
+      "text": "Either asks the user to clarify OR self-defines the investigation scope explicitly",
+      "passed": true,
+      "evidence": "Self-defined scope: refined vague '研究一下 baton 的 hook 系统' into specific dimensions: 'architecture, dispatch mechanism, hook lifecycle, and IDE integration'."
+    },
+    {
+      "text": "If it proceeds with investigation, states depth choice",
+      "passed": true,
+      "evidence": "Line 2: '**Depth**: Standard'"
+    }
+  ],
+  "summary": { "passed": 4, "failed": 0, "total": 4, "pass_rate": 1.0 }
+}

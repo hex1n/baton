@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "Defines DECISION BOUNDARY (who decides what action)", "passed": true, "evidence": "Refined to 'so a developer can modify or extend it' — names decision-maker (developer) and action (modify/extend). Not a pure topic list."},
+    {"text": "No immediate file reading without calibration", "passed": true, "evidence": "Metadata header with calibrated question precedes all investigation content"},
+    {"text": "Narrows scope rather than expanding", "passed": false, "evidence": "Output covers ALL 10 hooks, ALL adapters, ALL libraries, design philosophy, extension points (197 lines). Despite naming a decision-maker, the calibration expanded to 'cover everything about the hook system'. The skill says to narrow when broad, but the agent expanded."},
+    {"text": "States depth choice", "passed": true, "evidence": "**Depth**: Standard"},
+    {"text": "Self-challenge statement", "passed": true, "evidence": "'## Self-Challenge' section: identifies concurrent hooks runtime behavior as unverified, and run-hook.cmd without Git Bash behavior"}
+  ],
+  "summary": {"passed": 4, "failed": 1, "total": 5, "pass_rate": 0.8}
+}

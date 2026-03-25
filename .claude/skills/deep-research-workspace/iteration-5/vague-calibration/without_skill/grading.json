@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a decision boundary or investigation scope before diving into code",
+      "passed": false,
+      "evidence": "Opens with '# Baton Hook 系统研究报告' then '## 架构概览' immediately. No scope definition, no decision boundary statement."
+    },
+    {
+      "text": "Does not immediately start reading files without calibration",
+      "passed": false,
+      "evidence": "Went straight to reading files and reporting architecture without any calibration step."
+    },
+    {
+      "text": "Either asks the user to clarify OR self-defines the investigation scope explicitly",
+      "passed": false,
+      "evidence": "Neither. No scope definition or clarification request. Assumed the vague question meant 'document everything about the hook system'."
+    },
+    {
+      "text": "If it proceeds with investigation, states depth choice",
+      "passed": false,
+      "evidence": "No depth statement anywhere in the document."
+    }
+  ],
+  "summary": { "passed": 0, "failed": 4, "total": 4, "pass_rate": 0.0 }
+}

@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "Explicitly labels codebase vs external source type inline", "passed": true, "evidence": "Consistent pattern: '(verified: setup.sh:XXX)' for code, '(verified: agentskills.io)' for external, '(verified: Cursor docs)' for external. Source type is distinguishable by content of the marker."},
+    {"text": "Cites external sources with URL noting version/date", "passed": true, "evidence": "15+ URLs in Sources section. Dates: '30+ 工具采纳' with timeline. Version-specific refs throughout."},
+    {"text": "Structured comparison format", "passed": true, "evidence": "Multiple tables and ASCII diagrams comparing IDEs"},
+    {"text": "States depth choice", "passed": true, "evidence": "**Depth**: Deep"},
+    {"text": "Self-challenge statement", "passed": true, "evidence": "3 open questions including 'NTFS junction 在 Cursor 中的行为...需要实测' — explicitly naming unverified assumptions"}
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}
+}

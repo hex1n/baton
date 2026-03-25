@@ -27,7 +27,18 @@ no certainty without verification.
 
 ## How It Works
 
-### 1. Read the question. Decide the depth.
+### 1. Calibrate the question. Decide the depth.
+
+**Before investigating, check whether the question has a clear decision
+boundary.** "How does the auth middleware work?" is clear. "Research the
+auth system" is not — research *what about it*, for *what decision*?
+
+If the decision boundary is unclear, define it — not by listing topics to
+cover (that's scope expansion), but by naming the decision: "This
+investigation will determine [what] so that [who] can decide [what action]."
+If you can't name a decision-maker or action, the question is too broad —
+narrow it before proceeding, don't expand into "cover everything."
+If a prior conversation or task context already makes this obvious, skip it.
 
 | Signal | Depth | Output |
 |--------|-------|--------|
@@ -84,7 +95,9 @@ evidence with external docs when the question touches both.
 
 **External research tips:**
 - **Source hierarchy depends on the question.** For "what API does X expose?": official docs > source code. For "what does X actually do?": source code > docs (docs describe intent; code describes reality). Blog posts are leads, not evidence.
-- **Fetch current content, don't assume.** Use WebFetch for URLs; note the date/version of external sources. Stale docs are misleading.
+- **Discovery vs. targeted fetch.** Use WebSearch when you don't know *where* the answer lives ("what libraries support X?", "how do others solve Y?"). Use WebFetch when you have a specific URL to read. Use structured docs tools (e.g., Context7) when available — they return versioned, indexed content that's more reliable than raw web fetches.
+- **Version mismatch is a silent killer.** Before citing external docs, check which version the project actually uses (package.json, go.mod, requirements.txt, etc.). If the docs version doesn't match the project version, note the discrepancy — don't silently apply v3 docs to a v2 codebase.
+- **Cross-validate external claims.** A single external source is a lead. Two independent sources agreeing is stronger but still not verified. When possible, confirm external claims against the actual codebase or a runnable test.
 - **Multi-source synthesis**: state which claims come from which source. Don't merge codebase evidence and external docs into ambiguous prose.
 
 #### Format guidance
@@ -151,9 +164,48 @@ different structure (e.g., a single comparison table with commentary), use that.
 
 ### 4. Challenge yourself.
 
-Be honest about what you don't know. A genuine one-sentence gap admission
-("I didn't check X") beats a fabricated three-paragraph self-challenge.
-Scale the effort to the stakes, not to a formula.
+For **Standard/Deep**: before finalizing, name your weakest conclusion or
+the most important thing you didn't check. One honest sentence is enough —
+"I didn't verify whether X holds at runtime" or "This assumes Y, which I
+couldn't confirm." If you can't find a gap, that's a red flag — look harder.
+
+For **Quick**: skip this unless the answer depends on an assumption you
+didn't verify, in which case flag it inline.
+
+## Example: Cross-Module Behavior Trace
+
+> **Question**: "Why does the webhook retry logic sometimes send duplicate
+> events to downstream consumers?"
+
+**Calibration**: The question implies a production behavior — the decision
+boundary is whether to change the retry mechanism. → **Standard** depth
+(cross-module, but not a design decision yet).
+
+**Investigation** (abbreviated):
+
+1. *Most important unknown*: where does the retry logic live?
+   - `grep -r "retry" src/webhooks/` → found `retry-queue.ts:34` and `delivery.ts:78`
+   - ✅ `retry-queue.ts:34`: exponential backoff with `maxRetries: 3`
+   - ✅ `delivery.ts:78`: separate retry via `setTimeout` — **this is a second retry path**
+
+2. *Changed question*: are both retry paths active simultaneously?
+   - ✅ `git blame delivery.ts:78` → added 2024-11 by PR #412 "hotfix: retry on timeout"
+   - ✅ `git blame retry-queue.ts:34` → original implementation from 2023-06
+   - **Contradiction**: PR #412's description says "replaces the queue-based retry" but the queue code was never removed ❓ (no delete in the diff)
+
+3. *Resolution*: read the PR #412 diff → confirmed: only added `setTimeout` retry, did not touch `retry-queue.ts`. Both paths fire on timeout errors.
+
+**Answer**: Duplicate events occur because two independent retry mechanisms
+both trigger on timeout: the original queue (`retry-queue.ts:34`) and a
+hotfix bypass (`delivery.ts:78`). The hotfix was intended to replace the
+queue but never removed it. Fix: remove the `setTimeout` retry in
+`delivery.ts` or deregister timeout errors from the queue.
+
+**Open question**: ❓ Are there downstream consumers that depend on the
+faster `setTimeout` retry timing? Need to check consumer SLAs before
+removing it.
+
+---
 
 ## Anti-Patterns
 
@@ -174,6 +226,14 @@ When the investigation is substantial enough to save (Standard or Deep depth):
 
 - Save to a location appropriate for the project (e.g., `docs/research-<topic>.md`
   or a project-specific research directory).
+- Start the document with a brief header so the next investigator can assess
+  relevance without reading the full document:
+  ```
+  **Question**: [the specific question this investigation answers]
+  **Depth**: Standard | Deep
+  **Key finding**: [one-sentence answer]
+  **Open questions**: [count] — see end of document
+  ```
 - If there are unresolved questions, list them at the end so the next
   investigator knows where to pick up.
 

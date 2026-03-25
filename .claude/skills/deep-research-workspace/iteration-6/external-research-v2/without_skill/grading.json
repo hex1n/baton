@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "Explicitly labels codebase vs external source type inline", "passed": false, "evidence": "Mixes codebase and external claims without inline source-type markers. No 'verified by reading code' vs 'from external docs' distinction."},
+    {"text": "Cites external sources with URL noting version/date", "passed": true, "evidence": "Mentions agentskills.io, specific versions. Dates mentioned for standard releases."},
+    {"text": "Structured comparison format", "passed": true, "evidence": "Multiple comparison tables present"},
+    {"text": "States depth choice", "passed": false, "evidence": "No depth statement"},
+    {"text": "Self-challenge statement", "passed": false, "evidence": "No self-challenge or challenge section"}
+  ],
+  "summary": {"passed": 2, "failed": 3, "total": 5, "pass_rate": 0.4}
+}
