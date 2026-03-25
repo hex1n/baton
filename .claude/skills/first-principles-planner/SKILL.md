@@ -55,11 +55,9 @@ extract goals, constraints, evidence, conclusions, unresolved questions.
 From conversation: extract what the user is trying to achieve, what they've
 tried, what feels wrong.
 
-**When working from a document**: verify its claims against reality. Documents
-go stale. If the document says "5 hooks" but there are 10, say so — the
-mismatch itself is a finding. Go beyond stated issues: what did the document
-miss? Codebase exploration or external verification often reveals problems
-the author didn't see.
+**When working from a document**: verify claims against reality — documents
+go stale. Mismatches between document and reality are findings in themselves.
+Go beyond stated issues: what did the document miss?
 
 ### 1.1 — The Five Whys (adapted)
 
@@ -134,10 +132,7 @@ long after the conditions change.
 
 ## Phase 2: Solution Reconstruction
 
-Now — and only now — design solutions. You're working with:
-- A clearly stated root problem (Phase 1)
-- Only true constraints, not conventions (Phase 1 assumption audit)
-- A wider solution space than you started with
+Build on Phase 1's root problem and true constraints to design solutions.
 
 ### 2.1 — Solution Categories
 
@@ -153,17 +148,12 @@ For each category:
 
 ### 2.2 — Inversion Test
 
-For the leading candidate, flip the question: **"Under what conditions
-would this be the worst possible approach?"** This is a pre-mortem — it
-catches failure modes that forward reasoning misses because you're
-optimizing for success, not scanning for failure.
+For the leading candidate, ask: **"Under what conditions would this be
+the worst possible approach?"** If the pre-mortem reveals a plausible
+failure, mitigate it or reconsider. Every approach has a failure mode —
+if you can't find one, you haven't looked hard enough.
 
-If the pre-mortem reveals a plausible failure scenario, either mitigate
-it in the plan or reconsider the recommendation. If you can't articulate
-a plausible failure, you haven't thought hard enough — every approach
-has a failure mode.
-
-Skip inversion for Light depth or when the approach is obvious.
+Skip for Light depth or when the approach is obvious.
 
 ### 2.3 — Recommend with Reasoning
 
@@ -217,17 +207,11 @@ overall scope scannable:
 
 ### Artifact Structure: Conclusion First
 
-The plan artifact must lead with the actionable content. The reader should
-know what to DO within the first 20 lines. Detailed analysis (Phase 1-2
-reasoning) goes in a later section — it supports the plan but should not
-block the reader from reaching the action items.
-
-**No redundancy between sections.** The Analysis section must NOT repeat
-code examples or details already shown in the Action Plan. Instead,
-reference them: "See P1 above for the code example." The Analysis section
-adds the *reasoning* (why this approach, what alternatives were rejected,
-what assumptions were challenged) — the Action Plan section contains the
-*what and how*.
+Lead with actionable content — the reader should know what to DO within
+the first 20 lines. Analysis (Phase 1-2 reasoning) goes last as a
+supporting section. No redundancy: Analysis adds the *why*, Action Plan
+contains the *what and how*. Reference earlier code examples instead of
+repeating them.
 
 ### Plan Template
 
@@ -283,13 +267,9 @@ answers.
 
 ## Output Conventions
 
-- **Language**: Write the plan in the same language the user used. If the
-  user writes in Chinese, the plan should be in Chinese. Code examples and
-  technical terms can stay in English (they're universal), but prose,
-  headings, and Self-Check should match the user's language. The template
-  headings in this skill (e.g., "Action Plan", "Analysis", "Self-Check")
-  are structural guides — translate them to the user's language in the
-  output. "TL;DR" is a universal abbreviation and can stay as-is.
+- **Language**: Match the user's language. Code examples and technical terms
+  can stay in English, but prose and headings should be in the user's language.
+  Translate template headings (e.g., "Action Plan" → "行动方案") accordingly.
 - Save plans to a location the user specifies, or propose one
 - Include the depth level chosen and the input sources used
 - Mark evidence: ✅ verified, ❓ unverified

@@ -1,0 +1,82 @@
+[
+  {
+    "query": "我们的 CI pipeline 现在跑一次要 45 分钟，团队抱怨很多。我试过加缓存但效果不大。能不能帮我从头想想，到底应该怎么优化这个流程？",
+    "should_trigger": true
+  },
+  {
+    "query": "我在纠结要不要把项目从 monorepo 拆成 polyrepo。两种方式各有利弊，目前团队 6 个人，3 个服务。帮我分析一下哪种更合理，给个方案。",
+    "should_trigger": true
+  },
+  {
+    "query": "读了这份竞品分析文档之后，我想重新规划我们的 SDK 设计方向。现在的 API 太复杂了，用户上手成本高。帮我做个改进方案。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们一直用 REST API，但最近看了 gRPC 和 GraphQL 觉得也不错。项目是内部工具，大概 20 个 endpoint，前端是 React。应该换吗？帮我理清楚。",
+    "should_trigger": true
+  },
+  {
+    "query": "每次发版都要手动跑 8 步操作，已经出过两次人为错误了。但团队说'流程就是这样的'。我觉得不对，帮我 challenge 一下这些假设，看看哪些步骤其实可以去掉或自动化。",
+    "should_trigger": true
+  },
+  {
+    "query": "我有一份关于用户流失的数据分析报告，结论是'需要优化 onboarding'。但我不确定这个结论对不对。帮我从第一性原理重新审视这个问题，给个行动建议。",
+    "should_trigger": true
+  },
+  {
+    "query": "公司想上微服务架构，理由是'大厂都在用'。我们现在是 Django monolith，日活 5000，团队 4 个后端。这个决策合理吗？给我一个客观的分析和建议。",
+    "should_trigger": true
+  },
+  {
+    "query": "我想给开源项目设计一个 contributor workflow，从 issue triage 到 PR merge 的完整流程。现在是完全没有规范，PR 平均 review 时间 2 周。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们选型卡住了。Redis vs Memcached vs 自建缓存层，三种方案老板都觉得行但我觉得有隐藏的 tradeoff。帮我把这个决策理清楚。",
+    "should_trigger": true
+  },
+  {
+    "query": "这个系统跑了三年，每次加功能都像在补丁上打补丁。我想退一步想想：如果今天从零开始设计，应该长什么样？然后看看怎么从现状迁移过去。",
+    "should_trigger": true
+  },
+  {
+    "query": "dispatch.sh 里第 38 行的 case 语句是做什么的？帮我看一下。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我实现一下这个 plan 里 P1 描述的那个 stdin-reader.sh 脚本，代码写到 .baton/hooks/lib/ 目录下。",
+    "should_trigger": false
+  },
+  {
+    "query": "git log 显示最近 3 个 commit 都是 hotfix，帮我查一下这些改动影响了哪些文件。",
+    "should_trigger": false
+  },
+  {
+    "query": "tests/test-dispatch.sh 跑挂了，错误信息是 'expected 0 but got 2'，帮我 debug 一下 root cause。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我 review 一下这个 PR 的 diff，看看有没有安全问题或者逻辑漏洞。",
+    "should_trigger": false
+  },
+  {
+    "query": "我想了解一下 Claude Code 的 hook system 是怎么工作的，从 IDE 触发到脚本执行的完整链路。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这个函数的变量名从 camelCase 改成 snake_case。",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写一个 pytest fixture，mock 掉 Redis 连接，返回一个 fake client。",
+    "should_trigger": false
+  },
+  {
+    "query": "查一下 Anthropic 官方文档里 tool_use 的 API 参数格式，我需要知道 tool_choice 字段怎么传。",
+    "should_trigger": false
+  },
+  {
+    "query": "把 README.md 里的安装步骤更新一下，加上 Windows 的说明。",
+    "should_trigger": false
+  }
+]
