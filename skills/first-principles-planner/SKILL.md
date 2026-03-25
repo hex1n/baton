@@ -214,12 +214,8 @@ answers.
 
 ## Output Conventions
 
-- **Language**: Match the user's language. Code examples and technical terms
-  can stay in English, but prose and headings should be in the user's language.
-  Translate template headings (e.g., "Action Plan" → "行动方案") accordingly.
-- Save plans to a location the user specifies, or propose one
-- Include the depth level chosen and the input sources used
-- Mark evidence: ✅ verified, ❓ unverified
-- If multiple viable approaches remain after analysis, present the tradeoff
-  honestly rather than forcing a recommendation — the user may have context
-  you don't
+- **Language**: Match the user's language (prose + headings). Code/technical terms stay English.
+- Save plans where user specifies, or propose a location
+- Include depth level and input sources used
+- Evidence markers: ✅ verified, ❓ unverified
+- Multiple viable approaches → present tradeoff honestly, don't force a pick
