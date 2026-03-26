@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 repo_root="."
 task_id=""
 owner="scoped-explorer"
@@ -72,6 +74,10 @@ while [[ $# -gt 0 ]]; do
       dry_run="true"
       shift
       ;;
+    --version)
+      printf 'harness-spec v%s\n' "$(cat "$script_dir/../VERSION")"
+      exit 0
+      ;;
     --help|-h)
       usage
       exit 0
@@ -106,7 +112,6 @@ case "$state" in
     ;;
 esac
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 spec_root="$(cd "$script_dir/.." && pwd)"
 templates_dir="$spec_root/templates"
 resolved_repo_root="$(cd "$repo_root" && pwd)"

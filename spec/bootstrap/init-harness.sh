@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 repo_root="."
 profile="auto"
 adapter="codex"
@@ -148,6 +150,10 @@ while [[ $# -gt 0 ]]; do
       force="true"
       shift
       ;;
+    --version)
+      printf 'harness-spec v%s\n' "$(cat "$script_dir/../VERSION")"
+      exit 0
+      ;;
     --help|-h)
       usage
       exit 0
@@ -176,7 +182,6 @@ case "$adapter" in
     ;;
 esac
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 spec_root="$(cd "$script_dir/.." && pwd)"
 templates_dir="$spec_root/templates"
 profiles_dir="$spec_root/profiles"
