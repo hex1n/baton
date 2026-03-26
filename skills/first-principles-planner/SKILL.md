@@ -13,6 +13,7 @@ description: >
   rethinking approaches that feel stuck or conventional. This skill produces plans
   and proposals, not implementations or pure research.
 user-invocable: true
+allowed-tools: Read Grep Glob Bash WebFetch WebSearch Agent Write
 ---
 
 ## Core Principle
@@ -110,6 +111,11 @@ would happen if it were?"**
 
 Litmus test: "Who decided this, when, and does the reason still hold?"
 
+**Phase gate → Solution Design**: is the root problem clear enough to
+design solutions for? If load-bearing assumptions are unverified or
+multiple independent roots emerged, resolve or scope down before
+proceeding. A solution built on an unclear problem is precise nonsense.
+
 ---
 
 ## Phase 2: Solution Reconstruction
@@ -152,6 +158,10 @@ When recommending against the user's stated approach, always provide:
 (a) conditions that WOULD justify their approach, and (b) a concrete
 "if you still want to proceed" plan. The goal is an informed decision,
 not a veto.
+
+**Phase gate → Plan Synthesis**: does the recommendation stand on
+evidence, not momentum? If the inversion test surfaced a plausible
+failure with no mitigation, reconsider before committing to plan details.
 
 ---
 
