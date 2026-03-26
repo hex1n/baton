@@ -79,9 +79,9 @@ Portable core leaves some similar artifacts optional. Strict mode does not.
 
 This extension provides starter templates for:
 
-- [codebase-map.template.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/codebase-map.template.md)
-- [decisions.template.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/decisions.template.md)
-- [api-contract.template.yaml](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/api-contract.template.yaml)
-- [evaluation-report.template.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/evaluation-report.template.md)
-- [generator-feedback.template.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/generator-feedback.template.md)
-- [runtime-signals.README.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/templates/runtime-signals.README.md)
+- [codebase-map.template.md](./templates/codebase-map.template.md)
+- [decisions.template.md](./templates/decisions.template.md)
+- [api-contract.template.yaml](./templates/api-contract.template.yaml)
+- [evaluation-report.template.md](./templates/evaluation-report.template.md)
+- [generator-feedback.template.md](./templates/generator-feedback.template.md)
+- [runtime-signals.README.md](./templates/runtime-signals.README.md)

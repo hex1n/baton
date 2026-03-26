@@ -28,7 +28,7 @@ an existing row is not yet `complete`.
 ## PowerShell
 
 ```powershell
-pwsh ./docs/harness-spec-v1/bootstrap/start-task.ps1 -RepoRoot . -TaskId challenge-export-fix
+pwsh ./spec/bootstrap/start-task.ps1 -RepoRoot . -TaskId challenge-export-fix
 ```
 
 Useful options:
@@ -41,7 +41,7 @@ Useful options:
 ## Bash
 
 ```bash
-./docs/harness-spec-v1/bootstrap/start-task.sh --repo-root . --task-id challenge-export-fix
+./spec/bootstrap/start-task.sh --repo-root . --task-id challenge-export-fix
 ```
 
 Useful options:

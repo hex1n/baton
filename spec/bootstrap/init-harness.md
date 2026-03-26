@@ -57,11 +57,11 @@ The last file should be created from `templates/profile.local.template.yaml`.
 If you want a generated starting point instead of manual copying:
 
 ```powershell
-pwsh ./docs/harness-spec-v1/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -TaskId pilot-task
+pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -TaskId pilot-task
 ```
 
 ```bash
-./docs/harness-spec-v1/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task
+./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task
 ```
 
 Useful options:
@@ -75,11 +75,11 @@ Useful options:
 If you only want to identify the repo profile without writing files:
 
 ```powershell
-pwsh ./docs/harness-spec-v1/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -DetectOnly
+pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -DetectOnly
 ```
 
 ```bash
-./docs/harness-spec-v1/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --detect-only
+./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --detect-only
 ```
 
 ## Step 4: Fill `profile.local.yaml`
@@ -157,11 +157,11 @@ Avoid starting with:
 After `Repo Explorer`, initialize the first concrete task:
 
 ```powershell
-pwsh ./docs/harness-spec-v1/bootstrap/start-task.ps1 -RepoRoot . -TaskId pilot-task
+pwsh ./spec/bootstrap/start-task.ps1 -RepoRoot . -TaskId pilot-task
 ```
 
 ```bash
-./docs/harness-spec-v1/bootstrap/start-task.sh --repo-root . --task-id pilot-task
+./spec/bootstrap/start-task.sh --repo-root . --task-id pilot-task
 ```
 
 ## Step 9: Keep `module-status.md` Live

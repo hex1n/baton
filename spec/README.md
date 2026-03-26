@@ -55,7 +55,7 @@ This spec does not require `.harness/` specifically, but all examples assume it.
 ## Directory Contents
 
 ```text
-docs/harness-spec-v1/
+spec/
   README.md
   bootstrap/
     init-harness.md
@@ -128,7 +128,7 @@ Recommended bootstrap flow:
 
 For Java/Spring business systems that need the heavier `11.md` style loop, start from:
 
-- [java-backend-strict/README.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/README.md)
+- [java-backend-strict/README.md](./extensions/java-backend-strict/README.md)
 
 ## Non-Goals
 

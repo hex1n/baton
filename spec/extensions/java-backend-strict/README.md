@@ -62,8 +62,8 @@ The intention is:
 
 ## Files In This Extension
 
-- [artifact-overlay.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/artifact-overlay.md)
-- [runtime-evaluator.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/runtime-evaluator.md)
-- [state-overlay.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/state-overlay.md)
-- [v1-to-11-roadmap.md](/C:/Users/hexin/Desktop/project/fundsalesmrksupport/docs/harness-spec-v1/extensions/java-backend-strict/v1-to-11-roadmap.md)
+- [artifact-overlay.md](./artifact-overlay.md)
+- [runtime-evaluator.md](./runtime-evaluator.md)
+- [state-overlay.md](./state-overlay.md)
+- [v1-to-11-roadmap.md](./v1-to-11-roadmap.md)
 - `templates/`
