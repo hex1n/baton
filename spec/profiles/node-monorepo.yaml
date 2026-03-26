@@ -1,0 +1,36 @@
+profile: node-monorepo
+description: Portable profile for Node monorepos using pnpm, npm, or yarn workspaces
+repo_signals:
+  - package.json
+  - pnpm-workspace.yaml
+  - turbo.json
+  - nx.json
+verification_style:
+  primary: targeted workspace test and build commands
+  secondary: lint and typecheck
+workspace_strategy:
+  preferred: git worktree
+  fallback: feature branch in current workspace
+high_risk_surfaces:
+  - shared packages
+  - codegen outputs
+  - lockfiles
+  - infra scripts
+preferred_test_style:
+  first_layer: package-local unit tests
+  second_layer: app integration or e2e
+required_gates:
+  - scoped_explorer
+  - architecture_approved
+  - verification_path_check
+example_commands:
+  discover:
+    - rg --files -g package.json
+    - pnpm -v
+  verify:
+    - pnpm --filter <package> test
+    - pnpm --filter <package> build
+    - pnpm --filter <package> lint
+notes:
+  - identify task runner first
+  - verify package graph before implementation

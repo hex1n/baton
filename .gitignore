@@ -1,4 +1,3 @@
-baton-tasks/
 .DS_Store
 .idea/
 .claude/*
@@ -9,8 +8,5 @@ baton-tasks/
 !CLAUDE.md
 *.stackdump
 CLAUDE.local.md
-.claude/skills/baton-*
-.cursor/skills/baton-*
-.agents/skills/baton-*
 autoresearch-results.tsv
 autoresearch-quality-results.tsv

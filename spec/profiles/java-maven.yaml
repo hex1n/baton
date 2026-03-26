@@ -1,0 +1,34 @@
+profile: java-maven
+description: Portable profile for Java repositories built with Maven
+repo_signals:
+  - pom.xml
+  - src/main/java
+  - src/test/java
+verification_style:
+  primary: targeted junit or testng commands
+  secondary: module compile and static checks
+workspace_strategy:
+  preferred: git worktree
+  fallback: feature branch in current workspace
+high_risk_surfaces:
+  - integration
+  - bootstrap
+  - migrations
+  - generated-sources
+preferred_test_style:
+  first_layer: mockito or focused unit tests
+  second_layer: spring or module integration tests
+required_gates:
+  - scoped_explorer
+  - architecture_approved
+  - verification_path_check
+example_commands:
+  discover:
+    - rg --files -g pom.xml
+    - mvn -q -version
+  verify:
+    - mvn -pl <module> -am test
+    - mvn -pl <module> -am -DskipTests compile
+notes:
+  - verify reactor shape early
+  - do not assume app/test is isolated from other modules

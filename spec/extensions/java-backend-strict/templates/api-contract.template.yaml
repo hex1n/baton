@@ -1,0 +1,13 @@
+openapi: 3.0.3
+info:
+  title: Replace Me
+  version: 0.1.0
+paths:
+  /example:
+    get:
+      summary: Replace me
+      responses:
+        "200":
+          description: Success
+components:
+  schemas: {}
