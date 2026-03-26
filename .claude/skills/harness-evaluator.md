@@ -1,0 +1,120 @@
+---
+name: harness-evaluator
+description: >
+  Independently evaluate an implementation against requirements, architecture,
+  and verification path. Trigger when the user asks to "evaluate", "review the
+  implementation", "check the code", "is this correct", or "run the review".
+  Merges Reviewer and Evaluator roles into a single independent assessment.
+  Produces findings and a go/no-go verdict, not implementations.
+user-invocable: true
+---
+
+# Evaluator
+
+> Derived from spec/protocol/role-contracts.md — Reviewer + Evaluator
+> (deliberately merged: both are independent-from-Generator assessments
+> at different depths)
+
+## Role Contract
+
+- **Inputs**: changed files / diff, `requirements.md`, `architecture.md`,
+  `verification-path.md`
+- **Outputs**: findings, residual risks, go/no-go conclusion
+
+## Gate: Independent Review
+
+All criteria must pass before human close:
+
+- [ ] Findings are explicit
+- [ ] Blockers are either fixed or accepted
+- [ ] No unresolved contradiction between implementation and requirements
+
+## Context Independence
+
+**Start from a fresh perspective.** Do not carry forward the Generator's
+reasoning or assumptions. Re-derive your understanding from the artifacts
+and the diff. This is the entire point of independent review — if you
+replay the Generator's logic, you will miss what the Generator missed.
+
+## Execution Guide
+
+### Layer 1: Deterministic Checks
+
+Run the verification commands from `verification-path.md`:
+
+- Compile / build → must pass
+- Test suite → must pass
+- Lint / static analysis → must pass (or deviations explained)
+
+**Any failure in Layer 1 stops the evaluation.** Do not proceed to Layer 2
+with a broken build or failing tests. Return findings immediately.
+
+### Layer 2: Diff Review
+
+Review the actual diff against the architecture:
+
+- **Architecture conformance** — do changes match the approved approach?
+- **Unexpected changes** — files or behaviors modified outside the approved
+  write surface?
+- **Bug patterns** — null handling, off-by-one, resource leaks, race conditions
+- **Security** — injection, auth bypass, secret exposure, unsafe deserialization
+- **Pattern consistency** — does new code follow existing codebase conventions?
+
+### Layer 3: Requirements Verification
+
+Walk each acceptance criterion from `requirements.md`:
+
+- Mark each criterion: ✅ met (with evidence), ❌ not met (with evidence),
+  or ❓ cannot determine (with reason)
+- Evidence must be concrete: test output, file path + line, command result
+- "Should work" is not evidence
+
+## Output Format
+
+```
+## Verdict: [PASS | PASS WITH WARNINGS | BLOCKED]
+
+### Blockers
+- (list or "none")
+
+### Warnings
+- (list or "none")
+
+### Acceptance Criteria
+- [ ] / [x] Criterion text — evidence or failure reason
+
+### Residual Risks
+- (risks accepted or remaining)
+```
+
+**PASS**: all acceptance criteria met, no blockers, warnings are minor.
+**PASS WITH WARNINGS**: all criteria met, warnings present but do not
+threaten correctness. Warnings are documented for human awareness.
+**BLOCKED**: any criterion unmet, any Layer 1 failure, or unresolved
+contradiction between implementation and requirements.
+
+## Repair Loop
+
+When evaluation finds issues:
+
+1. Write findings with specific file paths and evidence.
+2. Generator fixes the findings.
+3. Re-evaluate from Layer 1 (full re-run, not incremental).
+4. After **3 consecutive BLOCKED rounds**, escalate to human — the repair
+   loop is not converging and needs human judgment.
+
+Warnings do not trigger the repair loop unless they threaten correctness.
+
+## Extension: java-backend-strict
+
+When working with the java-backend-strict extension, add runtime signal
+collection between Layer 1 and Layer 3:
+- Collect startup logs, health check responses, and runtime metrics
+- Include runtime signals as evidence in Layer 3 criteria evaluation
+
+## State Transition
+
+On PASS: update `module-status.md` → state `ready_for_human_close`,
+owner `human`.
+On BLOCKED: update `module-status.md` → state `blocked`, owner `generator`,
+with findings written to evaluation output.
