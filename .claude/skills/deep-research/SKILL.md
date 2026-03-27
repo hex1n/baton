@@ -12,6 +12,7 @@ description: >
   or reviews. For single-file questions, just read the file. When in doubt,
   use it — the calibration step determines the right depth.
 user-invocable: true
+allowed-tools: Read Grep Glob Bash WebFetch WebSearch Agent Write
 ---
 
 # Deep Research
@@ -42,6 +43,10 @@ questions: "This investigation will explain [how/why X works] to the depth
 needed to [build on it / debug it / teach it]." If you can't articulate
 either framing, the question is too broad — narrow it before proceeding.
 If a prior conversation or task context already makes this obvious, skip it.
+
+**Scope check for vague questions**: if your framing would require
+investigating more than 3-4 independent components, you're expanding not
+narrowing. Pick one facet and go deep; list the rest as out of scope.
 
 | Signal | Depth | Output |
 |--------|-------|--------|
