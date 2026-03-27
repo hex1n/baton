@@ -64,6 +64,22 @@ If unavailable, the adapter must still support a documented local review step.
 - roles still exist logically
 - artifacts and state transitions must remain explicit
 
+## Context Isolation Requirement
+
+The following roles MUST derive judgment from artifacts only,
+without inheriting prior role reasoning:
+
+- Scoped Explorer (task mode)
+- Evaluator
+
+Adapters MUST document how they implement this isolation.
+Acceptable mechanisms:
+- New context initialized from artifacts only (preferred)
+- Isolated sub-agent with explicit artifact inputs, no context fork
+- Explicit session reset followed by artifact reload
+
+Sequential execution WITHOUT isolation is not sufficient for Evaluator.
+
 ## Adapter Responsibilities
 
 The adapter may decide:

@@ -113,6 +113,19 @@
 - Status responsibility:
   - update `module-status.md` before handoff to `human`
 
+## Implementation Note: Reviewer + Evaluator Merge
+
+In single-agent CLI environments (Claude Code, Codex sequential fallback),
+Reviewer and Evaluator MAY be merged into a single role.
+
+Conditions for valid merge:
+- The merged role must maintain context independence (see `cli-adapter-interface.md`)
+- Findings must still be explicit before go/no-go conclusion
+- The merge must be documented in the adapter's role execution section
+
+When sub-agents are available, keeping them separate is preferred —
+Reviewer can run in parallel with final Generator cleanup.
+
 ## Human
 
 - Responsibilities:

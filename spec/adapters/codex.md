@@ -63,6 +63,19 @@ If sub-agents are unavailable, use the sequential fallback described below.
 - Preferred: isolated review agent with findings-first output
 - Fallback: explicit local review pass after implementation
 
+### Evaluator
+
+- Spawn as an isolated sub-agent: `spawn_agent({ fork_context: false })`
+- Explicitly pass only:
+  - `.harness/requirements.md`
+  - `.harness/architecture.md`
+  - `.harness/verification-path.md`
+  - implementation diff
+- Do NOT use `fork_context: true` — this copies Generator's reasoning chain
+  and defeats context independence
+- If sub-agents are unavailable, fall back to sequential execution with an
+  explicit cold-read of all artifacts before evaluation begins
+
 ## Sequential Fallback
 
 If sub-agents are not available:

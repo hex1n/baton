@@ -69,6 +69,21 @@
   - repo-specific lessons
   - next version recommendations
 
+## Conditionally Required Artifacts
+
+### `generator-feedback.md`
+
+- **Required when**: Generator discovers a requirement gap or architectural
+  mismatch that cannot be resolved within the approved write surface
+- Writer: Generator or Evaluator
+- Readers: Architect, Specifier, Human
+- Purpose: escalation channel for design-level issues found during implementation
+- Required sections:
+  - original assumption (from `architecture.md`)
+  - actual finding (what the code shows)
+  - impact on implementation
+  - recommended next owner: `architect` | `specifier` | `human`
+
 ## Optional Artifacts
 
 - `repo-map.md`

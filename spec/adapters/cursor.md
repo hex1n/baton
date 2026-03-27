@@ -56,6 +56,16 @@ chat contexts or sequential role execution.
 - Prefer a separate chat or review context
 - Findings should be written against concrete files and lines
 
+### Evaluator
+
+- Open a new chat or agent context before starting evaluation
+- Load only: `.harness/requirements.md`, `architecture.md`,
+  `verification-path.md`, and the diff
+- Known limitation: Cursor has no programmatic spawn — isolation
+  depends on user discipline. If context isolation cannot be
+  guaranteed, note this in `module-status.md` and have the human
+  perform a separate manual review pass before close.
+
 ## Cursor-Specific Advice
 
 - Do not let Cursor Rules become the only protocol definition. Keep the canonical protocol in files.
