@@ -90,6 +90,13 @@ cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command 
 stop_cmd="[[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
 
 # ---------------------------------------------------------------------------
+# SubagentStop command string (Claude Code only)
+# Matcher: baton-evaluator|baton-verifier
+# Reads agent_type field; validates fork agent wrote its required artifact
+# ---------------------------------------------------------------------------
+subagent_stop_cmd="input=\$(cat); agent=\$(echo \"\$input\" | jq -r '.agent_type // empty' 2>/dev/null); case \"\$agent\" in baton-verifier|baton-evaluator) ;; *) exit 0 ;; esac; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bootstrap=\"\$root/.vendor/baton-harness/spec/bootstrap\"; case \"\$agent\" in baton-verifier) [[ -f \"\$root/.harness/verification-path.md\" ]] || { jq -n '{\"decision\":\"block\",\"reason\":\"baton-verifier completed without writing verification-path.md\"}'; exit 2; }; bash \"\$bootstrap/validate-artifact.sh\" verification-path \"\$root/.harness/verification-path.md\" || exit 2 ;; baton-evaluator) state=\$(awk -F'|' 'NF>3 && \$4!~/---/ && \$4!~/^[[:space:]]*State[[:space:]]*\$/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$root/.harness/module-status.md\" 2>/dev/null); case \"\$state\" in blocked|reviewing|ready_for_human_close) ;; *) jq -n --arg s \"\$state\" '{\"decision\":\"block\",\"reason\":(\"baton-evaluator completed but module-status state is \\\\\"\" + \$s + \"\\\\\"\")}'; exit 2 ;; esac ;; esac # baton-subagent-stop"
+
+# ---------------------------------------------------------------------------
 # Dry-run: print what would be written, then exit
 # ---------------------------------------------------------------------------
 if [[ "$dry_run" == true ]]; then
@@ -119,6 +126,7 @@ cc_new="$(echo "$cc_existing" | jq \
   --arg post_cmd "$cc_post_cmd" \
   --arg pre_cmd "$cc_pre_cmd" \
   --arg stop_cmd "$stop_cmd" \
+  --arg subagent_cmd "$subagent_stop_cmd" \
   '
   def strip_baton_post:
     if type == "array" then
@@ -175,9 +183,24 @@ cc_new="$(echo "$cc_existing" | jq \
   def new_cc_stop_entry:
     {"hooks": [{"type": "command", "command": $stop_cmd}]};
 
+  def strip_baton_subagent:
+    if type == "array" then
+      map(
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-subagent-stop"))) then
+          empty
+        else .
+        end
+      )
+    else [] end;
+
+  def new_subagent_stop_entry:
+    {"matcher": "baton-evaluator|baton-verifier",
+     "hooks": [{"type": "command", "command": $subagent_cmd}]};
+
   .hooks.PostToolUse = ((.hooks.PostToolUse | strip_baton_post) + [new_post_entry])
   | .hooks.PreToolUse = ((.hooks.PreToolUse | strip_baton_pre) + [new_pre_entry])
   | .hooks.Stop = ((.hooks.Stop | strip_baton_stop) + [new_cc_stop_entry])
+  | .hooks.SubagentStop = ((.hooks.SubagentStop | strip_baton_subagent) + [new_subagent_stop_entry])
   '
 )"
 

@@ -133,6 +133,21 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# SubagentStop (CC only)
+# ---------------------------------------------------------------------------
+assert_file_contains "CC SubagentStop written"            "$repo/.claude/settings.json" '"SubagentStop"'
+assert_file_contains "CC SubagentStop matcher is agents"  "$repo/.claude/settings.json" "baton-evaluator"
+assert_file_contains "CC SubagentStop checks agent_type"  "$repo/.claude/settings.json" "agent_type"
+TOTAL=$((TOTAL+1))
+if ! grep -q '"SubagentStop"' "$repo/.codex/hooks.json" 2>/dev/null; then
+  echo "  pass: Codex has no SubagentStop"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: Codex should not have SubagentStop"
+  FAIL=$((FAIL+1))
+fi
+
+# ---------------------------------------------------------------------------
 # Dry run
 # ---------------------------------------------------------------------------
 repo2="$tmp/repo2"
