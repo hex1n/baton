@@ -39,37 +39,76 @@ repo="$tmp/repo"
 mkdir -p "$repo/.claude" "$repo/.harness"
 bootstrap="$SCRIPT_DIR/../spec/bootstrap"
 
-# Basic install
+# ---------------------------------------------------------------------------
+# Claude Code hooks
+# ---------------------------------------------------------------------------
 assert_exit "install-hooks exits 0" 0 \
   bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap"
 
-assert_file_contains "PostToolUse written"       "$repo/.claude/settings.json" "PostToolUse"
-assert_file_contains "PreToolUse written"        "$repo/.claude/settings.json" "PreToolUse"
-assert_file_contains "validate-artifact in config" "$repo/.claude/settings.json" "validate-artifact"
-assert_file_contains "validate-transition in config" "$repo/.claude/settings.json" "validate-transition"
+assert_file_contains "CC PostToolUse written"           "$repo/.claude/settings.json" "PostToolUse"
+assert_file_contains "CC PreToolUse written"            "$repo/.claude/settings.json" "PreToolUse"
+assert_file_contains "CC validate-artifact in config"   "$repo/.claude/settings.json" "validate-artifact"
+assert_file_contains "CC validate-transition in config" "$repo/.claude/settings.json" "validate-transition"
+assert_file_contains "CC matcher is Write|Edit"         "$repo/.claude/settings.json" "Write|Edit|MultiEdit"
 
 # Idempotent: running twice does not duplicate PostToolUse
 bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" >/dev/null 2>&1
 post_count="$(grep -c '"PostToolUse"' "$repo/.claude/settings.json")"
 TOTAL=$((TOTAL + 1))
 if [[ "$post_count" -eq 1 ]]; then
-  echo "  pass: idempotent — PostToolUse not duplicated"
+  echo "  pass: CC idempotent — PostToolUse not duplicated"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: idempotent — PostToolUse key appears $post_count times"
+  echo "  FAIL: CC idempotent — PostToolUse key appears $post_count times"
   FAIL=$((FAIL + 1))
 fi
 
-# Dry run: does not create settings.json
+# ---------------------------------------------------------------------------
+# Codex hooks
+# ---------------------------------------------------------------------------
+assert_file_contains "Codex hooks.json created"             "$repo/.codex/hooks.json"   "PostToolUse"
+assert_file_contains "Codex PreToolUse written"             "$repo/.codex/hooks.json"   "PreToolUse"
+assert_file_contains "Codex validate-artifact in hooks"     "$repo/.codex/hooks.json"   "validate-artifact"
+assert_file_contains "Codex validate-transition in hooks"   "$repo/.codex/hooks.json"   "validate-transition"
+assert_file_contains "Codex matcher is Bash"                "$repo/.codex/hooks.json"   '"Bash"'
+assert_file_contains "Codex PreToolUse exits 2 to block"    "$repo/.codex/hooks.json"   "exit 2"
+assert_file_contains "Codex config feature flag written"    "$repo/.codex/config.toml"  "codex_hooks = true"
+
+# Idempotent: running twice does not duplicate Codex PostToolUse
+bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" >/dev/null 2>&1
+cx_post_count="$(grep -c '"PostToolUse"' "$repo/.codex/hooks.json")"
+TOTAL=$((TOTAL + 1))
+if [[ "$cx_post_count" -eq 1 ]]; then
+  echo "  pass: Codex idempotent — PostToolUse not duplicated"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: Codex idempotent — PostToolUse key appears $cx_post_count times"
+  FAIL=$((FAIL + 1))
+fi
+
+# Idempotent: config.toml feature flag not duplicated
+cx_flag_count="$(grep -c 'codex_hooks' "$repo/.codex/config.toml")"
+TOTAL=$((TOTAL + 1))
+if [[ "$cx_flag_count" -eq 1 ]]; then
+  echo "  pass: Codex idempotent — config.toml flag not duplicated"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: Codex idempotent — codex_hooks appears $cx_flag_count times in config.toml"
+  FAIL=$((FAIL + 1))
+fi
+
+# ---------------------------------------------------------------------------
+# Dry run
+# ---------------------------------------------------------------------------
 repo2="$tmp/repo2"
 mkdir -p "$repo2/.claude"
 bash "$INSTALL_HOOKS" --repo-root "$repo2" --bootstrap-dir "$bootstrap" --dry-run >/dev/null 2>&1
 TOTAL=$((TOTAL + 1))
-if [[ ! -f "$repo2/.claude/settings.json" ]]; then
-  echo "  pass: dry-run does not create settings.json"
+if [[ ! -f "$repo2/.claude/settings.json" && ! -f "$repo2/.codex/hooks.json" ]]; then
+  echo "  pass: dry-run does not create settings.json or hooks.json"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: dry-run should not create settings.json"
+  echo "  FAIL: dry-run should not create settings.json or hooks.json"
   FAIL=$((FAIL + 1))
 fi
 

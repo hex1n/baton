@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# install-hooks.sh — register baton validate-artifact + validate-transition as Claude Code hooks
+# install-hooks.sh — register baton validate-artifact + validate-transition as platform hooks
 #
 # Usage: install-hooks.sh --repo-root PATH --bootstrap-dir PATH [--dry-run]
 #
-# Writes PostToolUse and PreToolUse hook entries into .claude/settings.json in the
-# target repo. The operation is idempotent: any existing baton-owned hook entries
-# (identified by the marker string "# baton-validate-artifact" or
-# "# baton-validate-transition") are replaced, not duplicated.
+# Installs hooks for both Claude Code and Codex:
+#   Claude Code: PostToolUse + PreToolUse in .claude/settings.json
+#   Codex:       PostToolUse + PreToolUse in .codex/hooks.json
+#                feature flag in .codex/config.toml
+#
+# All operations are idempotent: existing baton-owned entries (identified by
+# marker strings "# baton-validate-artifact" / "# baton-validate-transition")
+# are replaced, not duplicated.
 #
 # Exit 0: success (or dry-run)
 # Exit 1: error (missing jq, missing args)
@@ -53,35 +57,63 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-settings_file="$repo_root/.claude/settings.json"
+# ---------------------------------------------------------------------------
+# Claude Code hook command strings
+# Trigger: Write|Edit|MultiEdit — tool_input has file_path + content
+# ---------------------------------------------------------------------------
 
-# -- build inline hook command strings --
-# PostToolUse: fire after Write/Edit on .harness/*.md → call validate-artifact.sh
-post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; at=\$(basename \"\$fp\" .md); bash ${bootstrap_dir}/validate-artifact.sh \"\$at\" \"\$fp\" # baton-validate-artifact"
+# PostToolUse: after write to .harness/*.md → validate-artifact.sh
+cc_post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; at=\$(basename \"\$fp\" .md); bash ${bootstrap_dir}/validate-artifact.sh \"\$at\" \"\$fp\" # baton-validate-artifact"
 
-# PreToolUse: fire before Write/Edit on module-status.md → call validate-transition.sh
-pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; bash ${bootstrap_dir}/validate-transition.sh \"\$cs\" \"\$ns\" # baton-validate-transition"
+# PreToolUse: before write to module-status.md → validate-transition.sh (any non-zero blocks)
+cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; bash ${bootstrap_dir}/validate-transition.sh \"\$cs\" \"\$ns\" # baton-validate-transition"
 
+# ---------------------------------------------------------------------------
+# Codex hook command strings
+# Trigger: Bash — tool_input has only .command (a bash command string)
+# PreToolUse blocks on exit 2 (not exit 1)
+# ---------------------------------------------------------------------------
+
+# PostToolUse: after Bash command that wrote to .harness/*.md → validate-artifact.sh
+# Extract .harness/*.md paths referenced in the command string; validate each existing file.
+cx_post_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"\$cmd\" ]] || exit 0; for fp in \$(echo \"\$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"\$fp\" ]] || continue; at=\$(basename \"\$fp\" .md); bash ${bootstrap_dir}/validate-artifact.sh \"\$at\" \"\$fp\"; done # baton-validate-artifact"
+
+# PreToolUse: before Bash command that writes to module-status.md → validate-transition.sh
+# Extract target state from known state names present in the command string.
+# Exit 2 (not 1) to signal Codex to block the pending tool call.
+cx_state_names="exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked"
+cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash ${bootstrap_dir}/validate-transition.sh \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
+
+# ---------------------------------------------------------------------------
+# Dry-run: print what would be written, then exit
+# ---------------------------------------------------------------------------
 if [[ "$dry_run" == true ]]; then
-  printf '[dry-run] Would write hooks to: %s\n' "$settings_file"
-  printf '[dry-run] PostToolUse command (matcher: Write|Edit|MultiEdit):\n  %s\n' "$post_cmd"
-  printf '[dry-run] PreToolUse command (matcher: Write|Edit|MultiEdit):\n  %s\n' "$pre_cmd"
+  printf '[dry-run] Claude Code: would write hooks to: %s/.claude/settings.json\n' "$repo_root"
+  printf '[dry-run] CC PostToolUse command:\n  %s\n' "$cc_post_cmd"
+  printf '[dry-run] CC PreToolUse command:\n  %s\n' "$cc_pre_cmd"
+  printf '[dry-run] Codex: would write hooks to: %s/.codex/hooks.json\n' "$repo_root"
+  printf '[dry-run] Codex feature flag: %s/.codex/config.toml\n' "$repo_root"
+  printf '[dry-run] Codex PostToolUse command:\n  %s\n' "$cx_post_cmd"
+  printf '[dry-run] Codex PreToolUse command:\n  %s\n' "$cx_pre_cmd"
   exit 0
 fi
 
-# -- read existing settings or start fresh --
-if [[ -f "$settings_file" ]]; then
-  existing="$(cat "$settings_file")"
+# ---------------------------------------------------------------------------
+# Install Claude Code hooks → .claude/settings.json
+# ---------------------------------------------------------------------------
+cc_settings="$repo_root/.claude/settings.json"
+mkdir -p "$repo_root/.claude"
+
+if [[ -f "$cc_settings" ]]; then
+  cc_existing="$(cat "$cc_settings")"
 else
-  existing="{}"
+  cc_existing="{}"
 fi
 
-# -- use jq to merge hook entries (idempotent: filter out baton-owned entries, then re-add) --
-new_settings="$(echo "$existing" | jq \
-  --arg post_cmd "$post_cmd" \
-  --arg pre_cmd "$pre_cmd" \
+cc_new="$(echo "$cc_existing" | jq \
+  --arg post_cmd "$cc_post_cmd" \
+  --arg pre_cmd "$cc_pre_cmd" \
   '
-  # Remove any existing baton-owned PostToolUse entries (by marker string)
   def strip_baton_post:
     if type == "array" then
       map(
@@ -95,7 +127,6 @@ new_settings="$(echo "$existing" | jq \
       []
     end;
 
-  # Remove any existing baton-owned PreToolUse entries (by marker string)
   def strip_baton_pre:
     if type == "array" then
       map(
@@ -109,7 +140,6 @@ new_settings="$(echo "$existing" | jq \
       []
     end;
 
-  # Build the new baton PostToolUse entry
   def new_post_entry:
     {
       "matcher": "Write|Edit|MultiEdit",
@@ -118,7 +148,6 @@ new_settings="$(echo "$existing" | jq \
       ]
     };
 
-  # Build the new baton PreToolUse entry
   def new_pre_entry:
     {
       "matcher": "Write|Edit|MultiEdit",
@@ -132,5 +161,84 @@ new_settings="$(echo "$existing" | jq \
   '
 )"
 
-printf '%s\n' "$new_settings" > "$settings_file"
-printf 'install-hooks: wrote hooks to %s\n' "$settings_file"
+printf '%s\n' "$cc_new" > "$cc_settings"
+printf 'install-hooks: wrote Claude Code hooks to %s\n' "$cc_settings"
+
+# ---------------------------------------------------------------------------
+# Install Codex hooks → .codex/hooks.json
+# ---------------------------------------------------------------------------
+cx_dir="$repo_root/.codex"
+cx_hooks="$cx_dir/hooks.json"
+mkdir -p "$cx_dir"
+
+if [[ -f "$cx_hooks" ]]; then
+  cx_existing="$(cat "$cx_hooks")"
+else
+  cx_existing="{}"
+fi
+
+cx_new="$(echo "$cx_existing" | jq \
+  --arg post_cmd "$cx_post_cmd" \
+  --arg pre_cmd "$cx_pre_cmd" \
+  '
+  def strip_baton_post:
+    if type == "array" then
+      map(
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-validate-artifact"))) then
+          empty
+        else
+          .
+        end
+      )
+    else
+      []
+    end;
+
+  def strip_baton_pre:
+    if type == "array" then
+      map(
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-validate-transition"))) then
+          empty
+        else
+          .
+        end
+      )
+    else
+      []
+    end;
+
+  def new_post_entry:
+    {
+      "matcher": "Bash",
+      "hooks": [
+        { "type": "command", "command": $post_cmd }
+      ]
+    };
+
+  def new_pre_entry:
+    {
+      "matcher": "Bash",
+      "hooks": [
+        { "type": "command", "command": $pre_cmd }
+      ]
+    };
+
+  .hooks.PostToolUse = ((.hooks.PostToolUse | strip_baton_post) + [new_post_entry])
+  | .hooks.PreToolUse = ((.hooks.PreToolUse | strip_baton_pre) + [new_pre_entry])
+  '
+)"
+
+printf '%s\n' "$cx_new" > "$cx_hooks"
+printf 'install-hooks: wrote Codex hooks to %s\n' "$cx_hooks"
+
+# ---------------------------------------------------------------------------
+# Codex feature flag → .codex/config.toml (idempotent)
+# ---------------------------------------------------------------------------
+cx_config="$cx_dir/config.toml"
+
+if [[ -f "$cx_config" ]] && grep -q 'codex_hooks' "$cx_config"; then
+  printf 'install-hooks: Codex feature flag already present in %s\n' "$cx_config"
+else
+  printf '\n[features]\ncodex_hooks = true\n' >> "$cx_config"
+  printf 'install-hooks: wrote Codex feature flag to %s\n' "$cx_config"
+fi
