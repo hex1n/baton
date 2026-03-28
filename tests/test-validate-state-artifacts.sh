@@ -31,6 +31,8 @@ make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
   cat > "$dir/module-status.md" <<EOF
+# Module Status
+
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |-------|-------|-------|------------|------------|-------|
 | task1 | generator | $state | 0 | 2026-03-28 | - |

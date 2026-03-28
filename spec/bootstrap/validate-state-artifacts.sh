@@ -6,7 +6,7 @@ module_status="$harness_dir/module-status.md"
 
 [[ -f "$module_status" ]] || exit 0
 
-state=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' "$module_status")
+state=$(awk -F'|' 'NF>3 && $4!~/---/ && $4!~/^[[:space:]]*State[[:space:]]*$/{gsub(/ /,"",$4); print $4; exit}' "$module_status")
 [[ -n "$state" ]] || exit 0
 
 required_for_state() {
