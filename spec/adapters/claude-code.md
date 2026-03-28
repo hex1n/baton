@@ -108,6 +108,18 @@ for the Verification Explorer and Scoped Explorer roles respectively.
 For Codex, see `spec/adapters/codex.md` for the equivalent `spawn_agent`
 pattern. For Cursor, see `spec/adapters/cursor.md`.
 
+### Isolation Invariant
+
+Context isolation responsibility belongs to the **orchestrator** (caller),
+not the invoked skill.
+
+- The skill declares isolation intent via `context: fork` frontmatter.
+- The orchestrator is responsible for dispatching via `Agent` tool.
+- Using the `Skill` tool to invoke an isolated role is a protocol
+  violation — it executes inline and shares conversation context.
+- If an isolated role's Isolation Self-Check fires, the orchestrator
+  MUST re-dispatch via `Agent` tool before the role can proceed.
+
 ## Sequential Fallback
 
 If Claude Code is operating without separate task contexts:
