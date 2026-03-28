@@ -35,8 +35,9 @@ Do not read Generator execution notes or inherit conversation history.
 
 Before proceeding, verify you are running in a fresh context:
 
-- If you can recall Generator output, code diffs, or implementation
-  decisions from earlier in this conversation, **STOP**.
+- If you can recall Generator output, implementation decisions, or code
+  diffs from earlier in this conversation — context you did not load from
+  the artifacts above — **STOP**.
 - You are NOT in a fresh context. Context inheritance defeats the
   purpose of independent evaluation.
 - Instruct the orchestrator to re-dispatch via `Agent` tool
