@@ -50,6 +50,10 @@ assert_file_contains "CC PreToolUse written"            "$repo/.claude/settings.
 assert_file_contains "CC validate-artifact in config"   "$repo/.claude/settings.json" "validate-artifact"
 assert_file_contains "CC validate-transition in config" "$repo/.claude/settings.json" "validate-transition"
 assert_file_contains "CC matcher is Write|Edit"         "$repo/.claude/settings.json" "Write|Edit|MultiEdit"
+assert_file_contains "CC commands use git rev-parse" \
+  "$repo/.claude/settings.json" "git rev-parse"
+assert_file_contains "Codex commands use git rev-parse" \
+  "$repo/.codex/hooks.json" "git rev-parse"
 
 # Idempotent: running twice does not duplicate PostToolUse
 bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" >/dev/null 2>&1

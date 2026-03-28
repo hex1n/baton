@@ -63,10 +63,10 @@ fi
 # ---------------------------------------------------------------------------
 
 # PostToolUse: after write to .harness/*.md → validate-artifact.sh
-cc_post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; at=\$(basename \"\$fp\" .md); bash ${bootstrap_dir}/validate-artifact.sh \"\$at\" \"\$fp\" # baton-validate-artifact"
+cc_post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; at=\$(basename \"\$fp\" .md); bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-artifact.sh\" \"\$at\" \"\$fp\" # baton-validate-artifact"
 
-# PreToolUse: before write to module-status.md → validate-transition.sh (any non-zero blocks)
-cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; bash ${bootstrap_dir}/validate-transition.sh \"\$cs\" \"\$ns\" # baton-validate-transition"
+# PreToolUse: before write to module-status.md → validate-transition.sh
+cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
 # Codex hook command strings
@@ -75,14 +75,13 @@ cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path
 # ---------------------------------------------------------------------------
 
 # PostToolUse: after Bash command that wrote to .harness/*.md → validate-artifact.sh
-# Extract .harness/*.md paths referenced in the command string; validate each existing file.
-cx_post_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"\$cmd\" ]] || exit 0; for fp in \$(echo \"\$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"\$fp\" ]] || continue; at=\$(basename \"\$fp\" .md); bash ${bootstrap_dir}/validate-artifact.sh \"\$at\" \"\$fp\"; done # baton-validate-artifact"
+cx_post_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"\$cmd\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; for fp in \$(echo \"\$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"\$fp\" ]] || continue; at=\$(basename \"\$fp\" .md); bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-artifact.sh\" \"\$at\" \"\$fp\"; done # baton-validate-artifact"
 
 # PreToolUse: before Bash command that writes to module-status.md → validate-transition.sh
 # Extract target state from known state names present in the command string.
 # Exit 2 (not 1) to signal Codex to block the pending tool call.
 cx_state_names="exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked"
-cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash ${bootstrap_dir}/validate-transition.sh \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
+cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
 # Dry-run: print what would be written, then exit
