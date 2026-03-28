@@ -149,9 +149,22 @@ Return to Step 2 (First-Principles Decomposition). Re-examine approach
 categories before proposing a new direction. Re-present and wait.
 
 **Rejected — requirements misunderstood**
-Update `module-status.md` → state `blocked`, category `design_blocker`.
-Notes: requirements layer has ambiguity; Specifier should re-engage to clarify
-before architecture resumes.
+
+1. Write `module-status.md` → state `blocked`, category `design_blocker`.
+   Notes: name the specific requirement that is ambiguous or contradictory.
+
+2. Write `.harness/generator-feedback.md` with these fields:
+   - **Original assumption**: what `architecture.md` assumed about the requirement
+   - **Actual finding**: why that assumption cannot be satisfied as-is
+   - **Impact on implementation**: what breaks if proceeding without clarity
+   - **Recommended next owner**: `specifier`
+
+3. Stop. Do not re-attempt architecture.
+
+Specifier entry condition: when `generator-feedback.md` exists and
+`recommended_next_owner` is `specifier`, resolve the ambiguity in
+`requirements.md` before architecture resumes. Architect will then
+re-read both files and restart from Step 2 (First-Principles Decomposition).
 
 ## Decision Records
 
