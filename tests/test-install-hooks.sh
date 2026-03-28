@@ -148,6 +148,15 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# SessionStart
+# ---------------------------------------------------------------------------
+assert_file_contains "CC SessionStart written"               "$repo/.claude/settings.json" '"SessionStart"'
+assert_file_contains "CC SessionStart matcher"               "$repo/.claude/settings.json" "startup|resume"
+assert_file_contains "CC SessionStart calls harness-context" "$repo/.claude/settings.json" "harness-context"
+assert_file_contains "Codex SessionStart written"            "$repo/.codex/hooks.json"     '"SessionStart"'
+assert_file_contains "Codex SessionStart has statusMessage"  "$repo/.codex/hooks.json"     "Loading harness context"
+
+# ---------------------------------------------------------------------------
 # Dry run
 # ---------------------------------------------------------------------------
 repo2="$tmp/repo2"
