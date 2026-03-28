@@ -102,6 +102,26 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Stop hooks
+# ---------------------------------------------------------------------------
+assert_file_contains "CC Stop hook written"             "$repo/.claude/settings.json" '"Stop"'
+assert_file_contains "CC Stop uses validate-state"      "$repo/.claude/settings.json" "validate-state-artifacts"
+assert_file_contains "Codex Stop hook written"          "$repo/.codex/hooks.json"     '"Stop"'
+assert_file_contains "Codex Stop has statusMessage"     "$repo/.codex/hooks.json"     "Checking harness state"
+
+# Stop idempotent (CC)
+bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" >/dev/null 2>&1
+cc_stop_count="$(grep -c '"Stop"' "$repo/.claude/settings.json")"
+TOTAL=$((TOTAL+1))
+if [[ "$cc_stop_count" -eq 1 ]]; then
+  echo "  pass: CC Stop idempotent — not duplicated"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: CC Stop appears $cc_stop_count times"
+  FAIL=$((FAIL+1))
+fi
+
+# ---------------------------------------------------------------------------
 # Dry run
 # ---------------------------------------------------------------------------
 repo2="$tmp/repo2"

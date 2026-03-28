@@ -84,6 +84,12 @@ cx_state_names="exploring|specifying|architecting|awaiting_human_arch|verificati
 cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
+# Stop hook command string (Claude Code + Codex — outputs JSON)
+# No matcher: Stop has no matcher support on either platform
+# ---------------------------------------------------------------------------
+stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [[ -f \"\$root/.harness/module-status.md\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
+
+# ---------------------------------------------------------------------------
 # Dry-run: print what would be written, then exit
 # ---------------------------------------------------------------------------
 if [[ "$dry_run" == true ]]; then
@@ -112,6 +118,7 @@ fi
 cc_new="$(echo "$cc_existing" | jq \
   --arg post_cmd "$cc_post_cmd" \
   --arg pre_cmd "$cc_pre_cmd" \
+  --arg stop_cmd "$stop_cmd" \
   '
   def strip_baton_post:
     if type == "array" then
@@ -139,6 +146,16 @@ cc_new="$(echo "$cc_existing" | jq \
       []
     end;
 
+  def strip_baton_stop:
+    if type == "array" then
+      map(
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-validate-state"))) then
+          empty
+        else .
+        end
+      )
+    else [] end;
+
   def new_post_entry:
     {
       "matcher": "Write|Edit|MultiEdit",
@@ -155,8 +172,12 @@ cc_new="$(echo "$cc_existing" | jq \
       ]
     };
 
+  def new_cc_stop_entry:
+    {"hooks": [{"type": "command", "command": $stop_cmd}]};
+
   .hooks.PostToolUse = ((.hooks.PostToolUse | strip_baton_post) + [new_post_entry])
   | .hooks.PreToolUse = ((.hooks.PreToolUse | strip_baton_pre) + [new_pre_entry])
+  | .hooks.Stop = ((.hooks.Stop | strip_baton_stop) + [new_cc_stop_entry])
   '
 )"
 
@@ -179,6 +200,7 @@ fi
 cx_new="$(echo "$cx_existing" | jq \
   --arg post_cmd "$cx_post_cmd" \
   --arg pre_cmd "$cx_pre_cmd" \
+  --arg stop_cmd "$stop_cmd" \
   '
   def strip_baton_post:
     if type == "array" then
@@ -206,6 +228,16 @@ cx_new="$(echo "$cx_existing" | jq \
       []
     end;
 
+  def strip_baton_stop:
+    if type == "array" then
+      map(
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-validate-state"))) then
+          empty
+        else .
+        end
+      )
+    else [] end;
+
   def new_post_entry:
     {
       "matcher": "Bash",
@@ -222,8 +254,12 @@ cx_new="$(echo "$cx_existing" | jq \
       ]
     };
 
+  def new_cx_stop_entry:
+    {"hooks": [{"type": "command", "command": $stop_cmd, "statusMessage": "Checking harness state", "timeout": 30}]};
+
   .hooks.PostToolUse = ((.hooks.PostToolUse | strip_baton_post) + [new_post_entry])
   | .hooks.PreToolUse = ((.hooks.PreToolUse | strip_baton_pre) + [new_pre_entry])
+  | .hooks.Stop = ((.hooks.Stop | strip_baton_stop) + [new_cx_stop_entry])
   '
 )"
 
