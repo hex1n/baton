@@ -121,6 +121,17 @@ else
   FAIL=$((FAIL+1))
 fi
 
+# Codex Stop idempotent
+cx_stop_count="$(grep -c '"Stop"' "$repo/.codex/hooks.json")"
+TOTAL=$((TOTAL+1))
+if [[ "$cx_stop_count" -eq 1 ]]; then
+  echo "  pass: Codex Stop idempotent — not duplicated"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: Codex Stop appears $cx_stop_count times"
+  FAIL=$((FAIL+1))
+fi
+
 # ---------------------------------------------------------------------------
 # Dry run
 # ---------------------------------------------------------------------------

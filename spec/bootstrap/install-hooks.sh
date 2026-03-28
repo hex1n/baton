@@ -87,7 +87,7 @@ cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command 
 # Stop hook command string (Claude Code + Codex — outputs JSON)
 # No matcher: Stop has no matcher support on either platform
 # ---------------------------------------------------------------------------
-stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [[ -f \"\$root/.harness/module-status.md\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
+stop_cmd="[[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
 
 # ---------------------------------------------------------------------------
 # Dry-run: print what would be written, then exit
