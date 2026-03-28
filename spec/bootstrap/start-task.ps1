@@ -28,7 +28,7 @@ function Convert-LineToRow {
     param([string]$Line)
 
     $parts = $Line.Split("|")
-    if ($parts.Count -lt 7) {
+    if ($parts.Count -lt 8) {
         return $null
     }
 
@@ -36,8 +36,9 @@ function Convert-LineToRow {
         Scope = $parts[1].Trim()
         Owner = $parts[2].Trim()
         State = $parts[3].Trim()
-        UpdatedAt = $parts[4].Trim()
-        Notes = $parts[5].Trim()
+        EvalRound = $parts[4].Trim()
+        UpdatedAt = $parts[5].Trim()
+        Notes = $parts[6].Trim()
     }
 }
 
@@ -324,6 +325,7 @@ $allRows += [pscustomobject]@{
     Scope = $safeTaskId
     Owner = $safeOwner
     State = $safeState
+    EvalRound = "0"
     UpdatedAt = $timestamp
     Notes = $safeNotes
 }
@@ -331,12 +333,12 @@ $allRows += [pscustomobject]@{
 $moduleStatusContent = @(
     "# Module Status"
     ""
-    "| Scope | Owner | State | Updated At | Notes |"
-    "|------|------|------|-----------|------|"
+    "| Scope | Owner | State | Eval Round | Updated At | Notes |"
+    "|------|------|------|-----------|-----------|------|"
 )
 
 foreach ($row in $allRows) {
-    $moduleStatusContent += "| $($row.Scope) | $($row.Owner) | $($row.State) | $($row.UpdatedAt) | $($row.Notes) |"
+    $moduleStatusContent += "| $($row.Scope) | $($row.Owner) | $($row.State) | $($row.EvalRound) | $($row.UpdatedAt) | $($row.Notes) |"
 }
 
 $moduleStatusContent += @(

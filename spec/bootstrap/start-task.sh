@@ -253,7 +253,7 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     break
   fi
 
-  if [[ "$line" == '| Scope | Owner | State | Updated At | Notes |' ]]; then
+  if [[ "$line" == '| Scope | Owner | State | Eval Round | Updated At | Notes |' ]]; then
     in_table="true"
     continue
   fi
@@ -262,7 +262,7 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     continue
   fi
 
-  if [[ "$line" == '|------|------|------|-----------|------|' || -z "$line" ]]; then
+  if [[ "$line" == '|------|------|------|-----------|-----------|------|' || -z "$line" ]]; then
     continue
   fi
 
@@ -272,7 +272,7 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
 
   trimmed_line="${line#|}"
   trimmed_line="${trimmed_line%|}"
-  IFS='|' read -r scope_column owner_column state_column updated_column notes_column <<< "$trimmed_line"
+  IFS='|' read -r scope_column owner_column state_column eval_round_column updated_column notes_column <<< "$trimmed_line"
 
   scope="$(trim "$scope_column")"
   row_state="$(trim "$state_column")"
@@ -361,15 +361,15 @@ safe_task_id="$(sanitize_cell "$task_id")"
 safe_owner="$(sanitize_cell "$owner")"
 safe_state="$(sanitize_cell "$state")"
 safe_notes="$(sanitize_cell "$notes")"
-new_row="| $safe_task_id | $safe_owner | $safe_state | $timestamp | $safe_notes |"
+new_row="| $safe_task_id | $safe_owner | $safe_state | 0 | $timestamp | $safe_notes |"
 
 if [[ "$dry_run" == "true" ]]; then
   printf 'plan  %s\n' "$module_status_path"
 else
   {
     printf '# Module Status\n\n'
-    printf '| Scope | Owner | State | Updated At | Notes |\n'
-    printf '|------|------|------|-----------|------|\n'
+    printf '| Scope | Owner | State | Eval Round | Updated At | Notes |\n'
+    printf '|------|------|------|-----------|-----------|------|\n'
     if [[ "${#rows[@]}" -gt 0 ]]; then
       for row in "${rows[@]}"; do
         printf '%s\n' "$row"
