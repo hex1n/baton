@@ -66,6 +66,7 @@ The materialization strategy is local to the target repo:
 2. hardlink
 3. copy
 
+When symlinks are used, their targets are written as repo-relative paths.
 This means the repo stays self-contained even when symlinks are used.
 
 ## Next Step

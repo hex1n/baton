@@ -184,6 +184,25 @@ if [[ $inv7_errors -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Invariant 8: committed runtime symlinks are repo-relative, never absolute
+# ---------------------------------------------------------------------------
+inv8_errors=0
+for link in "$claude_skills_dir"/*.md "$agents_dir"/*.md "$claude_agents_dir"/*.md; do
+  [[ -L "$link" ]] || continue
+  target="$(readlink "$link")"
+  case "$target" in
+    /*)
+      printf 'ERROR: invariant-8: %s uses absolute symlink target %s\n' "$link" "$target"
+      inv8_errors=$((inv8_errors + 1))
+      ;;
+  esac
+done
+errors=$((errors + inv8_errors))
+if [[ $inv8_errors -eq 0 ]]; then
+  printf 'OK: invariant-8: runtime symlinks use repo-relative targets\n'
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 if [[ $errors -eq 0 ]]; then

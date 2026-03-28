@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-architect.md
+../skills/baton-architect.md

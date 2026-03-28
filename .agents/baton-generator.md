@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-generator.md
+../skills/baton-generator.md

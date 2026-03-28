@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-evaluator.md
+../skills/baton-evaluator.md

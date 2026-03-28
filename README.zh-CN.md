@@ -107,7 +107,7 @@ spec/bootstrap/update-harness.sh --repo-root /path/to/repo
 spec/bootstrap/link-skills.sh
 ```
 
-这只适用于 baton 仓库自己的开发态。`sync-skills.sh` 会根据工作区真实文件类型判断是否需要同步，而不会只相信 `.link-mode`。
+这只适用于 baton 仓库自己的开发态。使用 symlink 时，link target 会写成仓库内相对路径，避免把本机绝对路径固化进仓库。`sync-skills.sh` 会根据工作区真实文件类型判断是否需要同步，而不会只相信 `.link-mode`。
 
 ### 手工复制 fallback
 

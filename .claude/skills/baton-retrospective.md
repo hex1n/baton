@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-retrospective.md
+../../skills/baton-retrospective.md

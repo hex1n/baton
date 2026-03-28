@@ -89,6 +89,7 @@ resolve_effective_skill_source() {
 link_one() {
   local source="$1"
   local target="$2"
+  local relative_source
 
   if [[ "$dry_run" == "true" ]]; then
     printf 'symlink'
@@ -97,7 +98,9 @@ link_one() {
 
   rm -f "$target"
 
-  if ln -s "$source" "$target" 2>/dev/null; then
+  relative_source="$(relative_link_target "$source" "$target")"
+
+  if ln -s "$relative_source" "$target" 2>/dev/null; then
     printf 'symlink'
     return 0
   fi
@@ -109,6 +112,35 @@ link_one() {
 
   cp "$source" "$target"
   printf 'copy'
+}
+
+relative_link_target() {
+  local source="$1"
+  local target="$2"
+  local source_dir target_dir source_name
+  local -a source_parts=() target_parts=()
+  local common=0 index rel=""
+
+  source_dir="$(dirname "$source")"
+  target_dir="$(dirname "$target")"
+  source_name="$(basename "$source")"
+
+  IFS='/' read -r -a source_parts <<< "$source_dir"
+  IFS='/' read -r -a target_parts <<< "$target_dir"
+
+  while [[ $common -lt ${#source_parts[@]} && $common -lt ${#target_parts[@]} && "${source_parts[$common]}" == "${target_parts[$common]}" ]]; do
+    common=$((common + 1))
+  done
+
+  for ((index = common; index < ${#target_parts[@]}; index++)); do
+    rel+="../"
+  done
+
+  for ((index = common; index < ${#source_parts[@]}; index++)); do
+    rel+="${source_parts[$index]}/"
+  done
+
+  printf '%s%s' "$rel" "$source_name"
 }
 
 materialize_runtime_dir() {

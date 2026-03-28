@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/deep-research/SKILL.md
+../skills/deep-research/SKILL.md

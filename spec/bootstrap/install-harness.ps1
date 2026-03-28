@@ -117,8 +117,10 @@ function Link-One {
         Remove-Item -Path $Target -Force
     }
 
+    $relativeTarget = Get-RelativeLinkTarget -Source $Source -Target $Target
+
     try {
-        New-Item -ItemType SymbolicLink -Path $Target -Target $Source -ErrorAction Stop | Out-Null
+        New-Item -ItemType SymbolicLink -Path $Target -Target $relativeTarget -ErrorAction Stop | Out-Null
         return "symlink"
     } catch { }
 
@@ -129,6 +131,16 @@ function Link-One {
 
     Copy-Item -Path $Source -Destination $Target -Force
     return "copy"
+}
+
+function Get-RelativeLinkTarget {
+    param(
+        [string]$Source,
+        [string]$Target
+    )
+
+    $targetDir = Split-Path -Parent $Target
+    return [System.IO.Path]::GetRelativePath($targetDir, $Source)
 }
 
 function Materialize-RuntimeDir {

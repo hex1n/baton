@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/first-principles-planner/SKILL.md
+../../skills/first-principles-planner/SKILL.md

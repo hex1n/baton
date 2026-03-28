@@ -119,7 +119,9 @@ spec/bootstrap/link-skills.sh
 ```
 
 This applies to `.claude/skills/` and `.agents/` directories. Run after any
-change to `skills/` if you are in copy mode. `sync-skills.sh` inspects the
+change to `skills/` if you are in copy mode. When symlinks are used, their
+targets are written as repo-relative paths so the checkout stays portable.
+`sync-skills.sh` inspects the
 actual workspace file state; it does not trust `.link-mode` alone.
 
 ### Manual Copy Fallback

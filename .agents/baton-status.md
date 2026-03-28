@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-status.md
+../skills/baton-status.md

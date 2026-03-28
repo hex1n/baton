@@ -1,1 +1,1 @@
-/Users/hex1n/IdeaProjects/baton/skills/baton-specifier.md
+../skills/baton-specifier.md
