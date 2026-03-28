@@ -191,6 +191,16 @@ else
   FAIL=$((FAIL+1))
 fi
 
+# Stronger check: absolute path to repo3 must not appear in the hook commands
+TOTAL=$((TOTAL+1))
+if ! grep -qF "$repo3" "$repo3/.claude/settings.json" 2>/dev/null; then
+  echo "  pass: CC hook commands contain no absolute path to bootstrap dir"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: CC hook commands contain absolute path — relative path not computed"
+  FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

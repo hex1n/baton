@@ -63,6 +63,11 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'ERROR: install-hooks: python3 is required but not found in PATH\n' >&2
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Compute bootstrap path relative to repo root
 # Baked into hook commands at install time; $root resolved at runtime via git.
