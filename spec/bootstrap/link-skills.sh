@@ -50,6 +50,7 @@ link_one() {
 }
 
 # Link all *.md files from skills/ into target_dir.
+# Also links skills/*/SKILL.md subdirectory-style skills as <dirname>.md.
 # Returns (stdout) the worst mode used in this directory.
 link_dir() {
   local target_dir="$1"
@@ -61,6 +62,7 @@ link_dir() {
     mkdir -p "$target_dir"
   fi
 
+  # Flat files: skills/*.md
   for source_file in "$skills_dir"/*.md; do
     [[ -f "$source_file" ]] || continue
     local fname
@@ -80,6 +82,59 @@ link_dir() {
     printf '%s  %s\n' "$mode" "$target_file" >&2
   done
 
+  # Subdirectory skills: skills/<name>/SKILL.md → target_dir/<name>.md
+  for source_file in "$skills_dir"/*/SKILL.md; do
+    [[ -f "$source_file" ]] || continue
+    local dirname fname target_file
+    dirname="$(basename "$(dirname "$source_file")")"
+    fname="${dirname}.md"
+    target_file="$target_dir/$fname"
+
+    local mode
+    mode="$(link_one "$source_file" "$target_file")"
+
+    if [[ "$mode" == "copy" ]]; then
+      dir_mode="copy"
+    elif [[ "$mode" == "hardlink" && "$dir_mode" == "symlink" ]]; then
+      dir_mode="hardlink"
+    fi
+
+    printf '%s  %s\n' "$mode" "$target_file" >&2
+  done
+
+  printf '%s' "$dir_mode"
+}
+
+# Link only skills with `context: fork` into target_dir.
+link_fork_dir() {
+  local target_dir="$1"
+  local dir_mode="symlink"
+
+  if [[ "$dry_run" == "true" ]]; then
+    printf 'plan  mkdir -p %s\n' "$target_dir" >&2
+  else
+    mkdir -p "$target_dir"
+  fi
+
+  for source_file in "$skills_dir"/*.md; do
+    [[ -f "$source_file" ]] || continue
+    grep -q '^context: fork' "$source_file" 2>/dev/null || continue
+    local fname
+    fname="$(basename "$source_file")"
+    local target_file="$target_dir/$fname"
+
+    local mode
+    mode="$(link_one "$source_file" "$target_file")"
+
+    if [[ "$mode" == "copy" ]]; then
+      dir_mode="copy"
+    elif [[ "$mode" == "hardlink" && "$dir_mode" == "symlink" ]]; then
+      dir_mode="hardlink"
+    fi
+
+    printf '%s  %s\n' "$mode" "$target_file" >&2
+  done
+
   printf '%s' "$dir_mode"
 }
 
@@ -89,10 +144,13 @@ claude_mode="$(link_dir "$baton_root/.claude/skills")"
 printf '==> .agents/\n' >&2
 agents_mode="$(link_dir "$baton_root/.agents")"
 
-# Overall mode = worst of both directories
-if [[ "$claude_mode" == "copy" || "$agents_mode" == "copy" ]]; then
+printf '==> .claude/agents/ (context:fork only)\n' >&2
+claude_agents_mode="$(link_fork_dir "$baton_root/.claude/agents")"
+
+# Overall mode = worst of all directories
+if [[ "$claude_mode" == "copy" || "$agents_mode" == "copy" || "$claude_agents_mode" == "copy" ]]; then
   final_mode="copy"
-elif [[ "$claude_mode" == "hardlink" || "$agents_mode" == "hardlink" ]]; then
+elif [[ "$claude_mode" == "hardlink" || "$agents_mode" == "hardlink" || "$claude_agents_mode" == "hardlink" ]]; then
   final_mode="hardlink"
 else
   final_mode="symlink"

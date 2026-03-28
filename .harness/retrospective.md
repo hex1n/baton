@@ -1,33 +1,35 @@
-# Retrospective: governance-multi-host-entrypoints
+# Retrospective: runtime-thickness-improvements
 
 ## 1. 结果
 
-- 关闭状态: `complete`
-- 主要阻塞: 无功能性阻塞；唯一残余风险是 PowerShell 路径未运行时验证，因为当前环境没有 `pwsh`
-- 人工决策: 确认接受该 PowerShell 运行时验证残余风险，并关闭任务
+- 关闭状态: complete（2026-03-28）
+- 主要阻塞: 无。架构被否决两次（Rev1、Rev2），均通过 blocked 状态保存现场后重新架构，流程正常运转。
+- 人工决策: (1) 要求真正的运行时隔离（否决 Rev1 残余风险）；(2) 要求跨平台对称（否决 Rev2 CC-only 方案）；(3) 接受 Rev3 并确认关闭。
 
 ## 2. 有效做法
 
-- 先把问题定义为“多宿主治理入口缺失”，而不是“再补一份 AGENTS.md”，能避免走向手工双份维护
-- 用共享模板 + 物化脚本 + 主一致性检查的组合，比直接复制根文件稳得多
-- 把 `init-harness` 一起接上，能保证这个能力不是只在 baton 仓库内部成立，而是对外部分发也成立
+- **验证前置**：verification-path.md 在实现前 dry-run 确认所有命令可执行，实现阶段零阻塞。
+- **gap 分析先行**：baton-explorer 扫描出 10 个改进计划项，9 个已实现，只有 P0-3 确实缺失，避免了过度实现。
+- **跨平台对比分析**：在 Rev3 架构阶段对比 CC / Codex / Cursor 现状，发现 Codex 已正确，只需 CC 与其对称。
+- **不变式守护新机制**：新增 invariant 7 将 `.claude/agents/` 一致性纳入 check-consistency.sh，防止未来编辑 skills/ 后遗忘同步。
 
 ## 3. 失败点
 
-- 之前默认认为根目录只有 `CLAUDE.md` 就够了，说明 adapter 层虽然写了 Codex / Cursor 文档，但没有把“宿主真正会读哪个文件”落到 bootstrap 产物
-- 当前仍没有在本机完成 PowerShell 运行时验证，说明跨 shell 路径一旦缺少环境，就容易只停留在静态对齐
+- **Rev1 单层分析不足**：`context: fork` frontmatter 已设，但未追问"这在 CC 运行时是否真的强制"，导致架构被否决。应在架构阶段主动验证机制的实际约束边界。
+- **Rev2 平台视野窄**：仅设计 CC 修复方案，未主动扫描其他平台，需要 human 明确提示才补全。应在架构阶段默认列出所有目标平台现状。
 
 ## 4. 仓库特定经验
 
-- 对 baton 这种同时服务多个 agent host 的仓库，根目录治理入口也应该像 skills 和 templates 一样有单一真源，而不是把某个宿主的文件名当成 canonical
-- 根目录 `AGENTS.md` 和 `CLAUDE.md` 都属于协议入口面，不是普通补充文档，值得纳入 `check-consistency.sh` invariant
+- `.claude/agents/` 是 Claude Code 的运行时 agent 类型注册目录，link-skills.sh 现在将 `context: fork` 的 skill 文件自动同步到此目录。
+- `.claude/skills/`（Skill 工具内联）和 `.claude/agents/`（Agent 工具隔离）是两个不同分发目标，语义不同，不可互换。
 
 ## 5. Harness 经验
 
-- “adapter 已经写了文档”不等于“协议已经真正落地”；只有当 bootstrap、root entrypoint 和一致性检查都接上，adapter 才算真正可执行
-- 这次再次证明，文档 / 协议 / bootstrap 三者必须一起改，否则用户会在真实宿主环境里先遇到空洞
+- **协议声明 ≠ 运行时强制**：`context: fork` frontmatter 只声明意图，需要配合 CC Agent 工具 / Codex spawn_agent 才能真正隔离。文档层与机制层必须同时完整。
+- **blocked 状态可正常复用**：被否决的架构通过 blocked 状态保存，重新设计后继续，无上下文丢失，流程符合预期。
+- **P1-2 已通过等价机制实现**：`baton-evaluator.md` State Notes（`Current eval round: N`）已满足 eval_round 追踪需求，无需修改 module-status 模板。
 
 ## 6. 可标准化候选
 
-- 后续可以把 root governance template 的宿主映射做成更明确的 metadata，而不只是固定同步到 `CLAUDE.md` / `AGENTS.md`
-- 如果未来要更深入支持 Cursor，可以在此基础上再补 `.cursor/rules` 的生成，但应保持 `AGENTS.md` 这条轻量共享入口继续存在
+- **架构检查清单扩展**：在架构阶段增加一项 "列出所有目标平台（CC / Codex / Cursor）现状，逐一确认机制对称性"，可防止 Rev2 式单平台盲区。
+- **Skill 分发目标说明**：在 link-skills.sh 注释中明确两个分发目标的语义差异（`.claude/skills/` = 内联，`.claude/agents/` = 隔离），方便后续维护者理解。

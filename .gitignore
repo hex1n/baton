@@ -3,6 +3,7 @@
 .claude/*
 !.claude/settings.json
 !.claude/skills/
+!.claude/agents/
 # claude-mem auto-generated context files (root CLAUDE.md is tracked, unaffected)
 **/CLAUDE.md
 !CLAUDE.md

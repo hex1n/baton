@@ -10,10 +10,10 @@
 | root-readme-bilingual | — | complete | 2026-03-27T23:20:19+0800 | human confirmed close; bilingual root README accepted; retrospective recorded |
 | root-readme-standardization | — | complete | 2026-03-27T23:38:00+0800 | human confirmed close; root README bilingual checks and governance rules accepted; retrospective recorded |
 | governance-multi-host-entrypoints | — | complete | 2026-03-27T23:56:00+0800 | human confirmed close; shared governance template, AGENTS.md root entrypoint, bootstrap sync, and consistency checks accepted; retrospective recorded |
+| runtime-thickness-improvements | — | complete | 2026-03-28T13:20:00+0800 | human confirmed close; cross-platform isolation implemented; all 7 AC criteria met; retrospective recorded |
 
 ## State Notes
 
-- Current artifacts: governance-multi-host-entrypoints closed; retrospective recorded
+- Current artifacts: all artifacts complete
 - Current blockers: none
-- Current residual risks: accepted that PowerShell paths were updated but not runtime-verified because `pwsh` is unavailable in this environment
-- Current next decision: none
+- Current residual risks: accepted — see retrospective.md

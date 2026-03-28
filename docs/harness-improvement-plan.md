@@ -188,6 +188,10 @@ user-invocable: true
 - 进入修复循环后填 `1`、`2`、`3`
 - 第 3 轮结果仍为 BLOCKED → 强制更新 state: blocked，owner: human，附说明
 
+> **实现状态（2026-03-28）**：模板列方案暂未实施。持久化需求已通过 `baton-evaluator.md`
+> State Notes 机制实现：Evaluator 在 BLOCKED 时于 State Notes 写入 `Current eval round: N`，
+> 第 3 轮后强制升级给 human。行为等价，向后兼容，模板列方案留作未来可选优化。
+
 ---
 
 #### P1-3：新增 `harness-retrospective` skill

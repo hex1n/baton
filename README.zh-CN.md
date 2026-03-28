@@ -112,7 +112,7 @@ spec/bootstrap/link-skills.sh
 ### 手工复制 fallback
 
 ```bash
-cp .claude/skills/harness-*.md /path/to/repo/.claude/skills/
+cp .claude/skills/baton-*.md /path/to/repo/.claude/skills/
 ```
 
 正常接入请优先使用 `install-harness` / `update-harness`。手工复制只保留为低成本 fallback。
@@ -128,12 +128,12 @@ bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force
 
 | Skill | Role | Gate |
 |-------|------|------|
-| `harness-explorer` | 代码探索（repo + scoped） | Scoped Exploration Complete |
-| `harness-specifier` | 需求定义 | — |
-| `harness-architect` | 技术架构 | Architecture Approved（人工） |
-| `harness-verifier` | 验证路径检查 | Verification Path Check |
-| `harness-generator` | 代码实现 | — |
-| `harness-evaluator` | 独立评估 | Independent Review |
+| `baton-explorer` | 代码探索（repo + scoped） | Scoped Exploration Complete |
+| `baton-specifier` | 需求定义 | — |
+| `baton-architect` | 技术架构 | Architecture Approved（人工） |
+| `baton-verifier` | 验证路径检查 | Verification Path Check |
+| `baton-generator` | 代码实现 | — |
+| `baton-evaluator` | 独立评估 | Independent Review |
 
 ## 能力技能
 

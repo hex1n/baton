@@ -1,106 +1,144 @@
-# Architecture: governance-multi-host-entrypoints
+# Architecture: runtime-thickness-improvements
 
-**主题**: 根目录治理摘要多宿主入口标准化
-**状态**: `approved`
+**主题**: 实现跨平台真实上下文隔离（三平台对称）
+**状态**: `proposed (revision 3)`
 **规模**: `Medium`
 
-## 1. 问题
+## 1. 问题重述
 
-当前 harness 参考实现只有 `CLAUDE.md` 这一份根级治理摘要。对 Claude Code 这是自然入口，但对 Codex 不是；对 Cursor 来说，这也不是最明确、最通用的根目录项目规则入口。问题本质不是“再复制一份文件”，而是“如何让多宿主入口共享同一份治理真源，并被 bootstrap 与一致性检查共同维护”。
+**协议层**（`cli-adapter-interface.md`）已明确要求：Evaluator、Verification Explorer 这两个角色
+"MUST derive judgment from artifacts only, without inheriting prior role reasoning"。
+
+**现状不对称**：
+
+| 平台 | adapter 文档 | skill 内 dispatch note | 运行时隔离保证 |
+|------|-------------|----------------------|--------------|
+| Codex | `codex.md` 有完整 spawn_agent 示例 ✅ | baton-evaluator/verifier 有 Codex Note ✅ | 真实（spawn_agent 是 Codex 运行时强制） |
+| Cursor | `cursor.md` 有 known limitation ✅ | 无 | 软性（用户手动开新 chat） |
+| Claude Code | `claude-code.md` 只说 "Prefer separate contexts" ❌ | 无 CC Note ❌ | 无保证（Skill 工具在当前会话内联执行） |
+
+**不对称的根因**：Claude Code adapter 和 skill 文件缺少对等于 Codex 的具体机制文档。
 
 ## 2. 第一性原理拆解
 
-### 2.1 问题陈述
+### 2.1 各平台隔离机制对照
 
-根级 agent instruction 文件的职责是让宿主工具在进入仓库时就加载一组稳定、跨任务的项目规则。如果这些规则只存在于某一个宿主专用文件名下，那么协议虽然定义了治理摘要，实际却只对那个宿主生效。只要不同宿主看到的根级规则不一致，portable harness 的“adapter 只是执行层”这个原则就会被破坏。
+| 平台 | 真实隔离机制 | 机制来源 |
+|------|------------|---------|
+| Claude Code | `Agent` 工具 — 生成零父会话历史的子进程 | Claude Code 运行时 |
+| Codex | `spawn_agent({ fork_context: false })` | Codex runtime API |
+| Cursor | 手动新建 chat/agent context | 用户纪律（无程序化手段） |
+
+`context: fork` in skill frontmatter：对 Codex/Cursor 是触发语义的信号；对 Claude Code 的 Skill 工具本身**无运行时效果**（Skill 工具始终内联执行）。
 
 ### 2.2 约束
 
-- 需要继续兼容 Claude Code 对 `CLAUDE.md` 的入口习惯
-- Codex 需要 `AGENTS.md`
-- Cursor 先走官方支持的简单入口 `AGENTS.md`，不引入更重的 `.cursor/rules` 系统
-- 不能让 `CLAUDE.md` 和 `AGENTS.md` 长期手工同步
+- 遵循已有的 Codex 模式：adapter 文档 + skill 内 Execution Note，保持三平台结构对称
+- 不改变协议核心
+- `.claude/agents/` 是 Claude Code 注册自定义 Agent 子类型的目录（与 `.claude/skills/` 并列，功能不同）
+- 为 `.claude/agents/` 设置保底 fallback（`general-purpose` 子类型），避免 CC 版本差异引起的中断
 
-### 2.3 方案类别
+### 2.3 方案选择
 
-- 方案 A: 只新增一个手工维护的 `AGENTS.md`
-- 方案 B: 把治理摘要完全迁移到 `AGENTS.md`，删掉 `CLAUDE.md`
-- 方案 C: 引入共享模板，通过脚本物化 `CLAUDE.md` 与 `AGENTS.md`，并纳入 bootstrap 与自检
+**选"Codex 模式对称"**：
+- adapter 文档（`claude-code.md`）加 Agent 工具 dispatch 部分，结构与 `codex.md` 对称
+- 三个 context:fork skill 各加 "Claude Code Execution Note"，结构与已有 "Codex Execution Note" 对称
+- 建立 `.claude/agents/` 目录，链接 evaluator/verifier/explorer，支持 `subagent_type: "baton-evaluator"` 调用
 
-### 2.4 评估
-
-- 为什么方案 C 胜出:
-  - 兼顾 Claude Code 与 Codex / Cursor
-  - 保持单一真源，避免双文件长期漂移
-  - 能自然接入 `init-harness` 和 `check-consistency.sh`
-- 为什么拒绝方案 A:
-  - 只是把单入口问题变成双份手工维护问题
-- 为什么拒绝方案 B:
-  - 会损失 Claude Code 的现有根入口，并且没有必要
+拒绝"只改文档"方案：无运行时效果，不满足 "必须" 要求。
+拒绝"只用 general-purpose fallback"方案：可行但丧失语义清晰度，且不能利用 `.claude/agents/` 机制。
 
 ## 3. 推荐架构
 
-- 方法:
-  - 新增共享模板 `spec/templates/root-governance.template.md`
-  - 新增 `spec/bootstrap/sync-governance-entrypoints.sh`
-  - baton 根目录用该脚本物化 `CLAUDE.md` 与 `AGENTS.md`
-  - `init-harness.sh` 在目标仓库 bootstrap 时调用该脚本，为根目录写出缺失入口
-  - `check-consistency.sh` 增加一个 invariant，检查这两个入口与模板保持一致
-- 关键变更点:
-  - 从单宿主 `CLAUDE.md` 升级为多宿主共享根入口
-  - bootstrap 除了 `.harness` 制品，还会管理根目录治理入口
-- 数据 / 控制边界:
-  - 真源在 `spec/templates/`
-  - 运行时根入口在 repo root
-  - 一致性检查只在 baton 仓库强制 exact-match
-- 向后兼容说明:
-  - 继续保留 `CLAUDE.md`
-  - Cursor 先通过 `AGENTS.md` 获得相同治理摘要，不额外要求 `.cursor/rules`
+**核心原则**：三平台结构对称 — 每个平台都有：adapter 文档机制 + skill 内具体 dispatch note。
+
+### 写入面（12 个文件）
+
+| 文件 | 变更类型 | 内容 |
+|------|---------|------|
+| `spec/adapters/claude-code.md` | 修改 | 加 "Context Isolation" 节：Agent 工具为 CC 的强制隔离机制，含 preferred/fallback dispatch 示例 |
+| `skills/baton-evaluator.md` | 修改 | 加 "Claude Code Execution Note"（结构与现有 Codex Note 对称） |
+| `skills/baton-verifier.md` | 修改 | 同上 |
+| `skills/baton-explorer.md` | 修改 | 加 CC/Codex/Cursor 三平台 dispatch note（Repo-wide 模式适用） |
+| `.claude/agents/baton-evaluator.md` | 新建（symlink） | 链接到 `skills/baton-evaluator.md` |
+| `.claude/agents/baton-verifier.md` | 新建（symlink） | 链接到 `skills/baton-verifier.md` |
+| `.claude/agents/baton-explorer.md` | 新建（symlink） | 链接到 `skills/baton-explorer.md` |
+| `spec/bootstrap/link-skills.sh` | 修改 | 新增 `.claude/agents/` 为同步目标 |
+| `spec/bootstrap/check-consistency.sh` | 修改 | 新增不变式 7：`.claude/agents/` context:fork 文件与 skills/ 一致 |
+
+（加上原始已在进行的 4 个变更：baton-explorer.md frontmatter、check-consistency.sh harness→baton、link-skills.sh SKILL.md 支持、改进计划 P1-2 补注）
+
+### Claude Code Execution Note 内容（baton-evaluator 示例）
+
+```markdown
+## Claude Code Execution Note
+
+In Claude Code, launch this role as an isolated subagent via the `Agent` tool.
+Do NOT invoke inline via the `Skill` tool — that executes within the current
+conversation and provides no context isolation.
+
+Preferred (if `.claude/agents/baton-evaluator` is registered):
+  Agent(subagent_type: "baton-evaluator",
+        prompt: "Evaluate the implementation for task [task-id].")
+
+Fallback (general-purpose, always works):
+  Agent(subagent_type: "general-purpose",
+        prompt: "You are the Evaluator for the current harness task.
+                 Cold-read only:
+                 - .harness/requirements.md
+                 - .harness/architecture.md
+                 - .harness/verification-path.md
+                 - the implementation diff from git
+                 Do not inherit Generator reasoning or prior conversation history.
+                 [follow baton-evaluator skill instructions]")
+
+See spec/adapters/claude-code.md for the full dispatch pattern.
+```
+
+### 三平台隔离对称表（实现后）
+
+| 平台 | 机制 | Adapter 文档 | Skill Note |
+|------|------|-------------|----------|
+| Claude Code | Agent 工具子进程 | `claude-code.md` § Context Isolation | CC Execution Note ✅ |
+| Codex | spawn_agent | `codex.md` § Evaluator | Codex Execution Note ✅ |
+| Cursor | 手动新 chat | `cursor.md` § Evaluator | Cursor 已知限制（adapter 文档，skill 内不重复） |
+
+Cursor 在 skill 内不加 note，原因：cursor.md 已完整记录，且无程序化机制可文档化。
 
 ## 4. 影响面扫描
 
-| 文件 | 层级 | 处理方式 | 原因 |
-|---|---|---|---|
-| `.harness/scoped-map.md` | L1 | modify | 记录当前探索 |
-| `.harness/requirements.md` | L1 | modify | 固化需求 |
-| `.harness/architecture.md` | L1 | modify | 固化方案 |
-| `.harness/verification-path.md` | L1 | modify | 定义验证路径 |
-| `.harness/module-status.md` | L1 | modify | 状态跟踪 |
-| `spec/templates/root-governance.template.md` | L1 | add | 共享治理真源 |
-| `spec/bootstrap/sync-governance-entrypoints.sh` | L1 | add | 物化和检查双入口 |
-| `spec/bootstrap/init-harness.sh` | L1 | modify | bootstrap 目标仓库根入口 |
-| `spec/bootstrap/check-consistency.sh` | L1 | modify | 增加双入口 invariant |
-| `CLAUDE.md` | L1 | modify | 由模板同步 |
-| `AGENTS.md` | L1 | add | Codex / Cursor 根入口 |
-| `README.md` | L1 | modify | 说明多宿主入口 |
-| `README.zh-CN.md` | L1 | modify | 同步说明 |
-| `spec/README.md` | L1 | modify | 说明 bootstrap 生成 root entrypoints |
-| `spec/bootstrap/init-harness.md` | L1 | modify | 文档化行为 |
-| `spec/adapters/codex.md` | L1 | modify | 明确读取 `AGENTS.md` |
-| `spec/adapters/cursor.md` | L1 | modify | 明确轻量入口采用 `AGENTS.md` |
+| 文件 | 层级 | 处理方式 |
+|------|------|---------|
+| `spec/adapters/claude-code.md` | L1 | 修改 |
+| `skills/baton-evaluator.md` | L1 | 修改 |
+| `skills/baton-verifier.md` | L1 | 修改 |
+| `skills/baton-explorer.md` | L1 | 修改 |
+| `.claude/agents/baton-evaluator.md` | L1 | 新建 symlink |
+| `.claude/agents/baton-verifier.md` | L1 | 新建 symlink |
+| `.claude/agents/baton-explorer.md` | L1 | 新建 symlink |
+| `spec/bootstrap/link-skills.sh` | L1 | 修改 |
+| `spec/bootstrap/check-consistency.sh` | L1 | 修改 |
+| `.claude/skills/baton-*.md` | L2 | 自动同步（已是 symlinks） |
+| `.agents/baton-*.md` | L2 | 自动同步（已是 symlinks） |
 
 ## 5. 验证策略
 
-- 主要检查:
-  - 同步脚本 check 模式通过
-  - 主一致性检查通过
-  - 临时仓库 bootstrap 后根目录出现双入口
-- 评审重点:
-  - `init-harness` 的覆盖策略是否足够稳妥
-  - 是否在不过度设计的前提下覆盖了 Codex / Cursor
-- 验证无法完全消除的风险:
-  - Cursor 的高级规则体系没有在本次任务中覆盖；这里只保证根级简单入口
+- `head -5 skills/baton-evaluator.md` 含 `context: fork`
+- `grep "Claude Code Execution Note" skills/baton-evaluator.md skills/baton-verifier.md skills/baton-explorer.md`
+- `ls -la .claude/agents/` 含三个 symlinks
+- `grep "Agent tool\|Agent(" spec/adapters/claude-code.md`
+- `bash spec/bootstrap/check-consistency.sh` 全部不变式（含新增不变式 7）通过
 
 ## 6. 风险
 
-- 如果维护者绕过模板直接改 `CLAUDE.md` / `AGENTS.md`，会被一致性检查拦下
-- 如果目标仓库已有自定义 root instructions，默认不强制覆盖，仍需人工决定是否合并
+| 风险 | 缓解 |
+|------|------|
+| `.claude/agents/` 在目标 CC 版本中不支持自定义 subagent_type | fallback 模式（general-purpose + skill 内容）文档化，确保降级路径清晰 |
+| Cursor 无程序化隔离（已知）| 已有文档；adapter + skill 层都不做虚假保证 |
+| link-skills.sh 新增 .claude/agents/ 同步时覆盖用户自定义 agent | .claude/agents/ 文件由 link-skills.sh 管理，与 .claude/skills/ 一致；用户自定义 agent 应放在 ~/.claude/agents/ (user-level) |
 
 ## 7. 自我质疑
 
-1. 这是最优方案类别，还是只是第一个可行方案?
-   - 对当前需求是最优轻量方案；没有必要一步走到 Cursor 的复杂 rule metadata
-2. 还有哪些假设尚未验证?
-   - 尚未验证 PowerShell 版 init 是否也要同时落地；当前优先覆盖 bash 主路径
-3. 一个怀疑者会先质疑什么?
-   - “为什么不用单独的 `.cursor/rules`？” 回答是当前问题首先是 Codex 不识别 `CLAUDE.md`，而 `AGENTS.md` 已能覆盖 Codex，并作为 Cursor 的简单官方入口
+1. **Cursor 为什么不在 skill 内加 Cursor Note？** Cursor 无程序化 dispatch；在 skill 内加等于又重复一遍 "请手动开新 chat"。cursor.md 已是权威来源，skill 内额外说明带来的是混淆而非价值。
+2. **为什么建 .claude/agents/ 而不只用 general-purpose fallback？** general-purpose 需要把完整 skill 内容嵌入 prompt，既冗长又难维护。.claude/agents/ 方案语义清晰、单一来源。
+3. **link-skills.sh 已有改动，再加 .claude/agents/ 是否超出写入面？** 否——link-skills.sh 的责任是管理所有分发目标；.claude/agents/ 是一个新的合理目标，属于同一职责域。

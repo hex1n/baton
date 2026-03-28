@@ -32,7 +32,7 @@ else
       printf 'ERROR: invariant-1: token "%s" found in skills/ but not in owners.txt\n' "$token"
       inv1_errors=$((inv1_errors + 1))
     fi
-  done < <(grep -rh 'owner `' "$skills_dir"/harness-*.md 2>/dev/null \
+  done < <(grep -rh 'owner `' "$skills_dir"/baton-*.md 2>/dev/null \
     | grep -oE 'owner `[^`]+`' | grep -oE '`[^`]+`' | tr -d '`' | sort -u)
   if [[ $inv1_errors -eq 0 ]]; then
     printf 'OK: invariant-1: all owner tokens in skills/ are present in owners.txt\n'
@@ -104,7 +104,7 @@ errors=$((errors + inv3_errors))
 # Invariant 4: skills/ files match .claude/skills/ and .agents/ copies
 # ---------------------------------------------------------------------------
 inv4_errors=0
-for src in "$skills_dir"/harness-*.md; do
+for src in "$skills_dir"/baton-*.md; do
   filename="$(basename "$src")"
   claude_copy="$claude_skills_dir/$filename"
   agents_copy="$agents_dir/$filename"
@@ -159,6 +159,29 @@ else
   printf 'OK: invariant-6: root governance entrypoints are synced\n'
 fi
 errors=$((errors + inv6_errors))
+
+# ---------------------------------------------------------------------------
+# Invariant 7: .claude/agents/ contains all context:fork skills from skills/
+# ---------------------------------------------------------------------------
+claude_agents_dir="$repo_root/.claude/agents"
+inv7_errors=0
+for src in "$skills_dir"/baton-*.md; do
+  grep -q '^context: fork' "$src" 2>/dev/null || continue
+  filename="$(basename "$src")"
+  agents_copy="$claude_agents_dir/$filename"
+
+  if [[ ! -f "$agents_copy" ]]; then
+    printf 'ERROR: invariant-7: %s missing from .claude/agents/\n' "$filename"
+    inv7_errors=$((inv7_errors + 1))
+  elif ! cmp -s "$src" "$agents_copy"; then
+    printf 'ERROR: invariant-7: %s diverged from .claude/agents/%s\n' "$filename" "$filename"
+    inv7_errors=$((inv7_errors + 1))
+  fi
+done
+errors=$((errors + inv7_errors))
+if [[ $inv7_errors -eq 0 ]]; then
+  printf 'OK: invariant-7: .claude/agents/ contains all context:fork skills from skills/\n'
+fi
 
 # ---------------------------------------------------------------------------
 # Summary

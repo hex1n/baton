@@ -55,6 +55,59 @@ to sequential execution without changing the protocol.
 - Prefer an isolated review context
 - Review output should focus on bugs, regressions, missing tests, and residual risk
 
+## Context Isolation
+
+The following roles MUST run in an isolated context — they must not inherit
+the orchestrator's conversation history or Generator's reasoning chain:
+
+- `Scoped Explorer` (repo-wide mode)
+- `Verification Explorer`
+- `Evaluator`
+
+In Claude Code, use the `Agent` tool to dispatch these roles. The `Skill` tool
+executes within the current conversation and does NOT provide isolation.
+
+### Preferred dispatch (if `.claude/agents/` custom type is registered)
+
+```
+Agent(
+  subagent_type: "baton-evaluator",
+  prompt: "Evaluate the implementation for task [task-id]."
+)
+```
+
+The agent is pre-loaded with the role's instructions from
+`.claude/agents/baton-evaluator.md`. It starts with a blank context and must
+cold-read `.harness/requirements.md`, `.harness/architecture.md`,
+`.harness/verification-path.md`, and the implementation diff.
+
+### Fallback dispatch (always works)
+
+```
+Agent(
+  subagent_type: "general-purpose",
+  prompt: "
+    You are the Evaluator for the current harness task.
+    Cold-read only:
+    - .harness/requirements.md
+    - .harness/architecture.md
+    - .harness/verification-path.md
+    - the implementation diff from git
+    Do not inherit Generator reasoning or prior conversation history.
+    Run verification first, then produce findings-first output and a
+    PASS / PASS WITH WARNINGS / BLOCKED verdict.
+    Follow the full baton-evaluator skill instructions in
+    skills/baton-evaluator.md.
+  "
+)
+```
+
+Substitute `baton-verifier` or `baton-explorer` and the matching artifact list
+for the Verification Explorer and Scoped Explorer roles respectively.
+
+For Codex, see `spec/adapters/codex.md` for the equivalent `spawn_agent`
+pattern. For Cursor, see `spec/adapters/cursor.md`.
+
 ## Sequential Fallback
 
 If Claude Code is operating without separate task contexts:

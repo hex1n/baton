@@ -125,7 +125,7 @@ actual workspace file state; it does not trust `.link-mode` alone.
 ### Manual Copy Fallback
 
 ```bash
-cp .claude/skills/harness-*.md /path/to/repo/.claude/skills/
+cp .claude/skills/baton-*.md /path/to/repo/.claude/skills/
 ```
 
 Prefer `install-harness` / `update-harness` for normal adoption. Manual copy is
@@ -142,12 +142,12 @@ bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force
 
 | Skill | Role | Gate |
 |-------|------|------|
-| `harness-explorer` | Code exploration (repo + scoped) | Scoped Exploration Complete |
-| `harness-specifier` | Requirements specification | — |
-| `harness-architect` | Technical architecture | Architecture Approved (human) |
-| `harness-verifier` | Verification path check | Verification Path Check |
-| `harness-generator` | Code implementation | — |
-| `harness-evaluator` | Independent evaluation | Independent Review |
+| `baton-explorer` | Code exploration (repo + scoped) | Scoped Exploration Complete |
+| `baton-specifier` | Requirements specification | — |
+| `baton-architect` | Technical architecture | Architecture Approved (human) |
+| `baton-verifier` | Verification path check | Verification Path Check |
+| `baton-generator` | Code implementation | — |
+| `baton-evaluator` | Independent evaluation | Independent Review |
 
 ## Capability Skills
 

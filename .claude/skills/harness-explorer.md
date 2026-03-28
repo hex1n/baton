@@ -1,1 +1,0 @@
-/Users/hex1n/IdeaProjects/baton/skills/harness-explorer.md
