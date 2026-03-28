@@ -28,6 +28,21 @@ Load these inputs before proceeding:
 Do not inherit Explorer / Specifier / Architect reasoning as your verification
 baseline.
 
+## Isolation Self-Check
+
+Before proceeding, verify you are running in a fresh context:
+
+- If you can recall Architect reasoning, Specifier decisions, or design
+  discussions from earlier in this conversation — context you did not
+  load from the artifacts above — **STOP**.
+- You are NOT in a fresh context. Inherited reasoning defeats the
+  purpose of independent verification path discovery.
+- Instruct the orchestrator to re-dispatch via `Agent` tool
+  (not `Skill` tool) and restart from a blank session.
+
+If you loaded the artifacts above and have no prior conversation
+history, proceed.
+
 ## Claude Code Execution Note
 
 In Claude Code, dispatch this role as an isolated subagent via the `Agent` tool.
