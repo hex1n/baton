@@ -171,6 +171,26 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+# ---------------------------------------------------------------------------
+# Relative bootstrap path test
+# ---------------------------------------------------------------------------
+repo3="$tmp/repo3"
+mkdir -p "$repo3/custom-bootstrap"
+bash "$INSTALL_HOOKS" --repo-root "$repo3" --bootstrap-dir "$repo3/custom-bootstrap" >/dev/null 2>&1
+assert_file_contains "CC uses relative bootstrap path" \
+  "$repo3/.claude/settings.json" "custom-bootstrap"
+assert_file_contains "Codex uses relative bootstrap path" \
+  "$repo3/.codex/hooks.json" "custom-bootstrap"
+
+TOTAL=$((TOTAL+1))
+if ! grep -q '\.vendor/baton-harness/spec/bootstrap' "$repo3/.claude/settings.json" 2>/dev/null; then
+  echo "  pass: CC does not hardcode vendor path when bootstrap-dir differs"
+  PASS=$((PASS+1))
+else
+  echo "  FAIL: CC hardcodes .vendor/baton-harness/spec/bootstrap instead of relative path"
+  FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
