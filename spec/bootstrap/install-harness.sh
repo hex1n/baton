@@ -300,6 +300,18 @@ EOF
   printf 'write %s\n' "$lockfile_path"
 fi
 
+# Install platform hooks for artifact validation and state transition enforcement
+if [[ "$dry_run" != "true" ]]; then
+  hook_installer="$resolved_source_root/spec/bootstrap/install-hooks.sh"
+  if [[ -f "$hook_installer" ]]; then
+    bootstrap_dir="$vendor_spec_root/bootstrap"
+    bash "$hook_installer" \
+      --repo-root "$resolved_repo_root" \
+      --bootstrap-dir "$bootstrap_dir" \
+      || printf 'Warning: install-hooks.sh failed — hooks not installed\n'
+  fi
+fi
+
 printf '\nHarness %s complete.\n' "$mode"
 printf 'Target Repo:   %s\n' "$resolved_repo_root"
 printf 'Source Root:   %s\n' "$resolved_source_root"
