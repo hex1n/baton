@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"$cmd\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; for fp in $(echo \"$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"$fp\" ]] || continue; at=$(basename \"$fp\" .md); bash \"$root/.vendor/baton-harness/spec/bootstrap/validate-artifact.sh\" \"$at\" \"$fp\"; done # baton-validate-artifact"
+            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"$cmd\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; for fp in $(echo \"$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"$fp\" ]] || continue; at=$(basename \"$fp\" .md); bash \"$root/spec/bootstrap/validate-artifact.sh\" \"$at\" \"$fp\"; done # baton-validate-artifact"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=$(echo \"$cmd\" | grep -oE '\\| *(exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked) *\\|' | head -1 | tr -d '| '); [[ -n \"$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}' \".harness/module-status.md\"); [[ -n \"$cs\" ]] || exit 0; bash \"$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"$cs\" \"$ns\" || exit 2 # baton-validate-transition"
+            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=$(echo \"$cmd\" | grep -oE '\\| *(exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked) *\\|' | head -1 | tr -d '| '); [[ -n \"$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}' \".harness/module-status.md\"); [[ -n \"$cs\" ]] || exit 0; bash \"$root/spec/bootstrap/validate-transition.sh\" \"$cs\" \"$ns\" || exit 2 # baton-validate-transition"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -f \".harness/module-status.md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"$root/.harness\" # baton-validate-state",
+            "command": "[[ -f \".harness/module-status.md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/spec/bootstrap/validate-state-artifacts.sh\" \"$root/.harness\" # baton-validate-state",
             "statusMessage": "Checking harness state",
             "timeout": 30
           }
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/.vendor/baton-harness/spec/bootstrap/harness-context.sh\" \"$root/.harness\" # baton-harness-context",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/spec/bootstrap/harness-context.sh\" \"$root/.harness\" # baton-harness-context",
             "statusMessage": "Loading harness context"
           }
         ]
