@@ -31,6 +31,20 @@ Load these artifacts before proceeding:
 
 Do not read Generator execution notes or inherit conversation history.
 
+## Isolation Self-Check
+
+Before proceeding, verify you are running in a fresh context:
+
+- If you can recall Generator output, code diffs, or implementation
+  decisions from earlier in this conversation, **STOP**.
+- You are NOT in a fresh context. Context inheritance defeats the
+  purpose of independent evaluation.
+- Instruct the orchestrator to re-dispatch via `Agent` tool
+  (not `Skill` tool) and restart from a blank session.
+
+If you loaded the artifacts above and have no prior conversation
+history, proceed.
+
 ## Claude Code Execution Note
 
 In Claude Code, dispatch this role as an isolated subagent via the `Agent` tool.
