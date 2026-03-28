@@ -32,7 +32,9 @@ state tokens, and blocker categories in stable English.
    - **Task ID** and description (from the task row)
    - **Current state** and **owner**
    - **Next action** — derived from the state machine below
-   - **Eval round** — if in the repair loop, show `round N / 3`
+   - **Eval round** — read the `Eval Round` column from the task table row.
+     If state is `reviewing`, `generating` (repair), or `blocked` from evaluator,
+     show `round N / 3`. If N ≥ 3, flag for human escalation.
    - **Blockers** — if state is `blocked`, show the blocker category and
      what is needed to unblock
 

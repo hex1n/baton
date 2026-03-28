@@ -190,5 +190,6 @@ collection between Layer 1 and Layer 3:
 On PASS: update `module-status.md` → state `ready_for_human_close`,
 owner `human`.
 On BLOCKED: update `module-status.md` → state `blocked`, owner `generator`,
-with findings written to evaluation output. Increment the eval round counter
-in the State Notes section of `module-status.md` (format: `Current eval round: N`).
+with findings written to evaluation output. Increment the `Eval Round` column
+in the task table row (not in State Notes). Read the current value, add 1,
+write it back as a plain integer.
