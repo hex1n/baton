@@ -3,5 +3,29 @@
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
     "ENABLE_LSP_TOOL": "1",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "75"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); fp=$(echo \"$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"$fp\" == *\".harness/\"*\".md\" ]] || exit 0; at=$(basename \"$fp\" .md); bash spec/bootstrap/validate-artifact.sh \"$at\" \"$fp\" # baton-validate-artifact"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); fp=$(echo \"$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"$fp\" == *\"module-status.md\" ]] || exit 0; nc=$(echo \"$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"$nc\" ]] || exit 0; ns=$(echo \"$nc\" | awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}'); [[ -n \"$ns\" ]] || exit 0; [[ -f \"$fp\" ]] || exit 0; cs=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}' \"$fp\"); [[ -n \"$cs\" ]] || exit 0; bash spec/bootstrap/validate-transition.sh \"$cs\" \"$ns\" # baton-validate-transition"
+          }
+        ]
+      }
+    ]
   }
 }
