@@ -9,6 +9,18 @@ user-invocable: true
 
 # Harness Status
 
+## Response Language Policy
+
+When reporting status to the user:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, prefer that language for the response.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
+
 ## Execution Steps
 
 1. Check that `.harness/module-status.md` exists. If not, prompt the user
@@ -43,7 +55,7 @@ user-invocable: true
 
 | Blocker Category | Exit State | Next Owner |
 |-----------------|-----------|-----------|
-| `verification_blocker` | `verification_check` | verifier |
+| `verification_blocker` | `verification_check` | verification-explorer |
 | `design_blocker` (architecture wrong) | `architecting` | architect |
 | `design_blocker` (requirements ambiguous) | `architecting` + specifier | architect + human |
 | `environment_blocker` | `generating` (after fix) | generator |

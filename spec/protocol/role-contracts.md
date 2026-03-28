@@ -44,6 +44,8 @@
   - `requirements.md`
 - Status responsibility:
   - update `module-status.md` when handing off to `architect` or when blocked
+  - when approved architecture decisions change requirements-level truth,
+    update `requirements.md` before verification begins
 
 ## Architect
 
@@ -52,6 +54,7 @@
   - `requirements.md`
 - Outputs:
   - recommended implementation category
+  - confirmed decisions that affect requirements truth
   - file-level impact
   - validation strategy
   - known tradeoffs and residual risks
@@ -59,13 +62,18 @@
   - `architecture.md`
 - Status responsibility:
   - update `module-status.md` when handing off to `human` or `verification-explorer`
+  - do not hand off to `verification-explorer` until `requirements.md`
+    reflects approved architecture decisions
 
 ## Verification Explorer
 
 - Inputs:
+  - `requirements.md`
   - `architecture.md`
   - repo profile
 - Outputs:
+  - proof that `requirements.md` and `architecture.md` agree on what will
+    be validated
   - exact commands or checks to validate the change
   - proof that the validation path is executable
   - blocking conditions if validation is not reachable
@@ -112,6 +120,13 @@
   - final residual risk statement
 - Status responsibility:
   - update `module-status.md` before handoff to `human`
+
+## Context Isolation Note
+
+- `Verification Explorer` and `Evaluator` are the mandatory artifact-isolated
+  judgment roles when the adapter supports isolated contexts.
+- Early-phase roles may run in the main session when their outputs remain
+  explicit in `.harness/`.
 
 ## Implementation Note: Reviewer + Evaluator Merge
 

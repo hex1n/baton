@@ -4,6 +4,7 @@ param(
     [string]$Profile = "auto",
     [ValidateSet("codex", "claude-code", "cursor")]
     [string]$Adapter = "codex",
+    [string]$Language = "zh",
     [switch]$Force,
     [switch]$DryRun,
     [switch]$DetectOnly,
@@ -32,6 +33,93 @@ function Copy-IfNeeded {
 
     Copy-Item -Path $Source -Destination $Target -Force
     Write-Host "write $Target"
+}
+
+function Normalize-LanguageValue {
+    param([string]$Value)
+
+    if ($null -eq $Value) {
+        return ""
+    }
+
+    $normalized = $Value.Trim()
+    $commentIndex = $normalized.IndexOf("#")
+    if ($commentIndex -ge 0) {
+        $normalized = $normalized.Substring(0, $commentIndex).Trim()
+    }
+
+    if ($normalized.Length -ge 2) {
+        if (($normalized.StartsWith('"') -and $normalized.EndsWith('"')) -or ($normalized.StartsWith("'") -and $normalized.EndsWith("'"))) {
+            $normalized = $normalized.Substring(1, $normalized.Length - 2).Trim()
+        }
+    }
+
+    return $normalized.ToLowerInvariant()
+}
+
+function Resolve-LocaleLanguage {
+    $candidates = @(
+        $env:LC_ALL,
+        $env:LC_MESSAGES,
+        $env:LANG,
+        [System.Globalization.CultureInfo]::CurrentUICulture.Name,
+        [System.Globalization.CultureInfo]::CurrentCulture.Name
+    )
+
+    foreach ($candidate in $candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        if ($candidate.Trim().ToLowerInvariant().StartsWith("zh")) {
+            return "zh"
+        }
+    }
+
+    return "en"
+}
+
+function Resolve-ArtifactLanguage {
+    param([string]$LanguagePolicy)
+
+    $policy = Normalize-LanguageValue -Value $LanguagePolicy
+    if ([string]::IsNullOrWhiteSpace($policy) -or $policy -eq "auto") {
+        return (Resolve-LocaleLanguage)
+    }
+
+    return $policy
+}
+
+function Get-HumanTemplatePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$TemplatesDir,
+        [Parameter(Mandatory = $true)][string]$TemplateName,
+        [Parameter(Mandatory = $true)][string]$ResolvedLanguage
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($script:resolvedRepoRoot)) {
+        $overrideRoot = Join-Path $script:resolvedRepoRoot ".harness/overrides/templates"
+        $overrideCandidate = if ($ResolvedLanguage -eq "zh") {
+            Join-Path (Join-Path $overrideRoot "zh") $TemplateName
+        } else {
+            Join-Path $overrideRoot $TemplateName
+        }
+
+        if (Test-Path $overrideCandidate) {
+            return $overrideCandidate
+        }
+    }
+
+    $candidate = Join-Path $TemplatesDir $TemplateName
+    if ($ResolvedLanguage -eq "zh") {
+        $candidate = Join-Path (Join-Path $TemplatesDir "zh") $TemplateName
+    }
+
+    if (-not (Test-Path $candidate)) {
+        throw "Template not found: $candidate"
+    }
+
+    return $candidate
 }
 
 function Resolve-Profile {
@@ -103,9 +191,17 @@ $specRoot = Split-Path -Parent $scriptDir
 $templatesDir = Join-Path $specRoot "templates"
 $profilesDir = Join-Path $specRoot "profiles"
 $adaptersDir = Join-Path $specRoot "adapters"
+$governanceSyncScript = Join-Path $scriptDir "sync-governance-entrypoints.ps1"
 
-$resolvedRepoRoot = (Resolve-Path $RepoRoot).Path
+$normalizedLanguage = Normalize-LanguageValue -Value $Language
+if ($normalizedLanguage -notin @("auto", "en", "zh")) {
+    throw "Unsupported language: $Language"
+}
+
+$script:resolvedRepoRoot = (Resolve-Path $RepoRoot).Path
+$resolvedRepoRoot = $script:resolvedRepoRoot
 $resolvedProfile = Resolve-Profile -RepoPath $resolvedRepoRoot -RequestedProfile $Profile
+$resolvedArtifactLanguage = Resolve-ArtifactLanguage -LanguagePolicy $normalizedLanguage
 $repoName = Split-Path $resolvedRepoRoot -Leaf
 $harnessDir = Join-Path $resolvedRepoRoot ".harness"
 $selectedProfilePath = Join-Path $profilesDir "$resolvedProfile.yaml"
@@ -125,6 +221,8 @@ if ($DetectOnly) {
     Write-Host "Repo:     $resolvedRepoRoot"
     Write-Host "Profile:  $resolvedProfile"
     Write-Host "Adapter:  $Adapter"
+    Write-Host "Language Policy:   $normalizedLanguage"
+    Write-Host "Artifact Language: $resolvedArtifactLanguage"
     Write-Host "Build:    $($defaults.Build)"
     Write-Host "Test:     $($defaults.Test)"
     Write-Host "Mode:     detect-only"
@@ -146,19 +244,25 @@ if ($DryRun) {
 }
 
 $templateMap = @(
-    @{ Source = "scoped-map.template.md"; Target = "scoped-map.md" }
-    @{ Source = "requirements.template.md"; Target = "requirements.md" }
-    @{ Source = "architecture.template.md"; Target = "architecture.md" }
-    @{ Source = "verification-path.template.md"; Target = "verification-path.md" }
-    @{ Source = "module-status.template.md"; Target = "module-status.md" }
-    @{ Source = "retrospective.template.md"; Target = "retrospective.md" }
+    @{ Source = "scoped-map.template.md"; Target = "scoped-map.md"; Human = $true }
+    @{ Source = "requirements.template.md"; Target = "requirements.md"; Human = $true }
+    @{ Source = "architecture.template.md"; Target = "architecture.md"; Human = $true }
+    @{ Source = "verification-path.template.md"; Target = "verification-path.md"; Human = $true }
+    @{ Source = "module-status.template.md"; Target = "module-status.md"; Human = $false }
+    @{ Source = "retrospective.template.md"; Target = "retrospective.md"; Human = $true }
 )
 
 $moduleStatusExisted = Test-Path (Join-Path $harnessDir "module-status.md")
 
 foreach ($entry in $templateMap) {
+    $sourcePath = if ($entry.Human) {
+        Get-HumanTemplatePath -TemplatesDir $templatesDir -TemplateName $entry.Source -ResolvedLanguage $resolvedArtifactLanguage
+    } else {
+        Join-Path $templatesDir $entry.Source
+    }
+
     Copy-IfNeeded `
-        -Source (Join-Path $templatesDir $entry.Source) `
+        -Source $sourcePath `
         -Target (Join-Path $harnessDir $entry.Target) `
         -Overwrite $Force.IsPresent
 }
@@ -173,6 +277,18 @@ Copy-IfNeeded `
     -Target (Join-Path $harnessDir "adapter-reference.md") `
     -Overwrite $Force.IsPresent
 
+$syncGovernanceParams = @{
+    RepoRoot = $resolvedRepoRoot
+}
+if ($Force.IsPresent) {
+    $syncGovernanceParams["Force"] = $true
+}
+if ($DryRun) {
+    $syncGovernanceParams["DryRun"] = $true
+}
+
+& $governanceSyncScript @syncGovernanceParams
+
 $profileLocalTarget = Join-Path $harnessDir "profile.local.yaml"
 
 if ((-not (Test-Path $profileLocalTarget)) -or $Force.IsPresent) {
@@ -180,6 +296,7 @@ if ((-not (Test-Path $profileLocalTarget)) -or $Force.IsPresent) {
     $profileLocalContent = $profileLocalContent.Replace("__REPO_NAME__", $repoName)
     $profileLocalContent = $profileLocalContent.Replace("__BASE_PROFILE__", $resolvedProfile)
     $profileLocalContent = $profileLocalContent.Replace("__ADAPTER__", $Adapter)
+    $profileLocalContent = $profileLocalContent.Replace("__ARTIFACT_LANGUAGE__", $normalizedLanguage)
     $profileLocalContent = $profileLocalContent.Replace("__BUILD_COMMAND__", $defaults.Build)
     $profileLocalContent = $profileLocalContent.Replace("__TEST_COMMAND__", $defaults.Test)
     $profileLocalContent = $profileLocalContent.Replace("__OPTIONAL_STATIC_CHECK__", $defaults.OptionalStaticCheck)
@@ -218,6 +335,8 @@ Write-Host "Harness bootstrap complete."
 Write-Host "Repo:     $resolvedRepoRoot"
 Write-Host "Profile:  $resolvedProfile"
 Write-Host "Adapter:  $Adapter"
+Write-Host "Language Policy:   $normalizedLanguage"
+Write-Host "Artifact Language: $resolvedArtifactLanguage"
 if ($TaskId) {
     Write-Host "TaskId:   $TaskId"
 }
@@ -227,5 +346,6 @@ if ($DryRun) {
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "1. Review .harness/profile.local.yaml"
-Write-Host "2. Run Repo Explorer"
-Write-Host "3. Run Verification Path Check before Generator"
+Write-Host "2. Review root CLAUDE.md and AGENTS.md"
+Write-Host "3. Run Repo Explorer"
+Write-Host "4. Run Verification Path Check before Generator"

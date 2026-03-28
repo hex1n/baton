@@ -53,20 +53,39 @@ Copy these templates into the target repo:
 ```
 
 The last file should be created from `templates/profile.local.template.yaml`.
+In this reference implementation, bootstrap also creates shared root governance
+entrypoints:
+
+```text
+CLAUDE.md
+AGENTS.md
+```
+
+If the repo adopted baton through `install-harness`, prefer running the
+vendored script inside the target repo:
+
+```bash
+/path/to/repo/.vendor/baton-harness/spec/bootstrap/init-harness.sh --repo-root /path/to/repo --profile auto --adapter codex
+```
 
 If you want a generated starting point instead of manual copying:
 
 ```powershell
-pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -TaskId pilot-task
+pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -TaskId pilot-task -Language zh
 ```
 
 ```bash
-./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task
+./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task --language zh
 ```
+
+Those commands also materialize `CLAUDE.md` and `AGENTS.md` from the shared
+governance template when the files are missing. Pass `--force` if you want to
+refresh them from the template.
 
 Useful options:
 
 - `-Profile auto` / `--profile auto`
+- `-Language auto|en|zh` / `--language auto|en|zh`
 - `-DryRun` / `--dry-run`
 - `-DetectOnly` / `--detect-only`
 - `-TaskId <id>` / `--task-id <id>`
@@ -88,6 +107,7 @@ At minimum, set:
 
 - repo name
 - base profile
+- artifact language policy
 - build command
 - test command
 - worktree policy
@@ -95,6 +115,25 @@ At minimum, set:
 - review isolation strategy
 
 Do not leave validation commands implicit.
+
+Language policy rules:
+
+- `documentation.artifact_language: zh` writes human-facing artifacts in Chinese
+- `documentation.artifact_language: en` writes them in English
+- `documentation.artifact_language: auto` makes bootstrap scripts resolve from
+  locale, while writing skills follow the current user request language
+- if you omit the flag in this repo, the bootstrap default is `zh`
+- `module-status.md` stays English as the stable control-plane file
+
+Template resolution order:
+
+1. `repo/.harness/overrides/templates/`
+2. vendored `spec/templates/`
+
+Root governance resolution order is simpler:
+
+1. shared template `spec/templates/root-governance.template.md`
+2. host entrypoints `CLAUDE.md` and `AGENTS.md` generated from it
 
 ## Step 5: Define Worktree Policy
 
@@ -182,6 +221,10 @@ After `start-task`, the current owner agent should update it at every major tran
 
 Do not require a separate state-transition script as part of the core protocol.
 If a local repo adds one, treat it as a convenience wrapper around direct file updates.
+
+Before a task enters `verification_check`, ensure `requirements.md` reflects
+any approved architecture decisions that change requirements-level truth.
+Run `spec/bootstrap/check-consistency.sh` before or during that verification stage.
 
 ## Step 10: Close With A Retrospective
 

@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "skill_name": "deep-research",
+    "skill_path": "/Users/hex1n/IdeaProjects/baton/skills/deep-research/SKILL.md",
+    "executor_model": "claude-opus-4-6",
+    "timestamp": "2026-03-25T12:50:41Z",
+    "evals_run": ["bun-vs-deno-evaluation", "hooks-system-investigation", "zod-usage-audit"],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_name": "bun-vs-deno-evaluation",
+      "configuration": "with_skill",
+      "pass_rate": 0.75,
+      "passed": 6,
+      "total": 8,
+      "time_seconds": 277.6,
+      "tokens": 49001,
+      "failed_assertions": [
+        "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch'",
+        "Does not contain hallucinated/unverifiable factual claims"
+      ]
+    },
+    {
+      "eval_name": "bun-vs-deno-evaluation",
+      "configuration": "without_skill",
+      "pass_rate": 0.875,
+      "passed": 7,
+      "total": 8,
+      "time_seconds": 201.7,
+      "tokens": 35567,
+      "failed_assertions": [
+        "Does not contain hallucinated/unverifiable factual claims"
+      ]
+    },
+    {
+      "eval_name": "hooks-system-investigation",
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "passed": 7,
+      "total": 7,
+      "time_seconds": 281.4,
+      "tokens": 101125,
+      "failed_assertions": []
+    },
+    {
+      "eval_name": "hooks-system-investigation",
+      "configuration": "without_skill",
+      "pass_rate": 0.714,
+      "passed": 5,
+      "total": 7,
+      "time_seconds": 249.7,
+      "tokens": 116761,
+      "failed_assertions": [
+        "References specific file paths and line numbers from the codebase",
+        "Uses evidence markers (verified/unverified indicators)"
+      ]
+    },
+    {
+      "eval_name": "zod-usage-audit",
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "passed": 5,
+      "total": 5,
+      "time_seconds": 101.3,
+      "tokens": 30138,
+      "failed_assertions": []
+    },
+    {
+      "eval_name": "zod-usage-audit",
+      "configuration": "without_skill",
+      "pass_rate": 1.0,
+      "passed": 5,
+      "total": 5,
+      "time_seconds": 75.0,
+      "tokens": 25073,
+      "failed_assertions": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "mean_pass_rate": 0.917,
+      "total_passed": 18,
+      "total_assertions": 20,
+      "mean_time_seconds": 220.1,
+      "mean_tokens": 60088
+    },
+    "without_skill": {
+      "mean_pass_rate": 0.863,
+      "total_passed": 17,
+      "total_assertions": 20,
+      "mean_time_seconds": 175.5,
+      "mean_tokens": 59134
+    },
+    "delta": {
+      "pass_rate": "+5.4%",
+      "time_seconds": "+44.6",
+      "tokens": "+954"
+    }
+  },
+  "notes": [
+    "Eval 1 with_skill leaked 'context7' in evidence markers despite skill text being platform-agnostic — skill needs explicit output guidance",
+    "Both versions hallucinated about Anthropic/Bun relationship — evidence discipline not strong enough for external research",
+    "Eval 2 shows clearest skill value: +2 assertions (line numbers + evidence markers) with fewer tokens",
+    "Eval 3 non-discriminating — both correctly identified false premise"
+  ]
+}

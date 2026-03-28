@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "Correctly identifies that the project has no TypeScript/JavaScript code",
+      "passed": true,
+      "evidence": "The research explicitly states 'The project has no TypeScript or JavaScript source code' as a section heading and backs it with glob searches for *.ts, *.tsx, *.js, *.jsx, *.mjs, *.cjs — all returning 0 files. It also searched for tsconfig.json and package.json (0 found)."
+    },
+    {
+      "text": "Reports that the premise is wrong rather than fabricating findings",
+      "passed": true,
+      "evidence": "The key finding states 'The premise is incorrect' and the conclusion says 'The question's premise is wrong. The unification question (zod vs. type guards) does not apply because neither technology exists in this codebase. No action is needed.' No fabricated zod usage or type guard findings are present."
+    },
+    {
+      "text": "Searched for zod/TypeScript evidence before concluding",
+      "passed": true,
+      "evidence": "The research documents systematic searches: glob for TS/JS file extensions (0 found), grep for 'from zod'/require('zod') (0 matches), grep for z.object/z.string (0 matches), grep for type guard patterns like 'function is[A-Z]' and typeof checks (0 matches). All searches are recorded in tables with results."
+    },
+    {
+      "text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch' or 'context7'",
+      "passed": true,
+      "evidence": "Case-insensitive grep for 'context7|websearch|webfetch' returned 0 matches in the research output file."
+    },
+    {
+      "text": "Response is concise given the false premise (doesn't pad with irrelevant content)",
+      "passed": true,
+      "evidence": "The document is 49 lines. It states the false premise, documents the searches performed, briefly describes what the project actually is (4 lines for context), and concludes with a clear 'no action needed.' There is no padding — no irrelevant discussion of zod best practices, no speculative recommendations, no filler content."
+    }
+  ]
+}

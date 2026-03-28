@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "States depth choice explicitly", "passed": false, "evidence": "No depth statement. Opens with '# Baton Junction Mechanism: Copy-Mode Fallback'"},
+    {"text": "Evidence sources explicitly labeled by confidence", "passed": false, "evidence": "Uses inline line refs (e.g., 'lines 8-36') but no confidence annotation (no ✅/❓/verified/unverified)"},
+    {"text": "Traces call chain with specific line references", "passed": true, "evidence": "Detailed trace through junction.sh -> setup.sh -> bin/baton with specific line numbers"},
+    {"text": "Lists open questions as distinct section", "passed": false, "evidence": "No open questions section. Ends with factual summary."},
+    {"text": "Self-challenge statement", "passed": false, "evidence": "No Challenge/Self-Challenge section"}
+  ],
+  "summary": {"passed": 1, "failed": 4, "total": 5, "pass_rate": 0.2}
+}

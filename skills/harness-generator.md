@@ -19,6 +19,18 @@ user-invocable: true
   verified `verification-path.md`
 - **Outputs**: code changes, execution notes, updated `module-status.md`
 
+## Artifact Language Policy
+
+Before writing any human-facing artifact or feedback file:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
+
 ## Precondition
 
 `verification-path.md` must exist and pass Gate 3. If it does not exist or

@@ -1,0 +1,13 @@
+{
+  "eval_id": 5,
+  "eval_name": "non-technical-process",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Performs root cause analysis (Five Whys or equivalent) without codebase access", "passed": true, "evidence": "Full Five Whys trace (lines 62-70): PR等待 → 没人review → review争夺注意力 → review没有deadline → review不被当作正式工作"},
+    {"text": "Surfaces at least 3 assumptions with type classification", "passed": true, "evidence": "6 assumptions in audit table (#1-#6) with types: ❓未验证, 惯例(已证伪), 惯例, ❓未验证, ❓未验证, ❓未验证"},
+    {"text": "Separates true constraints from conventions", "passed": true, "evidence": "5-row table: '代码必须被review' = 真约束; '所有PR需同等深度review', 'review是有空就做的任务', 'PR大小天然确定', 'reviewer需从零理解上下文' = 惯例"},
+    {"text": "Produces priority table with effort estimates and total row", "passed": true, "evidence": "6 items P1-P3 with effort (0.5天-2天), total ~4-5天, phased execution recommendation"},
+    {"text": "Includes 'what NOT to do' section with reasoning", "passed": true, "evidence": "3 items: no more approval gates, no AI review as replacement, no gamified review leaderboards — each with specific reasoning"},
+    {"text": "Self-Check produces genuine insight about failure mode", "passed": true, "evidence": "Identifies team overload as failure mode, proposes WIP limits as alternative if process optimization fails — concrete, non-formulaic"}
+  ]
+}

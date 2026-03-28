@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "Correctly identifies that the project has no TypeScript/JavaScript code",
+      "passed": true,
+      "evidence": "The research explicitly states 'A recursive glob for **/*.{ts,tsx,js,jsx,mjs,cjs} across the entire repository returned zero results. The project contains no files in any JavaScript-family language.' and identifies the project as 'entirely shell-based' with shell scripts, markdown, and JSON."
+    },
+    {
+      "text": "Reports that the premise is wrong rather than fabricating findings",
+      "passed": true,
+      "evidence": "The summary opens with 'The premise of this investigation -- that the project uses zod for schema validation alongside hand-written type guards -- is incorrect.' The conclusion reiterates 'Zod is not used in this project, and the question of unifying zod usage vs. hand-written type guards does not apply.' No fabricated zod usage or type guard findings appear anywhere."
+    },
+    {
+      "text": "Searched for zod/TypeScript evidence before concluding",
+      "passed": true,
+      "evidence": "The Methodology table documents 7 concrete search steps: globbing for TS/JS files, globbing for package.json, content search for zod/z.object/z.string, content search for type guard patterns, content search for schema validation concepts, reading README.md, and directory listing. The evidence sections report specific search results (all zero matches)."
+    },
+    {
+      "text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch'",
+      "passed": true,
+      "evidence": "A literal ripgrep search for 'Context7|WebSearch|WebFetch' across the research output returned zero matches. The methodology table references generic approaches ('File glob', 'Content search', 'Read', 'Directory listing') rather than specific tool names."
+    },
+    {
+      "text": "Response is concise given the false premise (doesn't pad with irrelevant content)",
+      "passed": true,
+      "evidence": "The document is 62 lines. Content is tightly scoped: a summary stating the premise is wrong, 5 evidence sections each directly supporting that conclusion, a brief conclusion with a practical note about what could be done differently, and a methodology table. There is no padding with unrelated topics, no speculative analysis of what zod could do, and no filler content."
+    }
+  ]
+}

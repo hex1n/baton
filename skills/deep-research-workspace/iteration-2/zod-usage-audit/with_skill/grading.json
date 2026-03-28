@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "Correctly identifies that the project has no TypeScript/JavaScript code",
+      "passed": true,
+      "evidence": "The research explicitly states 'this project has no TypeScript, no JavaScript, no zod, and no type guards' in the key finding. Section 1 details that glob searches for *.ts, *.js, and package.json all returned 0 results, and identifies the project as entirely bash scripts and markdown."
+    },
+    {
+      "text": "Reports that the premise is wrong rather than fabricating findings",
+      "passed": true,
+      "evidence": "The conclusion section opens with 'The question's premise is wrong.' The key finding states 'The premise is false'. The research directly confronts the false assumption rather than inventing zod usage or type guard issues."
+    },
+    {
+      "text": "Searched for zod/TypeScript evidence before concluding",
+      "passed": true,
+      "evidence": "The research documents multiple searches: glob for *.ts, *.js, and package.json (all 0 results); grep for zod import patterns (from 'zod' and require('zod')); grep for typeof/instanceof in .sh files; grep for type guard patterns. Each search is annotated with verification notes."
+    },
+    {
+      "text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch' or 'context7'",
+      "passed": true,
+      "evidence": "Case-insensitive grep for 'context7|WebSearch|WebFetch' against the research output returned no matches."
+    },
+    {
+      "text": "Response is concise given the false premise (doesn't pad with irrelevant content)",
+      "passed": true,
+      "evidence": "The document is 99 lines. All content is directly relevant: identifying the tech stack, confirming no zod/TS presence, describing what validation actually exists (shell hooks — relevant context for the zod question), and a brief self-challenge. The hook table in section 4 is borderline but serves the purpose of showing what validation the project actually uses, which directly addresses the 'should type guards be unified with zod' part of the question."
+    }
+  ]
+}

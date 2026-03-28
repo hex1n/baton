@@ -1,0 +1,9 @@
+repo-explorer
+scoped-explorer
+specifier
+architect
+verification-explorer
+generator
+reviewer
+evaluator
+human

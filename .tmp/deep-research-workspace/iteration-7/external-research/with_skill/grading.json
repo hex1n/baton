@@ -1,0 +1,12 @@
+{
+  "eval_name": "external-research",
+  "prompt": "调研一下 Claude Code 的 Agent Skills 和 Cursor Rules 在技能/规则分发机制上的区别，我想决定 baton 的跨 IDE 适配策略。",
+  "expectations": [
+    {"text": "Labels codebase vs external inline", "passed": true, "evidence": "Consistent labeling: ✅ [URL] for external, ✅ Read docs/... for codebase, ❓ for unverified. Source types explicitly distinguished in Source Audit table."},
+    {"text": "URLs with version/date", "passed": true, "evidence": "15+ URLs (agentskills.io, cursor.com/docs, code.claude.com/docs, forum.cursor.com, etc.), version refs (Cursor 2.4, 2026-01), timeline dates"},
+    {"text": "Structured comparison", "passed": true, "evidence": "Multiple comparison tables: three-layer model overview, Rules format comparison (3x6), current baton mapping (3x4), strategy summary (3x4), industry trend analysis (3x4)"},
+    {"text": "States depth", "passed": true, "evidence": "Depth: Deep"},
+    {"text": "Self-challenge statement", "passed": true, "evidence": "## 9. Challenge: Weakest Conclusions with 3 specific points: Cursor frontmatter compatibility, AGENTS.md file reference tracking, Cursor Rules ROI"}
+  ],
+  "pass_rate": 1.0
+}

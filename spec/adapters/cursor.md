@@ -8,6 +8,10 @@ Cursor is often editor-centric rather than CLI-centric, so the portable harness
 should remain file-driven. The chat or agent layer should orchestrate, but the
 source of truth must stay in `.harness/`.
 
+Root governance entrypoint for the simple shared setup: `AGENTS.md`.
+This keeps Cursor aligned with Codex while `CLAUDE.md` remains available for
+Claude Code.
+
 ## Recommended Operating Mode
 
 - Main chat or agent: orchestrator
@@ -68,6 +72,8 @@ chat contexts or sequential role execution.
 
 ## Cursor-Specific Advice
 
+- Prefer `AGENTS.md` as the lightweight shared root rule entrypoint before
+  introducing a more complex `.cursor/rules` setup
 - Do not let Cursor Rules become the only protocol definition. Keep the canonical protocol in files.
 - Treat the editor as an interaction layer, not the control plane.
 - In repositories with fragile build graphs, verify test/build reachability before generating code.

@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Uses WebSearch or WebFetch to gather external information",
+      "passed": true,
+      "evidence": "46 tool calls total. Output contains detailed external knowledge about Agent Skills standard, Cursor 2.4 changelog, Codex Skills docs, Windsurf Cascade docs, Cline docs, Kiro docs — all with specific URLs."
+    },
+    {
+      "text": "Cites external sources with URL or doc reference",
+      "passed": true,
+      "evidence": "Multiple URLs: [agentskills.io/specification], [Cursor 2.4 changelog](cursor.com/changelog/2-4), [Codex Skills docs](developers.openai.com/codex/skills), [Windsurf Cascade Skills](docs.windsurf.com/...), [Cursor Rules docs], [Cursor Skills docs], etc."
+    },
+    {
+      "text": "Distinguishes codebase evidence from external doc claims (multi-source synthesis)",
+      "passed": true,
+      "evidence": "Explicitly separates sources: '(✅ verified: agentskills.io specification, Claude Code docs)' vs '(✅ verified: setup.sh:142-182)' vs '(✅ verified: setup.sh:480-503 inject_claude_md)'."
+    },
+    {
+      "text": "Notes version or date of external sources consulted",
+      "passed": true,
+      "evidence": "'2025 年 12 月 Anthropic 发布 Agent Skills 开放标准', 'Cursor v2.4 (2026-02)', '2026-03-09 加入支持' (Windsurf), 'Cline v3.48+'."
+    },
+    {
+      "text": "Provides comparison in structured format (table or side-by-side)",
+      "passed": true,
+      "evidence": "Multiple comparison tables: IDE Skills support matrix (7 IDEs × 4 columns), Rules layer comparison (7 IDEs × 5 columns), Skills vs Rules distribution matrix."
+    },
+    {
+      "text": "States depth choice (Standard or Deep)",
+      "passed": true,
+      "evidence": "Line 2: '**Depth**: Deep'"
+    }
+  ],
+  "summary": { "passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0 }
+}

@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "eval_name": "plugin-marketplace",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reframes 'marketplace' — separates the stated solution from the underlying problem (closed ecosystem)",
+      "passed": true,
+      "evidence": "TL;DR: '真正缺失的不是\"市场平台\"，而是三个原语：registry、resolver、installer'. Analysis Five Whys traces to 'skill 分发系统没有\"来源多元化\"的能力'"
+    },
+    {
+      "text": "Surfaces at least 3 explicit assumptions and challenges them",
+      "passed": true,
+      "evidence": "Assumption audit table has 6 assumptions (#1-#6) with type classification and impact analysis"
+    },
+    {
+      "text": "Distinguishes true constraints from conventions",
+      "passed": true,
+      "evidence": "'真约束 vs 惯例' section: true constraints (pure bash, junction model) vs conventions (baton-* prefix, no version numbers)"
+    },
+    {
+      "text": "Presents 2+ fundamentally different solution categories",
+      "passed": true,
+      "evidence": "Three categories: A (Git仓库分发 — recommended), B (npm/pip式HTTP registry), C (GitHub Releases/Archive)"
+    },
+    {
+      "text": "Produces concrete actionable steps with success criteria",
+      "passed": true,
+      "evidence": "P1-P6 priority table with effort estimates, code examples for P1/P2, total row (~17h)"
+    },
+    {
+      "text": "Includes 'what we are NOT doing' or equivalent rejection reasoning",
+      "passed": true,
+      "evidence": "'不应该做的事' section with 4 items: no HTTP server, no SKILL.md pollution, no dependency SAT solver, no premature security/signing"
+    }
+  ]
+}

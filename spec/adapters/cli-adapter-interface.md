@@ -69,7 +69,7 @@ If unavailable, the adapter must still support a documented local review step.
 The following roles MUST derive judgment from artifacts only,
 without inheriting prior role reasoning:
 
-- Scoped Explorer (task mode)
+- Verification Explorer
 - Evaluator
 
 Adapters MUST document how they implement this isolation.
@@ -78,7 +78,8 @@ Acceptable mechanisms:
 - Isolated sub-agent with explicit artifact inputs, no context fork
 - Explicit session reset followed by artifact reload
 
-Sequential execution WITHOUT isolation is not sufficient for Evaluator.
+Sequential execution WITHOUT isolation is not sufficient for Verification
+Explorer or Evaluator.
 
 ## Adapter Responsibilities
 

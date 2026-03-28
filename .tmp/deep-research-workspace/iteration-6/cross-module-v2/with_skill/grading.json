@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "States depth choice explicitly", "passed": true, "evidence": "Line 2: '**Depth**: Standard'"},
+    {"text": "Evidence sources explicitly labeled by confidence", "passed": true, "evidence": "Multiple confidence markers: inline '(verified: ...)' annotations, explicit 'unverified' in open questions. Goes beyond bare file:line refs."},
+    {"text": "Traces call chain with specific line references", "passed": true, "evidence": "Complete ASCII decision tree with lines: junction.sh:8-36, setup.sh:124-139, setup.sh:163/177, phase-guide.sh:63, bin/baton:305-311/329-333"},
+    {"text": "Lists open questions as distinct section", "passed": true, "evidence": "'## Open Questions' with 1 item about copy-mode exit path, explicitly marked unverified"},
+    {"text": "Self-challenge statement", "passed": true, "evidence": "'## Challenge' section: 'Weakest point: 技能 junction 和主目录 junction 的 fallback 一致性假设' — identifies edge case about junction-within-junction on NTFS"}
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}
+}

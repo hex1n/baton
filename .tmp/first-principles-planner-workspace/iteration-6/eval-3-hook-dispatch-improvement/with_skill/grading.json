@@ -1,0 +1,37 @@
+{
+  "eval_id": 3,
+  "eval_name": "hook-dispatch-improvement",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Validates input document claims against actual codebase (catches stale/inaccurate data)",
+      "passed": true,
+      "evidence": "Detailed 7-row fact-checking table: hook count 5→10, manifest mappings 8→10, fabricated prompt-guard.sh, false claim about no state sharing, error handling understated. All marked with ✅ verification."
+    },
+    {
+      "text": "Identifies a unifying root cause beyond the listed symptoms",
+      "passed": true,
+      "evidence": "'dispatch.sh 的 \"预处理\" 范围太窄（只提取了 tool_name），导致下游 hook 各自补充缺失的预处理步骤' — unifies stdin parsing, target extraction, and plan init repetition under one root cause."
+    },
+    {
+      "text": "Surfaces hidden assumptions about the current architecture",
+      "passed": true,
+      "evidence": "Challenges document's assumption that flat manifest is a problem. Full first-principles analysis of why hook self-governance (not manifest-level routing) is the correct design."
+    },
+    {
+      "text": "Proposes changes that target root cause, not symptoms",
+      "passed": true,
+      "evidence": "P1 (BATON_TARGET pre-extraction) directly targets root cause. P2-P3 eliminate downstream duplication that exists because dispatch's pre-processing scope was too narrow."
+    },
+    {
+      "text": "Includes 'what NOT to change' section with reasoning",
+      "passed": true,
+      "evidence": "'不应该做的事' with 3 items: no conditional routing in manifest, no complex dispatch framework, no run-hook.cmd rewrite. Each with architectural reasoning."
+    },
+    {
+      "text": "Provides concrete code examples for proposed changes",
+      "passed": true,
+      "evidence": "P1: full bash code block for BATON_TARGET extraction with jq+awk dual-path. P2: stdin.sh extraction pattern. P3: init_plan_context() wrapper code."
+    }
+  ]
+}

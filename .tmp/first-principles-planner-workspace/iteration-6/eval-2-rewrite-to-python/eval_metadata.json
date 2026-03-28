@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "rewrite-to-python",
+  "prompt": "我们需要把所有 bash hooks 重写成 Python，因为 bash 太难维护了。请规划一下最佳方案。",
+  "assertions": [
+    {"text": "Identifies 'rewrite to Python' as a solution masquerading as a problem"},
+    {"text": "Decomposes 'hard to maintain' into 2+ specific possible root causes"},
+    {"text": "Surfaces the conflict with 'zero compiled dependencies' principle"},
+    {"text": "Recommends investigation before committing to rewrite"},
+    {"text": "Provides comparison table between approaches"},
+    {"text": "Includes conditional path — what would justify a rewrite"}
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {"query": "I need to understand how the dispatch system routes events to hook scripts. There are multiple code paths and I'm not sure which one is actually used in production vs which is legacy.", "should_trigger": true},
+  {"query": "We're considering switching from junctions to symlinks for the baton distribution model. I need to research the tradeoffs — platform support, update propagation, Windows NTFS behavior, and what other projects do.", "should_trigger": true},
+  {"query": "The Cursor adapter has two files (adapter.sh and dispatch.sh) that seem to do overlapping things. I need to trace which one setup.sh actually installs and whether adapter.sh is still used anywhere.", "should_trigger": true},
+  {"query": "research how other AI governance frameworks handle write-locking — specifically Aider, Continue, and Cline. I want to know if they have comparable hook systems or if they take a completely different approach.", "should_trigger": true},
+  {"query": "I'm getting confused by how plan-parser.sh discovers plan files. It walks up directories, checks baton-tasks/, handles multiple plans — I need a clear picture of all the discovery paths and edge cases before I modify it.", "should_trigger": true},
+  {"query": "deep research into whether Claude Code's PreToolUse exit code 2 is documented as a stable API or if it could change. Check official docs, changelogs, and community discussions.", "should_trigger": true},
+  {"query": "The write-lock test suite has 45 assertions but I don't know if it covers the multi-plan ambiguity case. Research the test coverage gaps.", "should_trigger": true},
+  {"query": "I want to compare three different approaches for implementing the prompt-guard hook — pattern matching vs LLM classification vs context injection. Need to understand the tradeoffs before planning.", "should_trigger": true},
+  {"query": "fix the typo on line 45 of README.md — change recieves to receives", "should_trigger": false},
+  {"query": "what does the BATON_BYPASS environment variable do?", "should_trigger": false},
+  {"query": "add a new test case to test-bash-guard.sh that covers the patch --dry-run scenario", "should_trigger": false},
+  {"query": "read dispatch.sh and explain what lines 35-62 do", "should_trigger": false},
+  {"query": "run the smoke tests and tell me if they pass", "should_trigger": false},
+  {"query": "refactor the strip_quoted_segments function to handle backtick command substitution", "should_trigger": false},
+  {"query": "I've finished implementing the prompt-guard hook. Please review my changes against the plan and check for any issues.", "should_trigger": false},
+  {"query": "generate the todo list from the approved plan and start implementing", "should_trigger": false},
+  {"query": "help me write a plan for adding the UserPromptSubmit hook to baton", "should_trigger": false},
+  {"query": "create a shell script that tests whether Cursor accepts 'block' or 'deny' in the JSON response", "should_trigger": false}
+]

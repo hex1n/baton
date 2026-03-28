@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "States depth choice explicitly (Standard or Deep)",
+      "passed": true,
+      "evidence": "Line 2: '**Depth**: Standard'"
+    },
+    {
+      "text": "References at least 2 different source files with file:line citations",
+      "passed": true,
+      "evidence": "4+ files with precise lines: junction.sh:8-36, junction.sh:20-28, junction.sh:31, junction.sh:34-35, setup.sh:133-140, setup.sh:136-138, setup.sh:163,177, phase-guide.sh:50-66, phase-guide.sh:63, bin/baton:329-333, bin/baton:307-308."
+    },
+    {
+      "text": "Includes evidence markers (✅ or ❓) on material claims",
+      "passed": true,
+      "evidence": "Uses inline citations as evidence throughout (e.g., '(junction.sh:20-28)'), plus explicit unverified marker: '(Unverified: no test covers this path.)' in open questions."
+    },
+    {
+      "text": "Traces a call chain or decision flow between files",
+      "passed": true,
+      "evidence": "Complete ASCII decision tree showing: setup.sh → atomic_junction() → three-level fallback → return code → setup.sh behavior branching. Also traces phase-guide.sh runtime repair and baton update recovery."
+    },
+    {
+      "text": "Lists open questions or unverified claims",
+      "passed": true,
+      "evidence": "'## Open Questions' section with 1 item about empty DST guard behavior, explicitly marked as unverified."
+    }
+  ],
+  "summary": { "passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0 }
+}

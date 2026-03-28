@@ -21,11 +21,25 @@ user-invocable: true
   tradeoffs and residual risks
 - **Required artifact**: `architecture.md`
 
+## Artifact Language Policy
+
+Before writing any human-facing artifact:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
+
 ## Gate: Architecture Approved
 
 All criteria must pass before proceeding to Verification Path Check:
 
 - [ ] Requirements and architecture are internally consistent
+- [ ] `requirements.md` reflects approved decisions that change
+  requirements-level truth before verification begins
 - [ ] Main approach and rejected alternatives are visible
 - [ ] **Human has approved the direction** (explicit approval required)
 
@@ -110,10 +124,21 @@ Write the strongest arguments against your chosen approach:
 Present the full `architecture.md` to the human. **Stop and wait for approval.**
 Do not proceed to verification or implementation.
 
+### 10. Requirements Sync Pass
+
+After human approval, review the confirmed decisions in `architecture.md`.
+
+- If a confirmed decision changes requirements-level truth, update
+  `requirements.md` directly or hand it back to Specifier for the update.
+- Do not hand off to Verifier until that sync is complete.
+- Verification starts only after `requirements.md` and `architecture.md`
+  describe the same approved reality.
+
 ## Human Feedback Handling
 
 **Approved**
-Update `module-status.md` → state `verification_check`, owner `verifier`.
+Ensure the requirements sync pass is complete, then update
+`module-status.md` → state `verification_check`, owner `verification-explorer`.
 
 **Partial revision requested**
 Revise `architecture.md` per feedback. Re-present the changed sections.
@@ -140,5 +165,5 @@ java-backend-strict extension: use a separate `decisions.md`.
 
 ## State Transition
 
-On human approval: update `module-status.md` → state `verification_check`,
-owner `verifier`.
+On human approval: complete the requirements sync pass, then update
+`module-status.md` → state `verification_check`, owner `verification-explorer`.

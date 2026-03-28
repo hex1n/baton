@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Uses WebSearch or WebFetch to gather external information",
+      "passed": true,
+      "evidence": "40 tool calls. Output contains detailed external knowledge about Agent Skills standard, Cursor hooks protocol, multiple IDE comparisons."
+    },
+    {
+      "text": "Cites external sources with URL or doc reference",
+      "passed": true,
+      "evidence": "References agentskills.io, mentions specific IDE documentation. Less explicit URL formatting than with-skill but external sources are identifiable."
+    },
+    {
+      "text": "Distinguishes codebase evidence from external doc claims (multi-source synthesis)",
+      "passed": true,
+      "evidence": "Separate sections for baton architecture assessment (codebase) vs IDE comparison (external). But no explicit markers distinguishing source types inline."
+    },
+    {
+      "text": "Notes version or date of external sources consulted",
+      "passed": true,
+      "evidence": "'Anthropic 于 2025 年 12 月发布', 'Cursor 2.4' with specific version."
+    },
+    {
+      "text": "Provides comparison in structured format (table or side-by-side)",
+      "passed": true,
+      "evidence": "Multiple tables: distribution mechanism comparison (6 IDEs × 7 dimensions), hooks protocol comparison (13 dimensions × 2 IDEs), Skills standard vs extensions table."
+    },
+    {
+      "text": "States depth choice (Standard or Deep)",
+      "passed": false,
+      "evidence": "No depth statement. Opens with '# Claude Code Agent Skills vs Cursor Rules' then '## 研究目的' — no depth annotation."
+    }
+  ],
+  "summary": { "passed": 5, "failed": 1, "total": 6, "pass_rate": 0.83 }
+}

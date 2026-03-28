@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "cross-module-junction-fallback",
+  "prompt": "baton 的 junction 机制在什么情况下会 fallback 到 copy mode？追踪完整的判断链，包括 setup.sh 和 junction.sh 的交互。",
+  "assertions": [
+    "States depth choice explicitly (Standard or Deep)",
+    "References at least 2 different source files with file:line citations",
+    "Includes evidence markers (✅ or ❓) on material claims",
+    "Traces a call chain or decision flow between files",
+    "Lists open questions or unverified claims"
+  ]
+}

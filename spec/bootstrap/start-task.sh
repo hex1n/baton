@@ -8,6 +8,7 @@ task_id=""
 owner="scoped-explorer"
 state="exploring"
 notes="task row created by start-task bootstrap"
+language=""
 dry_run="false"
 
 trim() {
@@ -18,34 +19,104 @@ sanitize_cell() {
   printf '%s' "$1" | tr '|' '/'
 }
 
+normalize_language() {
+  local value="${1:-}"
+  value="${value%%#*}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed "s/^[[:space:]\"']*//;s/[[:space:]\"']*$//")"
+  printf '%s' "$value"
+}
+
+resolve_locale_language() {
+  local locale_value="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+  local normalized
+  normalized="$(printf '%s' "$locale_value" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$normalized" == zh* ]]; then
+    printf '%s' 'zh'
+    return
+  fi
+
+  printf '%s' 'en'
+}
+
+read_profile_language() {
+  local profile_path="$1"
+  local raw=''
+
+  if [[ ! -f "$profile_path" ]]; then
+    printf '%s' ''
+    return
+  fi
+
+  raw="$(awk -F: '/^[[:space:]]*artifact_language:[[:space:]]*/ {sub(/^[[:space:]]+/, "", $2); print $2; exit}' "$profile_path")"
+  raw="$(printf '%s' "$raw" | sed "s/[[:space:]]*#.*$//;s/^[[:space:]\"']*//;s/[[:space:]\"']*$//" | tr '[:upper:]' '[:lower:]')"
+  printf '%s' "$raw"
+}
+
+resolve_artifact_language() {
+  local policy
+  policy="$(normalize_language "$1")"
+
+  if [[ -z "$policy" || "$policy" == 'auto' ]]; then
+    resolve_locale_language
+    return
+  fi
+
+  printf '%s' "$policy"
+}
+
+human_template_path() {
+  local template_name="$1"
+  local resolved_language="$2"
+  local override_root=""
+  local override_candidate=""
+  local candidate="$templates_dir/$template_name"
+
+  if [[ -n "${resolved_repo_root:-}" ]]; then
+    override_root="$resolved_repo_root/.harness/overrides/templates"
+    if [[ "$resolved_language" == 'zh' ]]; then
+      override_candidate="$override_root/zh/$template_name"
+    else
+      override_candidate="$override_root/$template_name"
+    fi
+
+    if [[ -f "$override_candidate" ]]; then
+      printf '%s' "$override_candidate"
+      return 0
+    fi
+  fi
+
+  if [[ "$resolved_language" == 'zh' ]]; then
+    candidate="$templates_dir/zh/$template_name"
+  fi
+
+  if [[ ! -f "$candidate" ]]; then
+    printf 'Template not found: %s\n' "$candidate" >&2
+    exit 1
+  fi
+
+  printf '%s' "$candidate"
+}
+
 usage() {
-  cat <<'EOF'
-Usage:
-  start-task.sh --task-id ID [--repo-root PATH] [--owner ROLE] [--state STATE] [--notes TEXT] [--dry-run]
-
-Owners:
-  repo-explorer
-  scoped-explorer
-  specifier
-  architect
-  verification-explorer
-  generator
-  reviewer
-  evaluator
-  human
-
-States:
-  exploring
-  specifying
-  architecting
-  awaiting_human_arch
-  verification_check
-  generating
-  reviewing
-  blocked
-  ready_for_human_close
-  complete
-EOF
+  local owners_file="$script_dir/../protocol/owners.txt"
+  local states_file="$script_dir/../protocol/states.txt"
+  printf 'Usage:\n  start-task.sh --task-id ID [--repo-root PATH] [--owner ROLE] [--state STATE] [--notes TEXT] [--language auto|en|zh] [--dry-run]\n\nOwners:\n'
+  if [[ -f "$owners_file" ]]; then
+    while IFS= read -r token; do
+      printf '  %s\n' "$token"
+    done < "$owners_file"
+  else
+    printf '  (owners.txt not found at %s)\n' "$owners_file"
+  fi
+  printf '\nStates:\n'
+  if [[ -f "$states_file" ]]; then
+    while IFS= read -r token; do
+      printf '  %s\n' "$token"
+    done < "$states_file"
+  else
+    printf '  (states.txt not found at %s)\n' "$states_file"
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -68,6 +139,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --notes)
       notes="$2"
+      shift 2
+      ;;
+    --language)
+      language="$2"
       shift 2
       ;;
     --dry-run)
@@ -96,21 +171,36 @@ if [[ -z "$task_id" ]]; then
   exit 1
 fi
 
-case "$owner" in
-  repo-explorer|scoped-explorer|specifier|architect|verification-explorer|generator|reviewer|evaluator|human) ;;
-  *)
-    printf 'Unsupported owner: %s\n' "$owner" >&2
-    exit 1
-    ;;
-esac
+language="$(normalize_language "$language")"
+if [[ -n "$language" ]]; then
+  case "$language" in
+    auto|en|zh) ;;
+    *)
+      printf 'Unsupported language: %s\n' "$language" >&2
+      exit 1
+      ;;
+  esac
+fi
 
-case "$state" in
-  exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|blocked|ready_for_human_close|complete) ;;
-  *)
-    printf 'Unsupported state: %s\n' "$state" >&2
-    exit 1
-    ;;
-esac
+owners_file="$script_dir/../protocol/owners.txt"
+if [[ ! -f "$owners_file" ]]; then
+  printf 'owners.txt not found: %s\n' "$owners_file" >&2
+  exit 1
+fi
+if ! grep -Fxq "$owner" "$owners_file"; then
+  printf 'Unsupported owner: %s\n' "$owner" >&2
+  exit 1
+fi
+
+states_file="$script_dir/../protocol/states.txt"
+if [[ ! -f "$states_file" ]]; then
+  printf 'states.txt not found: %s\n' "$states_file" >&2
+  exit 1
+fi
+if ! grep -Fxq "$state" "$states_file"; then
+  printf 'Unsupported state: %s\n' "$state" >&2
+  exit 1
+fi
 
 spec_root="$(cd "$script_dir/.." && pwd)"
 templates_dir="$spec_root/templates"
@@ -118,6 +208,7 @@ resolved_repo_root="$(cd "$repo_root" && pwd)"
 harness_dir="$resolved_repo_root/.harness"
 module_status_path="$harness_dir/module-status.md"
 history_root="$harness_dir/history"
+profile_local_path="$harness_dir/profile.local.yaml"
 
 if [[ ! -d "$harness_dir" ]]; then
   printf 'Harness directory not found: %s. Run init-harness first.\n' "$harness_dir" >&2
@@ -127,6 +218,27 @@ if [[ ! -f "$module_status_path" ]]; then
   printf 'Module status file not found: %s. Run init-harness first.\n' "$module_status_path" >&2
   exit 1
 fi
+
+profile_language="$(read_profile_language "$profile_local_path")"
+if [[ -n "$profile_language" ]]; then
+  case "$profile_language" in
+    auto|en|zh) ;;
+    *)
+      printf 'Unsupported artifact language in profile.local.yaml: %s\n' "$profile_language" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+language_policy="$language"
+if [[ -z "$language_policy" ]]; then
+  language_policy="$profile_language"
+fi
+if [[ -z "$language_policy" ]]; then
+  language_policy='zh'
+fi
+
+resolved_artifact_language="$(resolve_artifact_language "$language_policy")"
 
 rows=()
 last_scope="bootstrap"
@@ -203,7 +315,7 @@ archive_files=()
 for entry in "${artifact_templates[@]}"; do
   template_name="${entry%%:*}"
   target_name="${entry##*:}"
-  template_path="$templates_dir/$template_name"
+  template_path="$(human_template_path "$template_name" "$resolved_artifact_language")"
   target_path="$harness_dir/$target_name"
 
   if [[ -f "$target_path" ]] && ! cmp -s "$template_path" "$target_path"; then
@@ -234,12 +346,13 @@ fi
 for entry in "${artifact_templates[@]}"; do
   template_name="${entry%%:*}"
   target_name="${entry##*:}"
+  template_path="$(human_template_path "$template_name" "$resolved_artifact_language")"
   target_path="$harness_dir/$target_name"
 
   if [[ "$dry_run" == "true" ]]; then
     printf 'plan  %s\n' "$target_path"
   else
-    cp "$templates_dir/$template_name" "$target_path"
+    cp "$template_path" "$target_path"
     printf 'write %s\n' "$target_path"
   fi
 done
@@ -257,9 +370,11 @@ else
     printf '# Module Status\n\n'
     printf '| Scope | Owner | State | Updated At | Notes |\n'
     printf '|------|------|------|-----------|------|\n'
-    for row in "${rows[@]}"; do
-      printf '%s\n' "$row"
-    done
+    if [[ "${#rows[@]}" -gt 0 ]]; then
+      for row in "${rows[@]}"; do
+        printf '%s\n' "$row"
+      done
+    fi
     printf '%s\n' "$new_row"
     printf '\n## State Notes\n\n'
     printf -- '- Current artifacts: active task initialized for %s\n' "$safe_task_id"
@@ -275,6 +390,8 @@ printf 'Repo:     %s\n' "$resolved_repo_root"
 printf 'TaskId:   %s\n' "$safe_task_id"
 printf 'Owner:    %s\n' "$safe_owner"
 printf 'State:    %s\n' "$safe_state"
+printf 'Language Policy:   %s\n' "$language_policy"
+printf 'Artifact Language: %s\n' "$resolved_artifact_language"
 if [[ "$dry_run" == "true" ]]; then
   printf 'Mode:     dry-run\n'
 fi

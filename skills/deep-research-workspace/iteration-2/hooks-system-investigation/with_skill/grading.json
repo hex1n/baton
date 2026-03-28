@@ -1,0 +1,39 @@
+{
+  "expectations": [
+    {
+      "text": "References specific file paths and line numbers from the codebase",
+      "passed": true,
+      "evidence": "Extensively references file paths with line numbers throughout: setup.sh:39-53, setup.sh:66-128, dispatch.sh:40-48, plan-parser.sh:80-131, write-lock.sh:135-139, write-lock.sh:141-146, write-lock.sh:65-75, failure-tracker.sh:9-11, failure-tracker.sh:39-49, hooks/lib/plan-parser.sh:1-445, hooks/lib/common.sh:1-63, hooks/run-hook.cmd:1-45, dispatch.sh:52, dispatch.sh:37, dispatch.sh:28-30, phase-guide.sh:27-40, post-write-tracker.sh:85-91, bash-guard.sh:42-48, constitution.md:163, and many more. Line numbers are specific and consistently provided."
+    },
+    {
+      "text": "Identifies the different hook types (blocking vs advisory)",
+      "passed": true,
+      "evidence": "Dedicates an entire section 'Individual Hooks: Blocking vs Advisory' with two clearly labeled tables. Blocking hooks (write-lock, bash-guard, completion-check) are listed with their exit 2 behavior. Advisory hooks (phase-guide, post-write-tracker, quality-gate, stop-guard, subagent-context, failure-tracker, pre-compact) are listed as always exit 0 with stderr warnings. The dispatch mechanism section also explains exit code semantics: 0=allow, 2=block, other=warning."
+    },
+    {
+      "text": "Lists concrete failure modes with evidence",
+      "passed": true,
+      "evidence": "Lists 10 distinct failure modes, each with verified file/line references and concrete risk descriptions: (1) Plan discovery failures with 3 sub-cases, (2) JSON parsing failures including jq absence and awk fallback fragility, (3) Fail-open vs fail-closed decisions with itemized cases, (4) Subshell isolation side effects, (5) Session tracking fragility with stale count file risk, (6) Write-set enforcement gap with pre/post asymmetry, (7) Governance marker protection limits with concrete Bash bypass scenario, (8) Phase-guide context injection silent failure, (9) CRLF compatibility issues, (10) Timeout and hanging risks. Each includes 'verified:' citations."
+    },
+    {
+      "text": "Uses evidence markers (verified/unverified indicators)",
+      "passed": true,
+      "evidence": "Uses '(verified: ...)' markers extensively throughout the document — appearing in nearly every section with specific file:line references. Uses 'unverified' in open questions (e.g., 'but this is unverified' for CRLF question). The Challenge section explicitly identifies what was NOT verified ('I haven't verified this by running the actual hooks'). Open questions state reasons for being unverified ('reason: no runtime access', 'reason: no Windows test environment'). However, it does not use the constitution's prescribed markers (checkmark/question-mark emoji format). It uses a textual '(verified: ...)' convention instead, which is a reasonable functional equivalent."
+    },
+    {
+      "text": "Starts with architecture overview before diving into details",
+      "passed": true,
+      "evidence": "After a brief header with key finding and open question count, the document begins with 'Architecture Overview' containing an ASCII diagram of the full hook dispatch chain (Claude Code Runtime -> settings.json -> run-hook.cmd -> dispatch.sh -> manifest.conf -> hook scripts). It then proceeds through registration, dispatch mechanism, individual hooks, shared libraries, adapters, and finally failure modes. This is a clear top-down structure."
+    },
+    {
+      "text": "Covers the dispatch mechanism (manifest.conf, dispatch.sh)",
+      "passed": true,
+      "evidence": "Dedicates a full section 'The Dispatch Mechanism' with a 7-step numbered walkthrough of dispatch.sh's logic (receives event, sets BATON_PROJECT_DIR, buffers stdin, extracts tool_name, iterates manifest.conf, runs hooks in subshells, exit code logic). Includes the full manifest.conf content with all 10 routing entries. Also covers the double-filter architecture (settings.json matchers + manifest.conf matchers) and identifies the maintenance burden this creates."
+    },
+    {
+      "text": "Identifies cross-platform/adapter differences",
+      "passed": true,
+      "evidence": "Dedicated section 'Cross-Platform and Adapter Differences' covering three areas: (1) run-hook.cmd as a polyglot batch+bash file with Windows bash.exe search and fail-open on missing bash, (2) Codex adapter with only SessionStart/Stop support, no hard gates, stdin closure workaround, and file-based stop messaging, (3) Cursor adapter with camelCase-to-PascalCase event mapping, exit-code-to-JSON translation, and reduced enforcement scope. Also identifies CRLF compatibility as a failure mode (mode 9) and notes dispatch.sh's CRLF stripping vs individual hooks' lack thereof."
+    }
+  ]
+}

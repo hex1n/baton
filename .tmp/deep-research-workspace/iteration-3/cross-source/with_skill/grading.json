@@ -1,0 +1,37 @@
+{
+  "eval_name": "cross-source",
+  "prompt": "Is baton's hook dispatch protocol compatible with Claude Code's current hook specification?",
+  "expectations": [
+    {
+      "text": "Uses both codebase reading AND external docs (WebFetch)",
+      "passed": true,
+      "evidence": "Read all hook scripts + fetched https://code.claude.com/docs/en/hooks (2026-03-23)"
+    },
+    {
+      "text": "Field-by-field comparison tables present",
+      "passed": true,
+      "evidence": "3 detailed tables: stdin fields per hook, exit codes per hook, stdout format per hook, plus summary matrix"
+    },
+    {
+      "text": "Found real mismatch through cross-verification",
+      "passed": true,
+      "evidence": "Discovered additional_context (snake_case) vs additionalContext (camelCase) in phase-guide.sh non-plugin path"
+    },
+    {
+      "text": "Source provenance on material claims",
+      "passed": true,
+      "evidence": "'verified: read dispatch.sh:52-61 + fetched docs', 'verified: read phase-guide.sh:35-39 + fetched docs'"
+    },
+    {
+      "text": "Distinguishes design choices from bugs",
+      "passed": true,
+      "evidence": "stop-guard advisory-only: 'This is a design choice, not a bug' — clearly separated from the real mismatch"
+    },
+    {
+      "text": "Open questions present and actionable",
+      "passed": true,
+      "evidence": "4 questions with priority assessment and verification suggestions"
+    }
+  ],
+  "pass_rate": 1.0
+}

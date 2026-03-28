@@ -36,6 +36,7 @@ Useful options:
 - `-Owner scoped-explorer`
 - `-State exploring`
 - `-Notes "user-approved pilot task"`
+- `-Language auto|en|zh`
 - `-DryRun`
 
 ## Bash
@@ -49,6 +50,7 @@ Useful options:
 - `--owner scoped-explorer`
 - `--state exploring`
 - `--notes "user-approved pilot task"`
+- `--language auto|en|zh`
 - `--dry-run`
 
 ## What Gets Reset
@@ -62,6 +64,20 @@ The active task surfaces are reset from templates:
 - `retrospective.md`
 
 This keeps the top-level `.harness/` focused on the current task.
+
+Language selection for these human-facing artifacts resolves in this order:
+
+1. explicit `--language` / `-Language`
+2. `.harness/profile.local.yaml` → `documentation.artifact_language`
+3. Chinese default
+
+If the selected policy is `auto`, the bootstrap script resolves the artifact
+language from the local environment locale. `module-status.md` is not localized.
+
+Template resolution order:
+
+1. `repo/.harness/overrides/templates/`
+2. vendored `spec/templates/`
 
 ## What Gets Archived
 
@@ -81,7 +97,10 @@ This is a lightweight history mechanism, not a full scheduler.
 3. run `Repo Explorer` once
 4. run `start-task`
 5. fill `scoped-map.md`
-6. let the current owner agent move the task through the remaining states in `module-status.md`
+6. after architecture approval, sync `requirements.md` to any approved
+   architecture decisions that change requirements-level truth
+7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`
+8. let the current owner agent move the task through the remaining states in `module-status.md`
 
 ## Failure Conditions
 

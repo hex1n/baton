@@ -1,0 +1,13 @@
+{
+  "eval_name": "contradiction",
+  "prompt": "docs/research-ide-hooks.md 里的适配器架构图显示了 adapter-cline.sh 和 adapter-copilot.sh，但我在代码里找不到这些文件。到底 baton 当前支持哪些 adapter？文档和代码哪个是对的？",
+  "expectations": [
+    {"text": "States BOTH claims with sources", "passed": true, "evidence": "Section 1 'What the documentation claims' with line references (327-337, 227-228, 106) vs Section 2 'What actually exists in code' with glob results and paths"},
+    {"text": "Identifies distinguishing check", "passed": true, "evidence": "Glob search for adapter*, grep for adapter-cline|adapter-copilot, git log --all for file history"},
+    {"text": "Performs the check", "passed": true, "evidence": "All checks executed: glob found 2 adapter dirs, grep confirmed docs-only hits, git log confirmed files never existed"},
+    {"text": "Clear verdict", "passed": true, "evidence": "Code is correct. adapter-cline.sh and adapter-copilot.sh have never existed."},
+    {"text": "Does NOT smooth over", "passed": true, "evidence": "4 specific divergences in verdict table: adapter-cline.sh (unimplemented), adapter-copilot.sh (unimplemented), adapter-cursor.sh (doc stale), adapter-codex.sh (doc stale)"},
+    {"text": "Notes line-7 disclaimer", "passed": true, "evidence": "Explicitly cited: 'the header at line 7 explicitly states: Current implementation scope (2026-03-09): Baton supports 4 IDEs'"}
+  ],
+  "pass_rate": 1.0
+}

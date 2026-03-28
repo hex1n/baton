@@ -1,8 +1,8 @@
 # Module Status
 
-| Scope | Owner | State | Eval Round | Updated At | Notes |
-|------|------|------|-----------|-----------|------|
-| <task-id> | <role> | <state> | — | <timestamp> | <notes> |
+| Scope | Owner | State | Updated At | Notes |
+|------|------|------|-----------|------|
+| <task-id> | <role> | <state> | <timestamp> | <notes> |
 
 ## State Notes
 

@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "zod-usage-audit",
+  "prompt": "我们项目用了 zod 做 schema validation，但我看到有些地方用的是手写的 type guard。调研一下 zod 在这个项目里的使用现状，以及是否应该统一。",
+  "assertions": [
+    {"text": "Correctly identifies that the project has no TypeScript/JavaScript code", "type": "programmatic"},
+    {"text": "Reports that the premise is wrong rather than fabricating findings", "type": "qualitative"},
+    {"text": "Searched for zod/TypeScript evidence before concluding", "type": "qualitative"},
+    {"text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch'", "type": "programmatic"},
+    {"text": "Response is concise given the false premise (doesn't pad with irrelevant content)", "type": "qualitative"}
+  ]
+}

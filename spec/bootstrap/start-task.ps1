@@ -1,11 +1,10 @@
 param(
     [string]$RepoRoot = ".",
     [Parameter(Mandatory = $true)][string]$TaskId,
-    [ValidateSet("repo-explorer", "scoped-explorer", "specifier", "architect", "verification-explorer", "generator", "reviewer", "evaluator", "human")]
     [string]$Owner = "scoped-explorer",
-    [ValidateSet("exploring", "specifying", "architecting", "awaiting_human_arch", "verification_check", "generating", "reviewing", "blocked", "ready_for_human_close", "complete")]
     [string]$State = "exploring",
     [string]$Notes = "task row created by start-task bootstrap",
+    [string]$Language = "",
     [switch]$DryRun
 )
 
@@ -89,13 +88,141 @@ function Sanitize-Cell {
     return $Value.Replace("|", "/")
 }
 
+function Normalize-LanguageValue {
+    param([string]$Value)
+
+    if ($null -eq $Value) {
+        return ""
+    }
+
+    $normalized = $Value.Trim()
+    $commentIndex = $normalized.IndexOf("#")
+    if ($commentIndex -ge 0) {
+        $normalized = $normalized.Substring(0, $commentIndex).Trim()
+    }
+
+    if ($normalized.Length -ge 2) {
+        if (($normalized.StartsWith('"') -and $normalized.EndsWith('"')) -or ($normalized.StartsWith("'") -and $normalized.EndsWith("'"))) {
+            $normalized = $normalized.Substring(1, $normalized.Length - 2).Trim()
+        }
+    }
+
+    return $normalized.ToLowerInvariant()
+}
+
+function Resolve-LocaleLanguage {
+    $candidates = @(
+        $env:LC_ALL,
+        $env:LC_MESSAGES,
+        $env:LANG,
+        [System.Globalization.CultureInfo]::CurrentUICulture.Name,
+        [System.Globalization.CultureInfo]::CurrentCulture.Name
+    )
+
+    foreach ($candidate in $candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        if ($candidate.Trim().ToLowerInvariant().StartsWith("zh")) {
+            return "zh"
+        }
+    }
+
+    return "en"
+}
+
+function Resolve-ArtifactLanguage {
+    param([string]$LanguagePolicy)
+
+    $policy = Normalize-LanguageValue -Value $LanguagePolicy
+    if ([string]::IsNullOrWhiteSpace($policy) -or $policy -eq "auto") {
+        return (Resolve-LocaleLanguage)
+    }
+
+    return $policy
+}
+
+function Get-ProfileArtifactLanguage {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        return ""
+    }
+
+    foreach ($line in Get-Content $Path) {
+        if ($line -match '^\s*artifact_language\s*:\s*(.+?)\s*$') {
+            return Normalize-LanguageValue -Value $Matches[1]
+        }
+    }
+
+    return ""
+}
+
+function Get-HumanTemplatePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$TemplatesDir,
+        [Parameter(Mandatory = $true)][string]$TemplateName,
+        [Parameter(Mandatory = $true)][string]$ResolvedLanguage
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($script:resolvedRepoRoot)) {
+        $overrideRoot = Join-Path $script:resolvedRepoRoot ".harness/overrides/templates"
+        $overrideCandidate = if ($ResolvedLanguage -eq "zh") {
+            Join-Path (Join-Path $overrideRoot "zh") $TemplateName
+        } else {
+            Join-Path $overrideRoot $TemplateName
+        }
+
+        if (Test-Path $overrideCandidate) {
+            return $overrideCandidate
+        }
+    }
+
+    $candidate = Join-Path $TemplatesDir $TemplateName
+    if ($ResolvedLanguage -eq "zh") {
+        $candidate = Join-Path (Join-Path $TemplatesDir "zh") $TemplateName
+    }
+
+    if (-not (Test-Path $candidate)) {
+        throw "Template not found: $candidate"
+    }
+
+    return $candidate
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $specRoot = Split-Path -Parent $scriptDir
 $templatesDir = Join-Path $specRoot "templates"
-$resolvedRepoRoot = (Resolve-Path $RepoRoot).Path
+
+$normalizedLanguageOverride = Normalize-LanguageValue -Value $Language
+if ((-not [string]::IsNullOrWhiteSpace($normalizedLanguageOverride)) -and ($normalizedLanguageOverride -notin @("auto", "en", "zh"))) {
+    throw "Unsupported language: $Language"
+}
+
+$ownersFile = Join-Path $specRoot "protocol/owners.txt"
+if (-not (Test-Path $ownersFile)) {
+    throw "owners.txt not found: $ownersFile"
+}
+$validOwners = Get-Content $ownersFile | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+if ($validOwners -notcontains $Owner) {
+    throw "Unsupported owner: $Owner"
+}
+
+$statesFile = Join-Path $specRoot "protocol/states.txt"
+if (-not (Test-Path $statesFile)) {
+    throw "states.txt not found: $statesFile"
+}
+$validStates = Get-Content $statesFile | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+if ($validStates -notcontains $State) {
+    throw "Unsupported state: $State"
+}
+$script:resolvedRepoRoot = (Resolve-Path $RepoRoot).Path
+$resolvedRepoRoot = $script:resolvedRepoRoot
 $harnessDir = Join-Path $resolvedRepoRoot ".harness"
 $moduleStatusPath = Join-Path $harnessDir "module-status.md"
 $historyRoot = Join-Path $harnessDir "history"
+$profileLocalPath = Join-Path $harnessDir "profile.local.yaml"
 
 if (-not (Test-Path $harnessDir)) {
     throw "Harness directory not found: $harnessDir. Run init-harness first."
@@ -103,6 +230,20 @@ if (-not (Test-Path $harnessDir)) {
 if (-not (Test-Path $moduleStatusPath)) {
     throw "Module status file not found: $moduleStatusPath. Run init-harness first."
 }
+
+$profileLanguage = Get-ProfileArtifactLanguage -Path $profileLocalPath
+if ((-not [string]::IsNullOrWhiteSpace($profileLanguage)) -and ($profileLanguage -notin @("auto", "en", "zh"))) {
+    throw "Unsupported artifact language in profile.local.yaml: $profileLanguage"
+}
+
+$languagePolicy = if (-not [string]::IsNullOrWhiteSpace($normalizedLanguageOverride)) {
+    $normalizedLanguageOverride
+} elseif (-not [string]::IsNullOrWhiteSpace($profileLanguage)) {
+    $profileLanguage
+} else {
+    "zh"
+}
+$resolvedArtifactLanguage = Resolve-ArtifactLanguage -LanguagePolicy $languagePolicy
 
 $existingRows = @(Get-ModuleStatusRows -Path $moduleStatusPath)
 $matchingRows = @($existingRows | Where-Object { $_.Scope -eq $TaskId })
@@ -128,7 +269,7 @@ $artifactMap = @(
 $archivePairs = @()
 foreach ($entry in $artifactMap) {
     $targetPath = Join-Path $harnessDir $entry.Target
-    $templatePath = Join-Path $templatesDir $entry.Template
+    $templatePath = Get-HumanTemplatePath -TemplatesDir $templatesDir -TemplateName $entry.Template -ResolvedLanguage $resolvedArtifactLanguage
     $targetContent = Get-NormalizedContent -Path $targetPath
     $templateContent = Get-NormalizedContent -Path $templatePath
 
@@ -162,7 +303,7 @@ if ($archivePairs.Count -gt 0) {
 }
 
 foreach ($entry in $artifactMap) {
-    $templatePath = Join-Path $templatesDir $entry.Template
+    $templatePath = Get-HumanTemplatePath -TemplatesDir $templatesDir -TemplateName $entry.Template -ResolvedLanguage $resolvedArtifactLanguage
     $targetPath = Join-Path $harnessDir $entry.Target
 
     if ($DryRun) {
@@ -221,6 +362,8 @@ Write-Host "Repo:     $resolvedRepoRoot"
 Write-Host "TaskId:   $safeTaskId"
 Write-Host "Owner:    $safeOwner"
 Write-Host "State:    $safeState"
+Write-Host "Language Policy:   $languagePolicy"
+Write-Host "Artifact Language: $resolvedArtifactLanguage"
 if ($DryRun) {
     Write-Host "Mode:     dry-run"
 }

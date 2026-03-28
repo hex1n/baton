@@ -38,12 +38,14 @@
 - Active owner: `human`
 - Goal: approve or reject architecture direction
 - Required artifacts: `requirements.md`, `architecture.md`
+- Exit condition: approved architecture decisions that change
+  requirements-level truth have been synced back into `requirements.md`
 
 ### `verification_check`
 
 - Active owner: `verification-explorer` or `architect`
 - Goal: prove the intended verification path is executable
-- Required artifact: `verification-path.md`
+- Required artifacts: `requirements.md`, `architecture.md`, `verification-path.md`
 
 ### `generating`
 
@@ -92,11 +94,38 @@ blocked -> architecting
 blocked -> generating
 ```
 
+## Interpretation
+
+The harness has a linear happy path and explicit repair loops.
+
+Happy path:
+
+```text
+exploring -> specifying -> architecting -> awaiting_human_arch
+-> verification_check -> generating -> reviewing
+-> ready_for_human_close -> complete
+```
+
+Repair loops:
+
+```text
+verification_check -> blocked -> architecting
+verification_check -> blocked -> verification_check
+generating -> blocked -> architecting
+generating -> blocked -> generating
+reviewing -> blocked -> generating -> reviewing
+```
+
+The protocol keeps the main path readable and uses `blocked` plus explicit
+re-entry points to represent repair, escalation, and retry.
+
 ## Rules
 
 1. Only one state may be active per task.
 2. `blocked` must include a concrete reason and next decision needed.
 3. `complete` requires human confirmation.
-4. If verification assumptions change materially, return to `verification_check`.
-5. Portable harness v1 assumes one non-complete active task per workspace. Use another worktree or clone for parallel tasks.
-6. `start-task` initializes the task row only. Ordinary state transitions are performed by the current owner agent updating `module-status.md`.
+4. Before entering `verification_check`, `requirements.md` must reflect
+   approved architecture decisions that affect requirements truth.
+5. If verification assumptions change materially, return to `verification_check`.
+6. Portable harness v1 assumes one non-complete active task per workspace. Use another worktree or clone for parallel tasks.
+7. `start-task` initializes the task row only. Ordinary state transitions are performed by the current owner agent updating `module-status.md`.

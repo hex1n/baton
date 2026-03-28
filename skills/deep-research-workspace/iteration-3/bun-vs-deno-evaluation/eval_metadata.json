@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "bun-vs-deno-evaluation",
+  "prompt": "我在考虑用 Bun 还是 Deno 来写一个新的 CLI 工具，项目需要快速启动、支持 TypeScript、能方便地打包成单个可执行文件。帮我调研一下该选哪个。",
+  "assertions": [
+    {"text": "Output contains a structured comparison table (not just prose)", "type": "qualitative"},
+    {"text": "Cites official documentation or official repos as sources", "type": "qualitative"},
+    {"text": "Covers all three stated criteria: startup speed, TypeScript support, single-binary packaging", "type": "qualitative"},
+    {"text": "Provides a clear recommendation with reasoning, not 'both are fine'", "type": "qualitative"},
+    {"text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch'", "type": "programmatic"},
+    {"text": "Mentions adoption signals (npm downloads, GitHub stars, release cadence, or similar)", "type": "qualitative"},
+    {"text": "Does not contain hallucinated/unverifiable factual claims", "type": "qualitative"},
+    {"text": "Includes open questions or caveats about what wasn't verified", "type": "qualitative"}
+  ]
+}

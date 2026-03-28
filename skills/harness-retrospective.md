@@ -14,6 +14,18 @@ user-invocable: true
 - **Inputs**: all `.harness/` artifacts from the completed task
 - **Outputs**: `.harness/retrospective.md`, updated `module-status.md`
 
+## Artifact Language Policy
+
+Before writing any human-facing artifact:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
+
 ## Execution Steps
 
 1. Read all artifacts: `scoped-map.md`, `requirements.md`, `architecture.md`,

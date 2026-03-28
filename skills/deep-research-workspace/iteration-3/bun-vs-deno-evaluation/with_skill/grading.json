@@ -1,0 +1,44 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains a structured comparison table (not just prose)",
+      "passed": true,
+      "evidence": "The document contains 10+ markdown tables covering startup time, TypeScript support, binary size, cross-compilation targets, compilation features, ecosystem compatibility, developer experience, platform support, governance, and a final comparison summary table (lines 35-185)."
+    },
+    {
+      "text": "Cites official documentation or official repos as sources",
+      "passed": true,
+      "evidence": "The Sources section (lines 233-252) cites bun.com/docs/bundler/executables, docs.deno.com/runtime/reference/cli/compile/, bun.com/blog/bun-v1.3.10, docs.deno.com/runtime/fundamentals/typescript/, deno.com/blog/v2.7, and several other official documentation and blog URLs from both projects."
+    },
+    {
+      "text": "Covers all three stated criteria: startup speed, TypeScript support, single-binary packaging",
+      "passed": true,
+      "evidence": "Section 1 'Startup Time' (lines 31-46) covers startup speed with benchmarks. Section 2 'TypeScript Support' (lines 49-62) covers TypeScript with a feature comparison table. Section 3 'Single-Binary Compilation' (lines 65-104) covers binary packaging including size, cross-compilation targets, and compilation features."
+    },
+    {
+      "text": "Provides a clear recommendation with reasoning, not 'both are fine'",
+      "passed": true,
+      "evidence": "Line 189: 'Use Bun for this project.' The recommendation section (lines 188-206) provides specific reasoning tied to each of the three criteria, lists four specific scenarios when Deno would be better, and states the assumptions the recommendation rests on. This is a decisive recommendation, not a hedge."
+    },
+    {
+      "text": "Does not contain hardcoded tool names like 'Context7', 'WebSearch', or 'WebFetch' or 'context7'",
+      "passed": true,
+      "evidence": "Case-insensitive grep for 'context7', 'websearch', and 'webfetch' returned zero matches in the research output file."
+    },
+    {
+      "text": "Mentions adoption signals (npm downloads, GitHub stars, release cadence, or similar)",
+      "passed": true,
+      "evidence": "The document mentions: GitHub open issues (~4,800 for Bun, line 147), funding amounts ($30.9M for Deno, line 159), LTS release cadence (6-month backport cycle for Deno, line 148), version maturity (v1.3.x vs v2.7.x with GA dates, line 149), and production usage at scale (Claude Code). It does not mention npm downloads or GitHub stars specifically, but covers multiple adoption/maturity signals."
+    },
+    {
+      "text": "Does not contain hallucinated/unverifiable factual claims",
+      "passed": false,
+      "evidence": "The document states as verified fact that 'Anthropic acquired Bun in December 2025' (lines 22-23, 159, 164-166), citing URLs like 'anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone' and 'bun.com/blog/bun-joins-anthropic'. Per the assertion instructions, this is NOT true — Anthropic did not acquire Bun. These claims are presented as fact with specific dates, URLs, and revenue figures ($1B run-rate), none of which are marked as unverified or uncertain. The fabricated source URLs make this particularly problematic. Additional unverifiable claims stated as fact include: Claude Code reaching '$1B run-rate revenue' (line 165), specific version numbers (Bun v1.3.11, Deno v2.7.7), and 'Deno 2.7, Feb 2026' (line 90)."
+    },
+    {
+      "text": "Includes open questions or caveats about what wasn't verified",
+      "passed": true,
+      "evidence": "The document has three explicit open questions (lines 223-229) about target platforms, npm package compatibility, and binary size acceptability. It also has a 'Challenge' section (lines 217-221) noting the weakest conclusion (startup benchmarks not personally run, both below human perception threshold) and the most important unchecked item (actual npm package compatibility with bun build --compile). The 'Contradictions & Tensions' section (lines 209-215) adds further caveats about benchmark methodology variance and binary size claims."
+    }
+  ]
+}

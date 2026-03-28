@@ -1,5 +1,6 @@
 ---
 name: harness-verifier
+context: fork
 description: >
   Verify that the planned validation path is executable before implementation
   begins. Trigger when the user asks to "verify the path", "check verification",
@@ -14,16 +15,49 @@ user-invocable: true
 
 > Derived from spec/protocol/role-contracts.md — Verification Explorer
 
+## Startup (context: fork — must load artifacts explicitly)
+
+This skill should start from the artifacts, not from prior role reasoning.
+
+Load these inputs before proceeding:
+
+1. Read `.harness/requirements.md`
+2. Read `.harness/architecture.md`
+3. Read repo profile / validation config if present
+
+Do not inherit Explorer / Specifier / Architect reasoning as your verification
+baseline.
+
+## Codex Execution Note
+
+In Codex, launch this role as `spawn_agent({ fork_context: false })` and tell
+the sub-agent to cold-read only `requirements.md`, `architecture.md`, and repo
+validation config. See `spec/adapters/codex.md` for the concrete spawn/wait
+example.
+
 ## Role Contract
 
-- **Inputs**: `architecture.md`, repo profile
+- **Inputs**: `requirements.md`, `architecture.md`, repo profile
 - **Outputs**: exact commands or checks, executability proof, blocking conditions
 - **Required artifact**: `verification-path.md`
+
+## Artifact Language Policy
+
+Before writing any human-facing artifact:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
 
 ## Gate: Verification Path Check
 
 All criteria must pass before Generator can begin:
 
+- [ ] `requirements.md` and `architecture.md` contain no unresolved contradiction
 - [ ] Exact validation commands or checks are listed
 - [ ] Commands are executable in the current repo context
 - [ ] Toolchain blockers are known
@@ -56,6 +90,9 @@ If the answer is **no** or **uncertain**, the task is **blocked**.
 
 ### 1. Read Architecture Verification Strategy
 
+- First compare `requirements.md` with approved decisions in `architecture.md`.
+- If requirements still reflect pre-approval assumptions, block and hand back
+  for requirements sync before writing validation commands.
 - Extract the verification approach from `architecture.md`.
 - List what needs to be validated per requirement or module.
 

@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "skill_name": "deep-research",
+    "skill_path": "skills/deep-research/SKILL.md",
+    "executor_model": "claude-opus-4-6",
+    "timestamp": "2026-03-26T16:00:00Z",
+    "evals_run": [2, 3, 4, 5],
+    "runs_per_configuration": 1,
+    "changes": "Added investigation plan (lines 73-77) and reflection gate (lines 92-104) from Memento-Skills patterns"
+  },
+  "runs": [
+    {"eval_id": 2, "eval_name": "cross-module", "configuration": "with_skill", "run_number": 1,
+     "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 198.5, "tokens": 77344, "tool_calls": 38, "errors": 0},
+     "expectations": [
+       {"text": "States depth explicitly", "passed": true, "evidence": "Depth: Deep"},
+       {"text": "Evidence labeled by confidence", "passed": true, "evidence": "✅/❓ markers throughout with file:line references"},
+       {"text": "Traces call chain with line refs", "passed": true, "evidence": "5-layer trace with ASCII decision flow + per-function line numbers"},
+       {"text": "Open questions as distinct section", "passed": true, "evidence": "## Open Questions"},
+       {"text": "Self-challenge statement", "passed": true, "evidence": "## Weakest Conclusion: exotic filesystem edge cases"}
+     ]},
+    {"eval_id": 3, "eval_name": "vague-calibration", "configuration": "with_skill", "run_number": 1,
+     "result": {"pass_rate": 0.8, "passed": 4, "failed": 1, "total": 5, "time_seconds": 165.5, "tokens": 67033, "tool_calls": 36, "errors": 0},
+     "expectations": [
+       {"text": "Decision boundary (who/what action)", "passed": true, "evidence": "Named developer + understand architecture for modifying/debugging"},
+       {"text": "No immediate file reading", "passed": true, "evidence": "Calibration section with scope narrowing before findings"},
+       {"text": "Narrows scope rather than expanding", "passed": false, "evidence": "Claims architecture comprehension scope, excludes testing/history/edge-cases, but still covers all 11 hooks, all adapters, all libraries — comprehensive within frame"},
+       {"text": "States depth", "passed": true, "evidence": "Depth: Standard"},
+       {"text": "Self-challenge statement", "passed": true, "evidence": "## Self-Challenge with 3 points (jq fallback, session identity, adapter parity)"}
+     ]},
+    {"eval_id": 4, "eval_name": "external-research", "configuration": "with_skill", "run_number": 1,
+     "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 347.1, "tokens": 96559, "tool_calls": 39, "errors": 0},
+     "expectations": [
+       {"text": "Labels codebase vs external inline", "passed": true, "evidence": "✅ [URL] for external, ✅ Read for codebase, ❓ for unverified, distinct in Source Audit"},
+       {"text": "URLs with version/date", "passed": true, "evidence": "15+ URLs, Cursor 2.4 (2026-01), timeline dates"},
+       {"text": "Structured comparison", "passed": true, "evidence": "5+ comparison tables across layers"},
+       {"text": "States depth", "passed": true, "evidence": "Depth: Deep"},
+       {"text": "Self-challenge statement", "passed": true, "evidence": "3 weakest conclusions: Cursor frontmatter compat, AGENTS.md file ref tracking, Cursor Rules ROI"}
+     ]},
+    {"eval_id": 5, "eval_name": "contradiction", "configuration": "with_skill", "run_number": 1,
+     "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 101.2, "tokens": 42221, "tool_calls": 24, "errors": 0},
+     "expectations": [
+       {"text": "States BOTH claims with sources", "passed": true, "evidence": "Doc claims (lines 327-337, 227-228, 106) vs code reality (glob + grep)"},
+       {"text": "Identifies distinguishing check", "passed": true, "evidence": "Glob, grep, git log --all"},
+       {"text": "Performs the check", "passed": true, "evidence": "All checks executed"},
+       {"text": "Clear verdict", "passed": true, "evidence": "Code is correct, files never existed"},
+       {"text": "Does NOT smooth over", "passed": true, "evidence": "4 specific divergences in verdict table"},
+       {"text": "Notes line-7 disclaimer", "passed": true, "evidence": "Header line 7 explicitly cited"}
+     ]}
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.95, "stddev": 0.09, "min": 0.80, "max": 1.0},
+      "time_seconds": {"mean": 203.1, "stddev": 92.4, "min": 101.2, "max": 347.1},
+      "tokens": {"mean": 70789, "stddev": 20207, "min": 42221, "max": 96559}
+    }
+  },
+  "comparison_with_iteration_6": {
+    "pass_rate": {"iter_6": 0.95, "iter_7": 0.95, "delta": "0.00"},
+    "time_seconds": {"iter_6": 327.6, "iter_7": 203.1, "delta": "-38.0%"},
+    "tokens": {"iter_6": 58652, "iter_7": 70789, "delta": "+20.7%"},
+    "per_eval_comparison": {
+      "cross-module":     {"iter_6": "5/5", "iter_7": "5/5", "time_delta": "-26.8s (-12%)", "token_delta": "+34170 (+79%)"},
+      "vague-calibration": {"iter_6": "4/5", "iter_7": "4/5", "time_delta": "-154.9s (-48%)", "token_delta": "-8519 (-11%)"},
+      "external-research": {"iter_6": "5/5", "iter_7": "5/5", "time_delta": "-83.1s (-19%)", "token_delta": "+16488 (+21%)"},
+      "contradiction":     {"iter_6": "6/6", "iter_7": "6/6", "time_delta": "-233.2s (-70%)", "token_delta": "+6411 (+18%)"}
+    }
+  },
+  "notes": [
+    "PASS RATE UNCHANGED: 95% (20/21) same as iteration-6. The Memento-Skills structural changes (plan + reflection gate) did not break any passing assertions.",
+    "SAME WEAK SPOT: Eval 3 'narrows scope' still fails (80%). Agent claims narrowing to 'architecture comprehension' but still covers all 11 hooks, all adapters, all libs. This is a calibration-level issue that the plan/reflection additions don't address — they help DURING investigation, not during scope definition.",
+    "SPEED IMPROVEMENT: -38% mean wall-clock time (327.6s → 203.1s). Most dramatic on contradiction (-70%) and vague-calibration (-48%). The investigation plan may help agents converge faster by giving clear direction from the start.",
+    "TOKEN INCREASE: +21% mean tokens (58652 → 70789). Agents investigate more thoroughly (more tool calls on cross-module: 13→38) while finishing faster.",
+    "CAVEAT: Agents received condensed skill instructions, not the full SKILL.md. The plan/reflection guidance was included but agents did not explicitly verbalize 'Investigation Plan:' or 'Reflection: Continue' in their process. The structural features influence behavior implicitly rather than producing explicit plan/reflection text in output.",
+    "QUALITATIVE: Eval 2 output is notably more comprehensive than iter-6 (5 layers vs 3, v4/v5 version comparison, complete code blocks). Eval 4 output is substantially more detailed (417 lines, 3-layer analysis framework, 12-entry source audit). Eval 5 found an ADDITIONAL staleness issue (pre-refactor naming in ide-capability-matrix.md) that iter-6 missed.",
+    "PHASE-A CONFIRMATION: Results align with Phase A's finding that the skill is at a quality plateau for assertion-level metrics. The structural changes improve process quality (speed, depth) without moving the pass rate, because the existing assertions already pass at 95%."
+  ]
+}

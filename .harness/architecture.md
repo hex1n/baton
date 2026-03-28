@@ -1,68 +1,106 @@
-# Architecture: add-version-flag
+# Architecture: governance-multi-host-entrypoints
 
-**Topic**: Bootstrap script version reporting
-**Status**: `proposed`
-**Sizing**: `Trivial`
+**主题**: 根目录治理摘要多宿主入口标准化
+**状态**: `approved`
+**规模**: `Medium`
 
-## 1. Problem
+## 1. 问题
 
-Need a `--version` flag in both bootstrap scripts that reads from a single version source.
+当前 harness 参考实现只有 `CLAUDE.md` 这一份根级治理摘要。对 Claude Code 这是自然入口，但对 Codex 不是；对 Cursor 来说，这也不是最明确、最通用的根目录项目规则入口。问题本质不是“再复制一份文件”，而是“如何让多宿主入口共享同一份治理真源，并被 bootstrap 与一致性检查共同维护”。
 
-## 2. First-Principles
+## 2. 第一性原理拆解
 
-### 2.1 Problem Statement
+### 2.1 问题陈述
 
-Two scripts need to report the same version string without duplication.
+根级 agent instruction 文件的职责是让宿主工具在进入仓库时就加载一组稳定、跨任务的项目规则。如果这些规则只存在于某一个宿主专用文件名下，那么协议虽然定义了治理摘要，实际却只对那个宿主生效。只要不同宿主看到的根级规则不一致，portable harness 的“adapter 只是执行层”这个原则就会被破坏。
 
-### 2.2 Constraints
+### 2.2 约束
 
-- Scripts use `bash` with `set -euo pipefail`
-- Scripts already use `script_dir` / `spec_root` to locate sibling files
-- Argument parsing follows `case "$1" in` pattern
+- 需要继续兼容 Claude Code 对 `CLAUDE.md` 的入口习惯
+- Codex 需要 `AGENTS.md`
+- Cursor 先走官方支持的简单入口 `AGENTS.md`，不引入更重的 `.cursor/rules` 系统
+- 不能让 `CLAUDE.md` 和 `AGENTS.md` 长期手工同步
 
-### 2.3 Solution Categories
+### 2.3 方案类别
 
-- **A: Shared VERSION file** — `spec/VERSION` contains one line (e.g., `1.0.0`). Both scripts read it via `cat "$spec_root/VERSION"`.
-- **B: Shared shell variable file** — `spec/version.sh` exports `HARNESS_VERSION=1.0.0`. Both scripts `source` it.
-- **C: Hardcode in each script** — each script has `version="1.0.0"` at the top.
+- 方案 A: 只新增一个手工维护的 `AGENTS.md`
+- 方案 B: 把治理摘要完全迁移到 `AGENTS.md`，删掉 `CLAUDE.md`
+- 方案 C: 引入共享模板，通过脚本物化 `CLAUDE.md` 与 `AGENTS.md`，并纳入 bootstrap 与自检
 
-### 2.4 Evaluation
+### 2.4 评估
 
-- **A wins**: simplest, language-agnostic (works for `.ps1` too later), one plain text file, `cat` is all you need. Other tools/scripts can also read it.
-- **B rejected**: overkill — sourcing a shell file for one variable adds complexity with no benefit.
-- **C rejected**: violates FR-2 (single source). Version will drift.
+- 为什么方案 C 胜出:
+  - 兼顾 Claude Code 与 Codex / Cursor
+  - 保持单一真源，避免双文件长期漂移
+  - 能自然接入 `init-harness` 和 `check-consistency.sh`
+- 为什么拒绝方案 A:
+  - 只是把单入口问题变成双份手工维护问题
+- 为什么拒绝方案 B:
+  - 会损失 Claude Code 的现有根入口，并且没有必要
 
-## 3. Recommended Architecture
+## 3. 推荐架构
 
-- Create `spec/VERSION` containing `1.0.0` (one line, no newline decoration)
-- Both scripts: add `--version` case before `--help`, read and print `"$spec_root/VERSION"` content, exit 0
-- Version output format: `harness-spec v<version>` (e.g., `harness-spec v1.0.0`)
+- 方法:
+  - 新增共享模板 `spec/templates/root-governance.template.md`
+  - 新增 `spec/bootstrap/sync-governance-entrypoints.sh`
+  - baton 根目录用该脚本物化 `CLAUDE.md` 与 `AGENTS.md`
+  - `init-harness.sh` 在目标仓库 bootstrap 时调用该脚本，为根目录写出缺失入口
+  - `check-consistency.sh` 增加一个 invariant，检查这两个入口与模板保持一致
+- 关键变更点:
+  - 从单宿主 `CLAUDE.md` 升级为多宿主共享根入口
+  - bootstrap 除了 `.harness` 制品，还会管理根目录治理入口
+- 数据 / 控制边界:
+  - 真源在 `spec/templates/`
+  - 运行时根入口在 repo root
+  - 一致性检查只在 baton 仓库强制 exact-match
+- 向后兼容说明:
+  - 继续保留 `CLAUDE.md`
+  - Cursor 先通过 `AGENTS.md` 获得相同治理摘要，不额外要求 `.cursor/rules`
 
-Key change points:
-- `spec/VERSION` — new file (1 line)
-- `spec/bootstrap/init-harness.sh:121-161` — add `--version` case
-- `spec/bootstrap/start-task.sh:49-85` — add `--version` case
+## 4. 影响面扫描
 
-## 4. Surface Scan
-
-| File | Level | Disposition | Reason |
+| 文件 | 层级 | 处理方式 | 原因 |
 |---|---|---|---|
-| `spec/VERSION` | L1 | add | new version source file |
-| `spec/bootstrap/init-harness.sh` | L1 | modify | add --version case in arg parser |
-| `spec/bootstrap/start-task.sh` | L1 | modify | add --version case in arg parser |
+| `.harness/scoped-map.md` | L1 | modify | 记录当前探索 |
+| `.harness/requirements.md` | L1 | modify | 固化需求 |
+| `.harness/architecture.md` | L1 | modify | 固化方案 |
+| `.harness/verification-path.md` | L1 | modify | 定义验证路径 |
+| `.harness/module-status.md` | L1 | modify | 状态跟踪 |
+| `spec/templates/root-governance.template.md` | L1 | add | 共享治理真源 |
+| `spec/bootstrap/sync-governance-entrypoints.sh` | L1 | add | 物化和检查双入口 |
+| `spec/bootstrap/init-harness.sh` | L1 | modify | bootstrap 目标仓库根入口 |
+| `spec/bootstrap/check-consistency.sh` | L1 | modify | 增加双入口 invariant |
+| `CLAUDE.md` | L1 | modify | 由模板同步 |
+| `AGENTS.md` | L1 | add | Codex / Cursor 根入口 |
+| `README.md` | L1 | modify | 说明多宿主入口 |
+| `README.zh-CN.md` | L1 | modify | 同步说明 |
+| `spec/README.md` | L1 | modify | 说明 bootstrap 生成 root entrypoints |
+| `spec/bootstrap/init-harness.md` | L1 | modify | 文档化行为 |
+| `spec/adapters/codex.md` | L1 | modify | 明确读取 `AGENTS.md` |
+| `spec/adapters/cursor.md` | L1 | modify | 明确轻量入口采用 `AGENTS.md` |
 
-## 5. Validation Strategy
+## 5. 验证策略
 
-- `bash spec/bootstrap/init-harness.sh --version` → `harness-spec v1.0.0`, exit 0
-- `bash spec/bootstrap/start-task.sh --version` → `harness-spec v1.0.0`, exit 0
-- `bash spec/bootstrap/init-harness.sh --help` → existing usage output (unchanged)
+- 主要检查:
+  - 同步脚本 check 模式通过
+  - 主一致性检查通过
+  - 临时仓库 bootstrap 后根目录出现双入口
+- 评审重点:
+  - `init-harness` 的覆盖策略是否足够稳妥
+  - 是否在不过度设计的前提下覆盖了 Codex / Cursor
+- 验证无法完全消除的风险:
+  - Cursor 的高级规则体系没有在本次任务中覆盖；这里只保证根级简单入口
 
-## 6. Risks
+## 6. 风险
 
-- None significant. Change is additive and isolated.
+- 如果维护者绕过模板直接改 `CLAUDE.md` / `AGENTS.md`，会被一致性检查拦下
+- 如果目标仓库已有自定义 root instructions，默认不强制覆盖，仍需人工决定是否合并
 
-## 7. Self-Challenge
+## 7. 自我质疑
 
-1. Is a separate VERSION file overkill for one string? No — it's simpler than any alternative and enables future use by other tools.
-2. Unverified assumptions: none. The `spec_root` variable already exists in both scripts.
-3. A skeptic would ask: "why not just hardcode?" Answer: FR-2 requires single source, and the cost of a file is negligible.
+1. 这是最优方案类别，还是只是第一个可行方案?
+   - 对当前需求是最优轻量方案；没有必要一步走到 Cursor 的复杂 rule metadata
+2. 还有哪些假设尚未验证?
+   - 尚未验证 PowerShell 版 init 是否也要同时落地；当前优先覆盖 bash 主路径
+3. 一个怀疑者会先质疑什么?
+   - “为什么不用单独的 `.cursor/rules`？” 回答是当前问题首先是 Codex 不识别 `CLAUDE.md`，而 `AGENTS.md` 已能覆盖 Codex，并作为 Cursor 的简单官方入口

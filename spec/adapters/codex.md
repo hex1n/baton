@@ -10,13 +10,18 @@ This document assumes a typical Codex environment provides:
 - terminal command execution
 - optional isolated sub-agents
 
+Root governance entrypoint for this adapter: `AGENTS.md`.
+In the baton reference implementation, `AGENTS.md` is materialized from the
+same shared template as `CLAUDE.md`, so Codex and Claude Code read the same
+repo-level governance summary.
+
 If sub-agents are unavailable, use the sequential fallback described below.
 
 ## Recommended Operating Mode
 
 - Main thread: orchestrator
 - Optional isolated agents:
-  - `Scoped Explorer`
+  - `Verification Explorer`
   - `Reviewer`
   - `Evaluator`
 - Generator:
@@ -40,8 +45,9 @@ If sub-agents are unavailable, use the sequential fallback described below.
 
 ### Scoped Explorer
 
-- Preferred: isolated explorer agent
-- Fallback: main thread, but write `scoped-map.md` before moving on
+- Main thread is acceptable by default
+- Use an isolated explorer agent only when the repo is large enough that a
+  cold-read materially improves exploration quality
 
 ### Specifier / Architect
 
@@ -51,6 +57,12 @@ If sub-agents are unavailable, use the sequential fallback described below.
 ### Verification Explorer
 
 - Always run before generator
+- Preferred: isolated sub-agent via `spawn_agent({ fork_context: false })`
+- Explicitly pass only:
+  - `.harness/requirements.md`
+  - `.harness/architecture.md`
+  - repo profile or relevant validation config
+- Do not rely on prior main-thread reasoning as the verification baseline
 - Dry-run the intended build/test path
 
 ### Generator
@@ -76,17 +88,79 @@ If sub-agents are unavailable, use the sequential fallback described below.
 - If sub-agents are unavailable, fall back to sequential execution with an
   explicit cold-read of all artifacts before evaluation begins
 
+## Concrete Execution Examples
+
+### Verifier Example
+
+```text
+verifier_id = spawn_agent({
+  agent_type: "default",
+  fork_context: false,
+  message: "
+    You are the Verification Explorer for the current harness task.
+    Cold-read only:
+    - .harness/requirements.md
+    - .harness/architecture.md
+    - repo validation config such as .harness/profile.local.yaml if present
+    Do not rely on prior conversation history.
+    Produce .harness/verification-path.md and report blockers explicitly.
+  "
+})
+
+# Continue local work that does not depend on Gate 3.
+verifier_result = wait_agent({
+  ids: [verifier_id],
+  timeout_ms: 600000
+})
+```
+
+Observed in baton: the verifier is most valuable when it starts from artifacts
+only. Do not use `fork_context: true`.
+
+### Evaluator Example
+
+```text
+evaluator_id = spawn_agent({
+  agent_type: "default",
+  fork_context: false,
+  message: "
+    You are the Evaluator for the current harness task.
+    Cold-read only:
+    - .harness/requirements.md
+    - .harness/architecture.md
+    - .harness/verification-path.md
+    - the implementation diff from git
+    Do not inherit Generator reasoning or prior conversation history.
+    Run verification first, then produce findings-first output and a
+    PASS / PASS WITH WARNINGS / BLOCKED verdict.
+  "
+})
+
+# Wait only when evaluation is the next blocking step.
+evaluation = wait_agent({
+  ids: [evaluator_id],
+  timeout_ms: 600000
+})
+```
+
+Observed in baton: isolated evaluation catches contradictions that same-thread
+role-play can miss. Load only explicit artifacts; findings first, verdict second.
+
+Do not `wait_agent` by reflex immediately after spawning if the main thread can
+still do non-overlapping work.
+
 ## Sequential Fallback
 
 If sub-agents are not available:
 
 1. Keep the same role order
-2. Treat each artifact boundary as a hard handoff
+2. Treat `Verification Explorer` and `Evaluator` as hard cold-read boundaries
 3. Do not skip `module-status.md`
 4. Do not merge `verification_check` into `generating`
 
 ## Codex-Specific Advice
 
+- Keep root governance in `AGENTS.md`, not only `CLAUDE.md`
 - Do not let the main thread silently role-play all roles after harness has started.
 - Use worktrees for medium-plus implementation tasks.
 - Keep the control plane file-based; do not rely on chat history as the source of truth.

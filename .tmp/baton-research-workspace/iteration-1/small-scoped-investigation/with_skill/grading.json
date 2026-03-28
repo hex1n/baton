@@ -1,0 +1,32 @@
+{
+  "eval_id": 2,
+  "eval_name": "small-scoped-investigation",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "blocking-logic-explained",
+      "passed": true,
+      "evidence": "Full catalog of 11 block patterns and 2 warn patterns with regex details, organized in a clear table."
+    },
+    {
+      "text": "proportional-depth",
+      "passed": false,
+      "evidence": "204 lines for a single-file investigation. Includes Frame (15 lines), Orient, Investigation Methods table, full Counterexample Sweep, Self-Challenge with Q1/Q2/Q3, Final Conclusions with 3 formal conclusions, Questions for Human Judgment. Baseline achieved equivalent content in 95 lines."
+    },
+    {
+      "text": "false-positive-guidance",
+      "passed": true,
+      "evidence": "Move 3 identifies 6 false-positive surfaces: output redirection regex, _is_cmd_token flag-unawareness, install ambiguity, patch --dry-run, heredoc regex, quote stripping limitations."
+    },
+    {
+      "text": "code-references-specific",
+      "passed": true,
+      "evidence": "Consistently references line ranges: bash-guard.sh:96-98, bash-guard.sh:54-86, bash-guard.sh:100-152, bash-guard.sh:88-90."
+    },
+    {
+      "text": "no-over-engineering",
+      "passed": false,
+      "evidence": "Includes: Frame with 8 fields, Orient with strategy statement, Investigation Methods table, full Counterexample Sweep with active search, Self-Challenge with Q1 required format (4 fields), Questions for Human Judgment with blocking classification, annotation template. For 'understand the blocking logic' this is 2x the necessary overhead."
+    }
+  ]
+}

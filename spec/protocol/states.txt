@@ -1,0 +1,10 @@
+exploring
+specifying
+architecting
+awaiting_human_arch
+verification_check
+generating
+reviewing
+blocked
+ready_for_human_close
+complete

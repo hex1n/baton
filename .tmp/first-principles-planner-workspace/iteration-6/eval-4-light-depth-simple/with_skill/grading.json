@@ -1,0 +1,37 @@
+{
+  "eval_id": 4,
+  "eval_name": "light-depth-simple",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Correctly identifies Light depth",
+      "passed": true,
+      "evidence": "Header: '深度: Light — 问题明确，解决空间窄，且需要先验证是否真的存在问题。'"
+    },
+    {
+      "text": "Discovers that the feature already exists (questions the premise)",
+      "passed": true,
+      "evidence": "TL;DR: 'manifest.conf 已经支持 # 注释...不需要做任何改动'. Verified with dispatch.sh:38 and test-dispatch.sh:159-174."
+    },
+    {
+      "text": "Keeps output concise (under 60 lines)",
+      "passed": true,
+      "evidence": "Plan is 59 lines total — appropriate Light depth output."
+    },
+    {
+      "text": "Self-Check is genuine and concise, not formulaic",
+      "passed": true,
+      "evidence": "Single focused insight about行内注释 as a possible hidden need the user might have. Exactly one paragraph. No formulaic questions."
+    },
+    {
+      "text": "Skips inversion test (Light depth)",
+      "passed": true,
+      "evidence": "No inversion test section present — correctly skipped per skill instruction."
+    },
+    {
+      "text": "Uses inline assumptions instead of full table",
+      "passed": true,
+      "evidence": "'关键假设' section uses bullet-style inline format with ✅ markers, not a formal assumption audit table."
+    }
+  ]
+}

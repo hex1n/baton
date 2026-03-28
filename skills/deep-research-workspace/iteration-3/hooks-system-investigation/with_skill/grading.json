@@ -1,0 +1,39 @@
+{
+  "expectations": [
+    {
+      "text": "References specific file paths and line numbers from the codebase",
+      "passed": true,
+      "evidence": "Extensively references file paths with line numbers throughout, e.g. 'setup.sh:66-128', 'dispatch.sh:1-64', 'write-lock.sh:39-44', 'lib/plan-parser.sh:35-140', 'bash-guard.sh:100-146', 'failure-tracker.sh:9-11', and many more. Nearly every substantive claim is backed by a file:line reference."
+    },
+    {
+      "text": "Identifies the different hook types (blocking vs advisory)",
+      "passed": true,
+      "evidence": "Section 3 explicitly splits hooks into '3.1 Hard-Blocking Hooks (exit 2 = block the tool use)' covering write-lock.sh, bash-guard.sh, and completion-check.sh, versus '3.2 Advisory Hooks (always exit 0)' covering phase-guide.sh, post-write-tracker.sh, quality-gate.sh, stop-guard.sh, subagent-context.sh, pre-compact.sh, and failure-tracker.sh. The dispatch mechanism for exit code 2 as blocking is also explained in section 2.1."
+    },
+    {
+      "text": "Lists concrete failure modes with evidence",
+      "passed": true,
+      "evidence": "Section 5 enumerates 10 distinct failure modes (5.1 through 5.10), each with specific evidence. Examples: fail-open design with verified line references across 8 hook files (section 5.1), jq fallback degradation with specific file:line citations (5.2), plan discovery failure scenarios in a structured table with file references (5.3), write-set bypass vectors with code-level evidence (5.4), stdin buffering hang risk (5.6), governance marker protection requiring jq (5.10)."
+    },
+    {
+      "text": "Uses evidence markers (verified/unverified indicators)",
+      "passed": true,
+      "evidence": "Uses '(verified: ...)' markers consistently throughout the document, appearing dozens of times with specific file:line references. Examples: '(verified: setup.sh:66-128)', '(verified: dispatch.sh:52)', '(verified: adapters/cursor/dispatch.sh:10-33)'. The Challenge section at the end explicitly flags what was NOT verified: 'I did not actually test whether these bypass vectors work in practice' and 'I was denied permission to read that file.' Open questions also use '(cannot check: ...)' and '(partial answer: ...)' markers."
+    },
+    {
+      "text": "Starts with architecture overview before diving into details",
+      "passed": true,
+      "evidence": "The document begins with an Overview section listing the 5 architectural layers (IDE hook registration, adapter layer, dispatch layer, hook scripts, shared library) and includes an ASCII diagram showing the full flow from IDE through adapters to dispatch.sh to manifest.conf to individual hooks. Only after this architecture overview does it proceed to detailed sections on registration (section 1), dispatch mechanics (section 2), individual hooks (section 3), and so on."
+    },
+    {
+      "text": "Covers the dispatch mechanism (manifest.conf, dispatch.sh)",
+      "passed": true,
+      "evidence": "Section 2 is entirely dedicated to the dispatch layer. Section 2.1 covers dispatch.sh mechanics in detail: stdin buffering, jq/sed fallback for tool_name extraction, subshell isolation, exit code handling, and the 'all hooks run regardless of blocking' design. Section 2.2 covers manifest.conf format with the full manifest content reproduced, explaining the event:matcher:script format, empty matcher semantics, and comma-separated matcher behavior."
+    },
+    {
+      "text": "Identifies cross-platform/adapter differences",
+      "passed": true,
+      "evidence": "Sections 1.1-1.3 detail each IDE's integration path (Claude Code via settings.json, Cursor via .cursor/hooks.json with adapter, Codex via .codex/hooks.json with limited hooks). Section 5.5 provides a comparison table showing capability gaps across all three IDEs: Claude Code has full enforcement, Cursor has reduced enforcement (missing post-write-tracker, stop-guard, completion-check, failure-tracker), and Codex has no hard gates at all. Section 7 also identifies the tension between Cursor's two adapter files (adapter.sh vs dispatch.sh) providing different enforcement levels."
+    }
+  ]
+}

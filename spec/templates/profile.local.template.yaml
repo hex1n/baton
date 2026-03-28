@@ -2,6 +2,13 @@ repo_name: __REPO_NAME__
 base_profile: __BASE_PROFILE__
 adapter: __ADAPTER__
 
+documentation:
+  # artifact_language: auto | en | zh
+  # auto means bootstrap scripts resolve from locale; writing skills follow
+  # the current user request language.
+  artifact_language: __ARTIFACT_LANGUAGE__
+  control_plane_language: en
+
 workspace:
   worktree_required_for_medium_plus: true
   worktree_root: .worktrees

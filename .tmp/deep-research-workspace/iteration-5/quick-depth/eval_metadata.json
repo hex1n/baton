@@ -1,0 +1,11 @@
+{
+  "eval_id": 1,
+  "eval_name": "quick-depth-hook-dir",
+  "prompt": "dispatch.sh 里的 hook_dir 变量是怎么确定的？",
+  "assertions": [
+    "Does NOT create a research document file (Quick depth = chat answer only)",
+    "Includes at least one specific file:line reference (e.g., dispatch.sh:XX)",
+    "Contains at least one evidence marker (✅ or 'verified' or 'read')",
+    "Response is under 80 lines (Quick depth should be concise)"
+  ]
+}

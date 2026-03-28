@@ -1,0 +1,82 @@
+[
+  {
+    "query": "我们项目里有两种日志方案 (winston 和 pino)，不确定为什么当初混用了，帮我搞清楚它们各自在哪些模块用了、有没有功能重叠、该不该统一",
+    "should_trigger": true
+  },
+  {
+    "query": "hooks/dispatch.sh 里那个 manifest.conf 的解析逻辑看起来有 bug，第三个字段如果包含冒号就会被截断。帮我确认一下这个 bug 是否存在，影响范围多大",
+    "should_trigger": true
+  },
+  {
+    "query": "我想搞清楚 Next.js 的 App Router 和 Pages Router 在 SSR hydration 上的行为差异，特别是 streaming 场景下两者的 TTFB 和 FCP 表现。需要查官方文档和社区 benchmark",
+    "should_trigger": true
+  },
+  {
+    "query": "这个 repo 的 CI pipeline 最近经常 flaky，有时候 pass 有时候 fail，看起来是某个 race condition。帮我从 git history 和 test 代码里追一下根因",
+    "should_trigger": true
+  },
+  {
+    "query": "我们在评估是用 Postgres 的 JSONB 还是单独搞一个 MongoDB 来存用户自定义表单数据。两边各有什么坑？帮我做个 tradeoff 分析",
+    "should_trigger": true
+  },
+  {
+    "query": "代码里有个 `normalizeConfig` 函数行为很诡异，传入 undefined 和 null 的结果不一样，但注释说应该一样。帮我搞清楚到底是 bug 还是 intentional",
+    "should_trigger": true
+  },
+  {
+    "query": "最近 Tailwind v4 发布了，我们项目还在 v3。帮我调研一下升级的 breaking changes 和迁移成本，看看值不值得现在升",
+    "should_trigger": true
+  },
+  {
+    "query": "我发现我们的 auth middleware 和另一个 open source 项目的实现非常相似，想了解一下它们的设计是基于什么 RFC 或者行业标准",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我把这个 Python 脚本重写成 TypeScript，保持功能一致",
+    "should_trigger": false
+  },
+  {
+    "query": "这个按钮的 hover 状态颜色不对，应该是 #3B82F6 而不是 #2563EB，帮我改一下",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写个 GitHub Action，每次 push 到 main 分支时自动跑测试并部署到 staging",
+    "should_trigger": false
+  },
+  {
+    "query": "README.md 里的安装步骤过时了，帮我更新一下，加上 Docker 的方式",
+    "should_trigger": false
+  },
+  {
+    "query": "代码 review 一下我这个 PR，看看有没有安全问题或者性能隐患",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我给这个 API endpoint 加上 rate limiting，每个用户每分钟最多 100 次请求",
+    "should_trigger": false
+  },
+  {
+    "query": "tests/integration/auth.test.ts 第 47 行断言失败了，expected 200 got 401。帮我修一下",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我把这段代码的注释都翻译成中文",
+    "should_trigger": false
+  },
+  {
+    "query": "数据库查询特别慢，帮我看一下 explain plan 然后优化一下 SQL",
+    "should_trigger": false
+  },
+  {
+    "query": "我需要理解 Kubernetes 的 HPA 和 KEDA 在 scale-to-zero 场景下的区别，因为我们要决定用哪个来管理 worker pods 的自动扩缩容",
+    "should_trigger": true
+  },
+  {
+    "query": "git log 显示上周有人改了 payment 模块的 webhook handler 但没留 PR description。帮我搞清楚这次改动做了什么、为什么改、有没有遗留问题",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我设计一个用户权限系统，支持 RBAC 和 ABAC 混合模式",
+    "should_trigger": false
+  }
+]

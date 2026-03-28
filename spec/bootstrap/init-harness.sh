@@ -6,6 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="."
 profile="auto"
 adapter="codex"
+language="zh"
 force="false"
 dry_run="false"
 detect_only="false"
@@ -75,6 +76,71 @@ default_high_risk_2() {
   esac
 }
 
+normalize_language() {
+  local value="${1:-}"
+  value="${value%%#*}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed "s/^[[:space:]\"']*//;s/[[:space:]\"']*$//")"
+  printf '%s' "$value"
+}
+
+resolve_locale_language() {
+  local locale_value="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+  local normalized
+  normalized="$(printf '%s' "$locale_value" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$normalized" == zh* ]]; then
+    printf '%s' 'zh'
+    return
+  fi
+
+  printf '%s' 'en'
+}
+
+resolve_artifact_language() {
+  local policy
+  policy="$(normalize_language "$1")"
+
+  if [[ -z "$policy" || "$policy" == 'auto' ]]; then
+    resolve_locale_language
+    return
+  fi
+
+  printf '%s' "$policy"
+}
+
+human_template_path() {
+  local template_name="$1"
+  local resolved_language="$2"
+  local override_root=""
+  local override_candidate=""
+  local candidate="$templates_dir/$template_name"
+
+  if [[ -n "${resolved_repo_root:-}" ]]; then
+    override_root="$resolved_repo_root/.harness/overrides/templates"
+    if [[ "$resolved_language" == 'zh' ]]; then
+      override_candidate="$override_root/zh/$template_name"
+    else
+      override_candidate="$override_root/$template_name"
+    fi
+
+    if [[ -f "$override_candidate" ]]; then
+      printf '%s' "$override_candidate"
+      return 0
+    fi
+  fi
+
+  if [[ "$resolved_language" == 'zh' ]]; then
+    candidate="$templates_dir/zh/$template_name"
+  fi
+
+  if [[ ! -f "$candidate" ]]; then
+    printf 'Template not found: %s\n' "$candidate" >&2
+    exit 1
+  fi
+
+  printf '%s' "$candidate"
+}
+
 resolve_profile() {
   local repo="$1"
   local requested="$2"
@@ -105,7 +171,7 @@ resolve_profile() {
 usage() {
   cat <<'EOF'
 Usage:
-  init-harness.sh [--repo-root PATH] [--profile PROFILE] [--adapter ADAPTER] [--task-id ID] [--dry-run] [--detect-only] [--force]
+  init-harness.sh [--repo-root PATH] [--profile PROFILE] [--adapter ADAPTER] [--task-id ID] [--language auto|en|zh] [--dry-run] [--detect-only] [--force]
 
 Profiles:
   auto
@@ -132,6 +198,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --adapter)
       adapter="$2"
+      shift 2
+      ;;
+    --language)
+      language="$2"
       shift 2
       ;;
     --task-id)
@@ -182,12 +252,23 @@ case "$adapter" in
     ;;
 esac
 
+language="$(normalize_language "$language")"
+case "$language" in
+  auto|en|zh) ;;
+  *)
+    printf 'Unsupported language: %s\n' "$language" >&2
+    exit 1
+    ;;
+esac
+
 spec_root="$(cd "$script_dir/.." && pwd)"
 templates_dir="$spec_root/templates"
 profiles_dir="$spec_root/profiles"
 adapters_dir="$spec_root/adapters"
+governance_sync_sh="$script_dir/sync-governance-entrypoints.sh"
 resolved_repo_root="$(cd "$repo_root" && pwd)"
 resolved_profile="$(resolve_profile "$resolved_repo_root" "$profile")"
+resolved_artifact_language="$(resolve_artifact_language "$language")"
 
 if [[ -z "$resolved_profile" ]]; then
   printf 'Unable to auto-detect profile for repo: %s\n' "$resolved_repo_root" >&2
@@ -216,6 +297,8 @@ if [[ "$detect_only" == "true" ]]; then
   printf 'Repo:     %s\n' "$resolved_repo_root"
   printf 'Profile:  %s\n' "$resolved_profile"
   printf 'Adapter:  %s\n' "$adapter"
+  printf 'Language Policy:   %s\n' "$language"
+  printf 'Artifact Language: %s\n' "$resolved_artifact_language"
   printf 'Build:    %s\n' "$build_command"
   printf 'Test:     %s\n' "$test_command"
   printf 'Mode:     detect-only\n\n'
@@ -234,14 +317,24 @@ if [[ -e "$harness_dir/module-status.md" ]]; then
   module_status_existed="true"
 fi
 
-copy_if_needed "$templates_dir/scoped-map.template.md" "$harness_dir/scoped-map.md" "$force"
-copy_if_needed "$templates_dir/requirements.template.md" "$harness_dir/requirements.md" "$force"
-copy_if_needed "$templates_dir/architecture.template.md" "$harness_dir/architecture.md" "$force"
-copy_if_needed "$templates_dir/verification-path.template.md" "$harness_dir/verification-path.md" "$force"
+copy_if_needed "$(human_template_path 'scoped-map.template.md' "$resolved_artifact_language")" "$harness_dir/scoped-map.md" "$force"
+copy_if_needed "$(human_template_path 'requirements.template.md' "$resolved_artifact_language")" "$harness_dir/requirements.md" "$force"
+copy_if_needed "$(human_template_path 'architecture.template.md' "$resolved_artifact_language")" "$harness_dir/architecture.md" "$force"
+copy_if_needed "$(human_template_path 'verification-path.template.md' "$resolved_artifact_language")" "$harness_dir/verification-path.md" "$force"
 copy_if_needed "$templates_dir/module-status.template.md" "$harness_dir/module-status.md" "$force"
-copy_if_needed "$templates_dir/retrospective.template.md" "$harness_dir/retrospective.md" "$force"
+copy_if_needed "$(human_template_path 'retrospective.template.md' "$resolved_artifact_language")" "$harness_dir/retrospective.md" "$force"
 copy_if_needed "$selected_profile_path" "$harness_dir/profile.base.yaml" "$force"
 copy_if_needed "$selected_adapter_path" "$harness_dir/adapter-reference.md" "$force"
+
+governance_args=(--repo-root "$resolved_repo_root")
+if [[ "$force" == "true" ]]; then
+  governance_args+=(--force)
+fi
+if [[ "$dry_run" == "true" ]]; then
+  governance_args+=(--dry-run)
+fi
+
+bash "$governance_sync_sh" "${governance_args[@]}"
 
 profile_local_target="$harness_dir/profile.local.yaml"
 if [[ ! -e "$profile_local_target" || "$force" == "true" ]]; then
@@ -256,6 +349,7 @@ if [[ ! -e "$profile_local_target" || "$force" == "true" ]]; then
       -e "s|__REPO_NAME__|$repo_name|g" \
       -e "s|__BASE_PROFILE__|$resolved_profile|g" \
       -e "s|__ADAPTER__|$adapter|g" \
+      -e "s|__ARTIFACT_LANGUAGE__|$language|g" \
       -e "s|__BUILD_COMMAND__|$build_command|g" \
       -e "s|__TEST_COMMAND__|$test_command|g" \
       -e "s|__OPTIONAL_STATIC_CHECK__|$optional_static_check|g" \
@@ -289,6 +383,8 @@ printf '\nHarness bootstrap complete.\n'
 printf 'Repo:     %s\n' "$resolved_repo_root"
 printf 'Profile:  %s\n' "$resolved_profile"
 printf 'Adapter:  %s\n' "$adapter"
+printf 'Language Policy:   %s\n' "$language"
+printf 'Artifact Language: %s\n' "$resolved_artifact_language"
 if [[ -n "$task_id" ]]; then
   printf 'TaskId:   %s\n' "$task_id"
 fi
@@ -297,5 +393,6 @@ if [[ "$dry_run" == "true" ]]; then
 fi
 printf '\nNext steps:\n'
 printf '1. Review .harness/profile.local.yaml\n'
-printf '2. Run Repo Explorer\n'
-printf '3. Run Verification Path Check before Generator\n'
+printf '2. Review root CLAUDE.md and AGENTS.md\n'
+printf '3. Run Repo Explorer\n'
+printf '4. Run Verification Path Check before Generator\n'

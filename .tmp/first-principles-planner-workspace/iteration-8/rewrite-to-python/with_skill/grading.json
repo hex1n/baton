@@ -1,0 +1,14 @@
+{
+  "eval_name": "rewrite-to-python",
+  "prompt": "我们需要把所有 bash hooks 重写成 Python，因为 bash 太难维护了。请规划一下最佳方案。",
+  "expectations": [
+    {"text": "Identifies 'rewrite to Python' as a solution masquerading as a problem", "passed": true, "evidence": "Depth: Standard+ explicitly because 'user states solution not problem'. Five Whys root: '根本问题不是用了 bash，而是随着业务逻辑增长，bash 的语言能力不足以支撑当前的抽象需求'."},
+    {"text": "Decomposes 'hard to maintain' into 2+ specific possible root causes", "passed": true, "evidence": "5 specific root causes with code refs: (1) JSON parsing boilerplate x4, (2) bash-guard state machine readability, (3) plan-parser.sh 444-line monolith, (4) no structured error handling, (5) hand-rolled test framework 5329 lines"},
+    {"text": "Surfaces the conflict with 'zero compiled dependencies' principle", "passed": true, "evidence": "Constraint table: 'hooks 必须用 bash 写 = 惯例', '安装必须零依赖 = 惯例 with real cost'. Conclusion section #3: 'Python 重写最大的问题不是工作量，而是破坏了 baton 的核心分发假设：curl | bash 零依赖安装'"},
+    {"text": "Recommends investigation before committing to rewrite", "passed": true, "evidence": "Goes beyond — recommends bash internal refactoring as full solution. 4 specific root causes each mapped to concrete bash-native fixes."},
+    {"text": "Provides comparison table between approaches", "passed": true, "evidence": "Constraint separation table (true constraints vs conventions) + approach comparison across multiple dimensions"},
+    {"text": "Includes conditional path — what would justify a rewrite", "passed": true, "evidence": "Dissenting path with hybrid approach: plan-parser.py only, keep bash dispatch, maintain fallback, evaluate after 3 months"}
+  ],
+  "pass_rate": 1.0,
+  "new_feature_observed": "Phase gate influence visible in structure: eval explicitly checks constraint verification status before entering solution design"
+}

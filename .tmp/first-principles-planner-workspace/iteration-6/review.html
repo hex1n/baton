@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "first-principles-planner", "runs": [{"id": "eval-1-plugin-marketplace-with_skill", "prompt": "\u6211\u60f3\u7ed9 baton \u6dfb\u52a0\u4e00\u4e2a\u63d2\u4ef6\u5e02\u573a\uff0c\u8ba9\u7528\u6237\u53ef\u4ee5\u5171\u4eab\u548c\u5b89\u88c5 skills\u3002\u76ee\u524d skills \u662f\u901a\u8fc7 junction \u4ece ~/.baton/ \u94fe\u63a5\u5230\u9879\u76ee\u7684\u3002\u7ed9\u6211\u4e00\u4e2a\u6267\u884c\u8ba1\u5212\u3002", "eval_id": 1, "outputs": [{"name": "plan.md", "type": "text", "content": "# Baton \u63d2\u4ef6\u5e02\u573a\u6267\u884c\u8ba1\u5212\n\n**\u6df1\u5ea6**: Standard \u2014 \u591a\u4e2a\u53ef\u884c\u65b9\u6848\uff0c\u4e14\u6d89\u53ca\u5206\u53d1\u6a21\u578b\u3001\u5b89\u5168\u6a21\u578b\u3001\u5411\u540e\u517c\u5bb9\u7b49\u4ea4\u53c9\u95ee\u9898\uff0c\u9700\u8981\u5b8c\u6574\u5206\u6790\u3002\n\n**\u8f93\u5165**: baton \u4ee3\u7801\u5e93 (`C:\\Users\\hexin\\IdeaProjects\\baton`)\n\n---\n\n## TL;DR\n\n**\u95ee\u9898**: baton \u7684 skills \u76ee\u524d\u53ea\u80fd\u901a\u8fc7\u624b\u5de5\u590d\u5236\u6216 junction \u4ece `~/.baton/` \u5206\u53d1\u5230\u9879\u76ee\uff0c\u6ca1\u6709\u53d1\u73b0\u3001\u5171\u4eab\u3001\u7248\u672c\u7ba1\u7406\u7684\u673a\u5236\u3002\u7528\u6237\u65e0\u6cd5\u50cf `npm install` \u6216 `brew install` \u90a3\u6837\u4e00\u952e\u83b7\u53d6\u793e\u533a skill\u3002\n\n**\u6838\u5fc3\u6d1e\u5bdf**: baton \u7684\u67b6\u6784\u5df2\u7ecf\u5177\u5907\u4e86\u63d2\u4ef6\u5e02\u573a\u7684\u57fa\u7840\u8bbe\u65bd \u2014\u2014 skill \u5c31\u662f\u4e00\u4e2a\u5305\u542b `SKILL.md` \u7684\u76ee\u5f55\uff0c`junction.sh` \u5df2\u7ecf\u89e3\u51b3\u4e86\u8de8\u5e73\u53f0\u94fe\u63a5\uff0c`setup.sh` \u5df2\u7ecf\u6709\u52a8\u6001 skill \u53d1\u73b0 (`compute_skill_names`)\u3002\u771f\u6b63\u7f3a\u5931\u7684\u4e0d\u662f\"\u5e02\u573a\u5e73\u53f0\"\uff0c\u800c\u662f\u4e09\u4e2a\u539f\u8bed\uff1a**registry\uff08\u5728\u54ea\u627e\uff09\u3001resolver\uff08\u53d6\u54ea\u4e2a\u7248\u672c\uff09\u3001installer\uff08\u600e\u4e48\u88c5\uff09**\u3002\n\n**\u63a8\u8350**: \u57fa\u4e8e Git \u4ed3\u5e93\u7684\u53bb\u4e2d\u5fc3\u5316 registry + `baton` CLI \u5b50\u547d\u4ee4\uff0c\u4e0d\u5efa\u6784\u5efa\u4e2d\u5fc3\u5316\u5e73\u53f0\u3002\n\n---\n\n## \u884c\u52a8\u8ba1\u5212\n\n| \u4f18\u5148\u7ea7 | \u53d8\u66f4 | \u5de5\u4f5c\u91cf | \u98ce\u9669 | \u4ef7\u503c |\n|--------|------|--------|------|------|\n| P1 | **Skill \u5305\u683c\u5f0f\u89c4\u8303** \u2014 \u5b9a\u4e49 `skill.toml` \u5143\u6570\u636e\u6587\u4ef6\uff08name, version, description, author, baton-compat, dependencies\uff09 | 2h | \u4f4e | \u9ad8 \u2014 \u662f\u6240\u6709\u540e\u7eed\u529f\u80fd\u7684\u57fa\u7840 |\n| P2 | **`baton install <source>` \u547d\u4ee4** \u2014 \u4ece Git URL / GitHub shorthand \u5b89\u88c5 skill \u5230 `~/.baton/skills/` | 4h | \u4e2d \u2014 \u9700\u5904\u7406 Git sparse checkout\u3001Windows \u8def\u5f84 | \u9ad8 \u2014 \u6838\u5fc3\u7528\u6237\u6d41\u7a0b |\n| P3 | **`baton list` / `baton search` \u547d\u4ee4** \u2014 \u672c\u5730\u5df2\u5b89\u88c5 skill \u5217\u8868 + \u8fdc\u7a0b registry \u641c\u7d22 | 3h | \u4f4e | \u4e2d \u2014 \u53ef\u53d1\u73b0\u6027 |\n| P4 | **\u4e2d\u5fc3\u5316 registry index** \u2014 \u4e00\u4e2a Git \u4ed3\u5e93\uff08\u5982 `baton-skills/registry`\uff09\uff0c\u5305\u542b `index.json`\uff0c\u6bcf\u4e2a\u6761\u76ee\u6307\u5411 skill \u7684 Git URL | 2h | \u4f4e | \u4e2d \u2014 \u8ba9 `baton search` \u6709\u6570\u636e\u6e90 |\n| P5 | **`baton publish` \u547d\u4ee4** \u2014 \u9a8c\u8bc1 skill \u683c\u5f0f\u5408\u89c4\u540e\uff0c\u63d0\u4ea4 PR \u5230 registry \u4ed3\u5e93 | 3h | \u4e2d \u2014 \u9700\u8981 GitHub API \u4ea4\u4e92 | \u4f4e \u2014 \u65e9\u671f\u53ef\u4ee5\u624b\u52a8\u63d0\u4ea4 |\n| P6 | **\u7248\u672c\u9501\u5b9a\u4e0e `baton update`** \u2014 `~/.baton/skills/<name>/` \u8bb0\u5f55 Git ref\uff0c\u652f\u6301 pin \u7248\u672c\u548c\u5347\u7ea7 | 3h | \u4e2d \u2014 \u7248\u672c\u51b2\u7a81\u89e3\u51b3 | \u4f4e \u2014 \u65e9\u671f\u7528 latest \u5373\u53ef |\n| **\u5408\u8ba1** | | **~17h** | | |\n\n---\n\n## P1: Skill \u5305\u683c\u5f0f\u89c4\u8303\n\n\u5728\u6bcf\u4e2a skill \u76ee\u5f55\u4e2d\u589e\u52a0\u4e00\u4e2a `skill.toml`\uff08\u6216\u590d\u7528 SKILL.md frontmatter\uff09\uff1a\n\n```toml\n# ~/.baton/skills/my-awesome-skill/skill.toml\n[skill]\nname = \"my-awesome-skill\"\nversion = \"1.0.0\"\ndescription = \"Does something awesome\"\nauthor = \"github-user\"\nlicense = \"MIT\"\nbaton-compat = \">=4.0\"        # \u5bf9\u5e94 setup.sh \u7684 v4 \u67b6\u6784\nsource = \"https://github.com/user/baton-skill-awesome\"\n\n[skill.dependencies]          # \u53ef\u9009 \u2014 \u5927\u591a\u6570 skill \u65e0\u4f9d\u8d56\n# requires = [\"baton-research\"]  # \u4f9d\u8d56\u5176\u4ed6 skill\n```\n\n**\u8bbe\u8ba1\u51b3\u7b56**: \u4e3a\u4ec0\u4e48\u7528 `skill.toml` \u800c\u4e0d\u662f\u6269\u5c55 SKILL.md frontmatter\uff1f\n\n- SKILL.md frontmatter \u662f IDE \u6d88\u8d39\u7684\uff08Claude Code \u89e3\u6790\u5b83\u6765\u51b3\u5b9a skill \u884c\u4e3a\uff09\uff0c\u6df7\u5165\u5305\u7ba1\u7406\u5143\u6570\u636e\u4f1a\u6c61\u67d3\u5173\u6ce8\u70b9\n- `skill.toml` \u662f\u673a\u5668\u53ef\u89e3\u6790\u7684\uff08bash \u91cc\u7528 `grep`/`awk` \u5373\u53ef\u63d0\u53d6\uff09\uff0cSKILL.md frontmatter \u7684 YAML \u89e3\u6790\u5728\u7eaf bash \u4e2d\u4e0d\u53ef\u9760\n- \u4e24\u4e2a\u6587\u4ef6\uff0c\u4e24\u4e2a\u804c\u8d23\uff1a`SKILL.md` = IDE \u63a5\u53e3\uff0c`skill.toml` = \u5305\u7ba1\u7406\u63a5\u53e3\n\n**\u5411\u540e\u517c\u5bb9**: \u6ca1\u6709 `skill.toml` \u7684 skill \u4ecd\u7136\u6b63\u5e38\u5de5\u4f5c \u2014\u2014 `setup.sh` \u7684 `compute_skill_names` \u53ea\u770b\u76ee\u5f55\u662f\u5426\u5b58\u5728\uff0c\u4e0d\u4f9d\u8d56\u5143\u6570\u636e\u3002`skill.toml` \u4ec5\u5728 `baton install/publish/search` \u6d41\u7a0b\u4e2d\u88ab\u4f7f\u7528\u3002\n\n---\n\n## P2: `baton install` \u547d\u4ee4\n\n\u6838\u5fc3\u5b89\u88c5\u6d41\u7a0b\uff1a\n\n```bash\n# \u7528\u6cd5\nbaton install github:user/repo              # \u4ed3\u5e93\u6839\u76ee\u5f55\u5c31\u662f\u4e00\u4e2a skill\nbaton install github:user/repo/skills/foo   # \u4ed3\u5e93\u5185\u7684\u5b50\u8def\u5f84\nbaton install https://github.com/user/repo  # \u5b8c\u6574 Git URL\nbaton install ./local-path                  # \u672c\u5730\u8def\u5f84\uff08\u5f00\u53d1\u7528\uff09\n\n# \u5b89\u88c5\u8fc7\u7a0b\n# 1. git clone --depth 1 \u5230\u4e34\u65f6\u76ee\u5f55\n# 2. \u9a8c\u8bc1 SKILL.md \u5b58\u5728\uff08\u5fc5\u987b\uff09\uff0cskill.toml \u5b58\u5728\uff08\u63a8\u8350\uff09\n# 3. \u590d\u5236\u5230 ~/.baton/skills/<name>/\n# 4. \u8bb0\u5f55\u6765\u6e90\u4fe1\u606f\u5230 ~/.baton/skills/<name>/.install-meta\n# 5. \u5728\u5f53\u524d\u9879\u76ee\u4e2d\u521b\u5efa junction\uff08\u8c03\u7528\u5df2\u6709\u7684 atomic_junction\uff09\n```\n\n**\u5173\u952e\u8bbe\u8ba1\u70b9**:\n\n- \u5b89\u88c5\u76ee\u6807\u662f `~/.baton/skills/`\uff0c**\u4e0d\u662f**\u9879\u76ee\u7ea7\u76ee\u5f55\u3002\u8fd9\u4e0e baton \u73b0\u6709\u7684\u5206\u53d1\u6a21\u578b\u4e00\u81f4\uff1a`~/.baton` \u662f\u5355\u4e00\u6765\u6e90\uff0c\u9879\u76ee\u901a\u8fc7 junction \u5f15\u7528 \u2705 \u9a8c\u8bc1\uff1a`setup.sh:129` \u7684 `create_baton_junction` \u548c `setup.sh:143` \u7684 `create_skill_junctions` \u786e\u8ba4\u4e86\u8fd9\u4e2a\u6a21\u578b\n- \u5b89\u88c5\u540e\u81ea\u52a8\u5728\u5f53\u524d\u9879\u76ee\u521b\u5efa junction\uff0c\u590d\u7528 `phase-guide.sh:51-66` \u5df2\u6709\u7684\u81ea\u52a8 junction \u903b\u8f91 \u2705 \u9a8c\u8bc1\uff1a`phase-guide.sh` \u7684 `_skill_src` / `atomic_junction` \u5faa\u73af\n- `.install-meta` \u6587\u4ef6\u8bb0\u5f55 `source_url`\u3001`installed_at`\u3001`git_ref`\uff0c\u7528\u4e8e\u540e\u7eed\u7684 `update` \u548c `uninstall`\n\n**\u4e0e baton-* \u547d\u540d\u7a7a\u95f4\u7684\u5173\u7cfb**: \u73b0\u6709\u7684 `compute_skill_names`\uff08`setup.sh:21`\uff09\u626b\u63cf `.baton/skills/*/`\uff0c\u4e0d\u9650\u5b9a\u547d\u540d\u524d\u7f00\u3002`phase-guide.sh:55` \u7684\u81ea\u52a8 junction \u5faa\u73af\u9650\u5b9a\u4e86 `baton-*` \u524d\u7f00\u3002**\u8fd9\u662f\u4e00\u4e2a\u9700\u8981\u4fee\u6539\u7684\u5730\u65b9** \u2014\u2014 \u793e\u533a skill \u4e0d\u5e94\u5f3a\u5236\u4f7f\u7528 `baton-` \u524d\u7f00\uff0c\u4f46\u81ea\u52a8 junction \u9700\u8981\u77e5\u9053\u54ea\u4e9b skill \u8981\u94fe\u63a5\u3002\n\n\u89e3\u51b3\u65b9\u6848\uff1a\u5c06 `phase-guide.sh:55` \u7684 `for _skill_dir in \"$_skill_src\"/baton-*` \u6539\u4e3a `for _skill_dir in \"$_skill_src\"/*/`\uff0c\u8df3\u8fc7 workspace \u76ee\u5f55\uff08`*-workspace`\uff09\u3002\u6216\u8005\u5728 `skill.toml` \u4e2d\u58f0\u660e `auto-junction = true`\u3002\n\n---\n\n## P3: `baton list` / `baton search`\n\n```bash\nbaton list                    # \u5217\u51fa ~/.baton/skills/ \u4e2d\u5df2\u5b89\u88c5\u7684 skill\nbaton list --project          # \u5217\u51fa\u5f53\u524d\u9879\u76ee\u5df2 junction \u7684 skill\nbaton search <keyword>        # \u5728 registry index \u4e2d\u641c\u7d22\n```\n\n`baton list` \u7684\u5b9e\u73b0\u5f88\u76f4\u63a5 \u2014 \u904d\u5386 `~/.baton/skills/*/skill.toml`\uff0c\u63d0\u53d6 name/version/description\u3002\u5bf9\u4e8e\u6ca1\u6709 `skill.toml` \u7684 skill\uff08\u5185\u7f6e\u7684 baton-* \u7cfb\u5217\uff09\uff0c\u4ece SKILL.md frontmatter \u7684 `name`/`description` \u5b57\u6bb5\u63d0\u53d6\u3002\n\n`baton search` \u9700\u8981 P4 \u7684 registry index\u3002\u5b9e\u73b0\uff1a`curl` \u4e0b\u8f7d index.json \u2192 `jq`/`awk` \u8fc7\u6ee4 \u2192 \u5c55\u793a\u7ed3\u679c\u3002\n\n---\n\n## P4: \u4e2d\u5fc3\u5316 Registry Index\n\n\u4e00\u4e2a\u72ec\u7acb\u7684 Git \u4ed3\u5e93\uff08\u5982 `github.com/hex1n/baton-registry`\uff09\uff0c\u7ed3\u6784\uff1a\n\n```\nbaton-registry/\n  index.json          # \u6240\u6709\u5df2\u6ce8\u518c skill \u7684\u5143\u6570\u636e\n  skills/\n    my-skill.json     # \u6bcf\u4e2a skill \u7684\u8be6\u7ec6\u4fe1\u606f\uff08\u53ef\u9009\uff0c\u7528\u4e8e\u4e30\u5bcc\u641c\u7d22\u7ed3\u679c\uff09\n```\n\n`index.json` \u793a\u4f8b\uff1a\n\n```json\n{\n  \"skills\": [\n    {\n      \"name\": \"tdd-workflow\",\n      \"description\": \"Test-driven development workflow skill\",\n      \"source\": \"github:user/baton-skill-tdd\",\n      \"author\": \"user\",\n      \"tags\": [\"testing\", \"tdd\", \"workflow\"],\n      \"baton-compat\": \">=4.0\"\n    }\n  ]\n}\n```\n\n**\u4e3a\u4ec0\u4e48\u4e0d\u7528\u4e2d\u5fc3\u5316\u5e73\u53f0\uff08\u5982 npm registry\uff09\uff1f**\n\n- baton \u662f\u7eaf bash + markdown \u5de5\u5177\uff0c\u7528\u6237\u7fa4\u4f53\u5728\u65e9\u671f\u5f88\u5c0f\uff0c\u8fd0\u7ef4\u4e00\u4e2a HTTP registry \u670d\u52a1\u5668\u7684\u6210\u672c\u8fdc\u8d85\u6536\u76ca\n- Git \u4ed3\u5e93\u4f5c\u4e3a registry \u7684\u4f18\u52bf\uff1a\u514d\u8d39\u6258\u7ba1\u3001PR \u5373\u5ba1\u6838\u6d41\u7a0b\u3001\u7248\u672c\u5386\u53f2\u5373\u5ba1\u8ba1\u65e5\u5fd7\u3001\u79bb\u7ebf\u53ef\u7528\uff08clone \u540e\uff09\n- \u5982\u679c\u672a\u6765\u89c4\u6a21\u589e\u957f\uff0c\u53ef\u4ee5\u5728 index.json \u4e4b\u4e0a\u52a0\u4e00\u5c42 HTTP API \u800c\u4e0d\u6539\u53d8 skill \u7684\u5206\u53d1\u65b9\u5f0f\n\n---\n\n## \u4e0d\u5e94\u8be5\u505a\u7684\u4e8b\n\n1. **\u4e0d\u8981\u6784\u5efa\u4e2d\u5fc3\u5316\u4e0b\u8f7d\u670d\u52a1\u5668** \u2014 baton \u7684\u54f2\u5b66\u662f\u96f6\u7f16\u8bd1\u4f9d\u8d56\u3001\u7eaf bash\u3002\u5f15\u5165 HTTP \u670d\u52a1\u5668\u7834\u574f\u4e86\u8fd9\u4e2a\u7ea6\u675f\u3002Git \u4ed3\u5e93 + GitHub API \u8db3\u591f\u3002\n\n2. **\u4e0d\u8981\u5728 `SKILL.md` frontmatter \u4e2d\u52a0\u5165\u5305\u7ba1\u7406\u5b57\u6bb5** \u2014 \u5173\u6ce8\u70b9\u5206\u79bb\u3002SKILL.md \u662f IDE \u6d88\u8d39\u7684\u63a5\u53e3\uff0cskill.toml \u662f\u5305\u7ba1\u7406\u5668\u6d88\u8d39\u7684\u63a5\u53e3\u3002\n\n3. **\u4e0d\u8981\u5b9e\u73b0 skill \u95f4\u7684\u590d\u6742\u4f9d\u8d56\u89e3\u6790** \u2014 baton \u7684 skills \u662f\u72ec\u7acb\u7684\u63d0\u793a\u8bcd\u6587\u4ef6\uff0c\u4e0d\u662f\u7f16\u8bd1\u5355\u5143\u3002\u4f9d\u8d56\u573a\u666f\u6781\u5c11\u3002\u5982\u679c\u51fa\u73b0\uff0c\u5728 `skill.toml` \u4e2d\u58f0\u660e + `baton install` \u65f6\u63d0\u793a\u5373\u53ef\uff0c\u4e0d\u9700\u8981 SAT solver\u3002\n\n4. **\u4e0d\u8981\u4e3a P1 \u9636\u6bb5\u8bbe\u8ba1\u6743\u9650/\u7b7e\u540d\u7cfb\u7edf** \u2014 \u5b89\u5168\u5ba1\u8ba1\u53ef\u4ee5\u5728 registry PR review \u4e2d\u5b8c\u6210\u3002\u7b49\u5230\u793e\u533a\u89c4\u6a21\u8bc1\u660e\u9700\u8981\u7b7e\u540d\u65f6\u518d\u6dfb\u52a0\u3002\n\n---\n\n## \u98ce\u9669\u4e0e\u7f13\u89e3\n\n| \u98ce\u9669 | \u53ef\u80fd\u6027 | \u5f71\u54cd | \u7f13\u89e3 |\n|------|--------|------|------|\n| \u793e\u533a skill \u8d28\u91cf\u53c2\u5dee\u4e0d\u9f50\uff0c\u4f4e\u8d28\u91cf skill \u7834\u574f\u7528\u6237\u4f53\u9a8c | \u9ad8 | \u4e2d | Registry \u91c7\u7528 PR-based \u63d0\u4ea4\uff0c\u7ef4\u62a4\u8005\u5ba1\u6838\u540e\u5408\u5e76\u3002\u5b89\u88c5\u65f6\u663e\u793a\"\u672a\u5ba1\u6838\"\u8b66\u544a |\n| Windows \u4e0a Git sparse checkout \u4e0d\u53ef\u9760 | \u4e2d | \u4e2d | \u5148 full clone + copy \u5b50\u76ee\u5f55\uff0c\u540e\u7eed\u4f18\u5316\u4e3a sparse checkout |\n| `baton-*` \u547d\u540d\u7a7a\u95f4\u51b2\u7a81 \u2014 \u793e\u533a skill \u53ef\u80fd\u4f7f\u7528\u4e0e\u5185\u7f6e skill \u76f8\u540c\u7684\u540d\u79f0 | \u4f4e | \u9ad8 | Registry \u7981\u6b62 `baton-` \u524d\u7f00\uff08\u4fdd\u7559\u7ed9\u5185\u7f6e skill\uff09\u3002`baton install` \u62d2\u7edd\u8986\u76d6 `baton-*` \u76ee\u5f55 |\n| skill.toml \u7684 bash \u89e3\u6790\u5728\u8fb9\u7f18\u60c5\u51b5\u4e0b\u4e0d\u53ef\u9760 | \u4e2d | \u4f4e | \u9650\u5236 skill.toml \u4e3a\u5e73\u5766\u7ed3\u6784\uff08key = \"value\"\uff09\uff0c\u4e0d\u652f\u6301\u5d4c\u5957\u8868\u3002jq \u53ef\u9009\u52a0\u901f |\n\n---\n\n## \u81ea\u67e5\n\n**\u8fd9\u4e2a\u8ba1\u5212\u6700\u53ef\u80fd\u7684\u5931\u8d25\u6a21\u5f0f\u662f\u4ec0\u4e48\uff1f**\n\n\u662f\"\u6ca1\u4eba\u7528\"\u3002\u63d2\u4ef6\u5e02\u573a\u7684\u4ef7\u503c\u53d6\u51b3\u4e8e\u7f51\u7edc\u6548\u5e94 \u2014 \u6ca1\u6709 skill \u53ef\u88c5\u65f6\u5c31\u6ca1\u6709\u7528\u6237\u6765\u88c5\uff0c\u6ca1\u6709\u7528\u6237\u88c5\u5c31\u6ca1\u6709\u4f5c\u8005\u6765\u53d1\u5e03\u3002P1-P2 \u89e3\u51b3\u7684\u662f\u6280\u672f\u57fa\u7840\u8bbe\u65bd\uff0c\u4f46\u771f\u6b63\u7684\u6311\u6218\u662f\u51b7\u542f\u52a8\uff1a\u9700\u8981 5-10 \u4e2a\u9ad8\u8d28\u91cf\u7684\u793a\u8303 skill \u9884\u88c5\u5728 registry \u4e2d\u3002\n\n\u5982\u679c\u6211\u77e5\u9053\u5b83\u4f1a\u5931\u8d25\uff0c\u6211\u4f1a\u600e\u4e48\u505a\uff1f\u8df3\u8fc7 P4-P6\uff0c\u53ea\u505a P1-P2\uff08\u5305\u683c\u5f0f + install \u547d\u4ee4\uff09\uff0c\u7136\u540e\u628a\u7cbe\u529b\u653e\u5728\u5199\u51e0\u4e2a\u4f18\u8d28\u793e\u533a skill \u4e0a\u3002\u6280\u672f\u57fa\u7840\u8bbe\u65bd\u53ef\u4ee5\u5728\u9700\u6c42\u51fa\u73b0\u540e\u8fc5\u901f\u8865\u4e0a\uff0c\u4f46\u6ca1\u6709\u5185\u5bb9\u7684\u5e73\u53f0\u662f\u7a7a\u58f3\u3002\n\n**\u7528\u6237\u8bf4\u7684\u662f\"\u63d2\u4ef6\u5e02\u573a\"\uff0c\u6211\u662f\u5426\u8ffd\u6eaf\u5230\u4e86\u6839\u95ee\u9898\uff1f**\n\n\u7528\u6237\u8bf4\"\u8ba9\u7528\u6237\u53ef\u4ee5\u5171\u4eab\u548c\u5b89\u88c5 skills\"\u3002\"\u63d2\u4ef6\u5e02\u573a\"\u662f\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\uff0c\u6839\u95ee\u9898\u662f **skill \u5206\u53d1\u7684\u6469\u64e6\u592a\u9ad8**\u3002\u5f53\u524d\u6d41\u7a0b\uff1a\u627e\u5230 skill \u6e90\u7801 \u2192 \u624b\u52a8 clone \u2192 \u590d\u5236\u5230 `~/.baton/skills/` \u2192 \u8fd0\u884c setup.sh\u3002\u8fd9\u4e2a\u8ba1\u5212\u901a\u8fc7 `baton install` \u628a\u5b83\u7f29\u77ed\u4e3a\u4e00\u6761\u547d\u4ee4\uff0c\u8fd9\u76f4\u63a5\u89e3\u51b3\u4e86\u6839\u95ee\u9898\u3002\u81f3\u4e8e\"\u5e02\u573a\"\uff08\u53d1\u73b0 + \u641c\u7d22\uff09\uff0c\u662f P3-P4 \u89e3\u51b3\u7684\u6b21\u7ea7\u95ee\u9898 \u2014 \u53ef\u4ee5\u5ef6\u540e\u3002\n\n---\n\n## \u5206\u6790\n\n### Phase 1: \u95ee\u9898\u8003\u53e4\n\n**stated problem**: \"\u7ed9 baton \u6dfb\u52a0\u4e00\u4e2a\u63d2\u4ef6\u5e02\u573a\uff0c\u8ba9\u7528\u6237\u53ef\u4ee5\u5171\u4eab\u548c\u5b89\u88c5 skills\"\n\n**Five Whys**:\n1. \u4e3a\u4ec0\u4e48\u9700\u8981\u63d2\u4ef6\u5e02\u573a\uff1f\u2192 \u7528\u6237\u60f3\u4f7f\u7528\u522b\u4eba\u5199\u7684 skill\uff0c\u4f46\u6ca1\u6709\u53d1\u73b0\u548c\u5b89\u88c5\u7684\u9014\u5f84\n2. \u4e3a\u4ec0\u4e48\u6ca1\u6709\u9014\u5f84\uff1f\u2192 baton \u7684 skill \u5206\u53d1\u6a21\u578b\u662f\"\u5355\u4e00\u4ed3\u5e93 \u2192 junction \u5230\u9879\u76ee\"\uff0c\u5047\u8bbe\u6240\u6709 skill \u90fd\u5728 `~/.baton/skills/` \u4e2d\n3. \u4e3a\u4ec0\u4e48\u5047\u8bbe\u5728 `~/.baton/`\uff1f\u2192 baton \u662f\u5355\u4eba\u9879\u76ee\uff0c\u6700\u521d\u7684\u8bbe\u8ba1\u53ea\u8003\u8651\u4e86\u4f5c\u8005\u81ea\u5df1\u7684 skill\n4. \u6839\u95ee\u9898\uff1a**baton \u7684 skill \u5206\u53d1\u7cfb\u7edf\u6ca1\u6709\"\u6765\u6e90\u591a\u5143\u5316\"\u7684\u80fd\u529b** \u2014 \u5b83\u53ea\u8ba4\u8bc6\u4e00\u4e2a\u6765\u6e90\uff08`~/.baton/`\uff09\uff0c\u4e0d\u80fd\u4ece\u5176\u4ed6\u5730\u65b9\u83b7\u53d6 skill\n\n**\u95ee\u9898\u9648\u8ff0**: baton \u7684 skill \u5206\u53d1\u6a21\u578b\u5047\u8bbe\u6240\u6709 skill \u90fd\u6765\u81ea `~/.baton/` \u4ed3\u5e93\u3002\u5f53\u7528\u6237\u60f3\u4f7f\u7528\u6765\u81ea\u4e0d\u540c\u4f5c\u8005\u7684 skill \u65f6\uff0c\u5fc5\u987b\u624b\u52a8\u7ba1\u7406\u6587\u4ef6\u590d\u5236\u3002\u6ca1\u6709\u6807\u51c6\u5316\u7684\u53d1\u73b0\u3001\u5b89\u88c5\u3001\u7248\u672c\u7ba1\u7406\u6d41\u7a0b\u3002\u89e3\u51b3 = \u7528\u6237\u53ef\u4ee5\u901a\u8fc7\u5355\u6761\u547d\u4ee4\u5b89\u88c5\u6765\u81ea\u4efb\u610f Git \u4ed3\u5e93\u7684 skill\uff0c\u4e14\u5b89\u88c5\u540e\u7684 skill \u4e0e\u5185\u7f6e skill \u5728\u884c\u4e3a\u4e0a\u5b8c\u5168\u4e00\u81f4\u3002\n\n### \u5047\u8bbe\u5ba1\u8ba1\n\n| # | \u5047\u8bbe | \u7c7b\u578b | \u5982\u679c\u9519\u8bef... |\n|---|------|------|------------|\n| 1 | Skill \u662f\u81ea\u5305\u542b\u7684\u76ee\u5f55\uff08SKILL.md + \u53ef\u9009\u8d44\u6e90\uff09 | \u4e8b\u5b9e \u2705 \u9a8c\u8bc1\uff1a\u6240\u6709\u73b0\u6709 skill \u90fd\u662f\u8fd9\u4e2a\u7ed3\u6784 | \u8ba1\u5212\u6210\u7acb |\n| 2 | `~/.baton/skills/` \u662f skill \u7684\u89c4\u8303\u5b58\u50a8\u4f4d\u7f6e | \u4e8b\u5b9e \u2705 \u9a8c\u8bc1\uff1a`setup.sh:129-140`, `phase-guide.sh:51-66` | \u8ba1\u5212\u6210\u7acb |\n| 3 | Junction \u673a\u5236\u8db3\u4ee5\u5c06\u7b2c\u4e09\u65b9 skill \u94fe\u63a5\u5230\u9879\u76ee | \u4e8b\u5b9e \u2705 \u9a8c\u8bc1\uff1a`junction.sh` \u7684 `atomic_junction` \u4e0d\u533a\u5206 skill \u6765\u6e90 | \u8ba1\u5212\u6210\u7acb |\n| 4 | \u7528\u6237\u6709 Git \u547d\u4ee4\u884c\u53ef\u7528 | \u60ef\u4f8b \u2014 \u53ef\u4ee5\u6362\u6210 curl + tar | \u8ba1\u5212\u9700\u8981 fallback |\n| 5 | \u6bcf\u4e2a skill \u72ec\u5360\u4e00\u4e2a Git \u4ed3\u5e93 | \u60ef\u4f8b \u2014 \u5b9e\u9645\u4e0a\u5f88\u591a\u4f5c\u8005\u4f1a\u628a\u591a\u4e2a skill \u653e\u5728\u4e00\u4e2a monorepo \u4e2d | `baton install` \u9700\u8981\u652f\u6301\u5b50\u8def\u5f84\uff08\u89c1 P2\uff09 |\n| 6 | \u9700\u8981\u4e00\u4e2a\u4e2d\u5fc3\u5316\u7684\u641c\u7d22/\u53d1\u73b0\u670d\u52a1 | \u60ef\u4f8b \u2014 \u65e9\u671f\u53ef\u4ee5\u9760 GitHub search + README \u5217\u8868 | P3-P4 \u53ef\u4ee5\u5ef6\u540e\uff0c\u4e0d\u5f71\u54cd\u6838\u5fc3\u529f\u80fd |\n\n### \u771f\u7ea6\u675f vs \u60ef\u4f8b\n\n- **\u771f\u7ea6\u675f**: baton \u662f\u7eaf bash\uff0c\u4e0d\u80fd\u5f15\u5165\u7f16\u8bd1\u4f9d\u8d56\uff08Node.js, Python \u7b49\uff09\u3002\u6240\u6709\u5de5\u5177\u94fe\u5fc5\u987b\u5728 Git Bash / macOS Terminal / Linux shell \u4e2d\u53ef\u7528\u3002\n- **\u771f\u7ea6\u675f**: \u73b0\u6709\u7684 junction \u5206\u53d1\u6a21\u578b\u4e0d\u80fd\u88ab\u7834\u574f \u2014 \u5df2\u5b89\u88c5\u7684\u9879\u76ee\u4f9d\u8d56 `~/.baton/ \u2192 project/.baton` \u7684\u94fe\u63a5\u7ed3\u6784\u3002\n- **\u60ef\u4f8b\uff08\u53ef\u6311\u6218\uff09**: `phase-guide.sh:55` \u53ea\u81ea\u52a8 junction `baton-*` \u524d\u7f00\u7684 skill\u3002\u8fd9\u662f\u547d\u540d\u60ef\u4f8b\uff0c\u4e0d\u662f\u67b6\u6784\u9650\u5236\u3002\u793e\u533a skill \u4e0d\u5e94\u88ab\u5f3a\u5236\u4f7f\u7528\u8fd9\u4e2a\u524d\u7f00\u3002\n- **\u60ef\u4f8b\uff08\u53ef\u6311\u6218\uff09**: skill \u6ca1\u6709\u7248\u672c\u53f7\u3002\u76ee\u524d\u6240\u6709 skill \u8ddf\u968f baton \u4e3b\u4ed3\u5e93\u7684 Git \u5386\u53f2\u3002\u7b2c\u4e09\u65b9 skill \u9700\u8981\u72ec\u7acb\u7248\u672c\u7ba1\u7406\u3002\n\n### \u65b9\u6848\u7c7b\u522b\n\n**\u65b9\u6848 A: Git \u4ed3\u5e93\u5206\u53d1\uff08\u63a8\u8350\uff09**\n- \u673a\u5236\uff1a\u6bcf\u4e2a skill \u662f\u4e00\u4e2a Git \u4ed3\u5e93\uff08\u6216 monorepo \u4e2d\u7684\u76ee\u5f55\uff09\u3002`baton install` = `git clone` + copy + junction\u3002\n- \u4f18\u52bf\uff1a\u96f6\u57fa\u7840\u8bbe\u65bd\u6210\u672c\u3001\u7528\u6237\u5df2\u6709 Git\u3001\u7248\u672c\u7ba1\u7406\u5929\u7136\u5185\u7f6e\n- \u52a3\u52bf\uff1a\u641c\u7d22/\u53d1\u73b0\u9700\u8981\u989d\u5916\u7684 registry index\n- \u6311\u6218\u4e86\u4ec0\u4e48\u60ef\u4f8b\uff1a\u6ca1\u6709\u4e2d\u5fc3\u5316\u5e73\u53f0\n\n**\u65b9\u6848 B: npm/pip \u5f0f HTTP registry**\n- \u673a\u5236\uff1a\u4e2d\u5fc3\u5316 HTTP \u670d\u52a1\uff0c`baton install <name>` \u4ece registry \u4e0b\u8f7d tarball\n- \u4f18\u52bf\uff1a\u6807\u51c6\u5316\u7684\u641c\u7d22/\u53d1\u73b0\u4f53\u9a8c\n- \u52a3\u52bf\uff1a\u9700\u8981\u8fd0\u7ef4\u670d\u52a1\u5668\u3001\u8fdd\u53cd baton \u7684\u96f6\u4f9d\u8d56\u539f\u5219\u3001\u65e9\u671f\u7528\u6237\u89c4\u6a21\u4e0d\u652f\u6491\n- \u5728\u4ec0\u4e48\u6761\u4ef6\u4e0b\u6700\u597d\uff1a\u7528\u6237\u91cf > 1000\u3001skill \u6570\u91cf > 100\n\n**\u65b9\u6848 C: GitHub Releases / Archive \u4e0b\u8f7d**\n- \u673a\u5236\uff1askill \u4f5c\u8005\u53d1\u5e03 GitHub Release\uff0c`baton install` \u7528 `curl` \u4e0b\u8f7d tarball\n- \u4f18\u52bf\uff1a\u4e0d\u9700\u8981 Git\uff08\u53ea\u9700 curl\uff09\uff0c\u4f53\u79ef\u66f4\u5c0f\n- \u52a3\u52bf\uff1a\u4e22\u5931 Git \u5386\u53f2\u3001\u66f4\u65b0\u673a\u5236\u66f4\u590d\u6742\u3001\u9700\u8981\u4f5c\u8005\u624b\u52a8\u6253\u5305\n- \u5728\u4ec0\u4e48\u6761\u4ef6\u4e0b\u6700\u597d\uff1a\u76ee\u6807\u7528\u6237\u7fa4\u4f53\u4e2d\u6709\u4eba\u6ca1\u6709\u5b89\u88c5 Git\n\n\u63a8\u8350\u65b9\u6848 A\uff0c\u56e0\u4e3a\u5b83\u5229\u7528\u4e86 baton \u7528\u6237\u4e00\u5b9a\u6709 Git \u7684\u4e8b\u5b9e\uff08baton \u672c\u8eab\u901a\u8fc7 Git \u5b89\u88c5\uff09\uff0c\u4e14\u4e0e\u73b0\u6709\u7684 `ensure_baton_home`\uff08`setup.sh:57`\uff09\u4e2d\u7684 `git clone` \u6a21\u5f0f\u5b8c\u5168\u4e00\u81f4\u3002\n\n### \u53cd\u8f6c\u6d4b\u8bd5\n\n\u65b9\u6848 A\uff08Git \u4ed3\u5e93\u5206\u53d1\uff09\u5728\u4ec0\u4e48\u6761\u4ef6\u4e0b\u6700\u5dee\uff1f\n\n1. **Git \u4e0d\u53ef\u7528**\uff08\u5982\u4f01\u4e1a\u9632\u706b\u5899\u5185\u7f51\u73af\u5883\uff09\u2014 \u7f13\u89e3\uff1a\u652f\u6301 `baton install ./local-path` \u672c\u5730\u5b89\u88c5\n2. **Monorepo \u4e2d skill \u6570\u91cf\u5f88\u5927**\uff08100+ skill \u5728\u4e00\u4e2a\u4ed3\u5e93\u4e2d\uff0cclone \u5f88\u6162\uff09\u2014 \u7f13\u89e3\uff1a\u652f\u6301 sparse checkout \u6216\u8005\u8ba9\u4f5c\u8005\u62c6\u5206\u4ed3\u5e93\n3. **\u7248\u672c\u51b2\u7a81\u65e0\u6cd5\u81ea\u52a8\u89e3\u51b3**\uff08\u4e24\u4e2a skill \u4f9d\u8d56\u540c\u4e00\u4e2a skill \u7684\u4e0d\u540c\u7248\u672c\uff09\u2014 \u7f13\u89e3\uff1abaton \u7684 skill \u662f\u63d0\u793a\u8bcd\uff0c\u4e0d\u662f\u4ee3\u7801\u5e93\u3002\u771f\u6b63\u7684\u7248\u672c\u51b2\u7a81\u6982\u7387\u6781\u4f4e\u3002\u5982\u679c\u51fa\u73b0\uff0c\u8ba9\u7528\u6237\u624b\u52a8\u9009\u62e9\u3002\n\n\u8fd9\u4e9b\u5931\u8d25\u573a\u666f\u90fd\u4e0d\u662f\u9ad8\u6982\u7387\u7684\uff0c\u4e14\u90fd\u6709\u5408\u7406\u7684\u7f13\u89e3\u63aa\u65bd\u3002\n\n## \u6279\u6ce8\u533a\n"}], "grading": {"eval_id": 1, "eval_name": "plugin-marketplace", "configuration": "with_skill", "expectations": [{"text": "Reframes 'marketplace' \u2014 separates the stated solution from the underlying problem (closed ecosystem)", "passed": true, "evidence": "TL;DR: '\u771f\u6b63\u7f3a\u5931\u7684\u4e0d\u662f\"\u5e02\u573a\u5e73\u53f0\"\uff0c\u800c\u662f\u4e09\u4e2a\u539f\u8bed\uff1aregistry\u3001resolver\u3001installer'. Analysis Five Whys traces to 'skill \u5206\u53d1\u7cfb\u7edf\u6ca1\u6709\"\u6765\u6e90\u591a\u5143\u5316\"\u7684\u80fd\u529b'"}, {"text": "Surfaces at least 3 explicit assumptions and challenges them", "passed": true, "evidence": "Assumption audit table has 6 assumptions (#1-#6) with type classification and impact analysis"}, {"text": "Distinguishes true constraints from conventions", "passed": true, "evidence": "'\u771f\u7ea6\u675f vs \u60ef\u4f8b' section: true constraints (pure bash, junction model) vs conventions (baton-* prefix, no version numbers)"}, {"text": "Presents 2+ fundamentally different solution categories", "passed": true, "evidence": "Three categories: A (Git\u4ed3\u5e93\u5206\u53d1 \u2014 recommended), B (npm/pip\u5f0fHTTP registry), C (GitHub Releases/Archive)"}, {"text": "Produces concrete actionable steps with success criteria", "passed": true, "evidence": "P1-P6 priority table with effort estimates, code examples for P1/P2, total row (~17h)"}, {"text": "Includes 'what we are NOT doing' or equivalent rejection reasoning", "passed": true, "evidence": "'\u4e0d\u5e94\u8be5\u505a\u7684\u4e8b' section with 4 items: no HTTP server, no SKILL.md pollution, no dependency SAT solver, no premature security/signing"}]}}, {"id": "eval-2-rewrite-to-python-with_skill", "prompt": "\u6211\u4eec\u9700\u8981\u628a\u6240\u6709 bash hooks \u91cd\u5199\u6210 Python\uff0c\u56e0\u4e3a bash \u592a\u96be\u7ef4\u62a4\u4e86\u3002\u8bf7\u89c4\u5212\u4e00\u4e0b\u6700\u4f73\u65b9\u6848\u3002", "eval_id": 2, "outputs": [{"name": "plan.md", "type": "text", "content": "# \u89c4\u5212\uff1aBash Hooks \u91cd\u5199\u4e3a Python\n\n**\u6df1\u5ea6**: Deep \u2014 \u8fd9\u662f\u4e00\u4e2a\"\u6211\u4eec\u4e00\u76f4\u8fd9\u4e48\u505a\"\u7c7b\u578b\u7684\u63d0\u6848\uff0c\u5047\u8bbe\u5ba1\u8ba1\u662f\u6838\u5fc3\u4ef7\u503c\u6240\u5728\u3002\n**\u8f93\u5165\u6765\u6e90**: baton \u4ee3\u7801\u5e93\u76f4\u63a5\u5ba1\u67e5\uff08\u6240\u6709 `.baton/hooks/`\u3001`.baton/adapters/`\u3001`setup.sh`\u3001`bin/baton`\u3001`tests/`\uff09\n\n---\n\n## TL;DR\n\n\u7528\u6237\u63d0\u51fa\u7684\u95ee\u9898\u662f\"\u628a bash hooks \u91cd\u5199\u6210 Python\"\uff0c\u4f46\u5b9e\u9645\u7684\u6839\u95ee\u9898\u662f **bash \u96be\u4ee5\u7ef4\u62a4**\u3002\u91cd\u5199\u5230 Python \u662f\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\uff0c\u4e0d\u662f\u95ee\u9898\u672c\u8eab\u3002\u7ecf\u8fc7\u5bf9\u4ee3\u7801\u5e93\u7684\u6df1\u5165\u5ba1\u67e5\uff0c\u6211\u7684\u7ed3\u8bba\u662f\uff1a**\u4e0d\u5e94\u8be5\u91cd\u5199\u5230 Python**\u3002bash \u7684\"\u96be\u7ef4\u62a4\"\u7a0b\u5ea6\u88ab\u9ad8\u4f30\u4e86\uff0c\u800c\u91cd\u5199\u7684\u4ee3\u4ef7\u2014\u2014\u5f15\u5165 Python \u8fd0\u884c\u65f6\u4f9d\u8d56\u3001\u7834\u574f\u96f6\u7f16\u8bd1\u4f9d\u8d56\u67b6\u6784\u3001\u91cd\u5199 ~9600 \u884c\u4ee3\u7801\uff08\u542b\u6d4b\u8bd5\uff09\u2014\u2014\u8fdc\u8d85\u6536\u76ca\u3002\u66f4\u597d\u7684\u65b9\u6848\u662f\u5bf9\u73b0\u6709 bash \u4ee3\u7801\u505a\u9488\u5bf9\u6027\u7684\u7ed3\u6784\u4f18\u5316\u3002\n\n\u4f46\u5982\u679c\u4f60\u4ecd\u7136\u51b3\u5b9a\u8981\u505a\u8fd9\u4e2a\u91cd\u5199\uff0c\u672c\u6587\u672b\u5c3e\u63d0\u4f9b\u4e86\u5b8c\u6574\u7684\u6267\u884c\u65b9\u6848\u3002\n\n---\n\n## \u4e0d\u5e94\u8be5\u505a\u7684\u4e8b\n\n- **\u4e0d\u8981\u505a\u5168\u91cf\u4e00\u6b21\u6027\u91cd\u5199\u3002** \u65e0\u8bba\u9009\u62e9\u4ec0\u4e48\u76ee\u6807\u8bed\u8a00\uff0c\u4e00\u6b21\u6027\u91cd\u5199 2567 \u884c hooks + 393 \u884c CLI + 7034 \u884c\u6d4b\u8bd5\u662f\u9ad8\u98ce\u9669\u884c\u4e3a\u3002\n- **\u4e0d\u8981\u5f15\u5165 Python \u4f5c\u4e3a\u8fd0\u884c\u65f6\u4f9d\u8d56\u3002** baton \u7684\u6838\u5fc3\u8bbe\u8ba1\u539f\u5219\u662f\"pure bash + markdown, zero compiled dependencies\"\uff08\u2705 \u89c1 CLAUDE.md\uff09\u3002Python \u4e0d\u662f\u96f6\u4f9d\u8d56\u2014\u2014\u5b83\u9700\u8981\u5b89\u88c5\u3001\u9700\u8981\u7248\u672c\u7ba1\u7406\u3001Windows \u4e0a\u7684 Python \u8def\u5f84\u95ee\u9898\u6bd4 bash \u66f4\u591a\u3002\n- **\u4e0d\u8981\u628a\"\u6211\u89c9\u5f97 bash \u96be\u8bfb\"\u7b49\u540c\u4e8e\"bash \u662f\u9519\u8bef\u7684\u6280\u672f\u9009\u62e9\"\u3002** \u8fd9\u662f\u4e00\u4e2a convention \u5728\u5192\u5145 constraint\u3002\n\n---\n\n## \u63a8\u8350\u65b9\u6848\uff1a\u7ed3\u6784\u5316\u4f18\u5316\u73b0\u6709 Bash \u4ee3\u7801\n\n### \u4e3a\u4ec0\u4e48\u4e0d\u91cd\u5199\n\n| \u7ef4\u5ea6 | Bash \u73b0\u72b6 | Python \u91cd\u5199\u4ee3\u4ef7 |\n|------|-----------|----------------|\n| **\u8fd0\u884c\u65f6\u4f9d\u8d56** | \u96f6\u3002Git Bash \u5728 Windows \u4e0a\u968f Git \u5b89\u88c5 \u2705 | \u9700\u8981 Python 3.x \u5b89\u88c5 + \u7248\u672c\u9501\u5b9a\u3002Windows \u7528\u6237\u53ef\u80fd\u6709\u591a\u7248\u672c\u51b2\u7a81 |\n| **\u4ee3\u7801\u91cf** | hooks 1884 \u884c + lib 540 \u884c + adapters 165 \u884c + setup 683 \u884c + CLI 393 \u884c = ~2567 \u884c\u4ea7\u54c1\u4ee3\u7801 \u2705 | 1:1 \u91cd\u5199\u81f3\u5c11\u540c\u7b49\u884c\u6570\uff0c\u52a0\u4e0a ~7034 \u884c\u6d4b\u8bd5\u91cd\u5199 |\n| **\u542f\u52a8\u6027\u80fd** | bash \u811a\u672c\u65e0\u9700\u89e3\u91ca\u5668\u542f\u52a8\u3002hooks \u5728 10ms \u7ea7\u522b\u54cd\u5e94 \u2705 | Python \u51b7\u542f\u52a8 100-300ms\uff0c\u6bcf\u6b21 hook \u8c03\u7528\u90fd\u6709\u989d\u5916\u5f00\u9500 |\n| **\u8de8\u5e73\u53f0** | `run-hook.cmd` polyglot \u89e3\u51b3\u4e86 Windows \u517c\u5bb9 \u2705 | Python \u5728 Windows \u4e0a\u9700\u8981\u989d\u5916\u5904\u7406 (`py` vs `python3` vs `python`) |\n| **\u5df2\u6709\u6d4b\u8bd5** | 18 \u4e2a\u6d4b\u8bd5\u6587\u4ef6\uff0c7034 \u884c\u65ad\u8a00 \u2705 | \u5168\u90e8\u9700\u8981\u91cd\u5199\u6216\u5927\u5e45\u6539\u9020 |\n| **ShellCheck** | CI \u5df2\u96c6\u6210 linting \u2705 | \u9700\u8981\u5efa\u7acb\u65b0\u7684 lint \u4f53\u7cfb (mypy, ruff, etc.) |\n\n### \u6839\u95ee\u9898\u8bca\u65ad\uff08\u4e94\u4e2a\"\u4e3a\u4ec0\u4e48\"\uff09\n\n```\n\u58f0\u660e: \"bash \u592a\u96be\u7ef4\u62a4\u4e86\"\n\u4e3a\u4ec0\u4e48? \u2192 bash \u8bed\u6cd5\u4e0d\u76f4\u89c2\u3001\u9519\u8bef\u5904\u7406\u8106\u5f31\n\u4e3a\u4ec0\u4e48? \u2192 \u7f3a\u5c11\u7c7b\u578b\u7cfb\u7edf\u3001\u5b57\u7b26\u4e32\u64cd\u4f5c\u7b28\u62d9\u3001\u6761\u4ef6\u5224\u65ad\u8bed\u6cd5\u5947\u602a\n\u4e3a\u4ec0\u4e48? \u2192 bash \u662f shell \u8bed\u8a00\u800c\u975e\u901a\u7528\u7f16\u7a0b\u8bed\u8a00\n\u4e3a\u4ec0\u4e48? \u2192 baton \u9009\u62e9 bash \u662f\u56e0\u4e3a\u5b83\u662f\u552f\u4e00\u4e00\u4e2a\u6240\u6709\u76ee\u6807\u5e73\u53f0\uff08Linux/macOS/Windows Git Bash\uff09\u90fd\u4fdd\u8bc1\u5b58\u5728\u7684\u8bed\u8a00\n\u6839\u56e0: bash \u7684\"\u96be\u7ef4\u62a4\"\u662f\u771f\u5b9e\u7684\u5f00\u53d1\u4f53\u9a8c\u95ee\u9898\uff0c\u4f46\u5b83\u662f\u96f6\u4f9d\u8d56\u8de8\u5e73\u53f0\u7ea6\u675f\u4e0b\u7684\u5408\u7406\u6743\u8861\u3002\n      \u95ee\u9898\u4e0d\u662f\"\u8be5\u7528\u4ec0\u4e48\u8bed\u8a00\"\uff0c\u800c\u662f\"\u5982\u4f55\u8ba9 bash \u4ee3\u7801\u66f4\u53ef\u7ef4\u62a4\"\u3002\n```\n\n### \u95ee\u9898\u9648\u8ff0\n\nBash \u4f5c\u4e3a baton hooks \u7684\u5b9e\u73b0\u8bed\u8a00\uff0c\u5728\u4ee5\u4e0b\u65b9\u9762\u9020\u6210\u5f00\u53d1\u4f53\u9a8c\u6469\u64e6\uff1a\n\n1. **\u4ee3\u7801\u91cd\u590d** \u2014 \u591a\u4e2a hooks \u6709\u8fd1\u4e4e\u76f8\u540c\u7684\u521d\u59cb\u5316\u5e8f\u5217\uff08fail-open trap\u3001stdin \u8bfb\u53d6\u3001JSON \u89e3\u6790\u3001common.sh \u52a0\u8f7d\u3001plan \u67e5\u627e\uff09\u2705 \u8bfb\u8fc7\u6240\u6709 10 \u4e2a hook \u811a\u672c\u9a8c\u8bc1\n2. **JSON \u89e3\u6790\u8106\u5f31** \u2014 jq/awk \u53cc\u8def\u5f84\u6a21\u5f0f\u5728\u6bcf\u4e2a\u9700\u8981 stdin \u7684 hook \u4e2d\u91cd\u590d \u2705 \u89c1 dispatch.sh:25-31, write-lock.sh:35-45, bash-guard.sh:42-49\n3. **plan-parser.sh \u8fc7\u957f** \u2014 441 \u884c\u5355\u6587\u4ef6\uff0c\u6df7\u5408\u4e86 discovery (1A)\u3001section parsing (1B)\u3001write-set (1C) \u4e09\u4e2a\u4e0d\u540c\u5173\u6ce8\u70b9 \u2705\n4. **\u6d4b\u8bd5\u6267\u884c\u6162** \u2014 Windows Git Bash \u6bcf\u4e2a shell \u65ad\u8a00 ~15s \u2705 \u89c1 CLAUDE.md\n\n\u4f46\u4ee5\u4e0a\u8fd9\u4e9b\u90fd\u662f **\u53ef\u4ee5\u5728 bash \u5185\u89e3\u51b3\u7684\u7ed3\u6784\u95ee\u9898**\uff0c\u4e0d\u9700\u8981\u66f4\u6362\u8bed\u8a00\u3002\n\n---\n\n## \u884c\u52a8\u65b9\u6848\n\n| \u4f18\u5148\u7ea7 | \u53d8\u66f4 | \u5de5\u4f5c\u91cf | \u98ce\u9669 | \u4ef7\u503c |\n|--------|------|--------|------|------|\n| P1 | \u63d0\u53d6 `lib/stdin-reader.sh`\uff1a\u7edf\u4e00 JSON stdin \u8bfb\u53d6 + jq/awk \u53cc\u8def\u5f84 | 2h | \u4f4e | \u9ad8 \u2014 \u6d88\u9664 dispatch/write-lock/bash-guard/post-write-tracker/failure-tracker \u4e2d\u7684 5 \u5904\u91cd\u590d |\n| P2 | \u63d0\u53d6 `lib/hook-init.sh`\uff1a\u7edf\u4e00 fail-open trap + common.sh \u52a0\u8f7d + plan \u67e5\u627e | 1.5h | \u4f4e | \u9ad8 \u2014 \u6bcf\u4e2a hook \u51cf\u5c11 8-12 \u884c\u6837\u677f\u4ee3\u7801 |\n| P3 | \u62c6\u5206 `plan-parser.sh` \u4e3a\u4e09\u4e2a\u6a21\u5757\uff1a`plan-discovery.sh`\u3001`plan-sections.sh`\u3001`plan-writeset.sh` | 3h | \u4e2d \u2014 \u9700\u8981\u66f4\u65b0\u6240\u6709\u6d88\u8d39\u8005 | \u4e2d \u2014 \u63d0\u9ad8\u53ef\u8bfb\u6027\u548c\u53ef\u6d4b\u8bd5\u6027 |\n| P4 | \u4e3a `bash-guard.sh` \u7684 `strip_quoted_segments` \u6dfb\u52a0\u5355\u5143\u7ea7\u6d4b\u8bd5\u51fd\u6570 | 1h | \u4f4e | \u4e2d \u2014 \u8fd9\u662f\u6700\u590d\u6742\u7684 bash \u51fd\u6570\uff0884 \u884c\u5b57\u7b26\u7ea7\u72b6\u6001\u673a\uff09\uff0c\u76ee\u524d\u53ea\u6709\u96c6\u6210\u6d4b\u8bd5 |\n| P5 | \u521b\u5efa `lib/json-output.sh`\uff1a\u7edf\u4e00 hookSpecificOutput JSON \u6784\u9020\u548c `_escape_for_json` | 1h | \u4f4e | \u4f4e \u2014 \u51cf\u5c11 phase-guide.sh \u548c write-lock.sh \u4e2d\u7684 JSON \u5b57\u7b26\u4e32\u62fc\u63a5 |\n| **\u603b\u8ba1** | | **~8.5h** | | |\n\n### P1 \u4ee3\u7801\u793a\u4f8b\uff1a`lib/stdin-reader.sh`\n\n```bash\n#!/usr/bin/env bash\n# stdin-reader.sh \u2014 Unified JSON stdin reader with jq/awk fallback\n# Sets: STDIN, TOOL_NAME, TARGET, JSON_CWD (exported for hook use)\n\n[ -n \"${_BATON_STDIN_LOADED:-}\" ] && return 0\n_BATON_STDIN_LOADED=1\n\nbaton_read_stdin() {\n    if [ -n \"${BATON_STDIN+x}\" ]; then\n        STDIN=\"$BATON_STDIN\"\n    elif [ ! -t 0 ]; then\n        STDIN=\"$(cat 2>/dev/null || true)\"\n    else\n        STDIN=\"\"\n    fi\n    [ -z \"$STDIN\" ] && return\n\n    if command -v jq >/dev/null 2>&1; then\n        TOOL_NAME=\"$(printf '%s' \"$STDIN\" | jq -r '.tool_name // empty' 2>/dev/null)\" || true\n        TARGET=\"$(printf '%s' \"$STDIN\" | jq -r '.tool_input.file_path // empty' 2>/dev/null)\" || true\n        JSON_CWD=\"$(printf '%s' \"$STDIN\" | jq -r '.cwd // empty' 2>/dev/null)\" || true\n    else\n        TOOL_NAME=\"$(printf '%s' \"$STDIN\" | sed -n 's/.*\"tool_name\" *: *\"\\([^\"]*\\)\".*/\\1/p' | head -1)\" || true\n        TARGET=\"$(printf '%s' \"$STDIN\" | awk -F'\"' '{for(i=1;i<=NF;i++) if($i==\"file_path\") print $(i+2)}' | head -1)\" || true\n        JSON_CWD=\"$(printf '%s' \"$STDIN\" | awk -F'\"' '{for(i=1;i<=NF;i++) if($i==\"cwd\") print $(i+2)}' | head -1)\" || true\n    fi\n}\n```\n\n\u91cd\u5199\u524d write-lock.sh \u7684 stdin \u5904\u7406\uff08\u7b2c 23-46 \u884c\uff09\u53d8\u4e3a\uff1a\n\n```bash\n. \"$SCRIPT_DIR/lib/stdin-reader.sh\"\nbaton_read_stdin\nTARGET=\"${BATON_TARGET:-$TARGET}\"\n```\n\n### P2 \u4ee3\u7801\u793a\u4f8b\uff1a`lib/hook-init.sh`\n\n```bash\n#!/usr/bin/env bash\n# hook-init.sh \u2014 Standard hook initialization\n# Provides: fail-open trap, common.sh loading, plan discovery\n\nbaton_hook_init() {\n    local _hook_name=\"${1:-unknown}\"\n    trap \"echo '\u26a0\ufe0f BATON $_hook_name: unexpected error, allowing (fail-open)' >&2; exit 0\" HUP INT TERM\n\n    SCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" 2>/dev/null && pwd)\"\n    if [ -f \"$SCRIPT_DIR/lib/common.sh\" ]; then\n        . \"$SCRIPT_DIR/lib/common.sh\"\n    else\n        echo \"\u26a0\ufe0f BATON $_hook_name: common.sh not found, allowing (fail-open)\" >&2\n        exit 0\n    fi\n    resolve_plan_name\n    find_plan\n}\n```\n\n---\n\n## \u53cd\u5bf9\u65b9\u6848\uff08Dissenting Path\uff09\uff1a\u5982\u679c\u4f60\u4ecd\u7136\u8981\u7528 Python \u91cd\u5199\n\n### \u4ec0\u4e48\u6761\u4ef6\u4e0b Python \u91cd\u5199\u662f\u5408\u7406\u7684\n\n1. **baton \u7684\u7528\u6237\u7fa4\u6269\u5927\u5230\u975e\u5f00\u53d1\u8005**\uff0c\u4ed6\u4eec\u4e0d\u4f1a\u5b89\u88c5 Git\uff08\u56e0\u6b64\u6ca1\u6709 Git Bash\uff09\u4f46\u4f1a\u5b89\u88c5 Python \u2014 \u2753 \u76ee\u524d\u4e0d\u6210\u7acb\n2. **hooks \u7684\u903b\u8f91\u590d\u6742\u5ea6\u5927\u5e45\u589e\u52a0**\uff0c\u9700\u8981\u771f\u6b63\u7684\u6570\u636e\u7ed3\u6784\uff08AST\u3001tree\u3001graph\uff09\u2014 \u2753 \u76ee\u524d\u6700\u590d\u6742\u7684\u662f plan-parser \u7684 awk \u811a\u672c\uff0c\u8db3\u591f\u4f46\u52c9\u5f3a\n3. **\u4f60\u51b3\u5b9a\u653e\u5f03\"\u96f6\u4f9d\u8d56\"\u67b6\u6784\u539f\u5219** \u2014 \u8fd9\u662f\u4e00\u4e2a\u5408\u6cd5\u7684\u6218\u7565\u51b3\u7b56\uff0c\u4f46\u9700\u8981\u660e\u786e\u505a\u51fa\n\n### \u5982\u679c\u8981\u505a\uff0c\u6267\u884c\u65b9\u6848\n\n| \u9636\u6bb5 | \u5185\u5bb9 | \u5de5\u4f5c\u91cf | \u4f9d\u8d56 |\n|------|------|--------|------|\n| A | \u5efa\u7acb Python \u57fa\u7840\u8bbe\u65bd\uff1a`requirements.txt`\uff08\u7a7a\u6216 minimal\uff09\u3001\u9879\u76ee\u7ed3\u6784 `.baton/hooks_py/`\u3001Python \u7248\u672c\u68c0\u6d4b wrapper | 4h | \u65e0 |\n| B | \u91cd\u5199 `lib/` \u5c42\uff1aplan-parser\u3001common\u3001junction\u3001stdin-reader \u2192 Python \u6a21\u5757 | 8h | A |\n| C | \u91cd\u5199\u6838\u5fc3 hooks\uff1awrite-lock\u3001bash-guard\u3001dispatch \u2192 Python | 12h | B |\n| D | \u91cd\u5199\u8f85\u52a9 hooks\uff1aphase-guide\u3001stop-guard\u3001completion-check\u3001failure-tracker\u3001pre-compact\u3001post-write-tracker\u3001quality-gate\u3001subagent-context | 10h | B |\n| E | \u91cd\u5199 adapters\uff1acursor dispatch\u3001cursor adapter\u3001codex dispatch\u3001codex adapter | 4h | C |\n| F | \u91cd\u5199 setup.sh \u548c bin/baton | 12h | B |\n| G | \u91cd\u5199\u6d4b\u8bd5\uff1a7034 \u884c bash \u6d4b\u8bd5 \u2192 pytest | 16h | C, D |\n| H | \u66f4\u65b0 `run-hook.cmd`\uff1a\u5c06 bash \u8c03\u7528\u66ff\u6362\u4e3a Python | 2h | C |\n| I | \u96c6\u6210\u6d4b\u8bd5 + Windows \u9a8c\u8bc1 + CI \u66f4\u65b0 | 8h | G |\n| **\u603b\u8ba1** | | **~76h** | |\n\n**\u5173\u952e\u98ce\u9669**\uff1a\n- Windows \u4e0a Python \u8def\u5f84\u68c0\u6d4b\u6bd4 bash \u66f4\u590d\u6742\uff08`python` vs `python3` vs `py -3` vs \u865a\u62df\u73af\u5883\uff09\n- hook \u542f\u52a8\u5ef6\u8fdf\u4ece ~10ms \u589e\u52a0\u5230 ~150ms\uff0c\u7528\u6237\u5728\u6bcf\u6b21\u6587\u4ef6\u4fdd\u5b58\u65f6\u4f1a\u611f\u77e5\u5230\n- `run-hook.cmd` polyglot \u6280\u5de7\u5728 Python \u4e0a\u4e0d\u9002\u7528\uff0c\u9700\u8981\u53e6\u4e00\u79cd\u8de8\u5e73\u53f0\u5165\u53e3\u7b56\u7565\n- \u8fc1\u79fb\u671f\u95f4\u9700\u8981\u7ef4\u62a4 bash \u548c Python \u4e24\u5957\u4ee3\u7801\uff0c\u6301\u7eed\u65f6\u95f4\u4e0d\u77ed\n\n---\n\n## \u5206\u6790\n\n### \u5047\u8bbe\u5ba1\u8ba1\n\n| # | \u5047\u8bbe | \u7c7b\u578b | \u5982\u679c\u9519\u8bef... |\n|---|------|------|-------------|\n| 1 | \"Bash \u592a\u96be\u7ef4\u62a4\" = \u9700\u8981\u66f4\u6362\u8bed\u8a00 | **convention** \u2014 \u628a\"\u4e0d\u559c\u6b22 bash\"\u7b49\u540c\u4e8e\"bash \u4e0d\u9002\u5408\u8fd9\u4e2a\u7528\u9014\" | \u65b9\u6848\u5d29\u6e83\uff1a\u5982\u679c bash \u4ee3\u7801\u7ed3\u6784\u4f18\u5316\u540e\u53ef\u7ef4\u62a4\u6027\u8db3\u591f\uff0c\u91cd\u5199\u5c31\u662f\u6d6a\u8d39 |\n| 2 | Python \u5728\u6240\u6709\u76ee\u6807\u5e73\u53f0\u4e0a\u53ef\u7528 | **unknown** \u2014 Windows \u4e0d\u4fdd\u8bc1\u9884\u88c5 Python | \u65b9\u6848\u5d29\u6e83\uff1a\u5f15\u5165\u65b0\u7684\u5b89\u88c5\u524d\u63d0\u6761\u4ef6\uff0c\u8fdd\u53cd\u96f6\u4f9d\u8d56\u539f\u5219 |\n| 3 | Python \u91cd\u5199\u540e\u4ee3\u7801\u91cf\u4f1a\u51cf\u5c11 | **unknown** \u2014 Python \u7684\u663e\u5f0f\u5bfc\u5165\u548c\u7c7b\u5b9a\u4e49\u53ef\u80fd\u62b5\u6d88\u8bed\u6cd5\u7b80\u6d01\u6027 | \u65b9\u6848\u53d7\u635f\uff1a\u5982\u679c\u4ee3\u7801\u91cf\u6301\u5e73\uff0c\u7ef4\u62a4\u6027\u63d0\u5347\u6709\u9650 |\n| 4 | Hook \u542f\u52a8\u6027\u80fd\u4e0d\u91cd\u8981 | **convention** \u2014 \u6ca1\u6709\u4eba\u62b1\u6028\u8fc7\u6027\u80fd \u2260 \u6027\u80fd\u4e0d\u91cd\u8981 | \u65b9\u6848\u53d7\u635f\uff1aPreToolUse hook \u5728\u6bcf\u6b21\u7f16\u8f91\u64cd\u4f5c\u524d\u6267\u884c\uff0c150ms \u5ef6\u8fdf\u4f1a\u88ab\u611f\u77e5 |\n| 5 | \u73b0\u6709 bash \u4ee3\u7801\u8d28\u91cf\u5dee | **fact \u2014 \u88ab\u8bc1\u4f2a** | \u65b9\u6848\u7684\u524d\u63d0\u88ab\u524a\u5f31\u3002\u2705 \u8bfb\u8fc7\u5168\u90e8\u4ee3\u7801\uff1a\u6709\u4e00\u81f4\u7684\u98ce\u683c\u3001fail-open \u8bbe\u8ba1\u3001\u53cc\u8def\u5f84\u517c\u5bb9\u3001\u5145\u5206\u7684\u6d4b\u8bd5\u8986\u76d6 |\n\n### \u771f\u7ea6\u675f vs \u60ef\u4f8b\n\n| \u7ea6\u675f | \u7c7b\u578b | \u51b3\u5b9a\u8005 | \u7406\u7531\u662f\u5426\u4ecd\u6210\u7acb |\n|------|------|--------|---------------|\n| \u96f6\u7f16\u8bd1/\u8fd0\u884c\u65f6\u4f9d\u8d56 | **\u771f\u7ea6\u675f** \u2014 \u67b6\u6784\u51b3\u7b56 | \u9879\u76ee\u521b\u59cb\u4eba\uff08\u4f60\uff09\uff0c\u8bb0\u5f55\u5728 CLAUDE.md | \u2705 \u4ecd\u7136\u6210\u7acb\uff1abaton \u901a\u8fc7 junction \u5206\u53d1\u5230\u4efb\u610f\u9879\u76ee\uff0c\u4e0d\u80fd\u5047\u8bbe\u76ee\u6807\u9879\u76ee\u6709 Python |\n| \u8de8\u5e73\u53f0\uff08Linux/macOS/Windows\uff09 | **\u771f\u7ea6\u675f** \u2014 \u76ee\u6807\u5e02\u573a | \u9879\u76ee\u5b9a\u4e49 | \u2705 \u4ecd\u7136\u6210\u7acb |\n| hook \u54cd\u5e94\u65f6\u95f4 < 1s | **\u771f\u7ea6\u675f** \u2014 \u7528\u6237\u4f53\u9a8c | IDE hook \u534f\u8bae\u9650\u5236 | \u2705 \u4ecd\u7136\u6210\u7acb\uff1aCursor hooks.json \u6709 timeout:10 |\n| \"bash \u96be\u7ef4\u62a4\" | **\u60ef\u4f8b** \u2014 \u5f00\u53d1\u4f53\u9a8c\u504f\u597d | \u5f53\u524d\u5f00\u53d1\u8005 | \u53ef\u901a\u8fc7\u7ed3\u6784\u4f18\u5316\u6539\u5584\u800c\u975e\u66f4\u6362\u8bed\u8a00 |\n| \u4f7f\u7528 bash \u800c\u975e\u5176\u4ed6\u811a\u672c\u8bed\u8a00 | **convention \u4f46 load-bearing** | \u521d\u59cb\u67b6\u6784\u9009\u62e9 | \u2705 \u7406\u7531\u4ecd\u6210\u7acb\uff1abash \u662f\u552f\u4e00\u4fdd\u8bc1\u5b58\u5728\u4e8e\u6240\u6709\u76ee\u6807\u5e73\u53f0\u7684\u8bed\u8a00 |\n\n### \u9006\u5411\u6d4b\u8bd5\n\n\u5bf9\u63a8\u8350\u65b9\u6848\uff08\u7ed3\u6784\u4f18\u5316\u800c\u975e\u91cd\u5199\uff09\u505a pre-mortem\uff1a\n\n**\"\u5728\u4ec0\u4e48\u6761\u4ef6\u4e0b\uff0c\u7ed3\u6784\u4f18\u5316\u662f\u6700\u5dee\u7684\u65b9\u6848\uff1f\"**\n\n\u5f53 hooks \u7684\u4e1a\u52a1\u903b\u8f91\u590d\u6742\u5ea6\u589e\u957f\u5230\u9700\u8981\u771f\u6b63\u7684\u6570\u636e\u7ed3\u6784\u548c\u7c7b\u578b\u7cfb\u7edf\u65f6\u2014\u2014\u4f8b\u5982\u5982\u679c plan-parser \u9700\u8981\u89e3\u6790 Markdown AST \u800c\u975e\u7b80\u5355\u7684 `grep`/`awk` \u6a21\u5f0f\u5339\u914d\u3002\u76ee\u524d plan-parser.sh \u7684 441 \u884c\u4ee3\u7801\u521a\u597d\u5728 bash \u80fd\u529b\u7684\u8fb9\u754c\u4e0a\uff1aawk \u811a\u672c\u5904\u7406 section range\u3001Todo counting \u548c write-set extraction \u4ecd\u7136\u591f\u7528\uff0c\u4f46\u5982\u679c\u9700\u8981\u5d4c\u5957\u7ed3\u6784\u89e3\u6790\uff0cbash \u5c31\u4f1a\u5f00\u59cb\u6323\u624e\u3002\n\n**\u7f13\u89e3**\uff1a\u76d1\u63a7 plan-parser.sh \u7684\u590d\u6742\u5ea6\u3002\u5982\u679c\u5b83\u8d85\u8fc7 ~600 \u884c\u6216\u9700\u8981\u5904\u7406\u5d4c\u5957\u7ed3\u6784\uff0c\u90a3\u65f6\u5019\u8003\u8651\u5c06 **\u4ec5 parser** \u63d0\u53d6\u4e3a Python \u6a21\u5757\uff08\u800c\u975e\u5168\u91cf\u91cd\u5199\uff09\uff0c\u5176\u4f59 hooks \u7ee7\u7eed\u7528 bash\u3002\n\n---\n\n## \u81ea\u68c0\n\n**\u6838\u5fc3\u95ee\u9898\uff1a\u8fd9\u4e2a\u65b9\u6848\u6700\u53ef\u80fd\u7684\u5931\u8d25\u6a21\u5f0f\u662f\u4ec0\u4e48\uff1f**\n\n\u6700\u53ef\u80fd\u7684\u5931\u8d25\u6a21\u5f0f\u662f\uff1a\u6211\u4f4e\u4f30\u4e86\u7528\u6237\uff08\u4f60\uff09\u5bf9 bash \u7684\u7ef4\u62a4\u6027\u538c\u5026\uff0c\u800c\u4f60\u8981\u7684\u4e0d\u662f\"\u6700\u4f18\u6280\u672f\u65b9\u6848\"\u800c\u662f\"\u4e0d\u7528\u518d\u5199 bash\"\u7684\u5f00\u53d1\u4f53\u9a8c\u6539\u5584\u3002\u5982\u679c\u4f60\u7684\u6839\u672c\u9700\u6c42\u662f\"\u6211\u4e0d\u60f3\u518d\u770b bash \u4e86\"\uff0c\u90a3\u4e48\u7ed3\u6784\u4f18\u5316\u4e0d\u4f1a\u89e3\u51b3\u8fd9\u4e2a\u95ee\u9898\u2014\u2014\u5b83\u53ea\u662f\u8ba9\u4f60\u9700\u8981\u7ef4\u62a4\u7684 bash \u66f4\u6574\u6d01\u4e00\u70b9\u3002\n\n**\u5982\u679c\u6211\u77e5\u9053\u8fd9\u4e2a\u65b9\u6848\u4f1a\u5931\u8d25\uff0c\u6211\u4f1a\u600e\u4e48\u505a\uff1f** \u6211\u4f1a\u63a8\u8350\u4e00\u4e2a\u4e2d\u95f4\u8def\u7ebf\uff1a\u6838\u5fc3 dispatch \u4fdd\u6301 bash\uff08\u4fdd\u8bc1\u96f6\u4f9d\u8d56\uff09\uff0c\u4f46\u5c06\u4e1a\u52a1\u903b\u8f91\u5bc6\u96c6\u7684\u6a21\u5757\uff08plan-parser\u3001phase-guide\u3001bash-guard\uff09\u63d0\u53d6\u4e3a Python optional \u589e\u5f3a\u2014\u2014\u5f53 Python \u53ef\u7528\u65f6\u7528 Python \u7248\u672c\uff0c\u5426\u5219 fallback \u5230 bash\u3002\u8fd9\u589e\u52a0\u4e86\u7ef4\u62a4\u8868\u9762\u79ef\u4f46\u4fdd\u7559\u4e86\u96f6\u4f9d\u8d56\u4fdd\u8bc1\u3002\n\n**\u7528\u6237\u63d0\u51fa\u4e86\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\u800c\u975e\u95ee\u9898\u2014\u2014\u6211\u662f\u5426\u8ffd\u6eaf\u5230\u4e86\u6839\u95ee\u9898\uff1f** \u662f\u7684\u3002\"\u91cd\u5199\u5230 Python\"\u662f\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\u3002\u6839\u95ee\u9898\u662f\"bash \u96be\u7ef4\u62a4\"\u3002\u6211\u63d0\u51fa\u7684\u65b9\u6848\u76f4\u63a5\u89e3\u51b3\u7ef4\u62a4\u6027\u95ee\u9898\u800c\u4e0d\u5f15\u5165\u8bed\u8a00\u8fc1\u79fb\u7684\u6210\u672c\u548c\u98ce\u9669\u3002\u4f46\u6211\u4e5f\u5c0a\u91cd\u4f60\u53ef\u80fd\u6709\u6211\u4e0d\u77e5\u9053\u7684\u4e0a\u4e0b\u6587\u2014\u2014\u56e0\u6b64\u63d0\u4f9b\u4e86\u5b8c\u6574\u7684 Python \u91cd\u5199\u6267\u884c\u65b9\u6848\u3002\n\n---\n\n## \u6279\u6ce8\u533a\n"}], "grading": {"eval_id": 2, "eval_name": "rewrite-to-python", "configuration": "with_skill", "expectations": [{"text": "Identifies 'rewrite to Python' as a solution masquerading as a problem", "passed": true, "evidence": "TL;DR explicitly: '\u91cd\u5199\u5230 Python \u662f\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\uff0c\u4e0d\u662f\u95ee\u9898\u672c\u8eab'. Five Whys traces to bash maintainability as the root problem."}, {"text": "Decomposes 'hard to maintain' into 2+ specific possible root causes", "passed": true, "evidence": "Four specific root causes identified with code references: (1) \u4ee3\u7801\u91cd\u590d in init sequences, (2) JSON\u89e3\u6790\u8106\u5f31 jq/awk dual-path, (3) plan-parser.sh 441\u884c\u8fc7\u957f, (4) \u6d4b\u8bd5\u6267\u884c\u6162 on Windows"}, {"text": "Surfaces the conflict with 'zero compiled dependencies' principle", "passed": true, "evidence": "Comparison table row 1 (\u8fd0\u884c\u65f6\u4f9d\u8d56), '\u4e0d\u5e94\u8be5\u505a\u7684\u4e8b' item 2, assumption audit #2 (Python\u5728\u6240\u6709\u5e73\u53f0\u53ef\u7528 \u2014 unknown), constraints table (\u96f6\u7f16\u8bd1/\u8fd0\u884c\u65f6\u4f9d\u8d56 \u2014 \u771f\u7ea6\u675f)"}, {"text": "Recommends investigation before committing to rewrite", "passed": true, "evidence": "Goes beyond investigation \u2014 provides structural optimization plan (8.5h) as the recommended approach, backed by full codebase audit proving bash code quality is high"}, {"text": "Provides comparison table between approaches", "passed": true, "evidence": "'\u4e3a\u4ec0\u4e48\u4e0d\u91cd\u5199' table with 6 dimensions: \u8fd0\u884c\u65f6\u4f9d\u8d56, \u4ee3\u7801\u91cf, \u542f\u52a8\u6027\u80fd, \u8de8\u5e73\u53f0, \u5df2\u6709\u6d4b\u8bd5, ShellCheck"}, {"text": "Includes conditional path \u2014 what would justify a rewrite", "passed": true, "evidence": "Full '\u53cd\u5bf9\u65b9\u6848 (Dissenting Path)' section: 3 conditions that would justify Python + complete 76h execution plan (phases A-I)"}]}}, {"id": "eval-3-hook-dispatch-improvement-with_skill", "prompt": "\u8bf7\u9605\u8bfb\u8fd9\u4efd hook dispatch \u67b6\u6784\u73b0\u72b6\u5206\u6790\u6587\u6863\uff0c\u7136\u540e\u7ed9\u6211\u4e00\u4e2a\u6539\u8fdb\u65b9\u6848\u3002", "eval_id": 3, "outputs": [{"name": "plan.md", "type": "text", "content": "# Hook Dispatch \u67b6\u6784\u6539\u8fdb\u65b9\u6848\n\n**\u6df1\u5ea6**: Standard \u2014 \u591a\u4e2a\u53ef\u884c\u65b9\u6848\uff0c\u9700\u8981\u5728 \"\u8db3\u591f\u597d\" \u4e0e \"\u8fc7\u5ea6\u5de5\u7a0b\" \u4e4b\u95f4\u505a\u51fa\u5224\u65ad\u3002\n**\u8f93\u5165**: `input-doc.md`\uff08hook dispatch \u67b6\u6784\u73b0\u72b6\u5206\u6790\uff09 + \u4ee3\u7801\u5e93\u5b9e\u9645\u9a8c\u8bc1\u3002\n\n---\n\n## TL;DR\n\n\u8f93\u5165\u6587\u6863\u7684\u4e8b\u5b9e\u57fa\u7840\u6709\u591a\u5904\u91cd\u5927\u504f\u5dee\uff08hook \u6570\u91cf\u5dee\u4e00\u500d\u3001\u6f0f\u62a5\u5df2\u6709\u7684\u72b6\u6001\u5171\u4eab\u673a\u5236\u3001\u865a\u6784\u4e86\u4e0d\u5b58\u5728\u7684\u811a\u672c\uff09\uff0c\u5bfc\u81f4\u5b83\u63d0\u51fa\u7684\u95ee\u9898\u90e8\u5206\u662f\u4f2a\u95ee\u9898\u3002\u5b9e\u9645\u4ee3\u7801\u5e93\u4e2d\uff0cdispatch \u67b6\u6784\u7684\u6838\u5fc3\u8bbe\u8ba1\u662f\u5065\u5eb7\u7684 \u2014 64 \u884c\u8c03\u5ea6\u5668 + \u58f0\u660e\u5f0f manifest + \u9694\u79bb\u5b50\u58f3\u6267\u884c\u3002**\u771f\u6b63\u503c\u5f97\u6539\u8fdb\u7684\u662f\u4e24\u4e2a\u70b9**\uff1a(1) hook \u811a\u672c\u4e4b\u95f4\u7684 stdin \u89e3\u6790/plan \u53d1\u73b0\u6837\u677f\u4ee3\u7801\u91cd\u590d\u4e25\u91cd\uff088 \u4e2a\u811a\u672c\u5404\u81ea\u91cd\u590d\u540c\u4e00\u6bb5\uff09\uff0c(2) dispatch.sh \u7f3a\u5c11 BATON_TARGET \u7684\u9884\u63d0\u53d6\uff0c\u5bfc\u81f4\u4e0b\u6e38 hook \u5404\u81ea\u518d\u89e3\u6790\u4e00\u904d\u3002\u5176\u4f59\u6240\u8c13\u95ee\u9898\u8981\u4e48\u5df2\u89e3\u51b3\uff08\u72b6\u6001\u5171\u4eab\uff09\uff0c\u8981\u4e48\u662f\u523b\u610f\u7684\u8bbe\u8ba1\u9009\u62e9\uff08\u5e73\u9762 manifest \u7684\u7b80\u5355\u6027\u4f18\u4e8e\u6761\u4ef6\u8def\u7531\u7684\u590d\u6742\u6027\uff09\u3002\n\n---\n\n## \u6539\u8fdb\u65b9\u6848\n\n| \u4f18\u5148\u7ea7 | \u6539\u52a8 | \u5de5\u4f5c\u91cf | \u98ce\u9669 | \u4ef7\u503c |\n|--------|------|--------|------|------|\n| P1 | dispatch.sh \u9884\u63d0\u53d6 BATON_TARGET \u2014 \u4ece stdin JSON \u89e3\u6790 `tool_input.file_path` \u5e76 export | 1h | \u4f4e \u2014 \u5df2\u6709 jq+awk \u53cc\u8def\u5f84\u6a21\u5f0f\u53ef\u590d\u7528 | \u9ad8 \u2014 \u6d88\u9664 4 \u4e2a hook \u4e2d\u91cd\u590d\u7684 target \u89e3\u6790\u4ee3\u7801(~60 \u884c) |\n| P2 | \u5c06 stdin \u8bfb\u53d6\u6837\u677f\u63d0\u53d6\u5230 `lib/stdin.sh` \u2014 \u6807\u51c6\u5316 `BATON_STDIN+x` \u68c0\u67e5 + fallback \u8bfb\u53d6 | 1h | \u4f4e \u2014 \u7eaf\u91cd\u6784\uff0c\u884c\u4e3a\u4e0d\u53d8 | \u4e2d \u2014 \u6d88\u9664 4 \u4e2a hook \u4e2d\u91cd\u590d\u7684 stdin \u5904\u7406\u6a21\u5f0f(~30 \u884c) |\n| P3 | \u5408\u5e76 resolve_plan_name + find_plan \u8c03\u7528\u94fe \u2014 \u5f53\u524d 8 \u4e2a hook \u90fd\u624b\u52a8\u8c03 `resolve_plan_name; find_plan`\uff0c\u53ef\u5728 common.sh \u52a0 `init_plan_context()` \u4e00\u6b21\u8c03\u7528 | 30min | \u4f4e \u2014 \u5411\u540e\u517c\u5bb9\u7684 wrapper | \u4e2d \u2014 \u51cf\u5c11\u6837\u677f\uff0c\u964d\u4f4e\u65b0 hook \u7684\u5165\u95e8\u95e8\u69db |\n| P4 | \u4e3a dispatch.sh \u589e\u52a0 `--dry-run` \u6a21\u5f0f \u2014 \u8f93\u51fa\u5339\u914d\u7684 hook \u5217\u8868\u4f46\u4e0d\u6267\u884c | 30min | \u4f4e | \u4f4e \u2014 \u4f46\u5bf9\u8c03\u8bd5\u548c\u6d4b\u8bd5\u6709\u4ef7\u503c |\n| **\u5408\u8ba1** | | **~3h** | | |\n\n---\n\n## P1 \u8be6\u7ec6\u8bbe\u8ba1: dispatch.sh \u9884\u63d0\u53d6 BATON_TARGET\n\n\u5f53\u524d\u72b6\u6001\uff1adispatch.sh \u5df2\u7ecf\u4ece stdin \u63d0\u53d6 `tool_name`\uff08\u7b2c 24-31 \u884c\uff09\uff0c\u4f46\u6ca1\u6709\u63d0\u53d6 `file_path`\u3002\u4e0b\u6e38\u7684 write-lock.sh\u3001post-write-tracker.sh\u3001quality-gate.sh \u5404\u81ea\u518d\u89e3\u6790\u4e00\u904d\u3002\n\n\u6539\u52a8\uff1a\u5728 dispatch.sh \u7684 tool_name \u63d0\u53d6\u4e4b\u540e\uff0c\u589e\u52a0 file_path \u63d0\u53d6\uff1a\n\n```bash\n# \u5728 dispatch.sh \u7b2c 31 \u884c\u4e4b\u540e\u8ffd\u52a0\nexport BATON_TARGET=\"\"\nif [ -n \"$BATON_STDIN\" ]; then\n    BATON_TARGET=\"$(printf '%s' \"$BATON_STDIN\" | jq -r '.tool_input.file_path // empty' 2>/dev/null)\" || true\n    if [ -z \"$BATON_TARGET\" ]; then\n        BATON_TARGET=\"$(printf '%s' \"$BATON_STDIN\" | awk -F'\"' '{\n            for(i=1;i<=NF;i++) if($i==\"file_path\") { print $(i+2); exit }\n        }')\" || true\n    fi\nfi\n```\n\n\u4e0b\u6e38 hook \u4e2d\u7684 target \u89e3\u6790\u53ef\u7b80\u5316\u4e3a `TARGET=\"${BATON_TARGET:-}\"`\uff0c\u4fdd\u7559 fallback \u4ee5\u517c\u5bb9\u76f4\u63a5\u8c03\u7528\u573a\u666f\u3002\n\n## P2 \u8be6\u7ec6\u8bbe\u8ba1: lib/stdin.sh \u6807\u51c6\u5316\n\n\u5f53\u524d 4 \u4e2a hook (write-lock, bash-guard, post-write-tracker, failure-tracker) \u5404\u81ea\u5305\u542b\u76f8\u540c\u7684\u6a21\u5f0f\uff1a\n\n```bash\nif [ -n \"${BATON_STDIN+x}\" ]; then\n    STDIN=\"$BATON_STDIN\"\nelse\n    STDIN=\"\"\n    [ ! -t 0 ] && STDIN=\"$(cat 2>/dev/null || true)\"\nfi\n```\n\n\u63d0\u53d6\u5230 `lib/stdin.sh`\uff0cexport `STDIN` \u53d8\u91cf\u3002hook \u53ea\u9700 `. \"$SCRIPT_DIR/lib/stdin.sh\"`\u3002\n\n## P3 \u8be6\u7ec6\u8bbe\u8ba1: init_plan_context()\n\n\u5728 common.sh \u4e2d\u589e\u52a0\uff1a\n\n```bash\ninit_plan_context() {\n    resolve_plan_name\n    find_plan\n}\n```\n\n\u65b0 hook \u7684\u521d\u59cb\u5316\u4ece 3 \u884c\uff08source common + resolve + find\uff09\u53d8\u6210 2 \u884c\uff08source common + init\uff09\u3002\u73b0\u6709 hook \u4fdd\u6301\u517c\u5bb9\u3002\n\n---\n\n## \u4e0d\u5e94\u8be5\u505a\u7684\u4e8b\n\n1. **\u4e0d\u8981\u5f15\u5165\u6761\u4ef6\u8def\u7531 / \u9636\u6bb5\u611f\u77e5 manifest** \u2014 \u8f93\u5165\u6587\u6863\u5efa\u8bae manifest \"\u4e0d\u652f\u6301\u6761\u4ef6\u8def\u7531\uff08\u5982\u53ea\u5728 plan \u9636\u6bb5\u542f\u7528\u67d0 hook\uff09\"\u662f\u4e2a\u95ee\u9898\u3002\u8fd9\u4e0d\u662f\u95ee\u9898\uff0c\u8fd9\u662f\u8bbe\u8ba1\u9009\u62e9\u3002\u2705 \u9a8c\u8bc1\uff1a\u5f53\u524d 10 \u4e2a hook \u6ca1\u6709\u4e00\u4e2a\u9700\u8981\u6309\u9636\u6bb5\u6761\u4ef6\u7981\u7528 \u2014 write-lock \u5728\u6709 BATON:GO \u65f6\u81ea\u884c\u653e\u884c\uff0cphase-guide \u81ea\u884c\u68c0\u6d4b\u9636\u6bb5\u3002\u628a\u8def\u7531\u903b\u8f91\u4ece hook \u5185\u90e8\u79fb\u5230 manifest \u5c42\u4f1a\u589e\u52a0 manifest \u7684\u590d\u6742\u5ea6\u4e14\u5e26\u6765\u96f6\u6536\u76ca\uff08hook \u5df2\u7ecf\u5404\u81ea\u5904\u7406\u4e86\u8fd9\u4e2a\u903b\u8f91\uff09\u3002\n\n2. **\u4e0d\u8981\u628a dispatch.sh \u91cd\u5199\u4e3a\u66f4\u590d\u6742\u7684\u8c03\u5ea6\u6846\u67b6** \u2014 \u5f53\u524d 64 \u884c\u7684\u8c03\u5ea6\u5668\u6e05\u6670\u3001\u53ef\u6d4b\u8bd5\u3001fail-open\u3002\u589e\u52a0 hook \u4f18\u5148\u7ea7\u3001\u4f9d\u8d56\u6392\u5e8f\u3001hook \u94fe\u4e2d\u65ad\u7b49\u673a\u5236\u4f1a\u5f15\u5165\u5de5\u7a0b\u590d\u6742\u6027\u800c\u6ca1\u6709\u5f53\u524d\u9700\u6c42\u9a71\u52a8\u3002\n\n3. **\u4e0d\u8981\u8bd5\u56fe\u89e3\u51b3 \"Windows \u517c\u5bb9\u6027\u5c42\u589e\u52a0\u4e86\u590d\u6742\u5ea6\" \u8fd9\u4e2a \"\u95ee\u9898\"** \u2014 run-hook.cmd \u662f 46 \u884c\u7684 polyglot wrapper\uff0c\u5b83\u7684\u5b58\u5728\u662f\u56e0\u4e3a Windows IDE \u8fdb\u7a0b\u65e0\u6cd5\u76f4\u63a5\u8c03\u7528 bash\u3002\u8fd9\u662f\u4e00\u4e2a\u4e0d\u53ef\u6d88\u9664\u7684\u5e73\u53f0\u7ea6\u675f\uff0c\u4e0d\u662f\u67b6\u6784\u95ee\u9898\u3002\u2705 \u9a8c\u8bc1\uff1arun-hook.cmd \u6700\u540e\u66f4\u65b0\u4e8e\u5f88\u4e45\u4e4b\u524d\uff0c\u7a33\u5b9a\u4e14\u65e0 bug \u62a5\u544a\u3002\n\n---\n\n## \u98ce\u9669\u4e0e\u7f13\u89e3\n\n| \u98ce\u9669 | \u7f13\u89e3 |\n|------|------|\n| P1 \u9884\u63d0\u53d6\u53ef\u80fd\u4e0e hook \u5185\u90e8\u7684 fallback \u903b\u8f91\u51b2\u7a81 | hook \u5185\u90e8\u4fdd\u7559 `TARGET=\"${BATON_TARGET:-}\"` \u6a21\u5f0f \u2014 \u5982\u679c dispatch \u6ca1\u6709\u63d0\u53d6\u5230\uff08\u76f4\u63a5\u8c03\u7528\u573a\u666f\uff09\uff0chook \u81ea\u884c\u56de\u9000 |\n| P2/P3 \u91cd\u6784\u53ef\u80fd\u7834\u574f\u76f4\u63a5\u8c03\u7528 hook \u7684\u6d4b\u8bd5 | \u6d4b\u8bd5\u5df2\u6709 17 \u4e2a dispatch \u6d4b\u8bd5 + \u5404 hook \u72ec\u7acb\u6d4b\u8bd5\uff1b\u6539\u52a8\u540e\u8dd1\u5168\u5957\u56de\u5f52 |\n\n---\n\n## \u81ea\u68c0\n\n**\u8fd9\u4e2a\u65b9\u6848\u6700\u53ef\u80fd\u7684\u5931\u8d25\u6a21\u5f0f**\uff1a\u6539\u52a8\u592a\u5c0f\uff0c\u4e0d\u503c\u5f97\u505a\u30023 \u5c0f\u65f6\u7684\u91cd\u6784\u6d88\u9664\u7ea6 90 \u884c\u91cd\u590d\u4ee3\u7801 \u2014 \u5bf9\u4e8e\u4e00\u4e2a\u5df2\u7ecf\u7a33\u5b9a\u8fd0\u884c\u7684 1674 \u884c\u7cfb\u7edf\u6765\u8bf4\uff0cROI \u786e\u5b9e\u4e0d\u9ad8\u3002\u5982\u679c\u6211\u77e5\u9053\u8fd9\u4e2a\u65b9\u6848\u4f1a\u5931\u8d25\uff0c\u6211\u4f1a\u95ee\uff1a\"\u8fd9\u4e9b\u91cd\u590d\u771f\u7684\u9020\u6210\u4e86\u7ef4\u62a4\u8d1f\u62c5\u5417\uff1f\" \u7b54\u6848\u662f\uff1a\u5f53\u524d hook \u589e\u957f\u901f\u5ea6\u5df2\u7ecf\u653e\u7f13\uff08\u6700\u8fd1\u7684 hook \u662f failure-tracker \u548c pre-compact\uff09\uff0c\u5982\u679c\u4e0d\u518d\u9891\u7e41\u6dfb\u52a0\u65b0 hook\uff0c\u91cd\u6784\u7684\u6295\u8d44\u56de\u62a5\u4f1a\u66f4\u4f4e\u3002\n\n\u4f46\u53cd\u8fc7\u6765\u770b\uff1aP1\uff08\u9884\u63d0\u53d6 BATON_TARGET\uff09\u7684\u4ef7\u503c\u4e0d\u4ec5\u662f\u51cf\u5c11\u4ee3\u7801\u91cf \u2014 \u5b83\u786e\u7acb\u4e86\u4e00\u4e2a\u6b63\u786e\u7684\u804c\u8d23\u8fb9\u754c\uff1a\"dispatch \u8d1f\u8d23\u89e3\u6790 stdin\uff0chook \u8d1f\u8d23\u4e1a\u52a1\u903b\u8f91\"\u3002\u8fd9\u4e2a\u539f\u5219\u5728\u4e0b\u6b21\u6dfb\u52a0 hook \u65f6\u4f1a\u7acb\u523b\u964d\u4f4e\u8ba4\u77e5\u8d1f\u62c5\u3002\u6240\u4ee5\u5373\u4f7f\u53ea\u505a P1 \u4e00\u9879\uff0c\u4e5f\u662f\u6709\u610f\u4e49\u7684\u3002\n\n---\n\n## \u5206\u6790\n\n### \u8f93\u5165\u6587\u6863\u4e8b\u5b9e\u6838\u67e5\n\n\u8f93\u5165\u6587\u6863\u5b58\u5728\u591a\u5904\u4e8b\u5b9e\u504f\u5dee\uff0c\u5fc5\u987b\u5148\u7ea0\u6b63\u624d\u80fd\u5728\u5176\u57fa\u7840\u4e0a\u89c4\u5212\uff1a\n\n| \u6587\u6863\u58f0\u79f0 | \u5b9e\u9645\u60c5\u51b5 | \u504f\u5dee\u7a0b\u5ea6 |\n|----------|----------|----------|\n| \"\u5f53\u524d manifest.conf \u4e2d\u6709 8 \u4e2a\u6620\u5c04\" | \u2705 \u5b9e\u9645 10 \u4e2a\u6620\u5c04\uff08manifest.conf 10 \u884c\u975e\u6ce8\u91ca\u5185\u5bb9\uff09 | \u6570\u91cf\u9519\u8bef |\n| \"5 \u4e2a\u72ec\u7acb\u7684 hook \u811a\u672c\" | \u2705 \u5b9e\u9645 10 \u4e2a hook \u811a\u672c\uff08write-lock, phase-guide, bash-guard, post-write-tracker, quality-gate, stop-guard, completion-check, failure-tracker, pre-compact, subagent-context\uff09 | \u6570\u91cf\u5dee\u4e00\u500d |\n| \u5217\u4e3e \"prompt-guard.sh\" | \u2705 \u4e0d\u5b58\u5728\u6b64\u811a\u672c\uff1b\u5b9e\u9645\u5b58\u5728\u7684\u662f bash-guard.sh | \u865a\u6784 |\n| \"Hook \u4e4b\u95f4\u65e0\u901a\u4fe1\u673a\u5236 \u2014 \u6bcf\u4e2a hook \u72ec\u7acb\u6267\u884c\uff0c\u65e0\u6cd5\u5171\u4eab\u72b6\u6001\" | \u2705 \u5b9e\u9645\u6709\u591a\u79cd\u5171\u4eab\u673a\u5236\uff1a`BATON_STDIN`\uff08dispatch \u7f13\u51b2\u540e export\uff09\u3001`BATON_PROJECT_DIR`\uff08dispatch export\uff09\u3001`common.sh`/`plan-parser.sh`\uff08\u5171\u4eab\u5e93\uff09\u3001`/tmp/baton-*` \u6587\u4ef6\uff08session \u7ea7\u72b6\u6001\uff09 | \u4e0e\u4e8b\u5b9e\u76f8\u53cd |\n| \"\u9519\u8bef\u5904\u7406\u7c97\u7cd9 \u2014 \u53ea\u6709\u9000\u51fa\u7801\uff0c\u6ca1\u6709\u7ed3\u6784\u5316\u9519\u8bef\u4fe1\u606f\" | \u2705 dispatch.sh \u7b2c 59-61 \u884c\u6709 unexpected exit code \u8b66\u544a\uff1b\u6240\u6709 hook \u90fd\u6709 fail-open trap\uff1bstderr \u8f93\u51fa\u5305\u542b\u7ed3\u6784\u5316\u7684 emoji \u524d\u7f00\u6d88\u606f | \u4f4e\u4f30\u4e86\u73b0\u6709\u673a\u5236 |\n| \"manifest.conf \u662f\u5e73\u9762\u7ed3\u6784\" | \u2705 \u51c6\u786e \u2014 manifest \u786e\u5b9e\u662f event:matcher:script \u4e09\u5217\u5e73\u9762\u683c\u5f0f | \u51c6\u786e\uff0c\u4f46\u89c1\u4e0b\u65b9\u5206\u6790 |\n| \"\u4e0d\u652f\u6301\u6761\u4ef6\u8def\u7531\uff08\u5982\u53ea\u5728 plan \u9636\u6bb5\u542f\u7528\u67d0 hook\uff09\" | \u2705 \u51c6\u786e\u63cf\u8ff0 manifest \u80fd\u529b\uff1b\u4f46\u5ffd\u7565\u4e86 hook \u5185\u90e8\u5df2\u7ecf\u5404\u81ea\u5b9e\u73b0\u4e86\u9636\u6bb5\u611f\u77e5\u903b\u8f91 | \u51c6\u786e\u4f46\u8bef\u5bfc |\n\n### \u4e3a\u4ec0\u4e48 \"\u5e73\u9762 manifest\" \u4e0d\u662f\u95ee\u9898\n\n\u8f93\u5165\u6587\u6863\u6697\u793a manifest \u5e94\u8be5\u652f\u6301\u6761\u4ef6\u8def\u7531\u3002\u5bf9\u6b64\u8fdb\u884c\u7b2c\u4e00\u6027\u539f\u7406\u5206\u6790\uff1a\n\n**\u6761\u4ef6\u8def\u7531\u89e3\u51b3\u4ec0\u4e48\u95ee\u9898\uff1f** \u5b83\u7684\u524d\u63d0\u662f \"\u67d0\u4e9b hook \u5728\u67d0\u4e9b\u9636\u6bb5\u4e0d\u5e94\u8be5\u8fd0\u884c\"\u3002\u4f46 \u2705 \u9a8c\u8bc1\u5b9e\u9645\u4ee3\u7801\u540e\u53d1\u73b0\uff1a\u6240\u6709 10 \u4e2a hook \u90fd\u5728\u81ea\u8eab\u5185\u90e8\u5904\u7406\u4e86\u9636\u6bb5\u5224\u65ad\uff08write-lock \u68c0\u67e5 BATON:GO\u3001phase-guide \u68c0\u6d4b 6 \u79cd\u72b6\u6001\u3001bash-guard \u68c0\u67e5 gate \u72b6\u6001\u7b49\uff09\u3002\u5b83\u4eec\u5728 \"\u4e0d\u9002\u7528\" \u7684\u9636\u6bb5\u4f1a\u5feb\u901f\u9000\u51fa\uff08exit 0\uff09\uff0c\u4e0d\u4f1a\u4ea7\u751f\u9519\u8bef\u8f93\u51fa\u6216\u6027\u80fd\u5f00\u9500\u3002\n\n\u5982\u679c\u628a\u9636\u6bb5\u5224\u65ad\u4ece hook \u79fb\u5230 manifest\uff1a\n- manifest \u9700\u8981\u65b0\u8bed\u6cd5\uff08\u5982 `PreToolUse:Write:write-lock:phase=implement`\uff09\n- dispatch.sh \u9700\u8981\u65b0\u589e\u9636\u6bb5\u68c0\u6d4b\u903b\u8f91\uff08\u76ee\u524d\u4e0d\u662f\u5b83\u7684\u804c\u8d23\uff09\n- \u540c\u4e00\u4e2a\u9636\u6bb5\u5224\u65ad\u903b\u8f91\u4f1a\u51fa\u73b0\u5728\u4e24\u4e2a\u5730\u65b9\uff08manifest + hook \u5185\u90e8\u7684 fallback\uff09\n- \u6d4b\u8bd5\u590d\u6742\u5ea6\u589e\u52a0\uff08\u9700\u8981\u6d4b\u8bd5 manifest \u6761\u4ef6 + hook \u5185\u90e8\u6761\u4ef6\u7684\u4ea4\u4e92\uff09\n\n\u7ed3\u8bba\uff1a\u5f53\u524d\u8bbe\u8ba1\u4e2d **hook \u81ea\u6cbb** \u662f\u6b63\u786e\u7684\u67b6\u6784\u9009\u62e9\u3002dispatch \u53ea\u8d1f\u8d23\u8def\u7531\uff08event + tool matcher\uff09\uff0chook \u81ea\u5df1\u51b3\u5b9a\u662f\u5426\u751f\u6548\u3002\u8fd9\u9075\u5faa\u4e86 \"\u8ba9\u6bcf\u4e2a\u7ec4\u4ef6\u81ea\u5df1\u7ba1\u7406\u81ea\u5df1\u7684\u6761\u4ef6\" \u7684\u539f\u5219\u3002\n\n### \u771f\u6b63\u7684\u6539\u8fdb\u7a7a\u95f4\n\n\u901a\u8fc7\u4ee3\u7801\u5ba1\u67e5\u53d1\u73b0\u7684\u5b9e\u9645\u75db\u70b9\uff08\u4e0d\u662f\u6587\u6863\u8bf4\u7684\uff0c\u662f\u4ee3\u7801\u672c\u8eab\u8868\u73b0\u51fa\u7684\uff09\uff1a\n\n1. **stdin \u89e3\u6790\u91cd\u590d**: write-lock.sh(23-28), bash-guard.sh(34-40), post-write-tracker.sh(17-22), failure-tracker.sh(14-19) \u6709\u51e0\u4e4e\u76f8\u540c\u7684 6 \u884c BATON_STDIN \u68c0\u67e5\u6a21\u5f0f\u3002\u8fd9\u4e0d\u662f\u529f\u80fd\u95ee\u9898\uff0c\u4f46\u6bcf\u6b21\u6dfb\u52a0\u65b0 hook \u90fd\u8981\u590d\u5236\u7c98\u8d34\u3002\n\n2. **target \u8def\u5f84\u89e3\u6790\u91cd\u590d**: write-lock.sh(30-46) \u548c post-write-tracker.sh(25-39) \u5305\u542b\u51e0\u4e4e\u76f8\u540c\u7684 15 \u884c target+cwd \u89e3\u6790\u4ee3\u7801\u3002dispatch.sh \u5df2\u7ecf\u505a\u4e86 tool_name \u63d0\u53d6\u4f46\u8df3\u8fc7\u4e86 file_path \u2014 \u8fd9\u662f\u4e00\u4e2a\u9057\u7559\u7684\u4e0d\u4e00\u81f4\u3002\n\n3. **plan context \u521d\u59cb\u5316\u91cd\u590d**: 8 \u4e2a hook \u90fd\u6709 `resolve_plan_name; find_plan` \u4e24\u884c\u8c03\u7528\u3002\u867d\u7136\u6bcf\u884c\u5f88\u77ed\uff0c\u4f46\u5bf9\u65b0 hook \u4f5c\u8005\u6765\u8bf4\u662f\u4e00\u4e2a\u9700\u8981\u77e5\u9053\u7684\u4eea\u5f0f\u3002\n\n\u8fd9\u4e09\u4e2a\u91cd\u590d\u6a21\u5f0f\u7684\u5171\u540c\u6839\u56e0\u662f\uff1adispatch.sh \u7684 \"\u9884\u5904\u7406\" \u8303\u56f4\u592a\u7a84\uff08\u53ea\u63d0\u53d6\u4e86 tool_name\uff09\uff0c\u5bfc\u81f4\u4e0b\u6e38 hook \u5404\u81ea\u8865\u5145\u7f3a\u5931\u7684\u9884\u5904\u7406\u6b65\u9aa4\u3002\n\n## \u6279\u6ce8\u533a\n"}], "grading": {"eval_id": 3, "eval_name": "hook-dispatch-improvement", "configuration": "with_skill", "expectations": [{"text": "Validates input document claims against actual codebase (catches stale/inaccurate data)", "passed": true, "evidence": "Detailed 7-row fact-checking table: hook count 5\u219210, manifest mappings 8\u219210, fabricated prompt-guard.sh, false claim about no state sharing, error handling understated. All marked with \u2705 verification."}, {"text": "Identifies a unifying root cause beyond the listed symptoms", "passed": true, "evidence": "'dispatch.sh \u7684 \"\u9884\u5904\u7406\" \u8303\u56f4\u592a\u7a84\uff08\u53ea\u63d0\u53d6\u4e86 tool_name\uff09\uff0c\u5bfc\u81f4\u4e0b\u6e38 hook \u5404\u81ea\u8865\u5145\u7f3a\u5931\u7684\u9884\u5904\u7406\u6b65\u9aa4' \u2014 unifies stdin parsing, target extraction, and plan init repetition under one root cause."}, {"text": "Surfaces hidden assumptions about the current architecture", "passed": true, "evidence": "Challenges document's assumption that flat manifest is a problem. Full first-principles analysis of why hook self-governance (not manifest-level routing) is the correct design."}, {"text": "Proposes changes that target root cause, not symptoms", "passed": true, "evidence": "P1 (BATON_TARGET pre-extraction) directly targets root cause. P2-P3 eliminate downstream duplication that exists because dispatch's pre-processing scope was too narrow."}, {"text": "Includes 'what NOT to change' section with reasoning", "passed": true, "evidence": "'\u4e0d\u5e94\u8be5\u505a\u7684\u4e8b' with 3 items: no conditional routing in manifest, no complex dispatch framework, no run-hook.cmd rewrite. Each with architectural reasoning."}, {"text": "Provides concrete code examples for proposed changes", "passed": true, "evidence": "P1: full bash code block for BATON_TARGET extraction with jq+awk dual-path. P2: stdin.sh extraction pattern. P3: init_plan_context() wrapper code."}]}}, {"id": "eval-4-light-depth-simple-with_skill", "prompt": "manifest.conf \u9700\u8981\u652f\u6301 # \u6ce8\u91ca\uff0c\u5e2e\u6211\u89c4\u5212\u4e00\u4e0b\u600e\u4e48\u52a0\u3002", "eval_id": 4, "outputs": [{"name": "plan.md", "type": "text", "content": "# manifest.conf \u6ce8\u91ca\u652f\u6301\n\n**\u6df1\u5ea6**: Light \u2014 \u95ee\u9898\u660e\u786e\uff0c\u89e3\u51b3\u7a7a\u95f4\u7a84\uff0c\u4e14\u9700\u8981\u5148\u9a8c\u8bc1\u662f\u5426\u771f\u7684\u5b58\u5728\u95ee\u9898\u3002\n\n**\u8f93\u5165\u6765\u6e90**: baton \u4ee3\u7801\u5e93\uff08dispatch.sh, manifest.conf, test-dispatch.sh\uff09\n\n---\n\n## TL;DR\n\nmanifest.conf **\u5df2\u7ecf\u652f\u6301 `#` \u6ce8\u91ca**\u3002dispatch.sh \u7b2c 38 \u884c\u7684 `case \"$_evt\" in ''|\\#*) continue ;; esac` \u4f1a\u8df3\u8fc7\u6240\u6709\u4ee5 `#` \u5f00\u5934\u7684\u884c\u548c\u7a7a\u884c\u3002test-dispatch.sh \u4e2d\u6709\u4e13\u95e8\u7684\u6d4b\u8bd5\u7528\u4f8b\uff08\u7b2c 159-174 \u884c\uff09\u9a8c\u8bc1\u4e86\u8fd9\u4e2a\u884c\u4e3a\u3002\u5f53\u524d manifest.conf \u7684\u7b2c\u4e00\u884c `# event:matcher:script` \u672c\u8eab\u5c31\u662f\u4e00\u4e2a\u6b63\u5e38\u5de5\u4f5c\u7684\u6ce8\u91ca\u3002\n\n**\u4e0d\u9700\u8981\u505a\u4efb\u4f55\u6539\u52a8\u3002**\n\n---\n\n## \u884c\u52a8\u8ba1\u5212\n\n| \u4f18\u5148\u7ea7 | \u6539\u52a8 | \u5de5\u4f5c\u91cf | \u98ce\u9669 | \u4ef7\u503c |\n|--------|------|--------|------|------|\n| \u2014 | \u65e0\u9700\u6539\u52a8 | 0 | \u2014 | \u2014 |\n| **\u5408\u8ba1** | | **0** | | |\n\n---\n\n## \u5173\u952e\u5047\u8bbe\n\n- **\"manifest.conf \u9700\u8981\u652f\u6301 # \u6ce8\u91ca\"\u5047\u8bbe\u6ce8\u91ca\u529f\u80fd\u4e0d\u5b58\u5728** \u2014 \u8fd9\u662f\u4e00\u4e2a\u60ef\u4f8b\u6027\u5047\u8bbe\u3002\u5b9e\u9645\u4e0a\u529f\u80fd\u5df2\u5728\u4ee3\u7801\u4e2d\u5b9e\u73b0\u3002\u2705 \u5df2\u9a8c\u8bc1\uff1adispatch.sh:38 \u7684 case \u8bed\u53e5\u3002\n- **\"# \u5f00\u5934\u884c\u88ab\u6b63\u786e\u8df3\u8fc7\"** \u2014 \u2705 \u5df2\u9a8c\u8bc1\uff1atest-dispatch.sh \u7b2c 159-174 \u884c\u6709\u6d4b\u8bd5\u8986\u76d6\uff0c\u6d4b\u8bd5\u7528\u4f8b\u540d\u4e3a \"comments and blanks are skipped\"\u3002\n- **\u73b0\u6709 manifest.conf \u7684\u6ce8\u91ca\u884c\u683c\u5f0f\u517c\u5bb9** \u2014 \u2705 \u5df2\u9a8c\u8bc1\uff1amanifest.conf \u7b2c 1 \u884c `# event:matcher:script` \u662f\u4e00\u4e2a\u5305\u542b\u5192\u53f7\u7684\u6ce8\u91ca\u884c\uff0cIFS=: \u5206\u5272\u540e `_evt` \u4e3a `# event`\uff0c\u4ee5 `#` \u5f00\u5934\uff0c\u88ab\u6b63\u786e\u8df3\u8fc7\u3002\n\n---\n\n## \u81ea\u68c0\n\n**\u8fd9\u4e2a\u8ba1\u5212\u6700\u53ef\u80fd\u7684\u5931\u8d25\u6a21\u5f0f\u662f\u4ec0\u4e48\uff1f** \u7528\u6237\u53ef\u80fd\u6709\u4e00\u4e2a\u6211\u6ca1\u7406\u89e3\u5230\u7684\u66f4\u5177\u4f53\u7684\u9700\u6c42 \u2014 \u6bd4\u5982\u884c\u5185\u6ce8\u91ca\uff08`SessionStart::phase-guide # \u8fd9\u662f\u6ce8\u91ca`\uff09\u6216\u8005\u5bf9\u6ce8\u91ca\u683c\u5f0f\u6709\u7279\u6b8a\u8981\u6c42\u3002\u5f53\u524d\u5b9e\u73b0\u53ea\u652f\u6301\u6574\u884c\u6ce8\u91ca\uff08\u884c\u9996 `#`\uff09\uff0c\u4e0d\u652f\u6301\u884c\u5185\u6ce8\u91ca\u3002\u5982\u679c\u7528\u6237\u9700\u8981\u7684\u662f\u884c\u5185\u6ce8\u91ca\uff0c\u90a3\u786e\u5b9e\u9700\u8981\u4fee\u6539 dispatch.sh \u7684\u89e3\u6790\u903b\u8f91\uff0c\u4f46\u8fd9\u4f1a\u5f15\u5165\u65b0\u7684\u590d\u6742\u6027\uff08\u6bd4\u5982 script \u540d\u79f0\u4e2d\u5982\u679c\u5305\u542b `#` \u600e\u4e48\u529e\uff09\uff0c\u9700\u8981\u989d\u5916\u8bc4\u4f30\u3002\n\n---\n\n## \u5206\u6790\n\n### \u73b0\u6709\u5b9e\u73b0\u673a\u5236\n\ndispatch.sh \u7528 `while IFS=: read -r _evt _matcher _script` \u9010\u884c\u8bfb\u53d6 manifest.conf\uff0c\u4ee5\u5192\u53f7\u4e3a\u5206\u9694\u7b26\u62c6\u5206\u4e3a\u4e09\u4e2a\u5b57\u6bb5\u3002\u62c6\u5206\u540e\u7acb\u5373\u6267\u884c\uff1a\n\n```bash\ncase \"$_evt\" in ''|\\#*) continue ;; esac\n```\n\n\u8fd9\u4e2a case \u8bed\u53e5\u5904\u7406\u4e24\u79cd\u60c5\u51b5\uff1a\n- `''`\uff1a\u7a7a\u884c\uff08\u5305\u62ec\u53ea\u6709\u7a7a\u767d\u7684\u884c\u5728 `read` \u4e4b\u540e\u7684\u7ed3\u679c\uff09\n- `\\#*`\uff1a\u7b2c\u4e00\u4e2a\u5b57\u6bb5\u4ee5 `#` \u5f00\u5934\u7684\u884c\n\n\u5bf9\u4e8e `# \u8fd9\u662f\u6ce8\u91ca` \u8fd9\u6837\u65e0\u5192\u53f7\u7684\u884c\uff0c`read` \u628a\u6574\u884c\u8d4b\u7ed9 `_evt`\uff0c\u4ee5 `#` \u5f00\u5934\uff0c\u88ab\u8df3\u8fc7\u3002\u5bf9\u4e8e `# event:matcher:script` \u8fd9\u6837\u6709\u5192\u53f7\u7684\u884c\uff0c`_evt` \u5f97\u5230 `# event`\uff0c\u540c\u6837\u4ee5 `#` \u5f00\u5934\uff0c\u88ab\u8df3\u8fc7\u3002\n\n### \u6d4b\u8bd5\u8986\u76d6\n\ntest-dispatch.sh \u7b2c 159-174 \u884c\u660e\u786e\u6d4b\u8bd5\u4e86\u6b64\u884c\u4e3a\uff1a\u521b\u5efa\u5305\u542b\u6ce8\u91ca\u884c\u548c\u7a7a\u884c\u7684 manifest.conf\uff0c\u9a8c\u8bc1 hook \u6b63\u5e38\u89e6\u53d1\u4e14\u6ce8\u91ca\u88ab\u5ffd\u7565\u3002\u6d4b\u8bd5\u65ad\u8a00\u540d\u4e3a \"comments and blanks are skipped\"\u3002\n"}], "grading": {"eval_id": 4, "eval_name": "light-depth-simple", "configuration": "with_skill", "expectations": [{"text": "Correctly identifies Light depth", "passed": true, "evidence": "Header: '\u6df1\u5ea6: Light \u2014 \u95ee\u9898\u660e\u786e\uff0c\u89e3\u51b3\u7a7a\u95f4\u7a84\uff0c\u4e14\u9700\u8981\u5148\u9a8c\u8bc1\u662f\u5426\u771f\u7684\u5b58\u5728\u95ee\u9898\u3002'"}, {"text": "Discovers that the feature already exists (questions the premise)", "passed": true, "evidence": "TL;DR: 'manifest.conf \u5df2\u7ecf\u652f\u6301 # \u6ce8\u91ca...\u4e0d\u9700\u8981\u505a\u4efb\u4f55\u6539\u52a8'. Verified with dispatch.sh:38 and test-dispatch.sh:159-174."}, {"text": "Keeps output concise (under 60 lines)", "passed": true, "evidence": "Plan is 59 lines total \u2014 appropriate Light depth output."}, {"text": "Self-Check is genuine and concise, not formulaic", "passed": true, "evidence": "Single focused insight about\u884c\u5185\u6ce8\u91ca as a possible hidden need the user might have. Exactly one paragraph. No formulaic questions."}, {"text": "Skips inversion test (Light depth)", "passed": true, "evidence": "No inversion test section present \u2014 correctly skipped per skill instruction."}, {"text": "Uses inline assumptions instead of full table", "passed": true, "evidence": "'\u5173\u952e\u5047\u8bbe' section uses bullet-style inline format with \u2705 markers, not a formal assumption audit table."}]}}], "previous_feedback": {}, "previous_outputs": {"eval-1-plugin-marketplace-with_skill": [{"name": "plan.md", "type": "text", "content": "# \u6267\u884c\u8ba1\u5212: Baton \u63d2\u4ef6\u5e02\u573a\n\n**\u6df1\u5ea6**: Standard \u2014 \u591a\u79cd\u53ef\u884c\u65b9\u6848\uff0c\u9700\u8981\u660e\u786e\u6700\u4f18\u8def\u5f84\u3002\u7528\u6237\u9700\u6c42\u6e05\u6670\uff08\u5171\u4eab/\u5b89\u88c5 skills\uff09\uff0c\u4f46\u5b9e\u73b0\u673a\u5236\u5b58\u5728\u6839\u672c\u6027\u9009\u62e9\u3002\n\n**\u8f93\u5165\u6765\u6e90**: \u7528\u6237\u8bf7\u6c42 + \u4ee3\u7801\u5e93\u5b9e\u5730\u9a8c\u8bc1\uff08\u2705 `setup.sh`, `junction.sh`, `phase-guide.sh`, `manifest.conf`, `dispatch.sh`, skill \u76ee\u5f55\u7ed3\u6784\uff09\n\n---\n\n## TL;DR\n\n**\u6839\u672c\u95ee\u9898**: baton \u7684 skill \u5206\u53d1\u662f\u5355\u673a\u7684\uff08`~/.baton/` junction \u5230\u9879\u76ee\uff09\uff0c\u6ca1\u6709\u53d1\u73b0-\u83b7\u53d6-\u5b89\u88c5\u7684\u8de8\u7528\u6237\u901a\u9053\u3002\u7528\u6237\u60f3\u5171\u4eab\u81ea\u5df1\u5199\u7684 skill\u3001\u5b89\u88c5\u522b\u4eba\u7684 skill\uff0c\u5f53\u524d\u67b6\u6784\u4e0d\u652f\u6301\u3002\n\n**\u5173\u952e\u6d1e\u5bdf**: baton \u662f\u7eaf bash + markdown\u3001\u96f6\u7f16\u8bd1\u4f9d\u8d56\u7684\u7cfb\u7edf\u3002\u63d2\u4ef6\u5e02\u573a\u4e0d\u5e94\u5f15\u5165\u670d\u52a1\u7aef\u6216\u6570\u636e\u5e93\u2014\u2014\u5e94\u8be5\u5229\u7528 Git \u4ed3\u5e93\u4f5c\u4e3a registry\uff0cbash \u811a\u672c\u4f5c\u4e3a CLI\uff0cskill \u76ee\u5f55\u7ed3\u6784\u4f5c\u4e3a\u5305\u683c\u5f0f\u3002\u8fd9\u6837\u63d2\u4ef6\u5e02\u573a\u672c\u8eab\u5c31\u662f baton \u54f2\u5b66\u7684\u5ef6\u4f38\u3002\n\n**\u63a8\u8350\u65b9\u6848**: \u57fa\u4e8e Git \u7684\u53bb\u4e2d\u5fc3\u5316 registry + `baton skill` CLI \u5b50\u547d\u4ee4\u3002\u4e00\u4e2a\u516c\u5171 Git \u4ed3\u5e93\uff08\u5982 `baton-skills`\uff09\u4f5c\u4e3a\u7d22\u5f15\uff0c\u6bcf\u4e2a skill \u662f\u72ec\u7acb\u4ed3\u5e93\u6216\u5355\u4ed3\u5b50\u76ee\u5f55\u3002`baton skill install <name>` \u62c9\u53d6\u5230 `~/.baton/skills/`\uff0c\u73b0\u6709 junction \u673a\u5236\u81ea\u52a8\u5206\u53d1\u5230\u9879\u76ee\u3002\n\n---\n\n## \u884c\u52a8\u8ba1\u5212\n\n| \u4f18\u5148\u7ea7 | \u6b65\u9aa4 | \u5de5\u4f5c\u91cf | \u6210\u529f\u6807\u51c6 |\n|--------|------|--------|----------|\n| P1 | \u5b9a\u4e49 skill \u5305\u683c\u5f0f\u89c4\u8303 | 2h | SKILL.md frontmatter \u5305\u542b `version`, `author`, `license` \u5b57\u6bb5\uff1b\u6709 `skill.conf` \u5143\u6570\u636e\u6587\u4ef6\u89c4\u8303\u6587\u6863 |\n| P2 | \u521b\u5efa registry \u7d22\u5f15\u4ed3\u5e93 | 3h | `baton-skills` \u4ed3\u5e93\u542b `registry.conf` \u7d22\u5f15\u6587\u4ef6\uff0c\u81f3\u5c11\u6ce8\u518c 2 \u4e2a\u793a\u4f8b skill |\n| P3 | \u5b9e\u73b0 `baton skill` CLI \u5b50\u547d\u4ee4 | 6h | `baton skill search/install/remove/list/publish` \u4e94\u4e2a\u5b50\u547d\u4ee4\u53ef\u5de5\u4f5c |\n| P4 | \u96c6\u6210\u73b0\u6709 junction \u5206\u53d1\u673a\u5236 | 2h | install \u540e skill \u81ea\u52a8\u51fa\u73b0\u5728\u9879\u76ee\u7684 IDE skills \u76ee\u5f55\uff0c\u65e0\u9700\u624b\u52a8 setup |\n| P5 | \u7248\u672c\u7ba1\u7406\u4e0e\u66f4\u65b0\u673a\u5236 | 3h | `baton skill update` \u53ef\u68c0\u6d4b\u5e76\u62c9\u53d6\u65b0\u7248\u672c\uff0c\u9501\u6587\u4ef6\u8bb0\u5f55\u5df2\u5b89\u88c5\u7248\u672c |\n| P6 | \u6587\u6863\u4e0e\u53d1\u5e03\u6d41\u7a0b | 2h | README \u542b\u5b8c\u6574\u4f7f\u7528\u6307\u5357\uff0c`baton skill publish` \u53ef\u63d0\u4ea4 PR \u5230 registry |\n| **\u5408\u8ba1** | | **~18h** | |\n\n### P1: Skill \u5305\u683c\u5f0f\u89c4\u8303\n\n\u6269\u5c55\u73b0\u6709 SKILL.md frontmatter\uff0c\u589e\u52a0\u5e02\u573a\u6240\u9700\u5b57\u6bb5\uff1a\n\n```yaml\n---\nname: my-awesome-skill\nversion: 1.0.0\ndescription: >\n  A skill that does something useful.\nauthor: username\nlicense: MIT\nhomepage: https://github.com/user/my-skill\nmin-baton-version: 4.0\ntags: [planning, research]\n---\n```\n\n\u540c\u65f6\u5728 skill \u76ee\u5f55\u4e0b\u6dfb\u52a0\u53ef\u9009\u7684 `skill.conf`\uff1a\n\n```conf\n# skill.conf \u2014 \u673a\u5668\u53ef\u8bfb\u7684\u5143\u6570\u636e\uff08\u4f9b registry \u7d22\u5f15\u7528\uff09\nname=my-awesome-skill\nversion=1.0.0\nauthor=username\nrepo=https://github.com/user/my-skill\nchecksum=sha256:abc123...\n```\n\n**\u4e3a\u4ec0\u4e48\u4e24\u4e2a\u6587\u4ef6**: SKILL.md frontmatter \u662f IDE \u6d88\u8d39\u7684\uff08\u7ed9 AI \u8bfb\uff09\uff0c`skill.conf` \u662f CLI \u6d88\u8d39\u7684\uff08\u7ed9 bash \u811a\u672c parse\uff0c\u907f\u514d YAML \u89e3\u6790\u4f9d\u8d56\uff09\u3002\n\n### P2: Registry \u7d22\u5f15\u4ed3\u5e93\n\n\u521b\u5efa `baton-skills` \u516c\u5171\u4ed3\u5e93\uff0c\u7ed3\u6784\u5982\u4e0b\uff1a\n\n```\nbaton-skills/\n\u251c\u2500\u2500 registry.conf          # \u6240\u6709\u5df2\u6ce8\u518c skill \u7684\u7d22\u5f15\n\u251c\u2500\u2500 skills/\n\u2502   \u251c\u2500\u2500 deep-research/\n\u2502   \u2502   \u2514\u2500\u2500 skill.conf     # \u6307\u5411\u6e90\u4ed3\u5e93 + \u7248\u672c\n\u2502   \u251c\u2500\u2500 tdd-workflow/\n\u2502   \u2502   \u2514\u2500\u2500 skill.conf\n\u2502   \u2514\u2500\u2500 ...\n\u2514\u2500\u2500 README.md\n```\n\n`registry.conf` \u683c\u5f0f\uff08\u7eaf\u6587\u672c\uff0cbash \u53ef\u76f4\u63a5 grep/awk\uff09\uff1a\n\n```conf\n# name:version:repo:description\ndeep-research:1.2.0:https://github.com/user/deep-research:Fork-based deep research with auto-evaluation\ntdd-workflow:0.5.0:https://github.com/user/tdd-workflow:Test-driven development orchestrator\n```\n\n### P3: `baton skill` CLI \u5b50\u547d\u4ee4\n\n\u5728\u73b0\u6709 `setup.sh` \u65c1\u6dfb\u52a0 `baton` CLI \u5165\u53e3\u811a\u672c\uff0cskill \u7ba1\u7406\u4f5c\u4e3a\u5b50\u547d\u4ee4\uff1a\n\n```bash\n# baton skill search <keyword>\n# \u4ece registry.conf \u641c\u7d22\u5339\u914d\u7684 skill\nbaton_skill_search() {\n    local keyword=\"$1\"\n    local registry=\"$BATON_HOME/cache/registry.conf\"\n    _ensure_registry_cache\n    grep -i \"$keyword\" \"$registry\" | while IFS=: read -r name ver repo desc; do\n        printf \"  %-25s v%-8s %s\\n\" \"$name\" \"$ver\" \"$desc\"\n    done\n}\n\n# baton skill install <name>\n# \u514b\u9686\u5230 ~/.baton/skills/<name>\uff0c\u89e6\u53d1 junction \u91cd\u5efa\nbaton_skill_install() {\n    local name=\"$1\"\n    local registry=\"$BATON_HOME/cache/registry.conf\"\n    _ensure_registry_cache\n    local repo\n    repo=\"$(grep \"^${name}:\" \"$registry\" | head -1 | cut -d: -f3-4)\"\n    [ -z \"$repo\" ] && echo \"Skill '$name' not found in registry\" && return 1\n    git clone --depth 1 \"$repo\" \"$BATON_HOME/skills/$name\"\n    echo \"$name\" >> \"$BATON_HOME/installed.conf\"\n    echo \"\u2713 Installed $name \u2014 run 'baton setup' in your project to create junctions\"\n}\n```\n\n### P4: \u96c6\u6210\u73b0\u6709 junction \u673a\u5236\n\n\u2705 \u5df2\u9a8c\u8bc1\uff1a`phase-guide.sh:51-67` \u5728\u6bcf\u6b21 SessionStart \u65f6\u81ea\u52a8\u4e3a `.baton/skills/baton-*` \u521b\u5efa junction\u3002\u9700\u8981\u6269\u5c55\u8fd9\u4e2a\u903b\u8f91\uff1a\n\n- \u4fee\u6539 `phase-guide.sh` \u4e2d\u7684 glob \u4ece `baton-*` \u6539\u4e3a `*/`\uff08\u6240\u6709 skill \u76ee\u5f55\uff09\n- \u4fee\u6539 `setup.sh` \u4e2d\u7684 `compute_skill_names()` \u5305\u542b\u7b2c\u4e09\u65b9 skill\n- `add_gitignore()` \u9700\u52a8\u6001\u5904\u7406\u65b0\u5b89\u88c5\u7684\u7b2c\u4e09\u65b9 skill \u540d\u79f0\n\n### P5: \u7248\u672c\u7ba1\u7406\n\n\u5728 `~/.baton/` \u4e0b\u7ef4\u62a4\u9501\u6587\u4ef6\uff1a\n\n```conf\n# ~/.baton/installed.conf \u2014 \u9501\u6587\u4ef6\n# name:version:repo:install_date\ndeep-research:1.2.0:https://github.com/user/deep-research:2026-03-23\n```\n\n`baton skill update` \u5bf9\u6bcf\u4e2a\u5df2\u5b89\u88c5 skill \u6267\u884c `git -C <path> pull --ff-only`\uff0c\u6bd4\u8f83\u7248\u672c\u53f7\u540e\u62a5\u544a\u53d8\u66f4\u3002\n\n### P6: \u53d1\u5e03\u6d41\u7a0b\n\n`baton skill publish` \u4ece\u5f53\u524d\u76ee\u5f55\u8bfb\u53d6 `skill.conf`\uff0c\u751f\u6210 registry \u6761\u76ee\uff0c\u901a\u8fc7 `gh pr create` \u5411 `baton-skills` \u4ed3\u5e93\u63d0\u4ea4 PR\u3002\n\n---\n\n## \u98ce\u9669\u4e0e\u7f13\u89e3\n\n| \u98ce\u9669 | \u5f71\u54cd | \u53ef\u80fd\u6027 | \u7f13\u89e3 |\n|------|------|--------|------|\n| Skill \u5b89\u5168\u6027\u2014\u2014\u6076\u610f SKILL.md \u53ef\u6ce8\u5165 prompt | \u9ad8\u2014\u2014skill \u5185\u5bb9\u76f4\u63a5\u8fdb\u5165 AI context | \u4e2d | Registry \u9700 PR review \u624d\u80fd\u5408\u5e76\uff1b\u5b89\u88c5\u65f6\u663e\u793a skill \u5185\u5bb9\u6458\u8981\u4f9b\u7528\u6237\u786e\u8ba4 |\n| Git \u4f9d\u8d56\u2014\u2014\u7528\u6237\u53ef\u80fd\u5728\u65e0 Git \u73af\u5883\u4e2d\u4f7f\u7528 | \u4e2d\u2014\u2014install \u529f\u80fd\u4e0d\u53ef\u7528 | \u4f4e | baton \u672c\u8eab\u901a\u8fc7 Git clone \u5206\u53d1\uff08\u2705 `setup.sh:69`\uff09\uff0cGit \u662f\u4e8b\u5b9e\u4f9d\u8d56 |\n| Registry \u4e2d\u5fc3\u5316\u5355\u70b9\u6545\u969c | \u4e2d\u2014\u2014\u4ed3\u5e93\u4e0d\u53ef\u7528\u65f6\u65e0\u6cd5\u641c\u7d22/\u5b89\u88c5 | \u4f4e | \u652f\u6301\u591a registry\uff08`BATON_REGISTRIES` \u73af\u5883\u53d8\u91cf\uff09\uff1b\u5df2\u5b89\u88c5 skill \u4e0d\u53d7\u5f71\u54cd |\n| \u7248\u672c\u51b2\u7a81\u2014\u2014\u4e0d\u540c\u9879\u76ee\u9700\u8981\u540c\u4e00 skill \u4e0d\u540c\u7248\u672c | \u9ad8\u2014\u2014junction \u6307\u5411\u540c\u4e00\u4efd | \u4e2d | P5 \u9636\u6bb5\u5f15\u5165\u9879\u76ee\u7ea7 lockfile `baton-skills.lock`\uff1b\u957f\u671f\u8003\u8651\u7248\u672c\u5316\u76ee\u5f55 `~/.baton/skills/name@version/` |\n\n---\n\n## \u6211\u4eec\u523b\u610f\u4e0d\u505a\u7684\u4e8b\n\n1. **\u4e0d\u5efa Web \u670d\u52a1\u6216\u6570\u636e\u5e93**: baton \u7684\u6838\u5fc3\u627f\u8bfa\u662f\"\u96f6\u7f16\u8bd1\u4f9d\u8d56\"\u3002\u5e02\u573a\u7528 Git \u4ed3\u5e93 + bash \u811a\u672c\u5b9e\u73b0\uff0c\u4fdd\u6301\u8fd9\u4e2a\u627f\u8bfa\u3002Web UI \u53ef\u4ee5\u540e\u7eed\u4f5c\u4e3a\u53ef\u9009\u5c42\u52a0\u4e0a\u53bb\uff0c\u4f46\u6838\u5fc3\u529f\u80fd\u4e0d\u4f9d\u8d56\u5b83\u3002\n\n2. **\u4e0d\u505a\u8fd0\u884c\u65f6\u6c99\u7bb1**: Skill \u662f markdown prompt\uff0c\u4e0d\u662f\u53ef\u6267\u884c\u4ee3\u7801\u3002\u5b83\u4eec\u7684\"\u653b\u51fb\u9762\"\u662f prompt injection\uff0c\u4e0d\u662f\u4ee3\u7801\u6267\u884c\u3002\u6c99\u7bb1\u89e3\u51b3\u4e0d\u4e86 prompt \u95ee\u9898\u2014\u2014review \u624d\u80fd\u3002\n\n3. **\u4e0d\u641e\u81ea\u5b9a\u4e49\u5305\u7ba1\u7406\u534f\u8bae**: \u4e0d\u53d1\u660e\u65b0\u7684\u5305\u683c\u5f0f\u6216\u4f20\u8f93\u534f\u8bae\u3002Git clone + \u7eaf\u6587\u672c\u7d22\u5f15\u5df2\u7ecf\u591f\u7528\uff0c\u7528\u6237\u5df2\u7ecf\u719f\u6089\u8fd9\u4e2a\u5fc3\u667a\u6a21\u578b\u3002\n\n4. **\u4e0d\u505a skill \u4f9d\u8d56\u6811**: baton skill \u662f\u72ec\u7acb\u7684 markdown \u6587\u4ef6\uff0c\u4e0d\u5b58\u5728\u7f16\u8bd1\u65f6\u4f9d\u8d56\u3002\u5982\u679c skill A \u5efa\u8bae\u914d\u5408 skill B \u4f7f\u7528\uff0c\u5728 SKILL.md \u7684 `description` \u91cc\u8bf4\u660e\u5373\u53ef\uff0c\u4e0d\u9700\u8981\u4f9d\u8d56\u89e3\u6790\u5668\u3002\n\n---\n\n## Self-Check\n\n1. **\u6211\u662f\u5728\u8d28\u7591\u95ee\u9898\u672c\u8eab\uff0c\u8fd8\u662f\u53ea\u5728\u8d28\u7591\u65b9\u6848?**\n   \u662f\u7684\u3002\u6211\u95ee\u4e86\"\u4e3a\u4ec0\u4e48\u9700\u8981\u5e02\u573a\u800c\u4e0d\u662f\u76f4\u63a5 Git clone\"\u2014\u2014\u7b54\u6848\u662f\u53d1\u73b0\u6027\uff08discoverability\uff09\u3002\u624b\u52a8 clone \u9700\u8981\u77e5\u9053 URL\uff0c\u5e02\u573a\u63d0\u4f9b\u641c\u7d22\u548c\u7d22\u5f15\u3002\u95ee\u9898\u7684\u6839\u6e90\u4e0d\u662f\"\u5b89\u88c5\"\uff08Git clone \u5df2\u89e3\u51b3\uff09\uff0c\u800c\u662f\"\u53d1\u73b0\u522b\u4eba\u505a\u4e86\u4ec0\u4e48\u6709\u7528\u7684 skill\"\u3002\n\n2. **\u6211\u6709\u6ca1\u6709\u53d1\u73b0\u503c\u5f97\u6253\u7834\u7684\u60ef\u4f8b?**\n   \u6709\u3002\u73b0\u6709 `phase-guide.sh` \u53ea\u81ea\u52a8 junction `baton-*` \u524d\u7f00\u7684 skill\uff08\u2705 \u7b2c 55 \u884c\u7684 glob \u662f `\"$_skill_src\"/baton-*`\uff09\u3002\u8fd9\u4e2a\u60ef\u4f8b\u9700\u8981\u6253\u7834\u2014\u2014\u7b2c\u4e09\u65b9 skill \u4e0d\u4f1a\u4ee5 `baton-` \u5f00\u5934\uff0c\u81ea\u52a8 junction \u5e94\u8986\u76d6\u6240\u6709 skill \u76ee\u5f55\u3002\n\n3. **\u6211\u63a8\u8350\u7684\u662f\u4e0d\u662f\u7b2c\u4e00\u4e2a\u60f3\u5230\u7684\u65b9\u6848?**\n   \u4e0d\u662f\u3002\u6211\u5148\u8003\u8651\u4e86 npm \u98ce\u683c\u7684\u4e2d\u5fc3\u5316 registry\u3001S3 \u5b58\u50a8\u65b9\u6848\u3001\u4ee5\u53ca\u7eaf GitHub Releases \u65b9\u6848\u3002Git \u4ed3\u5e93\u7d22\u5f15\u65b9\u6848\u80dc\u51fa\u662f\u56e0\u4e3a\u5b83\u4e0e baton \u7684\"\u7eaf bash + \u96f6\u4f9d\u8d56\"\u7ea6\u675f\u5b8c\u7f8e\u5339\u914d\uff0c\u4e14\u7528\u6237\u5df2\u6709 Git\uff08setup.sh \u4f9d\u8d56\u5b83\uff09\u3002\n\n4. **\u7528\u6237\u8bfb\u5b8c\u8fd9\u4e2a\u8ba1\u5212\u80fd\u9884\u6d4b\u4f1a\u53d1\u751f\u4ec0\u4e48\u5417?**\n   \u80fd\u3002\u6bcf\u4e2a P \u7ea7\u6b65\u9aa4\u6709\u5177\u4f53\u7684\u6587\u4ef6\u53d8\u66f4\u3001\u4ee3\u7801\u793a\u4f8b\u548c\u6210\u529f\u6807\u51c6\u3002\u7528\u6237\u53ef\u4ee5\u770b\u5230\u65b0\u589e `baton` CLI\u3001\u4fee\u6539 `phase-guide.sh` \u7684 glob\u3001\u521b\u5efa `baton-skills` \u4ed3\u5e93\u7b49\u5177\u4f53\u52a8\u4f5c\u3002\n\n5. **\u6211\u613f\u610f\u62ff\u94b1\u8d4c\u8fd9\u4e2a\u65b9\u6848\u5417?**\n   P1-P4\uff08\u57fa\u7840\u529f\u80fd\uff09\u2014\u2014\u613f\u610f\u3002\u8fd9\u662f\u81ea\u7136\u5ef6\u4f38\uff0c\u6280\u672f\u98ce\u9669\u4f4e\u3002\u6700\u8584\u5f31\u73af\u8282\u662f P5 \u7684\u7248\u672c\u7ba1\u7406\uff1a\u591a\u9879\u76ee\u5171\u4eab `~/.baton/skills/` \u4e0b\u540c\u4e00 skill \u7684\u4e0d\u540c\u7248\u672c\u662f\u4e2a\u771f\u5b9e\u7684\u67b6\u6784\u5f20\u529b\uff0c\u53ef\u80fd\u9700\u8981\u540e\u7eed\u8fed\u4ee3\u89e3\u51b3\uff08\u9879\u76ee\u7ea7 skill \u76ee\u5f55 vs \u5168\u5c40\u5171\u4eab\uff09\u3002\n\n---\n\n## \u5206\u6790\uff08\u652f\u6491\u63a8\u7406\uff09\n\n### \u95ee\u9898\u8003\u53e4\n\n**\u4e94\u4e2a\u4e3a\u4ec0\u4e48**:\n\n- \u8868\u8ff0: \"\u60f3\u6dfb\u52a0\u63d2\u4ef6\u5e02\u573a\u8ba9\u7528\u6237\u5171\u4eab\u548c\u5b89\u88c5 skills\"\n- \u4e3a\u4ec0\u4e48? \u2192 \u5f53\u524d skill \u53ea\u80fd\u901a\u8fc7\u624b\u52a8\u590d\u5236\u6216 junction \u4ece\u672c\u5730 `~/.baton/` \u5206\u53d1\n- \u4e3a\u4ec0\u4e48\u8fd9\u662f\u95ee\u9898? \u2192 \u7528\u6237\u521b\u5efa\u4e86\u597d\u7528\u7684 skill \u4f46\u65e0\u6cd5\u8ba9\u5176\u4ed6\u4eba\u53d1\u73b0\u548c\u4f7f\u7528\n- \u4e3a\u4ec0\u4e48\u65e0\u6cd5\u53d1\u73b0? \u2192 \u6ca1\u6709\u7d22\u5f15\u3001\u6ca1\u6709\u641c\u7d22\u3001\u6ca1\u6709\u6807\u51c6\u5316\u7684\u5206\u53d1\u6e20\u9053\n- \u6839\u6e90: **skill \u7f3a\u4e4f\u8de8\u7528\u6237\u7684\u53d1\u73b0\u548c\u5206\u53d1\u673a\u5236**\u2014\u2014\"\u5e02\u573a\"\u662f\u4e00\u4e2a\u89e3\u51b3\u65b9\u6848\u7c7b\u522b\uff0c\u4e0d\u662f\u95ee\u9898\u672c\u8eab\n\n**\u95ee\u9898\u9648\u8ff0**: baton \u7528\u6237\u521b\u5efa\u7684 skill \u53ea\u80fd\u5728\u672c\u673a\u4f7f\u7528\uff0c\u65e0\u6cd5\u88ab\u5176\u4ed6\u7528\u6237\u53d1\u73b0\u3001\u8bc4\u4f30\u548c\u5b89\u88c5\u3002\u89e3\u51b3 = \u7528\u6237\u53ef\u4ee5\u641c\u7d22\u3001\u9884\u89c8\u3001\u4e00\u952e\u5b89\u88c5\u793e\u533a skill\uff0c\u4e14\u5b89\u88c5\u540e\u81ea\u52a8\u96c6\u6210\u5230\u73b0\u6709 junction \u5206\u53d1\u6d41\u7a0b\u3002\n\n### \u5047\u8bbe\u5ba1\u8ba1\n\n| # | \u5047\u8bbe | \u7c7b\u578b | \u5982\u679c\u9519\u4e86... |\n|---|------|------|------------|\n| 1 | Skill \u662f\u81ea\u5305\u542b\u7684\u76ee\u5f55\uff08SKILL.md + \u53ef\u9009\u6587\u4ef6\uff09 | \u2705 \u4e8b\u5b9e\u2014\u2014\u5df2\u9a8c\u8bc1\u76ee\u5f55\u7ed3\u6784 | \u8ba1\u5212\u5d29\u6e83\u2014\u2014\u5305\u683c\u5f0f\u9700\u8981\u91cd\u65b0\u8bbe\u8ba1 |\n| 2 | \u7528\u6237\u6709 Git | \u2705 \u4e8b\u5b9e\u2014\u2014`setup.sh` \u7528 `git clone` \u5b89\u88c5 baton \u672c\u8eab | install \u673a\u5236\u9700\u66ff\u4ee3\u65b9\u6848\uff08curl \u4e0b\u8f7d tarball\uff09 |\n| 3 | \u4e0d\u80fd\u5f15\u5165\u7f16\u8bd1\u4f9d\u8d56 | \u60ef\u4f8b\uff0c\u4f46\u662f\u6838\u5fc3\u8bbe\u8ba1\u7ea6\u675f | \u53ef\u4ee5\u7528 Python/Node CLI\u2014\u2014\u4f46\u4f1a\u7834\u574f baton \u7684\u5dee\u5f02\u5316\u5b9a\u4f4d |\n| 4 | `~/.baton/skills/` \u662f skill \u7684\u552f\u4e00\u5b58\u653e\u4f4d\u7f6e | \u60ef\u4f8b | \u53ef\u4ee5\u652f\u6301\u9879\u76ee\u7ea7 skill \u76ee\u5f55\uff0c\u89e3\u51b3\u7248\u672c\u51b2\u7a81\u95ee\u9898 |\n| 5 | Junction \u5206\u53d1\u8db3\u4ee5\u8986\u76d6\u6240\u6709 IDE | \u2705 \u4e8b\u5b9e\u2014\u2014`setup.sh` \u5df2\u8986\u76d6 claude/cursor/codex/factory | \u8ba1\u5212\u5b58\u6d3b\u2014\u2014junction \u53ea\u662f\u5206\u53d1\u673a\u5236\u7684\u4e00\u5c42 |\n\n**\u771f\u7ea6\u675f**: \u7eaf bash \u5b9e\u73b0\u3001Git \u53ef\u7528\u3001skill \u662f\u76ee\u5f55+markdown\u3001junction \u5206\u53d1\u94fe\u5df2\u5b58\u5728\u3002\n**\u60ef\u4f8b\uff08\u53ef\u6253\u7834\uff09**: `baton-*` \u524d\u7f00\u9650\u5236\u3001\u5168\u5c40\u552f\u4e00\u7248\u672c\u3001\u65e0\u5143\u6570\u636e\u6807\u51c6\u3002\n\n### \u65b9\u6848\u91cd\u5efa\n\n**\u8003\u8651\u8fc7\u7684\u65b9\u6848\u7c7b\u522b**:\n\n1. **Git \u4ed3\u5e93 registry**\uff08\u63a8\u8350\uff09\u2014\u2014\u7d22\u5f15\u662f\u7eaf\u6587\u672c\u6587\u4ef6\u5728 Git \u4ed3\u5e93\u4e2d\uff0cCLI \u7528 bash \u5b9e\u73b0\u3002\u4f18\u52bf\uff1a\u96f6\u65b0\u4f9d\u8d56\uff0c\u4e0e baton \u54f2\u5b66\u4e00\u81f4\u3002\u52a3\u52bf\uff1a\u65e0 Web \u641c\u7d22\u754c\u9762\uff08\u53ef\u540e\u52a0\uff09\u3002\n\n2. **GitHub Releases + API**\u2014\u2014\u6bcf\u4e2a skill \u662f\u72ec\u7acb\u4ed3\u5e93\uff0c\u7528 GitHub API \u641c\u7d22 topic \u6807\u7b7e\u3002\u4f18\u52bf\uff1a\u65e0\u9700\u4e2d\u5fc3 registry\u3002\u52a3\u52bf\uff1a\u4f9d\u8d56 `gh` CLI \u6216 curl + JSON \u89e3\u6790\uff0c\u641c\u7d22\u8d28\u91cf\u4f9d\u8d56 GitHub\u3002\n\n3. **npm/pip \u98ce\u683c\u4e2d\u5fc3\u5316 registry**\u2014\u2014\u642d\u5efa\u670d\u52a1\u7aef\u3002\u4f18\u52bf\uff1a\u4e30\u5bcc\u7684\u641c\u7d22/\u6392\u5e8f/\u8bc4\u5206\u3002\u52a3\u52bf\uff1a\u9700\u8981\u670d\u52a1\u5668\u3001\u9700\u8981 curl + JSON \u89e3\u6790\u3001\u8fdd\u53cd\u96f6\u4f9d\u8d56\u539f\u5219\u3002\n\n**\u53cd\u8f6c\u6d4b\u8bd5\uff08\u65b9\u6848 1\uff09**:\n- \u6700\u574f\u60c5\u51b5: registry \u4ed3\u5e93\u65e0\u4eba\u7ef4\u62a4\uff0cskill \u8d28\u91cf\u53c2\u5dee\u4e0d\u9f50\u3002\u7f13\u89e3\uff1aPR review + \u793e\u533a\u8bc4\u5206\u673a\u5236\uff08\u540e\u7eed\u8fed\u4ee3\uff09\u3002\n- \u53cd\u9762\u65b9\u6848\uff08\u5b8c\u5168\u53bb\u4e2d\u5fc3\u5316\uff0c\u65e0 registry\uff09: \u7528\u6237\u53ea\u80fd\u9760 URL \u5206\u4eab\u3002\u6709\u4e00\u5b9a\u4ef7\u503c\uff08\u7b80\u5355\uff09\uff0c\u4f46\u727a\u7272\u4e86\u53d1\u73b0\u6027\u2014\u2014\u8fd9\u6070\u6070\u662f\u8981\u89e3\u51b3\u7684\u6839\u672c\u95ee\u9898\u3002\n- \u5931\u8d25\u65f6\u5b66\u5230\u4ec0\u4e48: \u5982\u679c\u7eaf\u6587\u672c\u7d22\u5f15\u6269\u5c55\u6027\u4e0d\u591f\uff0c\u53ef\u4ee5\u8fc1\u79fb\u5230 JSON/SQLite \u7d22\u5f15\uff0cCLI \u63a5\u53e3\u4e0d\u53d8\u3002\n\n**\u63a8\u8350\u94fe**: \u6839\u672c\u95ee\u9898\u662f\u53d1\u73b0\u6027 \u2192 \u9700\u8981\u7d22\u5f15 \u2192 \u7d22\u5f15\u9700\u8981\u5b58\u50a8 \u2192 Git \u4ed3\u5e93\u662f baton \u751f\u6001\u4e2d\u6700\u81ea\u7136\u7684\u5b58\u50a8 \u2192 bash CLI \u662f\u6700\u81ea\u7136\u7684\u4ea4\u4e92\u65b9\u5f0f \u2192 junction \u673a\u5236\u5df2\u5b58\u5728\uff0c\u5b89\u88c5\u540e\u81ea\u52a8\u5206\u53d1\u3002\u6bcf\u4e00\u6b65\u90fd\u8ffd\u6eaf\u5230 Phase 1 \u7684\u7ea6\u675f\u548c\u6839\u56e0\u3002\n\n## \u6279\u6ce8\u533a\n"}], "eval-2-rewrite-to-python-with_skill": [{"name": "plan.md", "type": "text", "content": "# \u6539\u8fdb\u63d0\u6848\uff1aBaton Hook \u7cfb\u7edf\u7684\u53ef\u7ef4\u62a4\u6027\n\n**\u6df1\u5ea6**: Deep \u2014 \u7528\u6237\u7684\u8bf7\u6c42\u5e26\u6709\"\u4e00\u76f4\u90fd\u662f\u8fd9\u4e48\u505a\u7684\"\u7684\u80fd\u91cf\uff08\"bash \u592a\u96be\u7ef4\u62a4\u4e86 \u2192 \u91cd\u5199\u6210 Python\"\uff09\uff0c\u9700\u8981\u6df1\u5165\u8d28\u7591\u5047\u8bbe\uff0c\u5206\u79bb\u771f\u5b9e\u95ee\u9898\u4e0e\u9884\u8bbe\u65b9\u6848\u3002\n\n**\u8f93\u5165\u6765\u6e90**: \u4ee3\u7801\u5e93\u76f4\u63a5\u9a8c\u8bc1\uff08`.baton/hooks/` \u5168\u90e8 11 \u4e2a\u811a\u672c\u3001`lib/` 3 \u4e2a\u5e93\u6587\u4ef6\u3001`manifest.conf`\u3001\u9002\u914d\u5668\u3001\u6d4b\u8bd5\u5957\u4ef6\u3001`setup.sh`\u3001`run-hook.cmd`\uff09\n\n**\u8bc1\u636e\u6807\u8bb0**: \u5168\u90e8 \u2705 verified \u2014 \u6bcf\u4e2a\u65ad\u8a00\u5747\u57fa\u4e8e\u76f4\u63a5\u8bfb\u53d6\u6e90\u6587\u4ef6\u3002\n\n---\n\n## TL;DR\n\n\u7528\u6237\u63d0\u51fa\u5c06 bash hooks \u91cd\u5199\u4e3a Python\uff0c\u7406\u7531\u662f\"bash \u592a\u96be\u7ef4\u62a4\u4e86\"\u3002\u6df1\u5165\u5206\u6790\u540e\u53d1\u73b0\uff1a**\u771f\u6b63\u7684\u95ee\u9898\u4e0d\u662f\u8bed\u8a00\u672c\u8eab\uff0c\u800c\u662f bash \u4e2d\u7f3a\u4e4f\u7ed3\u6784\u5316\u590d\u7528\u673a\u5236\u5bfc\u81f4\u7684\u6a21\u5f0f\u91cd\u590d\uff08boilerplate\uff09\u3002** \u2705 \u9a8c\u8bc1\uff1a11 \u4e2a hook \u811a\u672c\u4e2d\u6709 7 \u4e2a\u91cd\u590d\u76f8\u540c\u7684 stdin \u89e3\u6790 / plan \u67e5\u627e / fail-open \u6a21\u5f0f\uff0c\u5171\u7ea6 120 \u884c\u91cd\u590d\u4ee3\u7801\u3002\u4f46\u5f15\u5165 Python \u4f1a\u7834\u574f baton \u7684\u6838\u5fc3\u8bbe\u8ba1\u539f\u5219\uff08\u96f6\u7f16\u8bd1\u4f9d\u8d56\uff09\uff0c\u5728 Windows \u4e0a\u5f15\u5165\u65b0\u7684\u4f9d\u8d56\u95ee\u9898\uff0c\u4e14\u9700\u8981\u91cd\u5199 7034 \u884c\u6d4b\u8bd5\u3002**\u63a8\u8350\u65b9\u6848\uff1a\u4fdd\u7559 bash\uff0c\u901a\u8fc7\u63d0\u53d6\u516c\u5171 harness \u5c42\u6d88\u9664 boilerplate\uff0c\u5c06 hook \u4f5c\u8005\u53ea\u9700\u5173\u5fc3\u7684\"\u4e1a\u52a1\u903b\u8f91\"\u964d\u5230\u6700\u5c11\u3002** \u5982\u679c\u4ecd\u7136\u5e0c\u671b\u91c7\u7528 Python\uff0c\u672c\u6587\u672b\u5c3e\u63d0\u4f9b\u4e86\u5177\u4f53\u7684\u8fc1\u79fb\u8def\u5f84\u3002\n\n---\n\n## \u63d0\u8bae\u7684\u53d8\u66f4\n\n| \u4f18\u5148\u7ea7 | \u53d8\u66f4 | \u4e3a\u4ec0\u4e48\uff08\u8ffd\u6eaf\u5230\u6839\u56e0\uff09 | \u5de5\u4f5c\u91cf | \u98ce\u9669 |\n|--------|------|---------------------|--------|------|\n| P1 | \u63d0\u53d6 hook harness \u5c42\uff1a`dispatch.sh` \u5185\u7f6e stdin \u7f13\u51b2\u3001plan \u67e5\u627e\u3001fail-open trap\uff0chook \u811a\u672c\u53ea\u5b9a\u4e49 `hook_main()` \u51fd\u6570 | \u6d88\u9664 7 \u4e2a hook \u4e2d\u91cd\u590d\u7684 ~120 \u884c boilerplate\uff0c\u8fd9\u662f\u53ef\u7ef4\u62a4\u6027\u95ee\u9898\u7684\u6839\u56e0 | 4h | \u4f4e \u2014 \u884c\u4e3a\u4e0d\u53d8\uff0c\u53ea\u662f\u7ed3\u6784\u91cd\u7ec4 |\n| P2 | \u7edf\u4e00 JSON \u89e3\u6790\uff1a\u5c06 jq/awk \u53cc\u8def\u5f84\u63d0\u53d6\u96c6\u4e2d\u5230 `lib/json.sh`\uff0c\u63d0\u4f9b `json_get <key>` \u63a5\u53e3 | \u76ee\u524d\u6bcf\u4e2a\u9700\u8981 JSON \u7684 hook \u90fd\u81ea\u5df1\u5b9e\u73b0 jq+awk fallback\uff0c\u662f\u6700\u5927\u7684\u91cd\u590d\u6765\u6e90\u4e4b\u4e00 | 2h | \u4f4e |\n| P3 | \u6dfb\u52a0 ShellCheck \u4e25\u683c\u6a21\u5f0f + hook \u63a5\u53e3\u5951\u7ea6\u6587\u6863 | \u7528\u9759\u6001\u5206\u6790\u5f25\u8865 bash \u7f3a\u4e4f\u7c7b\u578b\u7cfb\u7edf\u7684\u52a3\u52bf\uff1b\u63a5\u53e3\u6587\u6863\u964d\u4f4e\u65b0 hook \u7684\u8ba4\u77e5\u8d1f\u62c5 | 1h | \u4f4e |\n| P4 | \u4e3a `plan-parser.sh`\uff08441 \u884c\uff09\u6dfb\u52a0\u5355\u5143\u7ea7\u6d4b\u8bd5\u5206\u7ec4 | \u5f53\u524d `test-plan-parser.sh`\uff081105 \u884c\uff09\u662f\u6700\u5927\u6d4b\u8bd5\u6587\u4ef6\uff0c\u7f3a\u4e4f\u5185\u90e8\u5206\u7ec4\u4f7f\u56de\u5f52\u5b9a\u4f4d\u56f0\u96be | 2h | \u4f4e |\n| **Total** | | | **~9h** | |\n\n### P1 \u8be6\u7ec6\u8bbe\u8ba1\uff1aHook Harness \u5c42\n\n\u5f53\u524d\u6bcf\u4e2a hook \u7684\u7ed3\u6784\u51e0\u4e4e\u76f8\u540c\uff1a\n\n```bash\n# \u5f53\u524d\u6a21\u5f0f\uff08\u6bcf\u4e2a hook \u91cd\u590d\uff09\uff1a\ntrap 'echo \"...\" >&2; exit 0' HUP INT TERM        # fail-open\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" 2>/dev/null && pwd)\"\nif [ -f \"$SCRIPT_DIR/lib/common.sh\" ]; then        # source common\n    . \"$SCRIPT_DIR/lib/common.sh\"\nelse\n    exit 0\nfi\nresolve_plan_name                                    # plan discovery\nfind_plan\n# ...\u5b9e\u9645\u903b\u8f91...\n```\n\n\u6539\u4e3a\u7531 `dispatch.sh` \u63d0\u4f9b harness\uff1a\n\n```bash\n# dispatch.sh \u4e2d\u7684\u65b0\u8c03\u5ea6\u903b\u8f91\uff1a\n_run_hook() {\n    local _script=\"$1\"\n    # harness: fail-open trap + source common + resolve plan\n    trap 'echo \"\u26a0\ufe0f BATON dispatch: $_script unexpected error, fail-open\" >&2; exit 0' HUP INT TERM\n    . \"$_dir/lib/common.sh\" 2>/dev/null || { exit 0; }\n    resolve_plan_name; find_plan\n    # \u8c03\u7528 hook \u7684\u4e1a\u52a1\u903b\u8f91\n    . \"$_dir/$_script.sh\"\n}\n```\n\n```bash\n# \u91cd\u6784\u540e\u7684 stop-guard.sh\uff08\u4ece 52 \u884c\u964d\u81f3 ~20 \u884c\uff09\uff1a\n# Hook: Stop \u2014 \u63d0\u9192\u672a\u5b8c\u6210\u7684\u4efb\u52a1\n[ -z \"$PLAN\" ] && exit 0\ngrep -q '<!-- BATON:GO -->' \"$PLAN\" 2>/dev/null || exit 0\nparser_todo_counts\nif [ \"$TODO_TOTAL\" -gt 0 ] && [ \"$TODO_REMAINING\" -eq 0 ]; then\n    echo \"\u2705 All Todo items complete \u2014 FINISH phase.\" >&2\n    # ... finish guidance ...\nelif [ \"$TODO_REMAINING\" -gt 0 ]; then\n    echo \"\ud83d\udccb Implementation in progress: $TODO_DONE/$TODO_TOTAL done.\" >&2\nfi\nexit 0\n```\n\n**\u9884\u671f\u53ef\u8861\u91cf\u7684\u5f71\u54cd**: hook \u811a\u672c\u5e73\u5747\u884c\u6570\u4ece ~95 \u884c\u964d\u81f3 ~50 \u884c\uff08\u53bb\u9664 boilerplate \u540e\uff09\u3002\u65b0 hook \u7684\u7f16\u5199\u53ea\u9700\u5173\u6ce8\u4e1a\u52a1\u903b\u8f91\uff0c\u4e0d\u9700\u8981\u590d\u5236\u7c98\u8d34\u57fa\u7840\u8bbe\u65bd\u4ee3\u7801\u3002\n\n**\u9a8c\u8bc1\u65b9\u5f0f**: \u91cd\u6784\u540e\u8fd0\u884c\u5168\u90e8 18 \u4e2a\u6d4b\u8bd5\u6587\u4ef6\uff087034 \u884c\u65ad\u8a00\uff09\uff0c\u96f6\u56de\u5f52\u5373\u4e3a\u6210\u529f\u3002\n\n### P2 \u8be6\u7ec6\u8bbe\u8ba1\uff1a\u7edf\u4e00 JSON \u89e3\u6790\n\n```bash\n# lib/json.sh \u2014 \u7edf\u4e00 JSON \u5b57\u6bb5\u63d0\u53d6\n# \u7528\u6cd5\uff1avalue=\"$(json_get \"tool_input.file_path\" \"$json_string\")\"\njson_get() {\n    local _key=\"$1\" _json=\"$2\"\n    if command -v jq >/dev/null 2>&1; then\n        printf '%s' \"$_json\" | jq -r \".$_key // empty\" 2>/dev/null\n    else\n        # awk fallback\uff1a\u5904\u7406\u9876\u5c42\u548c\u4e00\u5c42\u5d4c\u5957\n        local _leaf=\"${_key##*.}\"\n        printf '%s' \"$_json\" | awk -F'\"' -v k=\"$_leaf\" '{\n            for(i=1;i<=NF;i++) if($i==k) { print $(i+2); exit }\n        }'\n    fi\n}\n```\n\n**\u9884\u671f\u5f71\u54cd**: \u6d88\u9664 `write-lock.sh`\u3001`bash-guard.sh`\u3001`post-write-tracker.sh`\u3001`failure-tracker.sh` \u4e2d\u7684 4 \u5904 jq/awk \u91cd\u590d\u5b9e\u73b0\u3002\n\n**\u9a8c\u8bc1\u65b9\u5f0f**: `test-write-lock.sh`\uff08529 \u884c\uff09+ `test-bash-guard.sh`\uff08377 \u884c\uff09\u5168\u90e8\u901a\u8fc7\u3002\n\n---\n\n## \u4e0d\u5e94\u6539\u53d8\u7684\u90e8\u5206\n\n| \u8981\u7d20 | \u4fdd\u7559\u539f\u56e0 |\n|------|---------|\n| **Bash \u4f5c\u4e3a hook \u8bed\u8a00** | \u2705 baton \u7684\u6838\u5fc3\u8bbe\u8ba1\u539f\u5219\u662f\"pure bash + markdown, zero compiled dependencies\"\u3002Bash \u5728\u6240\u6709\u76ee\u6807\u5e73\u53f0\uff08Linux\u3001macOS\u3001Windows Git Bash\uff09\u4e0a\u9884\u88c5\u53ef\u7528\uff0c\u65e0\u9700\u989d\u5916\u5b89\u88c5\u6b65\u9aa4\u3002Python \u5728 Windows \u4e0a\u4e0d\u4fdd\u8bc1\u9884\u88c5\u3002 |\n| **`manifest.conf` \u58f0\u660e\u5f0f\u8def\u7531** | \u2705 \u5f53\u524d\u7684 `event:matcher:script` \u683c\u5f0f\uff0812 \u884c\uff09\u6e05\u6670\u3001\u53ef grep\u3001\u6613\u4e8e\u65b0\u589e\u3002\u8fd9\u662f bash \u64c5\u957f\u7684\u573a\u666f\u3002 |\n| **jq-optional \u7b56\u7565** | \u2705 \"jq optional, awk fallback\" \u4fdd\u8bc1\u4e86\u96f6\u786c\u4f9d\u8d56\u3002\u6d88\u9664\u7684\u662f\u91cd\u590d\u5b9e\u73b0\uff0c\u4e0d\u662f\u53cc\u8def\u5f84\u7b56\u7565\u672c\u8eab\u3002 |\n| **Shell-based \u6d4b\u8bd5** | \u2705 7034 \u884c\u6d4b\u8bd5\u76f4\u63a5\u6d4b\u8bd5 bash hook \u884c\u4e3a\uff08exit code\u3001stderr \u8f93\u51fa\uff09\u3002\u6d4b\u8bd5\u8bed\u8a00\u4e0e\u88ab\u6d4b\u4ee3\u7801\u540c\u6784\u662f\u4f18\u52bf\uff0c\u4e0d\u662f\u95ee\u9898\u3002 |\n| **`run-hook.cmd` polyglot** | \u2705 \u8fd9\u4e2a 46 \u884c\u7684 cmd/bash polyglot \u89e3\u51b3\u4e86 Windows IDE \u7684 hook \u5165\u53e3\u95ee\u9898\u3002\u65e0\u8bba hook \u7528\u4ec0\u4e48\u8bed\u8a00\uff0c\u8fd9\u5c42\u9002\u914d\u90fd\u9700\u8981\u5b58\u5728\u3002 |\n\n---\n\n## \u5bf9\u6bd4\n\n| \u7ef4\u5ea6 | \u5f53\u524d\u72b6\u6001 | \u63d0\u8bae\u540e | \u539f\u56e0 |\n|------|---------|--------|------|\n| Hook \u5e73\u5747\u884c\u6570 | ~95 \u884c | ~50 \u884c | P1 harness \u6d88\u9664 boilerplate |\n| \u65b0 hook \u7f16\u5199\u6210\u672c | \u590d\u5236\u7c98\u8d34\u7ea6 15 \u884c\u57fa\u7840\u8bbe\u65bd | \u53ea\u5199\u4e1a\u52a1\u903b\u8f91 | harness \u5c42\u63d0\u4f9b\u7edf\u4e00\u5165\u53e3 |\n| JSON \u89e3\u6790\u91cd\u590d | 4 \u5904\u72ec\u7acb\u7684 jq+awk \u5b9e\u73b0 | 1 \u5904\u96c6\u4e2d\u5b9e\u73b0 | P2 \u7edf\u4e00 `json_get` |\n| \u8fd0\u884c\u65f6\u4f9d\u8d56 | bash only\uff08jq optional\uff09 | \u4e0d\u53d8 | \u4e0d\u5f15\u5165\u65b0\u4f9d\u8d56 |\n| \u6d4b\u8bd5\u6539\u52a8\u91cf | 0 | 0\uff08\u884c\u4e3a\u4e0d\u53d8\uff09 | \u91cd\u6784\u4e0d\u6539\u53d8\u5916\u90e8\u63a5\u53e3 |\n| Python \u65b9\u6848\u7684\u8fd0\u884c\u65f6\u4f9d\u8d56 | N/A | \u9700\u8981 Python 3.7+ | Windows \u4e0a\u9700\u989d\u5916\u5b89\u88c5 |\n\n---\n\n## Self-Check\n\n1. **\u6211\u662f\u5426\u8d28\u7591\u4e86\u95ee\u9898\u672c\u8eab\uff0c\u800c\u4e0d\u4ec5\u662f\u65b9\u6848\uff1f**\n   \u662f\u3002\u7528\u6237\u8bf4\"bash \u592a\u96be\u7ef4\u62a4\"\uff0c\u6211\u6ca1\u6709\u76f4\u63a5\u63a5\u53d7\u8fd9\u4e2a\u5b9a\u6027\uff0c\u800c\u662f\u53bb\u9a8c\u8bc1\u4e86\u5177\u4f53\u662f\u4ec0\u4e48\u8ba9 bash hook \u96be\u7ef4\u62a4\u3002\u53d1\u73b0\u4e0d\u662f bash \u8bed\u8a00\u672c\u8eab\uff08hook \u903b\u8f91\u5176\u5b9e\u5f88\u76f4\u767d\uff1aif/grep/exit\uff09\uff0c\u800c\u662f boilerplate \u91cd\u590d\u3002\u8fd9\u4e24\u4e2a\u95ee\u9898\u6709\u4e0d\u540c\u7684\u89e3\u3002\n\n2. **\u6211\u662f\u5426\u53d1\u73b0\u4e86\u503c\u5f97\u6253\u7834\u7684\u60ef\u4f8b\uff1f**\n   \u662f\u3002\u5f53\u524d\u60ef\u4f8b\u662f\u6bcf\u4e2a hook \u81ea\u5df1\u8d1f\u8d23 fail-open trap\u3001common.sh sourcing\u3001plan discovery\u3002\u8fd9\u4e2a\u60ef\u4f8b\u6e90\u4e8e hook \u7684\u72ec\u7acb\u6f14\u5316\u5386\u53f2\uff0c\u800c\u975e\u6709\u610f\u7684\u8bbe\u8ba1\u9009\u62e9\u3002\u6253\u7834\u5b83\uff08\u96c6\u4e2d\u5230 dispatch harness\uff09\u6d88\u9664\u4e86\u53ef\u7ef4\u62a4\u6027\u95ee\u9898\u7684\u6839\u56e0\u3002\n\n3. **\u6211\u63a8\u8350\u7684\u662f\u4e0d\u662f\u7b2c\u4e00\u4e2a\u60f3\u5230\u7684\u65b9\u6848\uff1f**\n   \u4e0d\u662f\u3002\u7b2c\u4e00\u53cd\u5e94\u662f\"Python \u4e0d\u884c\u56e0\u4e3a\u96f6\u4f9d\u8d56\u539f\u5219\"\u2014\u2014\u8fd9\u662f\u4e00\u4e2a\u9632\u5fa1\u6027\u5426\u5b9a\uff0c\u4e0d\u662f\u89e3\u51b3\u65b9\u6848\u3002\u5b9e\u9645\u63a8\u8350\u7684 harness \u91cd\u6784\u65b9\u6848\u662f\u5728\u5206\u6790\u4e86 11 \u4e2a hook \u7684\u5171\u540c\u6a21\u5f0f\u540e\u624d\u6d6e\u73b0\u7684\u3002\n\n4. **\u7528\u6237\u80fd\u5426\u4ece\u8fd9\u4e2a\u8ba1\u5212\u9884\u6d4b\u4f1a\u53d1\u751f\u4ec0\u4e48\uff1f**\n   \u80fd\u3002P1-P4 \u6bcf\u9879\u90fd\u6307\u5b9a\u4e86\u5177\u4f53\u6539\u4ec0\u4e48\u6587\u4ef6\u3001\u4ee3\u7801\u793a\u4f8b\u957f\u4ec0\u4e48\u6837\u3001\u884c\u6570\u9884\u671f\u53d8\u5316\u591a\u5c11\u3001\u7528\u4ec0\u4e48\u9a8c\u8bc1\u6210\u529f\u3002\n\n5. **\u6211\u613f\u610f\u62bc\u94b1\u5728\u8fd9\u4e2a\u65b9\u6848\u4e0a\u5417\uff1f**\n   P1-P2 \u613f\u610f \u2014 \u8fd9\u662f\u7eaf\u7cb9\u7684\u7ed3\u6784\u91cd\u6784\uff0c\u6709 7034 \u884c\u6d4b\u8bd5\u8986\u76d6\uff0c\u98ce\u9669\u6781\u4f4e\u3002\u6700\u5f31\u7684\u73af\u8282\u662f P1 \u7684 harness \u8bbe\u8ba1\u662f\u5426\u80fd\u8986\u76d6\u6240\u6709 hook \u7684\u521d\u59cb\u5316\u5dee\u5f02\uff08\u4f8b\u5982 `phase-guide.sh` \u6709\u989d\u5916\u7684 EXIT trap \u7528\u4e8e governance context \u6ce8\u5165 \u2014 \u8fd9\u9700\u8981 harness \u652f\u6301 hook \u7ea7\u522b\u7684 EXIT trap \u6ce8\u518c\uff0c\u800c\u4e0d\u662f\u8986\u76d6\uff09\u3002\n\n---\n\n## Analysis (supporting reasoning)\n\n### \u5f53\u524d\u72b6\u6001\uff08\u5df2\u9a8c\u8bc1\uff09\n\n\u2705 Baton hook \u7cfb\u7edf\u7531\u4ee5\u4e0b\u7ec4\u4ef6\u6784\u6210\uff1a\n- **`dispatch.sh`**\uff0864 \u884c\uff09\uff1a\u4e8b\u4ef6\u5206\u53d1\u5668\uff0c\u8bfb\u53d6 `manifest.conf`\uff0c\u5339\u914d\u4e8b\u4ef6+\u5de5\u5177\u540d\uff0c\u5728\u5b50 shell \u4e2d\u6267\u884c hook\n- **`manifest.conf`**\uff0812 \u884c\uff09\uff1a\u58f0\u660e\u5f0f\u8def\u7531\uff0c9 \u4e2a\u4e8b\u4ef6-\u811a\u672c\u6620\u5c04\n- **11 \u4e2a hook \u811a\u672c**\uff08\u5171 1134 \u884c\uff09\uff1a\u4ece 45 \u884c\uff08`quality-gate.sh`\uff09\u5230 264 \u884c\uff08`phase-guide.sh`\uff09\n- **3 \u4e2a\u5e93\u6587\u4ef6**\uff08\u5171 540 \u884c\uff09\uff1a`plan-parser.sh`\uff08441 \u884c\uff09\u3001`common.sh`\uff0863 \u884c\uff09\u3001`junction.sh`\uff0836 \u884c\uff09\n- **4 \u4e2a\u9002\u914d\u5668\u6587\u4ef6**\uff08\u5171 165 \u884c\uff09\uff1aCursor \u548c Codex \u7684 dispatch + adapter\n- **18 \u4e2a\u6d4b\u8bd5\u6587\u4ef6**\uff08\u5171 7034 \u884c\uff09\uff1a\u5168\u90e8\u57fa\u4e8e bash\n\n\u603b\u91cf\uff1a~1851 \u884c\u751f\u4ea7\u4ee3\u7801 + 7034 \u884c\u6d4b\u8bd5 = ~8885 \u884c\u3002\n\n### \u6839\u56e0\u5206\u6790\n\n\u7528\u6237\u7684\u95ee\u9898\u662f\"bash \u592a\u96be\u7ef4\u62a4\u4e86\"\u3002\u901a\u8fc7 Five Whys \u8ffd\u6eaf\uff1a\n\n1. **\u4e3a\u4ec0\u4e48\u8981\u91cd\u5199\u6210 Python\uff1f** \u2192 \"bash \u592a\u96be\u7ef4\u62a4\"\n2. **bash \u7684\u4ec0\u4e48\u5177\u4f53\u65b9\u9762\u96be\u7ef4\u62a4\uff1f** \u2192 \u9a8c\u8bc1\u540e\u53d1\u73b0\uff1a\u4e0d\u662f\u8bed\u6cd5\uff08hook \u903b\u8f91\u662f\u7b80\u5355\u7684 if/grep/exit \u6a21\u5f0f\uff09\uff0c\u800c\u662f\u6bcf\u4e2a hook \u91cd\u590d\u76f8\u540c\u7684 boilerplate\uff08fail-open\u3001common sourcing\u3001plan discovery\u3001stdin parsing\uff09\n3. **\u4e3a\u4ec0\u4e48\u6709\u8fd9\u4e9b boilerplate\uff1f** \u2192 \u6bcf\u4e2a hook \u8bbe\u8ba1\u4e3a\u53ef\u72ec\u7acb\u8fd0\u884c\u7684\u811a\u672c\uff0cdispatch.sh \u53ea\u8d1f\u8d23\u8def\u7531\u4e0d\u8d1f\u8d23\u521d\u59cb\u5316\n4. **\u4e3a\u4ec0\u4e48 dispatch \u4e0d\u63d0\u4f9b\u521d\u59cb\u5316\uff1f** \u2192 \u5386\u53f2\u539f\u56e0\uff1ahook \u4ece v1 \u5230 v4 \u9010\u6b65\u6f14\u5316\uff0c\u65e9\u671f\u6ca1\u6709 dispatch \u5c42\n5. **\u6839\u56e0**\uff1ahook \u7cfb\u7edf\u7f3a\u5c11\u4e00\u4e2a harness \u5c42\u6765\u63d0\u4f9b\u516c\u5171\u521d\u59cb\u5316\uff0c\u5bfc\u81f4\u6bcf\u4e2a hook \u4f5c\u8005\u5fc5\u987b\u624b\u52a8\u590d\u5236\u57fa\u7840\u8bbe\u65bd\u4ee3\u7801\n\n**\u95ee\u9898\u9648\u8ff0**\uff08\u4e0d\u5f15\u7528\u4efb\u4f55\u65b9\u6848\uff09\uff1aHook \u7cfb\u7edf\u7684\u53ef\u7ef4\u62a4\u6027\u53d7\u635f\u4e8e\u516c\u5171\u57fa\u7840\u8bbe\u65bd\u4ee3\u7801\u7684\u91cd\u590d\u3002\u6bcf\u65b0\u589e\u4e00\u4e2a hook \u9700\u8981\u590d\u5236\u7ea6 15 \u884c\u4e0e hook \u529f\u80fd\u65e0\u5173\u7684\u521d\u59cb\u5316\u4ee3\u7801\uff0c\u4fee\u6539\u516c\u5171\u6a21\u5f0f\uff08\u5982 fail-open \u7b56\u7565\uff09\u9700\u8981\u540c\u6b65\u4fee\u6539\u591a\u4e2a\u6587\u4ef6\u3002\u89e3\u51b3 = \u65b0 hook \u53ea\u9700\u7f16\u5199\u4e1a\u52a1\u903b\u8f91\uff0c\u516c\u5171\u6a21\u5f0f\u4fee\u6539\u53ea\u9700\u6539\u4e00\u5904\u3002\n\n### \u5047\u8bbe\u5ba1\u8ba1\n\n| # | \u5047\u8bbe | \u7c7b\u578b | \u5982\u679c\u9519\u4e86... |\n|---|------|------|-----------|\n| 1 | \"bash \u96be\u7ef4\u62a4\"\u662f\u56e0\u4e3a\u8bed\u8a00\u672c\u8eab | **\u60ef\u4f8b** \u2014 \u2705 \u9a8c\u8bc1\u540e\u53d1\u73b0\u662f boilerplate \u91cd\u590d\uff0c\u4e0d\u662f bash \u8bed\u6cd5\u95ee\u9898\u3002hook \u903b\u8f91\u672c\u8eab\uff08\u53bb\u6389 boilerplate\uff09\u662f\u7b80\u5355\u7684 shell \u64cd\u4f5c | \u5982\u679c\u771f\u662f\u8bed\u8a00\u95ee\u9898 \u2192 Python \u65b9\u6848\u6210\u7acb\u3002\u4f46\u8bc1\u636e\u4e0d\u652f\u6301 |\n| 2 | Python \u5728\u6240\u6709\u76ee\u6807\u5e73\u53f0\u53ef\u7528 | **\u672a\u77e5** \u2014 \u2753 Windows \u4e0d\u9884\u88c5 Python\uff0c\u7528\u6237\u7684 Windows 10 LTSC \u73af\u5883\u9700\u8981\u989d\u5916\u5b89\u88c5 | \u5982\u679c\u9519 \u2192 Python \u65b9\u6848\u5f15\u5165\u65b0\u7684\u90e8\u7f72\u6469\u64e6\uff0c\u8fdd\u53cd\u96f6\u4f9d\u8d56\u539f\u5219 |\n| 3 | \u91cd\u5199\u80fd\u4fdd\u6301\u884c\u4e3a\u4e00\u81f4 | **\u4e8b\u5b9e** \u2014 \u2705 \u6709 7034 \u884c\u6d4b\u8bd5\uff0c\u4f46\u6d4b\u8bd5\u662f bash \u5199\u7684\uff0c\u6d4b\u8bd5\u7684\u662f exit code + stderr \u8f93\u51fa\u3002\u5982\u679c hook \u6539\u4e3a Python\uff0c\u6d4b\u8bd5\u7684\u8c03\u7528\u65b9\u5f0f\u9700\u8981\u9002\u914d | \u5982\u679c\u9002\u914d\u4e0d\u5b8c\u5168 \u2192 \u56de\u5f52\u98ce\u9669 |\n| 4 | \u6240\u6709 hook \u5171\u4eab\u76f8\u540c\u7684\u521d\u59cb\u5316\u6a21\u5f0f | **\u4e8b\u5b9e** \u2014 \u2705 \u9a8c\u8bc1\uff1a9/11 \u4e2a hook source `common.sh` + `resolve_plan_name` + `find_plan`\u3002\u4f8b\u5916\uff1a`failure-tracker.sh` \u548c `quality-gate.sh` \u6709\u7b80\u5316\u8def\u5f84 | harness \u9700\u8981\u652f\u6301 opt-out |\n| 5 | Hook \u6570\u91cf\u4f1a\u7ee7\u7eed\u589e\u957f | **\u60ef\u4f8b** \u2014 \u5408\u7406\u63a8\u65ad\u4f46\u672a\u9a8c\u8bc1\u3002\u5982\u679c hook \u6570\u91cf\u7a33\u5b9a\u5728 11 \u4e2a\uff0cboilerplate \u7684\u8fb9\u9645\u6210\u672c\u5df2\u7ecf\u4ed8\u8fc7\u4e86 | \u5373\u4f7f\u4e0d\u589e\u957f\uff0cP1 \u4ecd\u7136\u503c\u5f97\u505a\uff08\u51cf\u5c11\u4fee\u6539\u516c\u5171\u6a21\u5f0f\u65f6\u7684\u540c\u6b65\u6210\u672c\uff09 |\n\n**\u771f\u6b63\u7684\u7ea6\u675f**:\n- bash \u5728\u6240\u6709\u76ee\u6807\u5e73\u53f0\u9884\u88c5 \u2014 \u8fd9\u662f\u771f\u7ea6\u675f\uff08\u4e8b\u5b9e\uff09\n- \u96f6\u7f16\u8bd1\u4f9d\u8d56\u662f\u6838\u5fc3\u8bbe\u8ba1\u539f\u5219 \u2014 \u8fd9\u662f\u5f3a\u60ef\u4f8b\uff0c\u7531\u7ef4\u62a4\u8005\u660e\u786e\u9009\u62e9\uff0c\u7b49\u540c\u4e8e\u7ea6\u675f\n- \u6d4b\u8bd5\u5fc5\u987b\u7ee7\u7eed\u901a\u8fc7 \u2014 \u771f\u7ea6\u675f\n\n**\u53ef\u4ee5\u6253\u7834\u7684\u60ef\u4f8b**:\n- \u6bcf\u4e2a hook \u81ea\u884c\u521d\u59cb\u5316 \u2014 \u5386\u53f2\u9057\u7559\uff0c\u4e0d\u662f\u6709\u610f\u8bbe\u8ba1\n- jq/awk fallback \u5728\u6bcf\u4e2a hook \u4e2d\u72ec\u7acb\u5b9e\u73b0 \u2014 \u53ef\u96c6\u4e2d\n\n### \u65b9\u6848\u91cd\u5efa\n\n#### \u65b9\u6848 A\uff1aPython \u91cd\u5199\uff08\u7528\u6237\u63d0\u51fa\u7684\u65b9\u6848\uff09\n\n**\u673a\u5236**: \u5c06 11 \u4e2a bash hook \u91cd\u5199\u4e3a Python \u811a\u672c\uff0c`dispatch.sh` \u6539\u4e3a `dispatch.py`\uff08\u6216\u4fdd\u7559 bash dispatch \u8c03\u7528 Python hook\uff09\u3002\n\n**\u53ef\u80fd\u6700\u4f18\u7684\u6761\u4ef6**: hook \u903b\u8f91\u9700\u8981\u590d\u6742\u6570\u636e\u7ed3\u6784\uff08dict\u3001class\uff09\u3001\u6b63\u5219\u8868\u8fbe\u5f0f\u3001JSON \u5904\u7406\u3001\u6216\u7f51\u7edc\u8bf7\u6c42\u3002\n\n**\u53ef\u80fd\u5931\u8d25\u7684\u539f\u56e0**:\n- \u2705 \u8fdd\u53cd\u6838\u5fc3\u8bbe\u8ba1\u539f\u5219\"pure bash + markdown, zero compiled dependencies\"\n- \u2705 Windows \u4e0a Python \u4e0d\u9884\u88c5\u3002\u5f53\u524d baton \u7684\u5b89\u88c5\u53ea\u9700 `bash setup.sh`\uff0c\u5f15\u5165 Python \u540e\u9700\u8981\u5148\u786e\u4fdd Python \u53ef\u7528\n- \u2705 \u9700\u8981\u91cd\u5199\u6216\u9002\u914d 7034 \u884c\u6d4b\u8bd5\n- \u2705 `run-hook.cmd` \u9700\u8981\u589e\u52a0 Python \u8def\u5f84\u53d1\u73b0\u903b\u8f91\uff08\u5f53\u524d\u53ea\u9700\u627e bash\uff09\n- \u2705 hook \u5b9e\u9645\u903b\u8f91\u5f88\u7b80\u5355\uff08grep\u3001exit code\u3001awk\uff09\uff0c\u4e0d\u9700\u8981 Python \u7684\u9ad8\u7ea7\u7279\u6027\n\n**\u53cd\u8f6c\u6d4b\u8bd5**: \u4ec0\u4e48\u6761\u4ef6\u4e0b\u8fd9\u4f1a\u662f\u6700\u5dee\u65b9\u6848\uff1f\u2192 \u5f53\u56e2\u961f\u5168\u662f bash \u4e13\u5bb6\u3001\u4ee3\u7801\u5e93\u5c0f\u3001hook \u903b\u8f91\u7b80\u5355\u65f6\u3002\u2705 \u5168\u90e8\u547d\u4e2d\u3002\n\n#### \u65b9\u6848 B\uff1aBash Harness \u91cd\u6784\uff08\u63a8\u8350\uff09\n\n**\u673a\u5236**: \u5728 `dispatch.sh` \u4e2d\u6dfb\u52a0 harness \u5c42\uff0c\u63d0\u4f9b\u516c\u5171\u521d\u59cb\u5316\uff08fail-open\u3001common sourcing\u3001plan discovery\uff09\u3002hook \u811a\u672c\u53ea\u5b9a\u4e49\u4e1a\u52a1\u903b\u8f91\u3002\u540c\u65f6\u5c06 JSON \u89e3\u6790\u96c6\u4e2d\u5230 `lib/json.sh`\u3002\n\n**\u53ef\u80fd\u6700\u4f18\u7684\u6761\u4ef6**: \u95ee\u9898\u662f boilerplate \u91cd\u590d\u800c\u975e\u8bed\u8a00\u80fd\u529b\u4e0d\u8db3\u3002\u2705 \u9a8c\u8bc1\u786e\u8ba4\u3002\n\n**\u53ef\u80fd\u5931\u8d25\u7684\u539f\u56e0**: \u67d0\u4e9b hook \u6709\u7279\u6b8a\u7684\u521d\u59cb\u5316\u9700\u6c42\u4e0d\u9002\u914d harness\u3002\u2705 \u9a8c\u8bc1\u53d1\u73b0 `phase-guide.sh` \u7684 EXIT trap \u548c `failure-tracker.sh` \u7684\u65e0 plan \u8def\u5f84\u662f\u4f8b\u5916\uff0c\u4f46\u53ef\u901a\u8fc7 harness \u7684 opt-out \u673a\u5236\u5904\u7406\u3002\n\n**\u53cd\u8f6c\u6d4b\u8bd5**: \u4ec0\u4e48\u6761\u4ef6\u4e0b\u8fd9\u4f1a\u662f\u6700\u5dee\u65b9\u6848\uff1f\u2192 \u5f53 bash \u8bed\u8a00\u672c\u8eab\u662f\u74f6\u9888\uff08\u9700\u8981 class\u3001\u5f02\u6b65\u3001\u590d\u6742\u6570\u636e\u5904\u7406\uff09\u65f6\u3002\u2705 \u5f53\u524d hook \u4e0d\u9700\u8981\u8fd9\u4e9b\u3002\n\n#### \u65b9\u6848 C\uff1a\u6df7\u5408\u65b9\u6848\uff08bash dispatch + Python \u590d\u6742 hook\uff09\n\n**\u673a\u5236**: \u4fdd\u7559 bash dispatch + \u7b80\u5355 hook\uff0c\u4ec5\u5c06 `plan-parser.sh`\uff08441 \u884c\uff0c\u6700\u590d\u6742\uff09\u6539\u4e3a Python\u3002\n\n**\u4e3a\u4ec0\u4e48\u4e0d\u63a8\u8350**: `plan-parser.sh` \u7684\u590d\u6742\u6027\u6765\u81ea walk-up \u67e5\u627e\u548c awk \u6bb5\u843d\u89e3\u6790\u2014\u2014\u8fd9\u4e9b bash \u505a\u5f97\u5f88\u597d\uff0c\u4e14\u6709 1105 \u884c\u4e13\u95e8\u6d4b\u8bd5\u8986\u76d6\u3002\u5f15\u5165 Python \u5355\u70b9\u4e0d\u51cf\u5c11\u590d\u6742\u5ea6\uff0c\u53cd\u800c\u589e\u52a0\u8de8\u8bed\u8a00\u8c03\u7528\u7684\u590d\u6742\u5ea6\u3002\n\n### \u53cd\u5bf9\u610f\u89c1\u8def\u5f84\uff08Dissenting Path\uff09\n\n\u5982\u679c\u4f60\u4ecd\u7136\u5e0c\u671b\u91c7\u7528 Python \u91cd\u5199\uff0c\u4ee5\u4e0b\u662f\u5408\u7406\u7684\u6761\u4ef6\u548c\u5177\u4f53\u8def\u5f84\uff1a\n\n**\u4ec0\u4e48\u6761\u4ef6\u4e0b Python \u65b9\u6848\u5408\u7406\uff1a**\n- hook \u9700\u8981\u8c03\u7528\u5916\u90e8 API\uff08HTTP \u8bf7\u6c42\u3001webhook \u901a\u77e5\uff09\n- hook \u9700\u8981\u590d\u6742\u7684 JSON schema \u9a8c\u8bc1\uff08\u4e0d\u53ea\u662f\u5b57\u6bb5\u63d0\u53d6\uff09\n- hook \u6570\u91cf\u589e\u957f\u5230 20+ \u4e14\u903b\u8f91\u8d8a\u6765\u8d8a\u590d\u6742\uff08\u9700\u8981 class \u5c42\u6b21\u7ed3\u6784\uff09\n- \u56e2\u961f\u4e2d\u6ca1\u6709\u4eba\u613f\u610f\u7ef4\u62a4 bash\n\n**\u5177\u4f53\u8fc1\u79fb\u8def\u5f84\uff08\u5982\u679c\u51b3\u5b9a\u6267\u884c\uff09\uff1a**\n\n1. **\u4fdd\u7559 `dispatch.sh` \u4e3a bash**\uff08\u5b83\u53ea\u6709 64 \u884c\uff0c\u4e14\u662f `run-hook.cmd` \u7684\u5165\u53e3\uff09\uff0c\u4f46\u6539\u4e3a\u8c03\u7528 `.py` \u811a\u672c\u800c\u975e `.sh`\n2. **\u65b0\u589e `lib/hook_base.py`**\uff1a\u63d0\u4f9b `HookBase` \u7c7b\uff0c\u5c01\u88c5 stdin \u89e3\u6790\u3001plan \u67e5\u627e\u3001fail-open\n3. **\u9010\u6b65\u8fc1\u79fb**\uff1a\u5148\u8fc1\u79fb\u6700\u7b80\u5355\u7684 hook\uff08`quality-gate.sh`\uff0c45 \u884c\uff09\uff0c\u9a8c\u8bc1\u6d4b\u8bd5\u901a\u8fc7\u540e\u518d\u9010\u6b65\u8fc1\u79fb\u5176\u4ed6\n4. **`manifest.conf` \u6269\u5c55**\uff1a\u589e\u52a0\u8bed\u8a00\u6807\u8bb0\u5b57\u6bb5\uff08`event:matcher:script:lang`\uff09\uff0cdispatch \u6839\u636e lang \u9009\u62e9 bash/python\n5. **\u6d4b\u8bd5\u9002\u914d**\uff1a\u6d4b\u8bd5\u4e0d\u9700\u8981\u91cd\u5199\uff08\u6d4b\u8bd5\u7684\u662f dispatch \u7684 exit code + stderr\uff09\uff0c\u4f46\u9700\u8981\u786e\u4fdd Python \u53ef\u7528\u6027\u68c0\u67e5\n6. **\u5de5\u4f5c\u91cf\u4f30\u8ba1**\uff1a~40h\uff08\u542b\u6d4b\u8bd5\u9002\u914d\uff09\uff0c\u7ea6\u4e3a bash harness \u65b9\u6848\u7684 4.5 \u500d\n\n---\n\n## \u6279\u6ce8\u533a\n\n"}], "eval-3-hook-dispatch-improvement-with_skill": [{"name": "plan.md", "type": "text", "content": "# \u6539\u8fdb\u65b9\u6848\uff1aHook Dispatch \u67b6\u6784\n\n**\u6df1\u5ea6**\uff1aStandard \u2014 \u591a\u79cd\u53ef\u884c\u65b9\u6848\uff0c\u9700\u8981\u5bf9\u6bd4\u53d6\u820d\n**\u6a21\u5f0f**\uff1aImprovement Proposal\uff08\u6539\u8fdb\u73b0\u6709\u7cfb\u7edf\uff09\n**\u8f93\u5165\u6765\u6e90**\uff1a`input-doc.md` + \u4ee3\u7801\u5e93\u5b9e\u9645\u9a8c\u8bc1\n\n---\n\n## TL;DR\n\n\u8f93\u5165\u6587\u6863\u4e25\u91cd\u8fc7\u65f6\uff08\u6807\u79f0 8 \u6761\u6620\u5c04 / 5 \u4e2a hook\uff0c\u5b9e\u9645 10 \u6761 / 10 \u4e2a hook\uff1b\u5217\u51fa\u7684 `prompt-guard.sh` \u4e0d\u5b58\u5728\uff09\uff0c\u4f46\u5b83\u8bc6\u522b\u7684\u4e94\u4e2a\u6838\u5fc3\u95ee\u9898\u4e2d\u6709\u56db\u4e2a\u771f\u5b9e\u5b58\u5728\u3002\u6839\u672c\u539f\u56e0\u4e0d\u662f dispatch.sh \u672c\u8eab\u8bbe\u8ba1\u6709\u7f3a\u9677\u2014\u2014\u5b83\u4f5c\u4e3a\u4e00\u4e2a 64 \u884c\u7684\u7eaf bash \u8def\u7531\u5668\u5df2\u7ecf\u591f\u7528\u2014\u2014\u800c\u662f **hook \u811a\u672c\u4e4b\u95f4\u5b58\u5728\u5927\u91cf\u91cd\u590d\u7684\u6837\u677f\u4ee3\u7801**\uff08stdin \u89e3\u6790\u3001target \u89e3\u6790\u3001plan \u67e5\u627e\u7b49\uff09\uff0c\u8fd9\u624d\u662f\u53ef\u7ef4\u62a4\u6027\u548c\u53ef\u6d4b\u8bd5\u6027\u7684\u771f\u6b63\u74f6\u9888\u3002\u6539\u8fdb\u65b9\u5411\u5e94\u8be5\u662f\u5411\u4e0b\u63d0\u53d6\u516c\u5171\u903b\u8f91\u5230 dispatch \u5c42\uff0c\u800c\u975e\u5411\u4e0a\u589e\u52a0 manifest \u590d\u6742\u5ea6\u3002\n\n---\n\n## \u63d0\u8bae\u7684\u6539\u8fdb\n\n| \u4f18\u5148\u7ea7 | \u6539\u8fdb | \u4e3a\u4ec0\u4e48\uff08\u8ffd\u6eaf\u5230\u6839\u672c\u539f\u56e0\uff09 | \u5de5\u65f6 | \u98ce\u9669 |\n|--------|------|------------------------|------|------|\n| P1 | \u63d0\u5347 dispatch.sh \u9884\u5904\u7406\u5c42\uff1astdin \u89e3\u6790 + target \u63d0\u53d6\u4e0b\u6c89 | 10 \u4e2a hook \u4e2d\u6709 6 \u4e2a\u91cd\u590d\u76f8\u540c\u7684 stdin/target \u89e3\u6790\u903b\u8f91\uff08~30 \u884c\uff09\uff0c\u662f\u6700\u5927\u7684\u91cd\u590d\u6765\u6e90 | 3h | \u4f4e |\n| P2 | \u7edf\u4e00 hook \u4e0a\u4e0b\u6587\u6ce8\u5165\uff1aplan \u67e5\u627e + GO \u68c0\u67e5\u4e0b\u6c89\u5230 dispatch | 8 \u4e2a hook \u4e2d\u6709 7 \u4e2a\u91cd\u590d `source common.sh` + `resolve_plan_name` + `find_plan` \u6a21\u5f0f | 2h | \u4f4e |\n| P3 | \u7ed3\u6784\u5316\u9000\u51fa\u534f\u8bae\uff1aJSON \u8f93\u51fa\u66ff\u4ee3\u7eaf stderr \u6587\u672c | \u5f53\u524d\u9519\u8bef\u4fe1\u606f\u4ec5\u9760 emoji \u524d\u7f00\u533a\u5206\uff0cIDE \u9002\u914d\u5c42\u65e0\u6cd5\u53ef\u9760\u89e3\u6790 | 4h | \u4e2d |\n| P4 | Hook \u6d4b\u8bd5 harness\uff1adispatch \u5c42 mock \u6ce8\u5165 | \u5f53\u524d\u6d4b\u8bd5\u9700\u6a21\u62df\u5b8c\u6574 IDE \u73af\u5883\u53d8\u91cf\uff1bdispatch \u9884\u5904\u7406\u540e hook \u53ea\u9700\u6d4b\u8bd5\u4e1a\u52a1\u903b\u8f91 | 3h | \u4f4e |\n| **\u5408\u8ba1** | | | **~12h** | |\n\n### P1\uff1aDispatch \u9884\u5904\u7406\u5c42\n\n\u5f53\u524d 6 \u4e2a hook\uff08write-lock, bash-guard, post-write-tracker, failure-tracker, quality-gate, subagent-context\uff09\u5404\u81ea\u72ec\u7acb\u89e3\u6790 `BATON_STDIN` \u4e2d\u7684 JSON \u5b57\u6bb5\u3002\u8fd9\u662f dispatch.sh \u5e94\u8be5\u505a\u7684\u4e8b\u2014\u2014\u5b83\u5df2\u7ecf\u505a\u4e86 `tool_name` \u63d0\u53d6\uff0c\u53ea\u9700\u6269\u5c55\uff1a\n\n```bash\n# dispatch.sh \u2014 \u5728 hook \u5faa\u73af\u4e4b\u524d\uff0c\u8ffd\u52a0\u4ee5\u4e0b\u5bfc\u51fa\nexport BATON_TOOL_NAME=\"$_tool\"\n\nif [ -n \"$BATON_STDIN\" ]; then\n    if command -v jq >/dev/null 2>&1; then\n        export BATON_TARGET=\"$(printf '%s' \"$BATON_STDIN\" | jq -r '.tool_input.file_path // empty')\"\n        export BATON_COMMAND=\"$(printf '%s' \"$BATON_STDIN\" | jq -r '.tool_input.command // empty')\"\n        export BATON_CWD=\"$(printf '%s' \"$BATON_STDIN\" | jq -r '.cwd // empty')\"\n        export BATON_SESSION_ID=\"$(printf '%s' \"$BATON_STDIN\" | jq -r '.session_id // empty')\"\n    else\n        # awk fallback\uff08\u73b0\u6709\u6a21\u5f0f\uff0c\u96c6\u4e2d\u4e00\u6b21\uff09\n        export BATON_TARGET=\"$(printf '%s' \"$BATON_STDIN\" | awk -F'\"' '{\n            for(i=1;i<=NF;i++) if($i==\"file_path\") { print $(i+2); exit }\n        }')\"\n        # ... \u5176\u4f59\u5b57\u6bb5\u7c7b\u4f3c\n    fi\nfi\n```\n\n**\u5f71\u54cd**\uff1a\u6bcf\u4e2a hook \u53ef\u5220\u9664 15-30 \u884c\u6837\u677f\u4ee3\u7801\uff0c\u76f4\u63a5\u4f7f\u7528 `$BATON_TARGET`\u3001`$BATON_CWD` \u7b49\u73af\u5883\u53d8\u91cf\u3002\n\n**\u9a8c\u8bc1\u65b9\u5f0f**\uff1a\u73b0\u6709 17 \u4e2a dispatch \u6d4b\u8bd5 + \u5404 hook \u72ec\u7acb\u6d4b\u8bd5\u5168\u90e8\u901a\u8fc7\u3002\n\n### P2\uff1aPlan \u4e0a\u4e0b\u6587\u9884\u52a0\u8f7d\n\n7 \u4e2a hook \u91cd\u590d\u540c\u4e00\u6bb5\u6a21\u5f0f\uff1a\n\n```bash\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" 2>/dev/null && pwd)\"\n. \"$SCRIPT_DIR/lib/common.sh\"\nresolve_plan_name\nfind_plan\n```\n\n\u5c06 plan \u53d1\u73b0\u4e0b\u6c89\u5230 dispatch.sh \u4e2d\uff0c\u5728 hook \u5faa\u73af\u4e4b\u524d\u6267\u884c\u4e00\u6b21\uff1a\n\n```bash\n# dispatch.sh \u2014 manifest \u89e3\u6790\u524d\n. \"$_dir/lib/common.sh\" 2>/dev/null || true\nresolve_plan_name\nfind_plan\nexport BATON_PLAN_PATH=\"$PLAN\"\nexport BATON_PLAN_FILE=\"$PLAN_NAME\"\nexport BATON_HAS_GO=\"\"\n[ -n \"$PLAN\" ] && parser_has_go && BATON_HAS_GO=1\nexport BATON_HAS_GO\n```\n\n**\u5f71\u54cd**\uff1aplan \u67e5\u627e\u4ece\u6bcf hook \u6267\u884c\u4e00\u6b21\u53d8\u4e3a\u6bcf\u6b21 dispatch \u6267\u884c\u4e00\u6b21\uff08Windows \u4e0a\u8282\u7701 ~100ms * hook \u6570\u91cf\uff09\u3002Hook \u76f4\u63a5\u8bfb\u73af\u5883\u53d8\u91cf\u5373\u53ef\u3002\n\n**\u9a8c\u8bc1\u65b9\u5f0f**\uff1a`test-dispatch.sh` \u6269\u5c55 + `test-write-lock.sh` \u56de\u5f52\u3002\n\n### P3\uff1a\u7ed3\u6784\u5316\u9000\u51fa\u534f\u8bae\n\n\u76ee\u524d Cursor \u9002\u914d\u5668 (`adapter.sh`) \u7528\u6b63\u5219\u4ece stderr \u6587\u672c\u4e2d\u63d0\u53d6\u4fe1\u606f\u3002\u5efa\u8bae\u7528 JSON stdout \u66ff\u4ee3\uff1a\n\n```bash\n# hook \u8f93\u51fa\u7ea6\u5b9a\uff08stdout JSON\uff0cstderr \u4ecd\u53ef\u7528\u4e8e\u4eba\u53ef\u8bfb\u6d88\u606f\uff09\n# \u5141\u8bb8\uff1a\necho '{\"decision\":\"allow\",\"context\":\"write-set approved\"}'\n# \u963b\u6b62\uff1a\necho '{\"decision\":\"deny\",\"reason\":\"no BATON:GO marker\"}'\n# \u5efa\u8bae\uff08PostToolUse \u7b49\uff09\uff1a\necho '{\"decision\":\"allow\",\"advisory\":\"file not in write set\"}'\n```\n\n**\u5f71\u54cd**\uff1aCursor \u9002\u914d\u5668\u4ece 37 \u884c\u7b80\u5316\u5230 ~5 \u884c\uff08\u76f4\u63a5\u900f\u4f20 JSON\uff09\u3002\u65b0 IDE \u9002\u914d\u53ea\u9700\u6620\u5c04 JSON \u5b57\u6bb5\u3002\n\n**\u9a8c\u8bc1\u65b9\u5f0f**\uff1a`test-adapters.sh` + `test-adapters-v2.sh` \u5168\u90e8\u8986\u76d6\u3002\n\n### P4\uff1a\u6d4b\u8bd5 Harness \u6539\u8fdb\n\nP1/P2 \u5b8c\u6210\u540e\uff0chook \u6d4b\u8bd5\u53ef\u4ee5\u7b80\u5316\u4e3a\uff1a\u8bbe\u7f6e\u73af\u5883\u53d8\u91cf \u2192 source hook \u2192 \u68c0\u67e5\u8f93\u51fa\u3002\u4e0d\u518d\u9700\u8981\u6784\u9020 JSON stdin \u548c\u6a21\u62df dispatch \u8def\u5f84\u3002\u8fd9\u4e0d\u662f\u72ec\u7acb\u5de5\u4f5c\u9879\uff0c\u800c\u662f P1/P2 \u7684\u81ea\u7136\u526f\u4ea7\u54c1\u2014\u2014\u4f46\u9700\u8981\u540c\u6b65\u66f4\u65b0\u73b0\u6709\u6d4b\u8bd5\u3002\n\n---\n\n## \u4e0d\u5e94\u6539\u53d8\u7684\u90e8\u5206\n\n| \u8981\u7d20 | \u4fdd\u7559\u7406\u7531 |\n|------|---------|\n| **manifest.conf \u5e73\u9762\u7ed3\u6784** | \u2705 \u9a8c\u8bc1\uff1a10 \u6761\u6620\u5c04\uff0c\u5168\u90e8\u662f\u65e0\u6761\u4ef6\u7684\u4e8b\u4ef6\u2192\u811a\u672c\u8def\u7531\u3002\u6587\u6863\u58f0\u79f0\u9700\u8981\"\u6761\u4ef6\u8def\u7531\uff08\u5982\u53ea\u5728 plan \u9636\u6bb5\u542f\u7528\u67d0 hook\uff09\"\uff0c\u4f46\u5b9e\u9645\u5404 hook \u5185\u90e8\u5df2\u81ea\u884c\u5904\u7406\u9636\u6bb5\u5224\u65ad\uff08\u5982 `parser_has_go`\uff09\uff0cmanifest \u4e0d\u9700\u8981\u627f\u8f7d\u8fd9\u4e2a\u8d23\u4efb\u3002\u9636\u6bb5\u6761\u4ef6\u4e0b\u6c89\u5230 hook \u5185\u90e8\u662f\u6b63\u786e\u7684\u2014\u2014manifest \u8d1f\u8d23\u8def\u7531\uff0chook \u8d1f\u8d23\u51b3\u7b56\u3002 |\n| **run-hook.cmd \u8de8\u5e73\u53f0\u5c42** | \u2705 \u9a8c\u8bc1\uff1apolyglot \u811a\u672c\uff08cmd + bash \u53cc\u6a21\u5f0f\uff09\uff0c46 \u884c\uff0c\u903b\u8f91\u6e05\u6670\u3002Windows \u4e0a\u7ed5\u8fc7 Git Bash \u6267\u884c\u6162\u7684\u95ee\u9898\u662f OS \u5c42\u9762\u7684\uff0c\u4e0d\u662f\u67b6\u6784\u5c42\u9762\u80fd\u89e3\u51b3\u7684\u3002 |\n| **Hook \u5b50 shell \u9694\u79bb** | \u2705 \u9a8c\u8bc1\uff1a`( . \"$_dir/$_script.sh\" )` \u6a21\u5f0f\u786e\u4fdd hook \u4e4b\u95f4\u72b6\u6001\u9694\u79bb\u3002\u6587\u6863\u5c06\u6b64\u5217\u4e3a\"hook \u4e4b\u95f4\u65e0\u901a\u4fe1\u673a\u5236\"\u95ee\u9898\uff0c\u4f46\u72b6\u6001\u9694\u79bb\u662f feature \u4e0d\u662f bug\u2014\u2014hook \u4e4b\u95f4\u5171\u4eab\u53ef\u53d8\u72b6\u6001\u4f1a\u5f15\u5165\u9690\u5f0f\u8026\u5408\u3002 |\n| **fail-open \u7b56\u7565** | \u2705 \u9a8c\u8bc1\uff1a\u6240\u6709 hook \u7684 trap \u9ed8\u8ba4 exit 0\u3002\u5bf9\u4e8e\u6cbb\u7406\u5de5\u5177\u6765\u8bf4 fail-open \u662f\u6b63\u786e\u7684\u9ed8\u8ba4\u2014\u2014hook \u5d29\u6e83\u4e0d\u5e94\u963b\u6b62\u5f00\u53d1\u8005\u5de5\u4f5c\u3002 |\n\n---\n\n## \u5bf9\u6bd4\n\n| \u7ef4\u5ea6 | \u5f53\u524d | \u6539\u8fdb\u540e | \u4e3a\u4ec0\u4e48 |\n|------|------|--------|--------|\n| Hook \u5e73\u5747\u884c\u6570 | ~80 \u884c\uff08\u542b ~30 \u884c\u6837\u677f\uff09 | ~50 \u884c\uff08\u7eaf\u4e1a\u52a1\u903b\u8f91\uff09 | P1/P2 \u6d88\u9664\u91cd\u590d\u6837\u677f |\n| Plan \u67e5\u627e\u6b21\u6570/dispatch | N \u6b21\uff08\u6bcf hook \u4e00\u6b21\uff0cN=\u88ab\u89e6\u53d1\u7684 hook \u6570\uff09 | 1 \u6b21 | P2 \u96c6\u4e2d\u9884\u52a0\u8f7d |\n| IDE \u9002\u914d\u590d\u6742\u5ea6 | \u9002\u914d\u5668\u9700\u89e3\u6790 stderr \u6587\u672c | \u9002\u914d\u5668\u900f\u4f20 JSON | P3 \u7ed3\u6784\u5316\u8f93\u51fa |\n| \u6d4b\u8bd5\u6784\u9020\u6210\u672c | \u9700\u6a21\u62df JSON stdin + \u73af\u5883 | \u8bbe\u7f6e env \u53d8\u91cf\u5373\u53ef | P1/P2 \u7684\u526f\u4ea7\u54c1 |\n| Windows \u6027\u80fd | ~200ms * hook \u6570 | ~200ms + hook \u6570 * delta | P2 \u51cf\u5c11\u91cd\u590d shell \u64cd\u4f5c |\n\n---\n\n## Self-Check\n\n1. **\u6211\u662f\u5426\u8d28\u7591\u4e86\u95ee\u9898\u672c\u8eab\uff0c\u800c\u4e0d\u4ec5\u662f\u89e3\u6cd5\uff1f**\n   \u662f\u3002\u8f93\u5165\u6587\u6863\u7684\u4e94\u4e2a\"\u5df2\u77e5\u95ee\u9898\"\u4e2d\uff0c\u6211\u9a8c\u8bc1\u540e\u53d1\u73b0\"hook \u95f4\u65e0\u901a\u4fe1\"\u5b9e\u9645\u4e0a\u662f\u6709\u610f\u7684\u9694\u79bb\u8bbe\u8ba1\u800c\u975e\u7f3a\u9677\u3002\"manifest \u4e0d\u652f\u6301\u6761\u4ef6\u8def\u7531\"\u4e5f\u4e0d\u662f\u771f\u6b63\u7684\u95ee\u9898\u2014\u2014\u9636\u6bb5\u5224\u65ad\u5728 hook \u5185\u90e8\u5b8c\u6210\u662f\u66f4\u597d\u7684\u804c\u8d23\u5206\u79bb\u3002\u771f\u6b63\u7684\u95ee\u9898\u662f\u6587\u6863\u6ca1\u63d0\u5230\u7684\uff1ahook \u95f4\u5927\u91cf\u91cd\u590d\u7684\u6837\u677f\u4ee3\u7801\u3002\n\n2. **\u6211\u662f\u5426\u53d1\u73b0\u4e86\u503c\u5f97\u6253\u7834\u7684\u60ef\u4f8b\uff1f**\n   \u662f\u3002\u5f53\u524d\u60ef\u4f8b\u662f\"\u6bcf\u4e2a hook \u81ea\u5df1\u8d1f\u8d23\u5b8c\u6574\u7684\u8f93\u5165\u89e3\u6790\"\u3002\u8fd9\u5728 hook \u6570\u91cf\u5c11\uff08\u6587\u6863\u58f0\u79f0 5 \u4e2a\uff09\u65f6\u53ef\u4ee5\u63a5\u53d7\uff0c\u4f46\u73b0\u5b9e\u5df2\u7ecf\u6709 10 \u4e2a hook\uff0c\u91cd\u590d\u5df2\u4e0d\u53ef\u5ffd\u89c6\u3002\u6253\u7834\u8fd9\u4e2a\u60ef\u4f8b\uff0c\u8ba9 dispatch \u627f\u62c5\u9884\u5904\u7406\u804c\u8d23\u3002\n\n3. **\u6211\u662f\u5426\u5728\u63a8\u8350\u7b2c\u4e00\u4e2a\u60f3\u5230\u7684\u65b9\u6848\uff1f**\n   \u4e0d\u662f\u3002\u6211\u5148\u8003\u8651\u4e86\u589e\u52a0 manifest \u590d\u6742\u5ea6\uff08\u6761\u4ef6\u8def\u7531\u3001\u4f18\u5148\u7ea7\u7cfb\u7edf\uff09\u7684\u65b9\u6848\uff0c\u4e5f\u8003\u8651\u4e86\u5f15\u5165 hook \u6846\u67b6/\u6a21\u677f\u751f\u6210\u5668\u7684\u65b9\u6848\u3002\u524d\u8005\u589e\u52a0\u8ba4\u77e5\u8d1f\u62c5\u4e14\u4e0d\u89e3\u51b3\u6839\u672c\u95ee\u9898\uff1b\u540e\u8005\u5f15\u5165\u4ee3\u7801\u751f\u6210\u590d\u6742\u5ea6\u3002\u6700\u7ec8\u9009\u62e9\u5411 dispatch \u4e0b\u6c89\u9884\u5904\u7406\uff0c\u56e0\u4e3a\u5b83\u4e0d\u589e\u52a0\u65b0\u6982\u5ff5\uff0c\u53ea\u662f\u628a\u5df2\u7ecf\u505a\u7684\u4e8b\uff08dispatch \u5df2\u63d0\u53d6 tool_name\uff09\u505a\u5f97\u66f4\u5b8c\u6574\u3002\n\n4. **\u8bfb\u8005\u80fd\u5426\u4ece\u8fd9\u4efd\u65b9\u6848\u9884\u6d4b\u4f1a\u53d1\u751f\u4ec0\u4e48\uff1f**\n   \u53ef\u4ee5\u3002\u6bcf\u4e2a P \u7ea7\u6539\u52a8\u90fd\u6807\u6ce8\u4e86\uff1a\u5177\u4f53\u6539\u4ec0\u4e48\u6587\u4ef6\u3001\u4ee3\u7801\u793a\u4f8b\u3001\u5220\u591a\u5c11\u884c\u3001\u5982\u4f55\u9a8c\u8bc1\u3002\n\n5. **\u6211\u613f\u610f\u62bc\u94b1\u5728\u8fd9\u4e2a\u65b9\u6848\u4e0a\u5417\uff1f**\n   P1/P2 \u5b8c\u5168\u613f\u610f\u2014\u2014\u5b83\u4eec\u662f\u4f4e\u98ce\u9669\u3001\u9ad8\u786e\u5b9a\u6027\u7684\u91cd\u6784\uff0c\u6709\u5145\u5206\u6d4b\u8bd5\u8986\u76d6\u3002P3 \u7684\u6700\u5f31\u73af\u8282\u662f\uff1a\u73b0\u6709 hook \u7684 stderr \u8f93\u51fa\u5df2\u88ab IDE \u96c6\u6210\uff08\u5982 Claude Code \u7684 hookSpecificOutput JSON\uff09\uff0c\u8fc1\u79fb\u5230\u7eaf JSON \u9700\u8981\u786e\u8ba4\u6240\u6709 IDE \u7684 hook \u534f\u8bae\u662f\u5426\u90fd\u652f\u6301 stdout JSON \u89e3\u6790\u3002\u5efa\u8bae P3 \u5148\u505a\u4e00\u4e2a hook \u7684 pilot\uff08write-lock\uff09\uff0c\u9a8c\u8bc1 Claude Code \u548c Cursor \u90fd\u80fd\u6b63\u786e\u5904\u7406\u540e\u518d\u63a8\u5e7f\u3002\n\n---\n\n## \u5206\u6790\uff08\u652f\u6491\u63a8\u7406\uff09\n\n### \u73b0\u72b6\uff08\u5df2\u9a8c\u8bc1\uff09\n\n\u8f93\u5165\u6587\u6863\u7684\u58f0\u660e\u4e0e\u4ee3\u7801\u5e93\u5b9e\u9645\u7684\u504f\u5dee\uff1a\n\n| \u6587\u6863\u58f0\u660e | \u5b9e\u9645\u60c5\u51b5 | \u504f\u5dee\u7a0b\u5ea6 |\n|---------|---------|---------|\n| \"8 \u4e2a\u6620\u5c04\" | \u2705 \u9a8c\u8bc1\uff1amanifest.conf \u6709 **10 \u6761\u6620\u5c04** | \u8fc7\u65f6 |\n| \"5 \u4e2a\u72ec\u7acb\u7684 hook \u811a\u672c\" | \u2705 \u9a8c\u8bc1\uff1a**10 \u4e2a** hook .sh \u6587\u4ef6\uff08\u4e0d\u542b dispatch.sh\uff09 | \u4e25\u91cd\u8fc7\u65f6 |\n| \"hook: prompt-guard.sh\" | \u2705 \u9a8c\u8bc1\uff1a**\u4e0d\u5b58\u5728** `prompt-guard.sh`\uff1b\u5b9e\u9645\u6709 bash-guard.sh | \u9519\u8bef |\n| \"hook \u4e4b\u95f4\u65e0\u901a\u4fe1\u673a\u5236\" | \u2705 \u9a8c\u8bc1\uff1a\u5b50 shell \u9694\u79bb\u662f\u6709\u610f\u8bbe\u8ba1\uff08`dispatch.sh:52`\uff09 | \u8bef\u5224 |\n| \"dispatch.sh \u5355\u6b21 ~50ms/~200ms\" | \u2753 \u672a\u9a8c\u8bc1\uff08\u65e0 benchmark \u5de5\u5177\uff09\uff0c\u4f46\u7b26\u5408 Git Bash \u7684\u5df2\u77e5\u6027\u80fd\u7279\u5f81 | \u53ef\u4fe1\u4f46\u672a\u9a8c\u8bc1 |\n\n\u5b8c\u6574\u7684 hook \u6e05\u5355\uff08\u2705 \u9a8c\u8bc1\u4e8e manifest.conf + \u6587\u4ef6\u7cfb\u7edf\uff09\uff1a\n\n1. `phase-guide.sh` \u2014 SessionStart\uff0c\u9636\u6bb5\u68c0\u6d4b + \u6280\u80fd\u5f15\u5bfc\uff08265 \u884c\uff0c\u6700\u590d\u6742\uff09\n2. `write-lock.sh` \u2014 PreToolUse(Write/Edit/...)\uff0c\u5199\u9501 + \u5199\u96c6\u6267\u884c\uff08172 \u884c\uff09\n3. `bash-guard.sh` \u2014 PreToolUse(Bash)\uff0cshell \u5199\u6a21\u5f0f\u68c0\u6d4b\uff08165 \u884c\uff09\n4. `post-write-tracker.sh` \u2014 PostToolUse(Write/Edit/...)\uff0c\u5199\u96c6\u6f02\u79fb\u544a\u8b66\uff08117 \u884c\uff09\n5. `quality-gate.sh` \u2014 PostToolUse(Write/Edit/...)\uff0cSelf-Challenge \u68c0\u67e5\uff0846 \u884c\uff09\n6. `subagent-context.sh` \u2014 SubagentStart\uff0cplan \u4e0a\u4e0b\u6587\u6ce8\u5165\uff0851 \u884c\uff09\n7. `stop-guard.sh` \u2014 Stop\uff0c\u4f1a\u8bdd\u7ed3\u675f\u63d0\u9192\uff0853 \u884c\uff09\n8. `completion-check.sh` \u2014 TaskCompleted\uff0c\u5b8c\u6210\u524d\u68c0\u67e5\uff0877 \u884c\uff09\n9. `failure-tracker.sh` \u2014 PostToolUseFailure\uff0c\u5931\u8d25\u8ba1\u6570\u5668\uff0864 \u884c\uff09\n10. `pre-compact.sh` \u2014 PreCompact\uff0c\u538b\u7f29\u524d\u4e0a\u4e0b\u6587\u4fdd\u5b58\uff0870 \u884c\uff09\n\n### \u6839\u672c\u539f\u56e0\n\n\u6587\u6863\u63d0\u51fa\u7684\"\u5e73\u9762 manifest\"\"\u65e0\u901a\u4fe1\"\"\u7c97\u7cd9\u9519\u8bef\u5904\u7406\"\u90fd\u662f\u8868\u8c61\u3002\u6df1\u5c42\u95ee\u9898\u662f\uff1a\n\n**Five Whys \u94fe\u6761\uff1a**\n\n- \u8868\u8c61\uff1a\u6dfb\u52a0\u65b0 hook \u9700\u8981\u5199\u5927\u91cf\u6837\u677f\u4ee3\u7801\n- \u4e3a\u4ec0\u4e48\uff1f\u6bcf\u4e2a hook \u72ec\u7acb\u5904\u7406\u8f93\u5165\u89e3\u6790\u548c\u4e0a\u4e0b\u6587\u83b7\u53d6\n- \u4e3a\u4ec0\u4e48\uff1fdispatch.sh \u53ea\u505a\u4e86\u6700\u5c0f\u7684\u8def\u7531\uff08\u4e8b\u4ef6\u540d\u5339\u914d + \u5b50 shell \u6267\u884c\uff09\n- \u4e3a\u4ec0\u4e48\uff1f\u6700\u521d\u53ea\u6709 2-3 \u4e2a hook\uff0c\u6837\u677f\u4e0d\u662f\u95ee\u9898\n- \u6839\u56e0\uff1a**hook \u6570\u91cf\u4ece 3 \u4e2a\u589e\u957f\u5230 10 \u4e2a\uff0c\u4f46 dispatch \u7684\u804c\u8d23\u6ca1\u6709\u540c\u6b65\u6269\u5c55**\n\n\u8fd9\u662f\u4e00\u4e2a\u5178\u578b\u7684\"\u6210\u529f\u5bfc\u81f4\u7684\u6280\u672f\u503a\"\u2014\u2014\u7cfb\u7edf\u56e0\u4e3a\u597d\u7528\u800c\u5feb\u901f\u589e\u957f\uff0c\u4f46\u57fa\u7840\u8bbe\u65bd\u6ca1\u8ddf\u4e0a\u3002\n\n### Assumption Audit\n\n| # | \u5047\u8bbe | \u7c7b\u578b | \u5982\u679c\u9519\u8bef\u2026 |\n|---|------|------|----------|\n| 1 | manifest.conf \u4e0d\u9700\u8981\u6761\u4ef6\u8def\u7531 | \u9a8c\u8bc1\u540e\u7684\u4e8b\u5b9e | \u5982\u679c\u672a\u6765\u9700\u8981\"\u67d0\u4e9b hook \u53ea\u5728\u7279\u5b9a IDE \u4e0a\u8fd0\u884c\"\uff0c\u9700\u8981\u91cd\u65b0\u8bc4\u4f30\u3002\u4f46\u5f53\u524d adapter \u673a\u5236\u5df2\u89e3\u51b3\u6b64\u95ee\u9898\u3002 |\n| 2 | Hook \u95f4\u4e0d\u9700\u8981\u5171\u4eab\u53ef\u53d8\u72b6\u6001 | \u8bbe\u8ba1\u9009\u62e9 | \u5982\u679c\u9700\u8981\uff0c\u8bf4\u660e hook \u804c\u8d23\u5212\u5206\u6709\u8bef\uff0c\u5e94\u5408\u5e76\u800c\u975e\u6dfb\u52a0\u901a\u4fe1\u3002\u65b9\u6848\u4e0d\u53d7\u5f71\u54cd\u3002 |\n| 3 | dispatch.sh \u9884\u5904\u7406\u4e0d\u4f1a\u663e\u8457\u589e\u52a0\u5ef6\u8fdf | \u63a8\u65ad | jq \u8c03\u7528\u4ece\u5206\u6563\u5728\u5404 hook \u53d8\u4e3a\u96c6\u4e2d\u4e00\u6b21\u8c03\u7528\uff0c\u603b\u5ef6\u8fdf\u5e94\u51cf\u5c11\u3002\u6700\u5dee\u60c5\u51b5\u6301\u5e73\u3002 |\n| 4 | \u6240\u6709 IDE hook \u534f\u8bae\u90fd\u652f\u6301 stdout JSON | \u672a\u77e5 | P3 \u7684\u5173\u952e\u98ce\u9669\u70b9\u3002Claude Code \u652f\u6301\uff08hookSpecificOutput \u5df2\u5728\u7528\uff09\uff0cCursor \u652f\u6301\uff08adapter \u5df2\u8fd4\u56de JSON\uff09\u3002\u5176\u4ed6 IDE \u5f85\u9a8c\u8bc1\u3002 |\n\n### \u65b9\u6848\u91cd\u6784\n\n\u8003\u8651\u8fc7\u7684\u66ff\u4ee3\u65b9\u6848\uff1a\n\n**A. \u589e\u5f3a manifest \u8bed\u6cd5**\uff08\u6761\u4ef6\u8def\u7531\u3001\u4f18\u5148\u7ea7\u3001\u53c2\u6570\u4f20\u9012\uff09\n- \u673a\u5236\uff1amanifest.conf \u53d8\u4e3a DSL\uff08\u5982 `PreToolUse:Write=write-lock.sh [when:has_go]`\uff09\n- \u5426\u51b3\u539f\u56e0\uff1a\u589e\u52a0\u89e3\u6790\u590d\u6742\u5ea6\uff0c\u4e14\u95ee\u9898\u4e0d\u5728\u8def\u7531\u903b\u8f91\u2014\u2014hook \u5185\u90e8\u5df2\u7ecf\u6b63\u786e\u5904\u7406\u6761\u4ef6\u5224\u65ad\u3002\u8fd9\u662f\u62ff manifest \u89e3\u51b3 hook \u7684\u95ee\u9898\u3002\n\n**B. Hook \u6846\u67b6/\u6a21\u677f\u751f\u6210\u5668**\n- \u673a\u5236\uff1a\u63d0\u4f9b `baton hook new <name>` \u751f\u6210 hook \u9aa8\u67b6\n- \u5426\u51b3\u539f\u56e0\uff1a\u751f\u6210\u7684\u4ee3\u7801\u4ecd\u7136\u662f\u91cd\u590d\u7684\u2014\u2014\u53ea\u662f\u751f\u6210\u65f6\u7701\u529b\uff0c\u7ef4\u62a4\u65f6\u4e0d\u7701\u529b\u3002\u4e14\u5bf9\u73b0\u6709 10 \u4e2a hook \u65e0\u5e2e\u52a9\u3002\n\n**C. \u5411 dispatch \u4e0b\u6c89\u9884\u5904\u7406**\uff08\u63a8\u8350\u65b9\u6848\uff09\n- \u673a\u5236\uff1adispatch.sh \u627f\u62c5 stdin \u89e3\u6790\u3001target \u63d0\u53d6\u3001plan \u53d1\u73b0\uff0c\u901a\u8fc7\u73af\u5883\u53d8\u91cf\u4f20\u9012\u7ed9 hook\n- \u4f18\u52bf\uff1a\u4e0d\u5f15\u5165\u65b0\u6982\u5ff5\uff1b\u51cf\u5c11\u4ee3\u7801\u91cf\uff1b\u6539\u5584\u6027\u80fd\uff08\u5355\u6b21 jq \u8c03\u7528\uff09\uff1b\u964d\u4f4e\u6d4b\u8bd5\u6784\u9020\u6210\u672c\n- \u98ce\u9669\uff1adispatch.sh \u4ece 64 \u884c\u589e\u957f\u5230 ~100 \u884c\uff0c\u4f46\u590d\u6742\u5ea6\u662f\u7ebf\u6027\u7684\uff08\u987a\u5e8f\u63d0\u53d6\u5b57\u6bb5\uff09\uff0c\u4e0d\u662f\u6307\u6570\u7684\n\n**\u53cd\u8f6c\u6d4b\u8bd5\uff08\u9488\u5bf9\u65b9\u6848 C\uff09\uff1a**\n- **\u4ec0\u4e48\u60c5\u51b5\u4e0b\u8fd9\u662f\u6700\u5dee\u65b9\u6848\uff1f** \u5982\u679c hook \u9700\u8981\u7684\u8f93\u5165\u5dee\u5f02\u6781\u5927\uff08\u6bcf\u4e2a hook \u9700\u8981\u5b8c\u5168\u4e0d\u540c\u7684 JSON \u5b57\u6bb5\uff09\uff0c\u96c6\u4e2d\u63d0\u53d6\u5c31\u53d8\u6210\u4e86\"\u63d0\u53d6\u4e86\u6ca1\u4eba\u7528\u7684\u5b57\u6bb5\"\u3002\u2705 \u9a8c\u8bc1\uff1a\u5b9e\u9645 6/10 hook \u9700\u8981\u76f8\u540c\u7684 file_path/cwd \u5b57\u6bb5\uff0c2/10 \u9700\u8981 command \u5b57\u6bb5\uff0c\u96c6\u4e2d\u63d0\u53d6\u662f\u5408\u7406\u7684\u3002\n- **\u53cd\u9762\u65b9\u6848\u6709\u9053\u7406\u5417\uff1f** \u53cd\u9762\u662f\"\u8ba9\u6bcf\u4e2a hook \u66f4\u72ec\u7acb\"\u2014\u2014\u8d70\u5411\u5fae\u670d\u52a1\u5316/\u72ec\u7acb\u8fdb\u7a0b\u3002\u5bf9\u4e8e <100ms \u76ee\u6807\u7684 hook \u7cfb\u7edf\u6765\u8bf4\uff0c\u8fdb\u7a0b\u5f00\u9500\u4e0d\u53ef\u63a5\u53d7\u3002\n"}], "eval-4-light-depth-simple-with_skill": [{"name": "plan.md", "type": "text", "content": "# \u6267\u884c\u8ba1\u5212\uff1amanifest.conf \u6ce8\u91ca\u652f\u6301\n\n**\u6df1\u5ea6**\uff1aLight \u2014 \u95ee\u9898\u6e05\u6670\uff0c\u89e3\u51b3\u65b9\u6848\u7a7a\u95f4\u6781\u7a84\u3002\n**\u8f93\u5165\u6765\u6e90**\uff1amanifest.conf, dispatch.sh, \u7528\u6237\u63cf\u8ff0\n\n## TL;DR\n\nmanifest.conf **\u5df2\u7ecf\u652f\u6301 `#` \u6ce8\u91ca**\u3002dispatch.sh \u7b2c 38 \u884c\u7684 `case \"$_evt\" in ''|\\#*) continue ;; esac` \u4f1a\u8df3\u8fc7\u7a7a\u884c\u548c `#` \u5f00\u5934\u7684\u884c\u3002manifest.conf \u524d\u4e24\u884c\u5c31\u662f\u6ce8\u91ca\u3002\u65e0\u9700\u4efb\u4f55\u4ee3\u7801\u4fee\u6539\u3002\n\n## \u884c\u52a8\u65b9\u6848\n\n\u65e0\u9700\u4fee\u6539\u3002\u529f\u80fd\u5df2\u5b58\u5728\u3002\n\n**\u5df2\u6709\u7684\u8bc1\u636e\uff1a**\n\n1. \u2705 `dispatch.sh:38` \u2014 `case \"$_evt\" in ''|\\#*) continue ;; esac` \u660e\u786e\u8df3\u8fc7 `#` \u5f00\u5934\u7684\u884c\n2. \u2705 `manifest.conf:1-2` \u2014 \u6587\u4ef6\u5f00\u5934\u5df2\u6709\u4e24\u884c `#` \u6ce8\u91ca\uff0c\u4e14\u7cfb\u7edf\u6b63\u5e38\u8fd0\u884c\n\n\u5982\u679c\u4f60\u60f3\u505a\u7684\u662f**\u589e\u5f3a**\u6ce8\u91ca\u652f\u6301\uff08\u6bd4\u5982\u884c\u5185\u6ce8\u91ca `SessionStart::phase-guide # \u542f\u52a8\u5f15\u5bfc`\uff09\uff0c\u90a3\u662f\u4e00\u4e2a\u4e0d\u540c\u7684\u9700\u6c42\uff0c\u9700\u8981\u4fee\u6539\u89e3\u6790\u903b\u8f91\u3002\u4f46\u6309\u5f53\u524d\u63cf\u8ff0\uff08`#` \u5f00\u5934\u7684\u884c\u4f5c\u4e3a\u6ce8\u91ca\u5ffd\u7565\uff09\uff0c\u529f\u80fd\u5df2\u5b8c\u5907\u3002\n\n## \u4e0d\u505a\u7684\u4e8b\u60c5\n\n- **\u884c\u5185\u6ce8\u91ca\u652f\u6301**\uff1a\u5f53\u524d `read -r` + IFS \u5206\u5272\u4e0d\u652f\u6301\u884c\u5c3e\u6ce8\u91ca\uff0c\u52a0\u8fd9\u4e2a\u9700\u8981\u6539\u89e3\u6790\u903b\u8f91\u4e14\u5bb9\u6613\u5f15\u5165 bug\uff08script \u540d\u79f0\u53ef\u80fd\u5305\u542b `#`\uff09\u3002\u6536\u76ca\u4e0d\u5927\uff0c\u4e0d\u5efa\u8bae\u505a\u3002\n- **\u6587\u6863\u8865\u5145**\uff1amanifest.conf \u524d\u4e24\u884c\u5df2\u7ecf\u662f\u81ea\u6587\u6863\u5316\u7684\u6ce8\u91ca\uff0c\u8db3\u591f\u8bf4\u660e\u683c\u5f0f\u3002\n\n## Self-Check\n\n1. **\u662f\u5426\u8d28\u7591\u4e86\u95ee\u9898\u672c\u8eab\uff1f** \u662f \u2014 \u53d1\u73b0\u95ee\u9898\u7684\u524d\u63d0\uff08\"\u6ca1\u6709\u6ce8\u91ca\u652f\u6301\"\uff09\u4e0d\u6210\u7acb\u3002\n2. **\u662f\u5426\u53d1\u73b0\u4e86\u503c\u5f97\u6253\u7834\u7684\u60ef\u4f8b\uff1f** \u4e0d\u9002\u7528\uff0c\u65e0\u9700\u6539\u52a8\u3002\n3. **\u662f\u5426\u63a8\u8350\u4e86\u7b2c\u4e00\u4e2a\u60f3\u5230\u7684\u65b9\u6848\uff1f** \u4e0d\u662f\"\u65b9\u6848\"\uff0c\u662f\u4e8b\u5b9e\u6838\u67e5\u3002\n4. **\u7528\u6237\u80fd\u5426\u4ece\u8ba1\u5212\u9884\u6d4b\u5c06\u8981\u53d1\u751f\u4ec0\u4e48\uff1f** \u80fd \u2014 \u7b54\u6848\u662f\u4ec0\u4e48\u90fd\u4e0d\u505a\u3002\n5. **\u662f\u5426\u6709\u4fe1\u5fc3\uff1f** \u5b8c\u5168\u786e\u5b9a\uff0c\u5df2\u4ece\u4ee3\u7801\u9a8c\u8bc1\u3002\n\n---\n\n## \u5206\u6790\uff08\u652f\u6491\u63a8\u7406\uff09\n\n### \u5173\u952e\u5047\u8bbe\n\n- **\u5047\u8bbe\uff1a\"manifest.conf \u4e0d\u652f\u6301\u6ce8\u91ca\"** \u2014 \u60ef\u4f8b\uff0c\u5b9e\u9645\u4e0d\u6210\u7acb\u3002\u2705 dispatch.sh:38 \u5df2\u5904\u7406\u3002\n- **\u5047\u8bbe\uff1a\"\u9700\u8981\u4ee3\u7801\u4fee\u6539\"** \u2014 \u57fa\u4e8e\u4e0a\u4e00\u6761\uff0c\u540c\u6837\u4e0d\u6210\u7acb\u3002\n\n### \u9a8c\u8bc1\u94fe\n\n`dispatch.sh` \u7528 `while IFS=: read -r _evt _matcher _script` \u9010\u884c\u8bfb\u53d6 manifest.conf\uff0c\u7d27\u63a5\u7740\u7528 `case \"$_evt\" in ''|\\#*) continue ;; esac` \u8fc7\u6ee4\u3002\u5f53\u4e00\u884c\u4ee5 `#` \u5f00\u5934\u65f6\uff0c`_evt` \u7684\u503c\u5c31\u662f `# ...`\uff08\u56e0\u4e3a `#` \u5728\u7b2c\u4e00\u4e2a `:` \u4e4b\u524d\uff09\uff0c\u5339\u914d `\\#*` \u6a21\u5f0f\uff0c\u6267\u884c `continue` \u8df3\u8fc7\u8be5\u884c\u3002\u903b\u8f91\u5b8c\u6574\uff0c\u65e0\u9057\u6f0f\u3002\n"}]}, "benchmark": {"skill_name": "first-principles-planner", "iteration": 6, "configurations": [{"name": "with_skill", "evals": [{"eval_name": "plugin-marketplace", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 58892, "duration_seconds": 261.3}, {"eval_name": "rewrite-to-python", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 72219, "duration_seconds": 283.6}, {"eval_name": "hook-dispatch-improvement", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 60655, "duration_seconds": 262.0}, {"eval_name": "light-depth-simple", "assertions_passed": 6, "assertions_total": 6, "pass_rate": 1.0, "tokens": 23612, "duration_seconds": 103.6}], "aggregate": {"mean_pass_rate": 1.0, "stddev_pass_rate": 0.0, "mean_tokens": 53844.5, "stddev_tokens": 18152.3, "mean_duration_seconds": 227.6, "stddev_duration_seconds": 72.1}}], "comparison_to_iteration_4": {"pass_rate_delta": 0.0, "mean_tokens_delta": {"iter4": 43356.25, "iter6": 53844.5, "delta": "+24.2%", "note": "Increase mainly from eval-2 (72K vs 57K) due to deeper codebase audit and fuller dissenting path"}, "mean_duration_delta": {"iter4": 195.7, "iter6": 227.6, "delta": "+16.3%"}}, "iter6_specific_validation": {"self_check_quality": {"eval1": "Genuine insight: network effect cold-start as failure mode + root problem trace. 2 relevant follow-ups.", "eval2": "Genuine insight: user's bash fatigue might be the real issue. Alternative middle-ground proposal.", "eval3": "Genuine insight: ROI concern + counter-argument about establishing correct responsibility boundary. Single focused paragraph.", "eval4": "Genuine: single point about\u884c\u5185\u6ce8\u91ca as hidden need. Appropriately concise for Light depth.", "verdict": "PASS \u2014 all 4 produce genuine insights, zero formulaic 5-question checklists"}, "inversion_test_calibration": {"eval1_standard": "Present: 3 failure scenarios for Git-based distribution. Focused.", "eval2_deep": "Present: when structural optimization would be worst (complexity growth). Focused.", "eval3_standard": "Absent (approach is straightforward refactoring). Defensible skip.", "eval4_light": "Absent. Correctly skipped per skill instruction.", "verdict": "PASS \u2014 skipped where appropriate, focused where present"}, "plan_structure_flexibility": {"eval1": "TL;DR \u2192 \u884c\u52a8\u8ba1\u5212 \u2192 P1-P4 details \u2192 \u4e0d\u5e94\u8be5\u505a \u2192 \u98ce\u9669 \u2192 \u81ea\u67e5 \u2192 \u5206\u6790. No comparison table (not needed).", "eval2": "TL;DR \u2192 \u4e0d\u5e94\u8be5\u505a \u2192 \u63a8\u8350\u65b9\u6848(comparison table) \u2192 \u884c\u52a8\u65b9\u6848(code) \u2192 \u53cd\u5bf9\u65b9\u6848 \u2192 \u5206\u6790 \u2192 \u81ea\u68c0. Includes dissenting path.", "eval3": "TL;DR \u2192 \u6539\u8fdb\u65b9\u6848 \u2192 P1-P4 details \u2192 \u4e0d\u5e94\u8be5\u505a \u2192 \u98ce\u9669 \u2192 \u81ea\u68c0 \u2192 \u5206\u6790.", "eval4": "TL;DR \u2192 \u884c\u52a8\u8ba1\u5212(empty) \u2192 \u5173\u952e\u5047\u8bbe(inline) \u2192 \u81ea\u68c0 \u2192 \u5206\u6790. Minimal Light.", "verdict": "PASS \u2014 all 4 adapt structure to context, no forced Mode A/B"}, "constraints_conventions_without_examples": {"eval1": "Clear separation with principle-based reasoning. No generic example lists.", "eval2": "Full table with 5 constraints classified. Principle-based.", "eval3": "Analysis explains why flat manifest is design choice, not problem. Principle-based.", "eval4": "Inline assumptions with \u2705 markers. Appropriate for Light.", "verdict": "PASS \u2014 principle-based separation works without canned examples"}}}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

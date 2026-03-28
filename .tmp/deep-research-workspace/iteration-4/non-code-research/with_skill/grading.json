@@ -1,0 +1,37 @@
+{
+  "eval_name": "non-code-research",
+  "prompt": "Research Claude Code plugin packaging requirements and compare with baton's structure",
+  "expectations": [
+    {
+      "text": "Uses external docs (WebFetch) for plugin system research",
+      "passed": true,
+      "evidence": "Fetched https://code.claude.com/docs/en/plugins-reference, cited with (verified: ...) tags"
+    },
+    {
+      "text": "Covers plugin file structure, manifest, hooks, distribution",
+      "passed": true,
+      "evidence": "Sections for file structure, plugin.json manifest, hook format, marketplace distribution, review process"
+    },
+    {
+      "text": "Compares against baton's current structure with specific gaps",
+      "passed": true,
+      "evidence": "Gap analysis table mapping baton components to plugin equivalents, identifies 4 major changes needed"
+    },
+    {
+      "text": "Identifies the hardest architectural gap",
+      "passed": true,
+      "evidence": "Constitution loading gap: no plugin equivalent of @.baton/constitution.md auto-loading, systemMessage workaround unverified"
+    },
+    {
+      "text": "Combines codebase + external evidence (cross-source)",
+      "passed": true,
+      "evidence": "Reads baton's setup.sh, skills/, hooks/ AND fetches plugin docs, then compares field by field"
+    },
+    {
+      "text": "Standard depth with structured output",
+      "passed": true,
+      "evidence": "381 lines with overview, plugin system docs, gap analysis, open questions"
+    }
+  ],
+  "pass_rate": 1.0
+}

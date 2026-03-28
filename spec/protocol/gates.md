@@ -18,6 +18,8 @@ Required before `Verification Path Check`.
 Pass criteria:
 
 - requirements and architecture are internally consistent
+- `requirements.md` reflects every approved architecture decision that changes
+  requirements-level truth before verification begins
 - main approach and rejected categories are visible
 - human has approved the direction
 
@@ -27,10 +29,12 @@ Required before `Generator`.
 
 Pass criteria:
 
+- `requirements.md` and `architecture.md` contain no unresolved contradiction
 - exact validation commands or checks are listed
 - commands are executable in the current repo context
 - toolchain blockers are known
 - fallback validation is defined if the primary path is unavailable
+- consistency preflight has passed or an explicit blocker has been recorded
 
 Fail criteria:
 

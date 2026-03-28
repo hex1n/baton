@@ -31,11 +31,30 @@ Load these artifacts before proceeding:
 
 Do not read Generator execution notes or inherit conversation history.
 
+## Codex Execution Note
+
+In Codex, launch this role as `spawn_agent({ fork_context: false })` and allow
+it to cold-read only the approved artifacts plus the implementation diff. See
+`spec/adapters/codex.md` for the concrete spawn/wait example and the warning
+against `fork_context: true`.
+
 ## Role Contract
 
 - **Inputs**: changed files / diff, `requirements.md`, `architecture.md`,
   `verification-path.md`
 - **Outputs**: findings, residual risks, go/no-go conclusion
+
+## Artifact Language Policy
+
+Before writing any human-facing artifact:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
 
 ## Gate: Independent Review
 
@@ -133,5 +152,5 @@ collection between Layer 1 and Layer 3:
 On PASS: update `module-status.md` → state `ready_for_human_close`,
 owner `human`.
 On BLOCKED: update `module-status.md` → state `blocked`, owner `generator`,
-with findings written to evaluation output. Increment `eval_round` in
-`module-status.md`.
+with findings written to evaluation output. Increment the eval round counter
+in the State Notes section of `module-status.md` (format: `Current eval round: N`).

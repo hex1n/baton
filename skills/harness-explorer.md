@@ -1,6 +1,5 @@
 ---
 name: harness-explorer
-context: fork
 description: >
   Explore and map a codebase for a task. Trigger when the user asks to
   "explore", "map the code", "understand the codebase", "trace the call chain",
@@ -27,6 +26,18 @@ user-invocable: true
 - **Inputs**: user request, repo map or local repo context
 - **Outputs**: task-local call chain, direct change surfaces, test landing points, risk notes
 - **Artifact**: required `scoped-map.md`
+
+## Artifact Language Policy
+
+Before writing any human-facing artifact:
+
+1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
+   `zh` or `en`, use that language.
+2. If it is `auto`, follow the current user request language.
+3. If the setting is missing, default to Chinese.
+
+Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+state tokens, and blocker categories in stable English.
 
 ## Gate: Scoped Exploration Complete
 
@@ -58,6 +69,8 @@ Sections (all required):
   general overview → **Repo mode**.
 - If there is a concrete task or feature request → **Scoped mode**.
 - When in doubt, ask the user.
+- Same-session execution is acceptable by default. Use an isolated context
+  only when repo scale or noise would materially improve exploration quality.
 
 ### Repo Mode Steps
 

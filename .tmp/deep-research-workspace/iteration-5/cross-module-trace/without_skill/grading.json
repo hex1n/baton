@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "States depth choice explicitly (Standard or Deep)",
+      "passed": false,
+      "evidence": "No depth statement found. Document opens with '# Baton Junction Fallback 完整判断链分析' then '## 概览' — no depth annotation."
+    },
+    {
+      "text": "References at least 2 different source files with file:line citations",
+      "passed": true,
+      "evidence": "4+ files: junction.sh lines 8-36, setup.sh lines 124-140/143-182, phase-guide.sh lines 50-67, bin/baton lines 315-342/67-113."
+    },
+    {
+      "text": "Includes evidence markers (✅ or ❓) on material claims",
+      "passed": false,
+      "evidence": "No ✅, ❓, 'verified', or 'unverified' markers. Claims stated as facts without confidence annotation."
+    },
+    {
+      "text": "Traces a call chain or decision flow between files",
+      "passed": true,
+      "evidence": "Comprehensive decision tree with ASCII diagram showing the full fallback chain from setup.sh through atomic_junction to baton update."
+    },
+    {
+      "text": "Lists open questions or unverified claims",
+      "passed": false,
+      "evidence": "No open questions section. Has '## 设计评注' with observations but no acknowledgment of gaps or unverified claims."
+    }
+  ],
+  "summary": { "passed": 2, "failed": 3, "total": 5, "pass_rate": 0.4 }
+}
