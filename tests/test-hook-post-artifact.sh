@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/post-artifact.sh"
+HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/post-artifact"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"

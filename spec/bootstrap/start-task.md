@@ -28,19 +28,13 @@ Portable harness v1 assumes:
 `start-task` enforces that assumption by refusing to create a new task row while
 an existing row is not yet `complete`.
 
-## PowerShell
+## Windows
+
+Use the same shell entrypoint from Git Bash, or invoke it from PowerShell:
 
 ```powershell
-pwsh ./spec/bootstrap/start-task.ps1 -RepoRoot . -TaskId challenge-export-fix
+bash ./spec/bootstrap/start-task.sh --repo-root . --task-id challenge-export-fix
 ```
-
-Useful options:
-
-- `-Owner scoped-explorer`
-- `-State exploring`
-- `-Notes "user-approved pilot task"`
-- `-Language auto|en|zh`
-- `-DryRun`
 
 ## Bash
 

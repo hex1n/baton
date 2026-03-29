@@ -11,10 +11,12 @@ baton checkout while preserving local overrides.
 ./spec/bootstrap/update-harness.sh --repo-root /path/to/repo
 ```
 
-## PowerShell
+## Windows
+
+Use the same shell entrypoint from Git Bash, or invoke it from PowerShell:
 
 ```powershell
-pwsh ./spec/bootstrap/update-harness.ps1 -RepoRoot /path/to/repo
+bash ./spec/bootstrap/update-harness.sh --repo-root C:/path/to/repo
 ```
 
 ## Behavior

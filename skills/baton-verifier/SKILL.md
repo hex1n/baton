@@ -68,10 +68,18 @@ See `spec/adapters/claude-code.md` § Context Isolation for the full pattern.
 
 ## Codex Execution Note
 
-In Codex, launch this role as `spawn_agent({ fork_context: false })` and tell
-the sub-agent to cold-read only `requirements.md`, `architecture.md`, and repo
-validation config. See `spec/adapters/codex.md` for the concrete spawn/wait
-example.
+In Codex, this role MUST be launched as `spawn_agent({ fork_context: false })`.
+Do not run verifier logic inline in the parent thread and do not use
+`fork_context: true`.
+
+The orchestrator must pass the spawned agent id into the prompt, and the
+verifier must record it in `verification-path.md` as:
+
+- `Agent ID: <spawned-agent-id>`
+
+If the orchestrator cannot provide a real isolated agent id, strict mode must
+block instead of silently degrading. See `spec/adapters/codex.md` for the
+concrete spawn/wait example.
 
 ## Role Contract
 
@@ -188,6 +196,7 @@ For each primary validation path, define what to do if it fails:
   - `Execution context: fresh_session`
   - `Execution context: session_reset`
   - `Execution context: sequential_fallback`
+  - `Agent ID: <spawned-agent-id>`
 - `Evidence` should say what artifacts/config you cold-read and whether you
   actually dry-ran commands.
 - `Fallback policy` should say how degraded execution is handled.

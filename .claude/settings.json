@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/post-artifact.sh\" # baton-validate-artifact"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/post-artifact\" # baton-validate-artifact"
           }
         ]
       }
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/pre-transition.sh\" # baton-validate-transition"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/pre-transition\" # baton-validate-transition"
           }
         ]
       }
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/stop-check.sh\" # baton-validate-state baton-validate-isolation"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/stop-check\" # baton-validate-state baton-validate-isolation"
           }
         ]
       }
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/subagent-stop.sh\" # baton-subagent-stop"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/subagent-stop\" # baton-subagent-stop"
           }
         ]
       }
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/session-start.sh\" # baton-harness-context"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/session-start\" # baton-harness-context"
           }
         ]
       }

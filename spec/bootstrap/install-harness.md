@@ -40,17 +40,19 @@ Useful options:
 - `--dry-run`
 - `--force`
 
-## PowerShell
+## Windows
+
+Use the same shell entrypoint from Git Bash, or invoke it from PowerShell:
 
 ```powershell
-pwsh ./spec/bootstrap/install-harness.ps1 -RepoRoot /path/to/repo
+bash ./spec/bootstrap/install-harness.sh --repo-root C:/path/to/repo
 ```
 
 Useful options:
 
-- `-SourceRoot C:\path\to\baton`
-- `-DryRun`
-- `-Force`
+- `--source-root C:/path/to/baton`
+- `--dry-run`
+- `--force`
 
 ## Effective Skill Resolution
 

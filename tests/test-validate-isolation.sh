@@ -34,7 +34,7 @@ EOF
 }
 
 make_verification() {
-  local dir="$1" mode="$2" context="$3" reason="$4"
+  local dir="$1" mode="$2" context="$3" agent_id="$4" reason="$5"
   cat > "$dir/verification-path.md" <<EOF
 # Verification Path: test
 ## 1. Intended Checks
@@ -47,6 +47,7 @@ ok
 - Role: verification_explorer
 - Isolation mode: $mode
 - Execution context: $context
+- Agent ID: $agent_id
 - Evidence: dry-run plan from isolated artifact read
 - Fallback policy: explicit
 - Fallback reason: $reason
@@ -60,7 +61,7 @@ EOF
 }
 
 make_evaluation() {
-  local dir="$1" mode="$2" context="$3" reason="$4" verdict="$5"
+  local dir="$1" mode="$2" context="$3" agent_id="$4" reason="$5" verdict="$6"
   cat > "$dir/evaluation.md" <<EOF
 # Evaluation: test
 ## 1. Inputs
@@ -69,6 +70,7 @@ ok
 - Role: evaluator
 - Isolation mode: $mode
 - Execution context: $context
+- Agent ID: $agent_id
 - Evidence: artifact-only cold read
 - Fallback policy: explicit
 - Fallback reason: $reason
@@ -86,11 +88,11 @@ EOF
 
 # strict is default when profile is absent
 make_status "$tmp/t1" "generating"
-make_verification "$tmp/t1" "strict" "isolated_subagent" "none"
+make_verification "$tmp/t1" "strict" "isolated_subagent" "agent-verifier-1" "none"
 assert_exit "strict verification with isolated_subagent -> pass" 0 bash "$SCRIPT" "$tmp/t1"
 
 make_status "$tmp/t2" "generating"
-make_verification "$tmp/t2" "strict" "sequential_fallback" "tool lacks agent"
+make_verification "$tmp/t2" "strict" "sequential_fallback" "none" "tool lacks agent"
 assert_exit "strict verification with sequential fallback -> block" 2 bash "$SCRIPT" "$tmp/t2"
 
 mkdir -p "$tmp/t3"
@@ -100,7 +102,7 @@ execution:
   review_isolation_mode: compat
 EOF
 make_status "$tmp/t3" "generating"
-make_verification "$tmp/t3" "compat" "sequential_fallback" "host policy disallows spawn_agent in this turn"
+make_verification "$tmp/t3" "compat" "sequential_fallback" "none" "host policy disallows spawn_agent in this turn"
 assert_exit "compat verification with reason -> pass" 0 bash "$SCRIPT" "$tmp/t3"
 
 mkdir -p "$tmp/t4"
@@ -110,17 +112,26 @@ execution:
   review_isolation_mode: compat
 EOF
 make_status "$tmp/t4" "generating"
-make_verification "$tmp/t4" "compat" "sequential_fallback" "none"
+make_verification "$tmp/t4" "compat" "sequential_fallback" "none" "none"
 assert_exit "compat verification without concrete reason -> block" 2 bash "$SCRIPT" "$tmp/t4"
 
 make_status "$tmp/t5" "ready_for_human_close"
-make_verification "$tmp/t5" "strict" "isolated_subagent" "none"
+make_verification "$tmp/t5" "strict" "isolated_subagent" "agent-verifier-5" "none"
 assert_exit "ready_for_human_close without evaluation -> block" 2 bash "$SCRIPT" "$tmp/t5"
 
 make_status "$tmp/t6" "ready_for_human_close"
-make_verification "$tmp/t6" "strict" "isolated_subagent" "none"
-make_evaluation "$tmp/t6" "strict" "isolated_subagent" "none" "PASS"
+make_verification "$tmp/t6" "strict" "isolated_subagent" "agent-verifier-6" "none"
+make_evaluation "$tmp/t6" "strict" "isolated_subagent" "agent-evaluator-6" "none" "PASS"
 assert_exit "ready_for_human_close with strict evaluation -> pass" 0 bash "$SCRIPT" "$tmp/t6"
+
+make_status "$tmp/t7" "generating"
+make_verification "$tmp/t7" "strict" "isolated_subagent" "none" "none"
+assert_exit "strict verification without Agent ID -> block" 2 bash "$SCRIPT" "$tmp/t7"
+
+make_status "$tmp/t8" "ready_for_human_close"
+make_verification "$tmp/t8" "strict" "isolated_subagent" "agent-verifier-8" "none"
+make_evaluation "$tmp/t8" "strict" "isolated_subagent" "none" "none" "PASS"
+assert_exit "strict evaluation without Agent ID -> block" 2 bash "$SCRIPT" "$tmp/t8"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"

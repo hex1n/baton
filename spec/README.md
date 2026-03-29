@@ -70,20 +70,48 @@ root-level governance entrypoints materialized from one template.
 spec/
   README.md
   bootstrap/
+    README.md
+    commands/
+      install-harness.sh
+      init-harness.sh
+      start-task.sh
+      update-harness.sh
+      link-skills.sh
+      sync-skills.sh
+      sync-governance-entrypoints.sh
+      check-consistency.sh
+      install-hooks.sh
+      validate-artifact.sh
+      validate-isolation.sh
+      validate-state-artifacts.sh
+      validate-transition.sh
+      harness-context.sh
+      check-root-readme-bilingual.sh
+    hooks/
+      run-hook.cmd
+      session-start
+      pre-transition
+      post-artifact
+      stop-check
+      subagent-stop
+    lib/
+      language.sh
+      module-status.sh
+      paths.sh
+      profile.sh
+      provenance.sh
+      state-requirements.sh
     install-harness.md
-    install-harness.ps1
     install-harness.sh
     init-harness.md
-    init-harness.ps1
     init-harness.sh
+    prepare-review.md
+    prepare-review.sh
     sync-governance-entrypoints.md
-    sync-governance-entrypoints.ps1
     sync-governance-entrypoints.sh
     start-task.md
-    start-task.ps1
     start-task.sh
     update-harness.md
-    update-harness.ps1
     update-harness.sh
   protocol/
     state-machine.md
@@ -140,12 +168,16 @@ spec/
 6. Run the gates in `protocol/gates.md` in order.
 7. Record all status transitions in `module-status.md`.
 
-Draft bootstrap scripts are included for convenience:
+Reference bootstrap entrypoints are included for convenience:
 
-- `bootstrap/init-harness.ps1`
+- `bootstrap/install-harness.sh`
 - `bootstrap/init-harness.sh`
-- `bootstrap/start-task.ps1`
 - `bootstrap/start-task.sh`
+- `bootstrap/update-harness.sh`
+
+Windows uses the same shell entrypoints through Git Bash or `bash ...` from
+PowerShell. The reference runtime does not maintain separate `.ps1` business
+entrypoints under `spec/bootstrap/`.
 
 Recommended bootstrap flow:
 
@@ -157,7 +189,8 @@ Recommended bootstrap flow:
 6. after architecture approval, sync `requirements.md` to any approved
    architecture decisions that change requirements-level truth
 7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`
-8. let the current owner agent update `module-status.md` and fill the active task artifacts in `.harness/`
+8. run `bootstrap/prepare-review.sh` before isolated verifier / evaluator handoff
+9. let the current owner agent update `module-status.md` and fill the active task artifacts in `.harness/`
 
 ## Artifact Language
 

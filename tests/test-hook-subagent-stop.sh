@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/subagent-stop.sh"
+HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/subagent-stop"
 MODULE_STATUS="$SCRIPT_DIR/../spec/bootstrap/module-status.sh"
 PASS=0; FAIL=0; TOTAL=0
 

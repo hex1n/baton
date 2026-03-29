@@ -16,10 +16,11 @@
 | positioning-protocol-vs-runtime | — | complete | 0 | 2026-03-28T23:21:00+0800 | human accepted the positioning result; docs/baton-positioning.md now defines Baton as protocol-first with a local reference runtime, not an immediate full runtime product; retrospective recorded |
 | workflow-best-practice-doc | — | complete | 0 | 2026-03-28T22:23:00+0800 | human accepted the workflow best-practice result; docs/baton-workflow-best-practice.md now defines default core flow plus conditional strict overlay and aligns with baton-positioning; retrospective recorded |
 | runtime-enforcement-hardening | — | complete | 1 | 2026-03-29T23:24:00+0800 | human confirmed close; isolated verification/evaluation passed; retrospective recorded; advisory human_ack residual risk accepted |
+| bootstrap-structure-rationalization | — | complete | 0 | 2026-03-29T22:56:52+0800 | human confirmed close; best-practice guardrails implemented; strict isolated verifier/evaluator passed with Agent IDs; retrospective recorded; Windows live smoke-test residual risk accepted |
 
 ## State Notes
 
 - Current artifacts: scoped-map.md, requirements.md, architecture.md, verification-path.md, evaluation.md, retrospective.md
 - Current blockers: none
-- Current residual risks: human_ack remains advisory bookkeeping rather than host-native approval, per approved non-goals; accepted at close
+- Current residual risks: no live Windows host smoke test for `run-hook.cmd`; current evidence is command-generation and shell-test coverage
 - Current next decision: none

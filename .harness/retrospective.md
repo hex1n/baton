@@ -1,34 +1,37 @@
-# Retrospective: runtime-enforcement-hardening
+# Retrospective: bootstrap-structure-rationalization
 
 ## 1. 结果
 
 - 关闭状态: complete
-- 主要阻塞: 评审阶段先后暴露了两个真实问题：`human_ack` 清理范围过宽，以及 `verification-path.md` 中原始 ShellCheck 命令与验收语义不一致
-- 人工决策: 人类批准了架构方案，并明确要求使用隔离子 agent 完成 strict verification / evaluation
+- 主要阻塞: 无实现级阻塞；中途发现 review gate 被 compat 评审和 stale local hooks 配置绕过，需要回退状态重做 verifier / evaluator
+- 人工决策: 接受 Baton 继续以 `bash` 单核心 + Git Bash / launcher 作为 Windows 路径，并接受当前仍缺少真实 Windows 主机 smoke test 的残余风险
 
 ## 2. 有效做法
 
-- 先把 hook runtime 从宿主 JSON 内联命令抽成独立脚本，再在脚本层补 enforcement gap，显著降低了测试和调试成本
-- 用隔离 verifier / evaluator 复跑 Gate 3 和 Gate 4，确实抓出了主线程容易忽略的契约问题
-- 在生成阶段并行拆分 runtime、tests、templates/skills 三条写面，明显缩短了集成时间
+- 把 `spec/bootstrap` 分成顶层 wrappers、`commands/`、`lib/`、`hooks/` 后，职责边界明显更清楚
+- 用 `install-hooks.sh --print-manifest` 生成机器可读真源，再由 `check-consistency.sh` 对 live `.claude/settings.json` / `.codex/hooks.json` 做 drift 对比，比写静态版本号更稳
+- 新增 `prepare-review.sh` 把 hooks refresh、consistency、live SessionStart smoke check 和 isolated review handoff 变成可执行流程，降低了靠记忆走 gate 的风险
 
 ## 3. 失败点
 
-- 初版 `post-artifact.sh` 只按写后状态判断是否清理 `human_ack`，没有保存真实转移来源，导致清理范围过宽
-- 初版 `verification-path.md` 把 `shellcheck` 原始命令写得过宽，没有对齐 AC-17 的 error-level 语义
+- 一开始把 isolated verifier / evaluator 当成可后补的“增强项”，没有主动按 strict gate 执行，这是流程判断错误
+- hooks handler 改名后，只靠测试没有立刻暴露 live `.codex/hooks.json` 仍指向旧 `*.sh` 的问题；需要把 live config freshness 纳入一致性检查
+- `install-harness.sh` 复用共享 `paths_relpath_from()` 时参数顺序写反，导致 vendored skill 链接回归；共享 helper 收敛后仍要靠测试兜住调用约定
 
 ## 4. 仓库特定经验
 
-- Baton 的 harness 任务在这个仓库里已经高度依赖 `.harness` 控制面和 bootstrap 脚本耦合，任何 runtime hardening 都必须同步更新 tests 和 consistency invariants
-- Bash 版本兼容性要保守处理，像 `mapfile` 这类较新的内建不适合作为默认实现前提
+- 这个仓库里 `.claude/settings.json` 和 `.codex/hooks.json` 不是纯本地噪声；当 hook runtime 变更时，它们需要被视为真实实现面的一部分
+- `spec/bootstrap/check-consistency.sh` 已经是 protocol/runtime 边界的核心守门人，适合继续承载“防回退”类 invariant
+- `prepare-review.sh` 这种 review 入口脚本更符合 Baton 的 protocol-first 定位：宿主负责 agent，runtime 负责把进入 gate 前的环境准备标准化
 
 ## 5. Harness 经验
 
-- `human_ack` 这类 advisory gate 只有在“前置 hook 记录转移意图 + 后置 hook 精确消费”的组合下才可靠，不能只看最终状态
-- verification-path 里的“精确命令”必须真的能被 evaluator 原样重跑通过，否则 Gate 4 会把 Gate 3 重新打回
+- strict 模式不能只写 `Isolation mode: strict`；必须把 `Execution context: isolated_subagent` 和 `Agent ID` 一并做成 validator 可审计字段
+- 当流程强调独立判断时，compat 结果不应允许临时充当最终 gate 产物；否则人很容易顺着“先跑通再说”的惯性滑过去
+- “live generated config 是否仍是当前真相”是 hook 系统的一类独立风险，需要专门的 freshness guard，而不是靠实现测试间接覆盖
 
 ## 6. 可标准化候选
 
-- 为 hook 间短生命周期状态传递沉淀一个共享 cache 约定，而不是在单个脚本里各自实现
-- 把 `shellcheck -S error` 固化为 runtime hardening 类任务的标准验证命令模板
-- 为 `post-artifact` / `pre-transition` 这种成对 hook 增加更明确的 repo-level test fixture 约定
+- 保留 `prepare-review.sh` 作为所有 Baton 任务进入 verifier / evaluator 前的标准入口
+- 保留 `Agent ID` 作为 strict verifier / evaluator artifact 的强制 provenance 字段
+- 保留 invariant-16 这类 “manifest vs live config” drift 检查，未来如扩到其他 generated runtime files 也沿用同一模式

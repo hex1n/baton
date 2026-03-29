@@ -2,4 +2,4 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$script_dir/install-harness.sh" --mode update "$@"
+exec bash "$script_dir/commands/update-harness.sh" "$@"

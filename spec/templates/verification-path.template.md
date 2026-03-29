@@ -29,6 +29,7 @@
 - Role: verification_explorer
 - Isolation mode:
 - Execution context:
+- Agent ID:
 - Evidence:
 - Fallback policy:
 - Fallback reason:

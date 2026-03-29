@@ -15,6 +15,7 @@
 - Role: evaluator
 - Isolation mode:
 - Execution context:
+- Agent ID:
 - Evidence:
 - Fallback policy:
 - Fallback reason:

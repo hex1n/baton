@@ -60,15 +60,15 @@ assert_exit "install-hooks exits 0" 0 \
 assert_file_contains "CC PostToolUse written"           "$repo/.claude/settings.json" "PostToolUse"
 assert_file_contains "CC PreToolUse written"            "$repo/.claude/settings.json" "PreToolUse"
 assert_file_contains "CC PostToolUse points at hook script" \
-  "$repo/.claude/settings.json" "hooks/post-artifact.sh"
+  "$repo/.claude/settings.json" "hooks/post-artifact"
 assert_file_contains "CC PreToolUse points at hook script" \
-  "$repo/.claude/settings.json" "hooks/pre-transition.sh"
+  "$repo/.claude/settings.json" "hooks/pre-transition"
 assert_file_contains "CC Stop points at hook script" \
-  "$repo/.claude/settings.json" "hooks/stop-check.sh"
+  "$repo/.claude/settings.json" "hooks/stop-check"
 assert_file_contains "CC SubagentStop points at hook script" \
-  "$repo/.claude/settings.json" "hooks/subagent-stop.sh"
+  "$repo/.claude/settings.json" "hooks/subagent-stop"
 assert_file_contains "CC SessionStart points at hook script" \
-  "$repo/.claude/settings.json" "hooks/session-start.sh"
+  "$repo/.claude/settings.json" "hooks/session-start"
 assert_file_contains "CC matcher is Write|Edit"         "$repo/.claude/settings.json" "Write|Edit|MultiEdit"
 assert_file_not_contains "CC settings no longer inline validate-artifact logic" \
   "$repo/.claude/settings.json" "tool_input.file_path"
@@ -93,13 +93,13 @@ fi
 assert_file_contains "Codex hooks.json created"             "$repo/.codex/hooks.json"   "PostToolUse"
 assert_file_contains "Codex PreToolUse written"             "$repo/.codex/hooks.json"   "PreToolUse"
 assert_file_contains "Codex PostToolUse points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/post-artifact.sh"
+  "$repo/.codex/hooks.json"   "hooks/post-artifact"
 assert_file_contains "Codex PreToolUse points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/pre-transition.sh"
+  "$repo/.codex/hooks.json"   "hooks/pre-transition"
 assert_file_contains "Codex Stop points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/stop-check.sh"
+  "$repo/.codex/hooks.json"   "hooks/stop-check"
 assert_file_contains "Codex SessionStart points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/session-start.sh"
+  "$repo/.codex/hooks.json"   "hooks/session-start"
 assert_file_contains "Codex matcher is Bash"                "$repo/.codex/hooks.json"   '"Bash"'
 assert_file_not_contains "Codex hooks no longer inline validate-artifact logic" \
   "$repo/.codex/hooks.json" "tool_input.command"
@@ -164,7 +164,7 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "CC SubagentStop written"            "$repo/.claude/settings.json" '"SubagentStop"'
 assert_file_contains "CC SubagentStop matcher is agents"  "$repo/.claude/settings.json" "baton-evaluator"
-assert_file_contains "CC SubagentStop points at hook script"  "$repo/.claude/settings.json" "hooks/subagent-stop.sh"
+assert_file_contains "CC SubagentStop points at hook script"  "$repo/.claude/settings.json" "hooks/subagent-stop"
 TOTAL=$((TOTAL+1))
 if ! grep -q '"SubagentStop"' "$repo/.codex/hooks.json" 2>/dev/null; then
   echo "  pass: Codex has no SubagentStop"
@@ -179,7 +179,7 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "CC SessionStart written"               "$repo/.claude/settings.json" '"SessionStart"'
 assert_file_contains "CC SessionStart matcher"               "$repo/.claude/settings.json" "startup|resume"
-assert_file_contains "CC SessionStart points at hook script"  "$repo/.claude/settings.json" "hooks/session-start.sh"
+assert_file_contains "CC SessionStart points at hook script"  "$repo/.claude/settings.json" "hooks/session-start"
 assert_file_contains "Codex SessionStart written"            "$repo/.codex/hooks.json"     '"SessionStart"'
 assert_file_contains "Codex SessionStart has statusMessage"  "$repo/.codex/hooks.json"     "Loading harness context"
 
@@ -228,6 +228,25 @@ else
   echo "  FAIL: CC hook commands contain absolute path — relative path not computed"
   FAIL=$((FAIL+1))
 fi
+
+# ---------------------------------------------------------------------------
+# Windows command generation
+# ---------------------------------------------------------------------------
+repo4="$tmp/repo4"
+mkdir -p "$repo4/.claude"
+BATON_HOOK_PLATFORM=windows bash "$INSTALL_HOOKS" --repo-root "$repo4" --bootstrap-dir "$bootstrap" >/dev/null 2>&1
+assert_file_contains "Windows CC uses run-hook.cmd" "$repo4/.claude/settings.json" "run-hook.cmd"
+assert_file_contains "Windows CC uses cmd launcher" "$repo4/.claude/settings.json" "cmd /d /c"
+assert_file_not_contains "Windows CC does not emit bash hook path" "$repo4/.claude/settings.json" 'bash \"$root'
+
+# ---------------------------------------------------------------------------
+# Machine-readable manifest
+# ---------------------------------------------------------------------------
+manifest="$tmp/install-hooks-manifest.json"
+bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" --print-manifest > "$manifest"
+assert_file_contains "manifest contains Claude session command" "$manifest" '"session_start"'
+assert_file_contains "manifest contains Codex post command" "$manifest" '"post"'
+assert_file_contains "manifest contains current handler path" "$manifest" 'hooks/session-start'
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"

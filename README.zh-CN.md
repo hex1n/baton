@@ -90,6 +90,10 @@ spec/bootstrap/install-harness.sh --repo-root /path/to/repo
 spec/bootstrap/update-harness.sh --repo-root /path/to/repo
 ```
 
+Windows 下请直接复用同一套 `.sh` 入口：可以在 Git Bash 里执行，也可以在
+PowerShell 里通过 `bash spec/bootstrap/<command>.sh ...` 调用。Baton
+不再维护单独的 `spec/bootstrap/*.ps1` 业务入口层。
+
 安装后会出现：
 
 - `.vendor/baton-harness/`：vendored 上游 payload

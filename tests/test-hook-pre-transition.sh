@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/pre-transition.sh"
+HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/pre-transition"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"

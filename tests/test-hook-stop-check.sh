@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/stop-check.sh"
+HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/stop-check"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"
@@ -57,6 +57,7 @@ content
 - Role: verification_explorer
 - Isolation mode: strict
 - Execution context: isolated_subagent
+- Agent ID: verifier-stop-check
 - Evidence: dry-run
 - Fallback policy: block
 - Fallback reason: none

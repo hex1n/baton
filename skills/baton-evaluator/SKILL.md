@@ -71,10 +71,17 @@ See `spec/adapters/claude-code.md` § Context Isolation for the full pattern.
 
 ## Codex Execution Note
 
-In Codex, launch this role as `spawn_agent({ fork_context: false })` and allow
-it to cold-read only the approved artifacts plus the implementation diff. See
-`spec/adapters/codex.md` for the concrete spawn/wait example and the warning
-against `fork_context: true`.
+In Codex, this role MUST be launched as `spawn_agent({ fork_context: false })`.
+Do not evaluate inline in the parent thread and do not use `fork_context: true`.
+
+The orchestrator must pass the spawned agent id into the prompt, and the
+evaluator must record it in `evaluation.md` as:
+
+- `Agent ID: <spawned-agent-id>`
+
+If the orchestrator cannot provide a real isolated agent id, strict mode must
+block instead of silently degrading. See `spec/adapters/codex.md` for the
+concrete spawn/wait example and the warning against `fork_context: true`.
 
 ## Role Contract
 
@@ -203,6 +210,7 @@ Warnings do not trigger the repair loop unless they threaten correctness.
   - `Execution context: fresh_session`
   - `Execution context: session_reset`
   - `Execution context: sequential_fallback`
+  - `Agent ID: <spawned-agent-id>`
 - `Evidence` should say what artifacts and diff you cold-read.
 - `Fallback policy` should say how degraded execution is handled.
 - In `strict`, sequential fallback is a blocker.

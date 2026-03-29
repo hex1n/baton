@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bootstrap_dir="$(cd "$script_dir/.." && pwd)"
+source "$bootstrap_dir/lib/module-status.sh"
+source "$bootstrap_dir/lib/state-requirements.sh"
+
+harness_dir="${1:-.harness}"
+module_status="$harness_dir/module-status.md"
+
+[[ -f "$module_status" ]] || exit 0
+
+state="$(module_status_current_field "$module_status" state)"
+[[ -n "$state" ]] || exit 0
+
+missing=()
+for artifact in $(state_required_artifacts_for_validation "$state"); do
+  [[ -f "$harness_dir/$artifact" ]] || missing+=("$harness_dir/$artifact")
+done
+
+[[ ${#missing[@]} -eq 0 ]] && exit 0
+
+list=""
+for f in "${missing[@]}"; do
+  list+="  - $f"$'\n'
+done
+
+reason="State is \"$state\" but missing required artifacts:"$'\n'"${list}"$'Write the missing artifacts before finishing this turn.'
+jq -n --arg r "$reason" '{"decision":"block","reason":$r}'
+exit 2

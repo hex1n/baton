@@ -30,12 +30,12 @@ Pick the closest execution adapter from `adapters/`:
 
 If your tool is different, start from [cli-adapter-interface.md](../adapters/cli-adapter-interface.md).
 
-You can also use the draft bootstrap scripts:
+You can also use the reference bootstrap entrypoints:
 
-- `bootstrap/init-harness.ps1`
+- `bootstrap/install-harness.sh`
 - `bootstrap/init-harness.sh`
-- `bootstrap/start-task.ps1`
 - `bootstrap/start-task.sh`
+- `bootstrap/update-harness.sh`
 
 ## Step 3: Create `.harness/`
 
@@ -70,13 +70,12 @@ vendored script inside the target repo:
 
 If you want a generated starting point instead of manual copying:
 
-```powershell
-pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -TaskId pilot-task -Language zh
-```
-
 ```bash
 ./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task --language zh
 ```
+
+On Windows, run the same shell command in Git Bash, or invoke it from
+PowerShell with `bash ./spec/bootstrap/init-harness.sh ...`.
 
 Those commands also materialize `CLAUDE.md` and `AGENTS.md` from the shared
 governance template when the files are missing. Pass `--force` if you want to
@@ -84,18 +83,14 @@ refresh them from the template.
 
 Useful options:
 
-- `-Profile auto` / `--profile auto`
-- `-Language auto|en|zh` / `--language auto|en|zh`
-- `-DryRun` / `--dry-run`
-- `-DetectOnly` / `--detect-only`
-- `-TaskId <id>` / `--task-id <id>`
-- `-Force` / `--force`
+- `--profile auto`
+- `--language auto|en|zh`
+- `--dry-run`
+- `--detect-only`
+- `--task-id <id>`
+- `--force`
 
 If you only want to identify the repo profile without writing files:
-
-```powershell
-pwsh ./spec/bootstrap/init-harness.ps1 -RepoRoot . -Profile auto -Adapter codex -DetectOnly
-```
 
 ```bash
 ./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --detect-only
@@ -194,10 +189,6 @@ Avoid starting with:
 - tasks with unclear verification ownership
 
 After `Repo Explorer`, initialize the first concrete task:
-
-```powershell
-pwsh ./spec/bootstrap/start-task.ps1 -RepoRoot . -TaskId pilot-task
-```
 
 ```bash
 ./spec/bootstrap/start-task.sh --repo-root . --task-id pilot-task

@@ -100,6 +100,10 @@ spec/bootstrap/install-harness.sh --repo-root /path/to/repo
 spec/bootstrap/update-harness.sh --repo-root /path/to/repo
 ```
 
+On Windows, use the same `.sh` entrypoints from Git Bash, or invoke them from
+PowerShell with `bash spec/bootstrap/<command>.sh ...`. Baton does not keep a
+separate `spec/bootstrap/*.ps1` business-entrypoint layer.
+
 This creates:
 
 - `.vendor/baton-harness/` as the vendored upstream payload
