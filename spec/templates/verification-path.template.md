@@ -24,17 +24,26 @@
 - Fixtures:
 - Environment variables:
 
-## 4. Dry-Run Result
+## 4. Execution Provenance
+
+- Role: verification_explorer
+- Isolation mode:
+- Execution context:
+- Evidence:
+- Fallback policy:
+- Fallback reason:
+
+## 5. Dry-Run Result
 
 - Command:
 - Result:
 - Notes:
 
-## 5. Blockers
+## 6. Blockers
 
 - <blocker or "none">
 
-## 6. Fallbacks
+## 7. Fallbacks
 
 - If the primary path fails:
 - If the test module is unavailable:

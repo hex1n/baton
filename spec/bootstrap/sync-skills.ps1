@@ -25,11 +25,28 @@ if ($linkMode -ne "copy") {
 function Sync-Dir {
     param([string]$TargetDir)
 
-    $skillFiles = Get-ChildItem -Path $skillsDir -Filter "*.md"
+    # Sync flat files: skills/*.md
+    $skillFiles = Get-ChildItem -Path $skillsDir -Filter "*.md" -File
     foreach ($sourceFile in $skillFiles) {
         $targetFile = Join-Path $TargetDir $sourceFile.Name
         Copy-Item -Path $sourceFile.FullName -Destination $targetFile -Force
         Write-Host "sync  $targetFile"
+    }
+
+    # Sync subdirectory skills: skills/*/SKILL.md
+    $subSkills = Get-ChildItem -Path $skillsDir -Directory | Where-Object {
+        Test-Path (Join-Path $_.FullName "SKILL.md")
+    }
+    foreach ($subDir in $subSkills) {
+        $targetSubDir = Join-Path $TargetDir $subDir.Name
+
+        # Skip if already a symlink (propagates automatically)
+        $item = Get-Item $targetSubDir -ErrorAction SilentlyContinue
+        if ($item -and $item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { continue }
+
+        New-Item -ItemType Directory -Path $targetSubDir -Force | Out-Null
+        Copy-Item -Path (Join-Path $subDir.FullName "*") -Destination $targetSubDir -Recurse -Force
+        Write-Host "sync  $targetSubDir/"
     }
 }
 

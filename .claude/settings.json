@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); fp=$(echo \"$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"$fp\" == *\".harness/\"*\".md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; at=$(basename \"$fp\" .md); bash \"$root/spec/bootstrap/validate-artifact.sh\" \"$at\" \"$fp\" # baton-validate-artifact"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/post-artifact.sh\" # baton-validate-artifact"
           }
         ]
       }
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); fp=$(echo \"$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"$fp\" == *\"module-status.md\" ]] || exit 0; nc=$(echo \"$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"$nc\" ]] || exit 0; ns=$(echo \"$nc\" | awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}'); [[ -n \"$ns\" ]] || exit 0; [[ -f \"$fp\" ]] || exit 0; cs=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,\"\",$4); print $4; exit}' \"$fp\"); [[ -n \"$cs\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/spec/bootstrap/validate-transition.sh\" \"$cs\" \"$ns\" # baton-validate-transition"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/pre-transition.sh\" # baton-validate-transition"
           }
         ]
       }
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[[ -f \".harness/module-status.md\" ]] || exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/spec/bootstrap/validate-state-artifacts.sh\" \"$root/.harness\" # baton-validate-state"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/stop-check.sh\" # baton-validate-state baton-validate-isolation"
           }
         ]
       }
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); agent=$(echo \"$input\" | jq -r '.agent_type // empty' 2>/dev/null); case \"$agent\" in baton-verifier|baton-evaluator) ;; *) exit 0 ;; esac; root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bootstrap=\"$root/spec/bootstrap\"; case \"$agent\" in baton-verifier) [[ -f \"$root/.harness/verification-path.md\" ]] || { jq -n '{\"decision\":\"block\",\"reason\":\"baton-verifier completed without writing verification-path.md\"}'; exit 2; }; bash \"$bootstrap/validate-artifact.sh\" verification-path \"$root/.harness/verification-path.md\" || exit 2 ;; baton-evaluator) state=$(awk -F'|' 'NF>3 && $4!~/---/ && $4!~/^[[:space:]]*State[[:space:]]*$/{gsub(/ /,\"\",$4); print $4; exit}' \"$root/.harness/module-status.md\" 2>/dev/null); case \"$state\" in blocked|reviewing|ready_for_human_close) ;; *) jq -n --arg s \"$state\" '{\"decision\":\"block\",\"reason\":(\"baton-evaluator completed but module-status state is \\\\\"\" + $s + \"\\\\\"\")}'; exit 2 ;; esac ;; esac # baton-subagent-stop"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/subagent-stop.sh\" # baton-subagent-stop"
           }
         ]
       }
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"$root/spec/bootstrap/harness-context.sh\" \"$root/.harness\" # baton-harness-context"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/session-start.sh\" # baton-harness-context"
           }
         ]
       }

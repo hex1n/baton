@@ -14,16 +14,17 @@ workspace:
   worktree_root: .worktrees
   artifacts_live_in_primary_repo: true
 
+execution:
+  verification_isolation_mode: strict
+  review_isolation_mode: strict
+  max_eval_rounds: 3
+
 verification:
   build_command: __BUILD_COMMAND__
   test_command: __TEST_COMMAND__
   optional_static_checks:
     - __OPTIONAL_STATIC_CHECK__
   dry_run_required_before_generator: true
-
-review:
-  isolated_review_preferred: true
-  fallback_review_mode: sequential
 
 risk:
   high_risk_paths:

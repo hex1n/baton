@@ -11,6 +11,9 @@ This step does three things:
 2. resets active task artifacts from the current templates
 3. archives the previous task's active artifacts into `.harness/history/` when needed
 
+The active task is always the **last data row** in the task table.
+Readers and hooks must use that same rule.
+
 It does not manage normal in-task state transitions. After initialization, the
 current owner agent updates `module-status.md` directly at each handoff or
 blocker.
@@ -61,6 +64,7 @@ The active task surfaces are reset from templates:
 - `requirements.md`
 - `architecture.md`
 - `verification-path.md`
+- `evaluation.md`
 - `retrospective.md`
 
 This keeps the top-level `.harness/` focused on the current task.

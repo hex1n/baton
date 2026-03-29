@@ -46,6 +46,7 @@
   - intended checks
   - commands
   - dependencies and prerequisites
+  - execution provenance
   - dry-run result
   - blockers
   - fallback strategies
@@ -71,6 +72,34 @@
 
 ## Conditionally Required Artifacts
 
+### `evaluation.md`
+
+- **Required when**: task reaches `ready_for_human_close` or `complete`
+- Writer: Evaluator
+- Readers: Human, Generator, Reviewer
+- Purpose: capture the independent assessment, verdict, and isolation provenance
+- Required sections:
+  - inputs
+  - execution provenance
+  - findings
+  - verification results
+  - verdict
+  - residual risks
+
+## Shared Provenance Block
+
+`verification-path.md` and `evaluation.md` must use one shared provenance block
+so validators, status surfaces, and human close can consume the same fields.
+
+Required bullet fields:
+
+- role
+- isolation mode
+- execution context
+- evidence
+- fallback policy
+- fallback reason
+
 ### `generator-feedback.md`
 
 - **Required when**: Generator discovers a requirement gap or architectural
@@ -88,7 +117,6 @@
 
 - `repo-map.md`
 - `review-notes.md`
-- `evaluation.md`
 - `handoff.md`
 
 ## Formatting Rules

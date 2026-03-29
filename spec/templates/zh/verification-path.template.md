@@ -24,17 +24,26 @@
 - 夹具 / 测试数据:
 - 环境变量:
 
-## 4. Dry-Run 结果
+## 4. Execution Provenance
+
+- Role: verification_explorer
+- Isolation mode:
+- Execution context:
+- Evidence:
+- Fallback policy:
+- Fallback reason:
+
+## 5. Dry-Run 结果
 
 - 命令:
 - 结果:
 - 备注:
 
-## 5. 阻塞项
+## 6. 阻塞项
 
 - <阻塞项，或填写 "none">
 
-## 6. 回退方案
+## 7. 回退方案
 
 - 如果主路径失败:
 - 如果测试模块不可用:

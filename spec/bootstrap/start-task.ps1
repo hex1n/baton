@@ -28,22 +28,61 @@ function Convert-LineToRow {
     param([string]$Line)
 
     $parts = $Line.Split("|")
-    if ($parts.Count -lt 8) {
-        return $null
+    if ($parts.Count -ge 8) {
+        return [pscustomobject]@{
+            Scope = $parts[1].Trim()
+            Owner = $parts[2].Trim()
+            State = $parts[3].Trim()
+            EvalRound = $parts[4].Trim()
+            UpdatedAt = $parts[5].Trim()
+            Notes = $parts[6].Trim()
+        }
     }
 
-    return [pscustomobject]@{
-        Scope = $parts[1].Trim()
-        Owner = $parts[2].Trim()
-        State = $parts[3].Trim()
-        EvalRound = $parts[4].Trim()
-        UpdatedAt = $parts[5].Trim()
-        Notes = $parts[6].Trim()
+    if ($parts.Count -ge 7) {
+        return [pscustomobject]@{
+            Scope = $parts[1].Trim()
+            Owner = $parts[2].Trim()
+            State = $parts[3].Trim()
+            EvalRound = "0"
+            UpdatedAt = $parts[4].Trim()
+            Notes = $parts[5].Trim()
+        }
     }
+
+    return $null
+}
+
+function Get-ModuleStatusSchema {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        return "missing"
+    }
+
+    foreach ($line in Get-Content $Path) {
+        $trimmed = $line.Trim()
+        if ($trimmed -eq "| Scope | Owner | State | Eval Round | Updated At | Notes |") {
+            return "current"
+        }
+        if ($trimmed -eq "| Scope | Owner | State | Updated At | Notes |") {
+            return "legacy"
+        }
+        if ($trimmed -eq "## State Notes") {
+            break
+        }
+    }
+
+    return "unknown"
 }
 
 function Get-ModuleStatusRows {
     param([string]$Path)
+
+    $schema = Get-ModuleStatusSchema -Path $Path
+    if ($schema -notin @("current", "legacy")) {
+        return $null
+    }
 
     $content = Get-Content -Raw $Path
     $lines = $content -split "`r?`n"
@@ -232,6 +271,11 @@ if (-not (Test-Path $moduleStatusPath)) {
     throw "Module status file not found: $moduleStatusPath. Run init-harness first."
 }
 
+$moduleStatusSchema = Get-ModuleStatusSchema -Path $moduleStatusPath
+if ($moduleStatusSchema -notin @("current", "legacy")) {
+    throw "Unsupported module-status schema: $moduleStatusSchema"
+}
+
 $profileLanguage = Get-ProfileArtifactLanguage -Path $profileLocalPath
 if ((-not [string]::IsNullOrWhiteSpace($profileLanguage)) -and ($profileLanguage -notin @("auto", "en", "zh"))) {
     throw "Unsupported artifact language in profile.local.yaml: $profileLanguage"
@@ -264,6 +308,7 @@ $artifactMap = @(
     @{ Template = "requirements.template.md"; Target = "requirements.md" }
     @{ Template = "architecture.template.md"; Target = "architecture.md" }
     @{ Template = "verification-path.template.md"; Target = "verification-path.md" }
+    @{ Template = "evaluation.template.md"; Target = "evaluation.md" }
     @{ Template = "retrospective.template.md"; Target = "retrospective.md" }
 )
 

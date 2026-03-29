@@ -118,20 +118,25 @@
   - go/no-go style conclusion
   - unmet acceptance criteria
   - final residual risk statement
+- Required artifact:
+  - `evaluation.md`
 - Status responsibility:
   - update `module-status.md` before handoff to `human`
 
 ## Context Isolation Note
 
 - `Verification Explorer` and `Evaluator` are the mandatory artifact-isolated
-  judgment roles when the adapter supports isolated contexts.
+  judgment roles in `strict` mode.
+- Repos may opt into `compat` mode, but only if the produced artifacts make the
+  degraded execution context explicit.
 - Early-phase roles may run in the main session when their outputs remain
   explicit in `.harness/`.
 
 ## Implementation Note: Reviewer + Evaluator Merge
 
-In single-agent CLI environments (Claude Code, Codex sequential fallback),
-Reviewer and Evaluator MAY be merged into a single role.
+In single-agent CLI environments, Reviewer and Evaluator MAY be merged into a
+single role only when the chosen mode still satisfies the isolation policy
+(`strict` isolated context, or explicit `compat` fallback).
 
 Conditions for valid merge:
 - The merged role must maintain context independence (see `cli-adapter-interface.md`)

@@ -5,13 +5,14 @@
 Map the portable harness protocol onto a Claude Code style environment.
 
 This document is intentionally capability-based. If your current Claude Code setup
-supports extra features such as parallel task agents, use them. If not, fall back
-to sequential execution without changing the protocol.
+supports extra features such as parallel task agents, use them. If it does not,
+`strict` tasks must block and `compat` tasks may use the documented sequential
+fallback.
 
 ## Recommended Operating Mode
 
 - Main session: orchestrator
-- Separate task contexts when available:
+- Separate task contexts for strict mode:
   - `Scoped Explorer`
   - `Reviewer`
   - `Evaluator`
@@ -25,7 +26,7 @@ to sequential execution without changing the protocol.
 | Artifact creation | Markdown and YAML files under `.harness/` |
 | Repo inspection | Terminal plus file reads |
 | Worktree creation | `git worktree` from terminal |
-| Independent review | Separate task context or explicit second-pass review |
+| Independent review | Separate task context in `strict`; explicit second-pass review only in `compat` |
 | State control | `.harness/module-status.md` |
 
 ## Role Execution
@@ -44,6 +45,9 @@ to sequential execution without changing the protocol.
 
 - Must run before implementation
 - Confirm the intended validation path is executable in the current repo
+- In `strict`, inability to dispatch an isolated context is a blocker
+- In `compat`, the produced `verification-path.md` must record the degraded
+  execution context and fallback reason
 
 ### Generator
 
@@ -54,6 +58,7 @@ to sequential execution without changing the protocol.
 
 - Prefer an isolated review context
 - Review output should focus on bugs, regressions, missing tests, and residual risk
+- `Evaluator` must write `.harness/evaluation.md` before human close
 
 ## Context Isolation
 
@@ -122,12 +127,14 @@ not the invoked skill.
 
 ## Sequential Fallback
 
-If Claude Code is operating without separate task contexts:
+If the repo explicitly runs in `compat` mode and Claude Code is operating
+without separate task contexts:
 
 1. Keep the role order unchanged
 2. Persist each role output to `.harness/`
-3. Record state transitions in `module-status.md`
-4. Run an explicit review pass before asking for human close
+3. Record degraded execution context and fallback reason in the produced artifact
+4. Record state transitions in `module-status.md`
+5. Run an explicit review pass before asking for human close
 
 ## Claude Code-Specific Advice
 

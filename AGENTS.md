@@ -34,8 +34,8 @@ exploring → specifying → architecting → awaiting_human_arch
 |---|------|----------------|-------------|
 | 1 | Scoped Exploration Complete | Specifier | Entry points, write surface, test landing points, risks identified |
 | 2 | Architecture Approved | Verification Check | Requirements ↔ architecture consistent, human approved |
-| 3 | Verification Path Check | Generator | Validation commands executable, fallback defined |
-| 4 | Independent Review | Human Close | Findings explicit, blockers resolved or accepted |
+| 3 | Verification Path Check | Generator | Validation commands executable, isolation mode/context explicit, fallback defined |
+| 4 | Independent Review | Human Close | Findings explicit, `evaluation.md` present, blockers resolved or accepted |
 | 5 | Human Close | Complete | Human accepts residual risk, confirms objective met |
 
 ## Artifacts
@@ -48,6 +48,7 @@ Tasks produce artifacts in `.harness/`:
 | `requirements.md` | Implementation contract |
 | `architecture.md` | Change design |
 | `verification-path.md` | Validation proof |
+| `evaluation.md` | Independent review verdict and isolation provenance |
 | `module-status.md` | Control plane (state tracking) |
 | `retrospective.md` | Process lessons |
 
@@ -57,7 +58,7 @@ Tasks produce artifacts in `.harness/`:
 2. **File-based communication** — artifacts are the source of truth, not conversation history
 3. **Explicit blockers** — blocked states must name the reason and next decision
 4. **Human gates** — architecture approval and task close require human confirmation
-5. **Context isolation** — each role operates from artifacts, not prior role's reasoning
+5. **Context isolation** — `Verification Explorer` and `Evaluator` must use isolated judgment in `strict`; `compat` fallback must be explicit in artifacts
 
 ## Documentation Contribution Rules
 

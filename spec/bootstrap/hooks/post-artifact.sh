@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/lib/parse-input.sh"
+
+validate_artifact_script="$BOOTSTRAP_DIR/validate-artifact.sh"
+module_status_script="$BOOTSTRAP_DIR/module-status.sh"
+blocked_notes_regex='^\[(verification|scope|environment|design)_blocker\]'
+
+has_human_ack() {
+  local file_path="$1"
+  awk '
+    /^## State Notes$/ { in_notes = 1; next }
+    /^## / && in_notes { in_notes = 0 }
+    in_notes && /^[[:space:]]*-[[:space:]]*human_ack:[[:space:]]*true[[:space:]]*$/ { found = 1 }
+    END { exit found ? 0 : 1 }
+  ' "$file_path"
+}
+
+collect_artifacts() {
+  if [[ "$HOOK_HOST" == "cc" ]]; then
+    if [[ "$HOOK_FILE_PATH" == *".harness/"*".md" && -f "$HOOK_FILE_PATH" ]]; then
+      printf '%s\n' "$HOOK_FILE_PATH"
+    fi
+    return 0
+  fi
+
+  if [[ "$HOOK_HOST" == "codex" ]]; then
+    printf '%s\n' "$HOOK_COMMAND" \
+      | grep -oE '\.harness/[A-Za-z0-9._/-]+\.md' \
+      | sort -u \
+      | while IFS= read -r path; do
+          [[ -f "$path" ]] || continue
+          printf '%s\n' "$path"
+        done
+  fi
+}
+
+clear_human_ack_if_needed() {
+  local file_path="$1"
+  local current_state=""
+  local cache_path=""
+  local previous_state=""
+  local expected_state=""
+  local key=""
+  local value=""
+
+  cache_path="$(hook_transition_cache_path)"
+  if [[ ! -f "$cache_path" ]]; then
+    return 0
+  fi
+
+  while IFS='=' read -r key value; do
+    case "$key" in
+      from_state) previous_state="$value" ;;
+      to_state) expected_state="$value" ;;
+    esac
+  done < "$cache_path"
+  rm -f "$cache_path"
+
+  current_state="$(bash "$module_status_script" current-field "$file_path" state 2>/dev/null || true)"
+  [[ -n "$current_state" ]] || return 0
+
+  if [[ "$current_state" != "$expected_state" ]]; then
+    return 0
+  fi
+
+  if [[ "$previous_state" != "awaiting_human_arch" && "$previous_state" != "ready_for_human_close" ]]; then
+    return 0
+  fi
+
+  if [[ "$current_state" == "awaiting_human_arch" || "$current_state" == "ready_for_human_close" || "$current_state" == "$previous_state" ]]; then
+    return 0
+  fi
+
+  if ! has_human_ack "$file_path"; then
+    return 0
+  fi
+
+  debug_log "clearing human_ack in $file_path after transition $previous_state -> $current_state"
+  export BATON_HOOK_ACTIVE=1
+  sed -i.bak '/^[[:space:]]*-[[:space:]]*human_ack:[[:space:]]*true[[:space:]]*$/d' "$file_path"
+  rm -f "$file_path.bak"
+}
+
+artifact_paths=()
+while IFS= read -r artifact_path; do
+  [[ -n "$artifact_path" ]] || continue
+  artifact_paths+=("$artifact_path")
+done < <(collect_artifacts)
+
+if [[ "${#artifact_paths[@]}" -eq 0 ]]; then
+  hook_pass
+fi
+
+for artifact_path in "${artifact_paths[@]}"; do
+  artifact_type="$(basename "$artifact_path" .md)"
+  debug_log "post-artifact validating $artifact_path ($artifact_type)"
+
+  if ! artifact_output="$(bash "$validate_artifact_script" "$artifact_type" "$artifact_path" 2>&1)"; then
+    hook_block "$artifact_output"
+  fi
+
+  if [[ "$HOOK_HOST" == "codex" && "$artifact_type" == "module-status" ]]; then
+    current_state="$(bash "$module_status_script" current-field "$artifact_path" state 2>/dev/null || true)"
+    current_notes="$(bash "$module_status_script" current-field "$artifact_path" notes 2>/dev/null || true)"
+    current_notes="$(hook_trim "$current_notes")"
+    if [[ "$current_state" == "blocked" ]]; then
+      if [[ -z "$current_notes" || ! "$current_notes" =~ $blocked_notes_regex ]]; then
+        hook_block "Blocked state Notes must start with [verification_blocker], [scope_blocker], [environment_blocker], or [design_blocker]."
+      fi
+    fi
+  fi
+
+  if [[ "$artifact_type" == "module-status" ]]; then
+    clear_human_ack_if_needed "$artifact_path"
+  fi
+done
+
+hook_pass

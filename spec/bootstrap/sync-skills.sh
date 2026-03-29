@@ -51,6 +51,7 @@ inspect_dir() {
   local target_dir="$1"
   local dir_mode="symlink"
 
+  # Check flat files: skills/*.md
   for source_file in "$skills_dir"/*.md; do
     [[ -f "$source_file" ]] || continue
     local fname
@@ -69,18 +70,58 @@ inspect_dir() {
     fi
   done
 
+  # Check subdirectory skills: skills/*/SKILL.md
+  for source_file in "$skills_dir"/*/SKILL.md; do
+    [[ -f "$source_file" ]] || continue
+    local dirname target_subdir
+    dirname="$(basename "$(dirname "$source_file")")"
+    target_subdir="$target_dir/$dirname"
+
+    if [[ -L "$target_subdir" ]]; then
+      # Directory symlink — propagates automatically
+      continue
+    elif [[ -d "$target_subdir" && -f "$target_subdir/SKILL.md" ]]; then
+      # Directory copy — needs sync
+      if ! cmp -s "$source_file" "$target_subdir/SKILL.md"; then
+        dir_mode="copy"
+        break
+      fi
+    else
+      dir_mode="copy"
+      break
+    fi
+  done
+
   printf '%s' "$dir_mode"
 }
 
 sync_dir() {
   local target_dir="$1"
   mkdir -p "$target_dir"
+
+  # Sync flat files: skills/*.md
   for source_file in "$skills_dir"/*.md; do
     [[ -f "$source_file" ]] || continue
     local fname
     fname="$(basename "$source_file")"
     cp "$source_file" "$target_dir/$fname"
     printf 'sync  %s\n' "$target_dir/$fname"
+  done
+
+  # Sync subdirectory skills: skills/*/SKILL.md
+  for source_file in "$skills_dir"/*/SKILL.md; do
+    [[ -f "$source_file" ]] || continue
+    local source_subdir dirname target_subdir
+    source_subdir="$(dirname "$source_file")"
+    dirname="$(basename "$source_subdir")"
+    target_subdir="$target_dir/$dirname"
+
+    # Skip if already a symlink (propagates automatically)
+    [[ -L "$target_subdir" ]] && continue
+
+    mkdir -p "$target_subdir"
+    cp -R "$source_subdir"/* "$target_subdir/"
+    printf 'sync  %s/\n' "$target_subdir"
   done
 }
 

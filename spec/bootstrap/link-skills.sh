@@ -115,24 +115,47 @@ link_dir() {
     printf '%s  %s\n' "$mode" "$target_file" >&2
   done
 
-  # Subdirectory skills: skills/<name>/SKILL.md → target_dir/<name>.md
+  # Subdirectory skills: skills/<name>/ → target_dir/<name>/ (directory link)
+  # Claude Code discovers skills by scanning for <dir>/SKILL.md, so we must
+  # preserve the directory structure rather than flattening to a .md file.
   for source_file in "$skills_dir"/*/SKILL.md; do
     [[ -f "$source_file" ]] || continue
-    local dirname fname target_file
-    dirname="$(basename "$(dirname "$source_file")")"
-    fname="${dirname}.md"
-    target_file="$target_dir/$fname"
+    local source_subdir dirname target_subdir
+    source_subdir="$(dirname "$source_file")"
+    dirname="$(basename "$source_subdir")"
+    target_subdir="$target_dir/$dirname"
 
-    local mode
-    mode="$(link_one "$source_file" "$target_file")"
+    # Clean up stale flat-file symlink from previous link-skills runs
+    [[ -L "$target_dir/${dirname}.md" ]] && rm -f "$target_dir/${dirname}.md"
+
+    if [[ "$dry_run" == "true" ]]; then
+      printf 'symlink  %s/\n' "$target_subdir" >&2
+      continue
+    fi
+
+    # Remove previous target (file symlink, directory symlink, or copy dir)
+    rm -rf "$target_subdir"
+
+    local rel_dir mode
+    # For directory symlinks, compute relative path from the symlink's parent
+    # (target_dir) to source_subdir — NOT from inside the target directory.
+    rel_dir="$(relative_link_target "$source_file" "$target_dir/dummy")"
+    rel_dir="$(dirname "$rel_dir")"
+
+    if ln -s "$rel_dir" "$target_subdir" 2>/dev/null; then
+      mode="symlink"
+    elif cp -R "$source_subdir" "$target_subdir" 2>/dev/null; then
+      mode="copy"
+    else
+      printf 'ERROR: could not link or copy %s\n' "$source_subdir" >&2
+      continue
+    fi
 
     if [[ "$mode" == "copy" ]]; then
       dir_mode="copy"
-    elif [[ "$mode" == "hardlink" && "$dir_mode" == "symlink" ]]; then
-      dir_mode="hardlink"
     fi
 
-    printf '%s  %s\n' "$mode" "$target_file" >&2
+    printf '%s  %s/\n' "$mode" "$target_subdir" >&2
   done
 
   printf '%s' "$dir_mode"
@@ -149,6 +172,7 @@ link_fork_dir() {
     mkdir -p "$target_dir"
   fi
 
+  # Flat skills: skills/*.md with context: fork
   for source_file in "$skills_dir"/*.md; do
     [[ -f "$source_file" ]] || continue
     grep -q '^context: fork' "$source_file" 2>/dev/null || continue
@@ -166,6 +190,46 @@ link_fork_dir() {
     fi
 
     printf '%s  %s\n' "$mode" "$target_file" >&2
+  done
+
+  # Subdirectory skills: skills/*/SKILL.md with context: fork
+  for source_file in "$skills_dir"/*/SKILL.md; do
+    [[ -f "$source_file" ]] || continue
+    grep -q '^context: fork' "$source_file" 2>/dev/null || continue
+    local source_subdir dirname target_subdir
+    source_subdir="$(dirname "$source_file")"
+    dirname="$(basename "$source_subdir")"
+    target_subdir="$target_dir/$dirname"
+
+    [[ -L "$target_dir/${dirname}.md" ]] && rm -f "$target_dir/${dirname}.md"
+
+    if [[ "$dry_run" == "true" ]]; then
+      printf 'symlink  %s/\n' "$target_subdir" >&2
+      continue
+    fi
+
+    rm -rf "$target_subdir"
+
+    local rel_dir mode
+    # For directory symlinks, compute relative path from the symlink's parent
+    # (target_dir) to source_subdir — NOT from inside the target directory.
+    rel_dir="$(relative_link_target "$source_file" "$target_dir/dummy")"
+    rel_dir="$(dirname "$rel_dir")"
+
+    if ln -s "$rel_dir" "$target_subdir" 2>/dev/null; then
+      mode="symlink"
+    elif cp -R "$source_subdir" "$target_subdir" 2>/dev/null; then
+      mode="copy"
+    else
+      printf 'ERROR: could not link or copy %s\n' "$source_subdir" >&2
+      continue
+    fi
+
+    if [[ "$mode" == "copy" ]]; then
+      dir_mode="copy"
+    fi
+
+    printf '%s  %s/\n' "$mode" "$target_subdir" >&2
   done
 
   printf '%s' "$dir_mode"

@@ -15,12 +15,13 @@ In the baton reference implementation, `AGENTS.md` is materialized from the
 same shared template as `CLAUDE.md`, so Codex and Claude Code read the same
 repo-level governance summary.
 
-If sub-agents are unavailable, use the sequential fallback described below.
+If sub-agents are unavailable, only repos that explicitly run in `compat` mode
+may use the sequential fallback described below. `strict` mode must block.
 
 ## Recommended Operating Mode
 
 - Main thread: orchestrator
-- Optional isolated agents:
+- Isolated agents for strict mode:
   - `Verification Explorer`
   - `Reviewer`
   - `Evaluator`
@@ -34,7 +35,7 @@ If sub-agents are unavailable, use the sequential fallback described below.
 | Read/write artifacts | Local file tools in the repo workspace |
 | Run repo checks | Shell command execution |
 | Isolated implementation workspace | `git worktree` via shell |
-| Independent review | Sub-agent if available; otherwise a separate sequential review pass |
+| Independent review | Sub-agent in `strict`; explicit sequential review only in `compat` |
 | Control plane | `.harness/module-status.md` |
 
 ## Role Execution
@@ -57,13 +58,17 @@ If sub-agents are unavailable, use the sequential fallback described below.
 ### Verification Explorer
 
 - Always run before generator
-- Preferred: isolated sub-agent via `spawn_agent({ fork_context: false })`
+- Strict mode: isolated sub-agent via `spawn_agent({ fork_context: false })`
 - Explicitly pass only:
   - `.harness/requirements.md`
   - `.harness/architecture.md`
   - repo profile or relevant validation config
 - Do not rely on prior main-thread reasoning as the verification baseline
 - Dry-run the intended build/test path
+- If strict isolation is unavailable, block instead of continuing
+- Compat mode may fall back to a same-thread cold-read only if
+  `verification-path.md` records `Verification mode: compat`,
+  `Execution context: sequential_fallback`, and a concrete fallback reason
 
 ### Generator
 
@@ -73,11 +78,12 @@ If sub-agents are unavailable, use the sequential fallback described below.
 ### Reviewer
 
 - Preferred: isolated review agent with findings-first output
-- Fallback: explicit local review pass after implementation
+- Compat fallback: explicit local review pass after implementation
 
 ### Evaluator
 
-- Spawn as an isolated sub-agent: `spawn_agent({ fork_context: false })`
+- Strict mode: spawn as an isolated sub-agent:
+  `spawn_agent({ fork_context: false })`
 - Explicitly pass only:
   - `.harness/requirements.md`
   - `.harness/architecture.md`
@@ -85,8 +91,12 @@ If sub-agents are unavailable, use the sequential fallback described below.
   - implementation diff
 - Do NOT use `fork_context: true` — this copies Generator's reasoning chain
   and defeats context independence
-- If sub-agents are unavailable, fall back to sequential execution with an
-  explicit cold-read of all artifacts before evaluation begins
+- Write `.harness/evaluation.md` with verdict and isolation provenance before
+  handoff to human close
+- If strict isolation is unavailable, block instead of continuing
+- Compat mode may fall back to sequential execution only if `evaluation.md`
+  records `Review mode: compat`, `Execution context: sequential_fallback`,
+  and a concrete fallback reason
 
 ## Concrete Execution Examples
 
@@ -149,14 +159,16 @@ role-play can miss. Load only explicit artifacts; findings first, verdict second
 Do not `wait_agent` by reflex immediately after spawning if the main thread can
 still do non-overlapping work.
 
-## Sequential Fallback
+## Compat Fallback
 
-If sub-agents are not available:
+If the repo explicitly opts into `compat` mode and sub-agents are not available:
 
 1. Keep the same role order
 2. Treat `Verification Explorer` and `Evaluator` as hard cold-read boundaries
-3. Do not skip `module-status.md`
-4. Do not merge `verification_check` into `generating`
+3. Record `Execution context: sequential_fallback` in the produced artifact
+4. Record a concrete fallback reason, not "not available"
+5. Do not skip `module-status.md`
+6. Do not merge `verification_check` into `generating`
 
 ## Codex-Specific Advice
 

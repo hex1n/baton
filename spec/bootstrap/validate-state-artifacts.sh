@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/module-status.sh"
+
 harness_dir="${1:-.harness}"
 module_status="$harness_dir/module-status.md"
 
 [[ -f "$module_status" ]] || exit 0
 
-state=$(awk -F'|' 'NF>3 && $4!~/---/ && $4!~/^[[:space:]]*State[[:space:]]*$/{gsub(/ /,"",$4); print $4; exit}' "$module_status")
+state="$(module_status_current_field "$module_status" state)"
 [[ -n "$state" ]] || exit 0
 
 required_for_state() {
@@ -17,8 +20,12 @@ required_for_state() {
       echo "scoped-map.md requirements.md" ;;
     awaiting_human_arch|verification_check)
       echo "scoped-map.md requirements.md architecture.md" ;;
-    generating|reviewing|ready_for_human_close|complete)
+    generating|reviewing)
       echo "scoped-map.md requirements.md architecture.md verification-path.md" ;;
+    ready_for_human_close)
+      echo "scoped-map.md requirements.md architecture.md verification-path.md evaluation.md" ;;
+    complete)
+      echo "scoped-map.md requirements.md architecture.md verification-path.md evaluation.md retrospective.md" ;;
     *)
       echo "" ;;
   esac

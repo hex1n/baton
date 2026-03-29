@@ -76,6 +76,120 @@ content
 EOF
 assert_exit "requirements complete -> exit 0" 0 bash "$VALIDATE" "requirements" "$tmp/requirements.md"
 
+# -- verification-path: complete passes with isolation plan --
+cat > "$tmp/verification-path.md" <<'EOF'
+# Verification Path: test-task
+## 1. Intended Checks
+content
+## 2. Exact Commands
+content
+## 3. Prerequisites
+content
+## 4. Execution Provenance
+content
+## 5. Dry-Run Result
+content
+## 6. Blockers
+content
+## 7. Fallbacks
+content
+EOF
+assert_exit "verification-path complete -> exit 0" 0 bash "$VALIDATE" "verification-path" "$tmp/verification-path.md"
+
+# -- evaluation: complete passes --
+cat > "$tmp/evaluation.md" <<'EOF'
+# Evaluation: test-task
+## 1. Inputs
+content
+## 2. Execution Provenance
+content
+## 3. Findings
+content
+## 4. Verification Results
+content
+## 5. Verdict
+content
+## 6. Residual Risks
+content
+EOF
+assert_exit "evaluation complete -> exit 0" 0 bash "$VALIDATE" "evaluation" "$tmp/evaluation.md"
+
+# -- chinese evaluation headings also pass --
+cat > "$tmp/evaluation-zh.md" <<'EOF'
+# Evaluation: test-task
+## 1. 输入
+content
+## 2. Execution Provenance
+content
+## 3. 发现
+content
+## 4. Verification Results
+content
+## 5. Verdict
+content
+## 6. Residual Risks
+content
+EOF
+assert_exit "evaluation zh headings -> exit 0" 0 bash "$VALIDATE" "evaluation" "$tmp/evaluation-zh.md"
+
+# -- generator-feedback: complete passes in English --
+cat > "$tmp/generator-feedback.md" <<'EOF'
+# Generator Feedback: test-task
+## 1. Original Assumption
+content
+## 2. Actual Finding
+content
+## 3. Impact
+content
+## 4. Recommended Next Owner
+content
+EOF
+assert_exit "generator-feedback complete -> exit 0" 0 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback.md"
+
+# -- generator-feedback: complete passes in Chinese --
+cat > "$tmp/generator-feedback-zh.md" <<'EOF'
+# Generator Feedback: test-task
+## 1. 原始假设
+content
+## 2. 实际发现
+content
+## 3. 影响
+content
+## 4. 建议下一步负责方
+content
+EOF
+assert_exit "generator-feedback zh headings -> exit 0" 0 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback-zh.md"
+
+# -- generator-feedback: missing section fails --
+cat > "$tmp/generator-feedback-bad.md" <<'EOF'
+# Generator Feedback: test-task
+## 1. Original Assumption
+content
+## 2. Actual Finding
+content
+EOF
+assert_exit "generator-feedback missing sections -> exit 1" 1 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback-bad.md"
+
+# -- chinese verification-path headings also pass --
+cat > "$tmp/verification-path-zh.md" <<'EOF'
+# Verification Path: test-task
+## 1. 计划检查项
+content
+## 2. 精确命令
+content
+## 3. 前置条件
+content
+## 4. Execution Provenance
+content
+## 5. Dry-Run 结果
+content
+## 6. 阻塞项
+content
+## 7. 回退方案
+content
+EOF
+assert_exit "verification-path zh headings -> exit 0" 0 bash "$VALIDATE" "verification-path" "$tmp/verification-path-zh.md"
+
 # -- unknown artifact type -> exit 0 (skip, not error) --
 assert_exit "unknown artifact type -> exit 0 (skip)" 0 bash "$VALIDATE" "unknown-type" "$tmp/requirements.md"
 

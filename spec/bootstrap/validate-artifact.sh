@@ -2,7 +2,7 @@
 # validate-artifact.sh — verify a .harness/*.md artifact has all required sections
 #
 # Usage: validate-artifact.sh <artifact-type> <file-path>
-#   artifact-type: scoped-map | requirements | architecture | verification-path | module-status
+#   artifact-type: scoped-map | requirements | architecture | verification-path | evaluation | module-status | generator-feedback
 #   file-path:     path to the artifact file to validate
 #
 # Exit 0: artifact passes or type is unknown (skip)
@@ -40,28 +40,47 @@ check_sections() {
   return $missing
 }
 
+check_optional_overlay_recommendation() {
+  local file="$1"
+
+  if ! grep -qiE '^##[[:space:]]+Overlay Recommendation' "$file"; then
+    return 0
+  fi
+
+  if ! grep -Eq '^overlay:[[:space:]]*(core|strict)[[:space:]]*$' "$file"; then
+    printf 'ERROR: validate-artifact: scoped-map overlay recommendation must contain "overlay: core" or "overlay: strict" in %s\n' "$file" >&2
+    return 1
+  fi
+}
+
 run_checks() {
   local rc=0
   case "$artifact_type" in
     scoped-map)
       check_sections "$file_path" \
-        "Scope" "Entry" "Call.Chain" "Existing.Behavior" \
-        "Existing.Tests" "Risk" "Change.Shape" "Recommendation" || rc=$?
+        "Scope|范围" "Entry|入口" "Call.Chain|调用链" "Existing.Behavior|现有行为" \
+        "Existing.Tests|现有测试" "Risk|风险" "Change.Shape|变更形态" "Recommendation|建议" || rc=$?
+      check_optional_overlay_recommendation "$file_path" || rc=$((rc + 1))
       ;;
     requirements)
       check_sections "$file_path" \
-        "Problem" "Scope" "Functional.Requirements" "Non.Goals" \
-        "Acceptance.Criteria" "Constraints" "Validation.Intent" || rc=$?
+        "Problem|问题" "Scope|范围" "Functional.Requirements|功能需求" "Non.Goals|非目标" \
+        "Acceptance.Criteria|验收标准" "Constraints|约束" "Validation.Intent|验证意图" || rc=$?
       ;;
     architecture)
       check_sections "$file_path" \
-        "Problem.Framing" "First.Principles" "Recommended.Approach" \
-        "Surface.Scan" "Verification.Strategy" "Risk" "Self.Challenge" || rc=$?
+        "Problem.Framing|问题" "First.Principles|第一性原理" "Recommended.Approach|推荐架构" \
+        "Surface.Scan|影响面扫描" "Verification.Strategy|验证策略" "Risk|风险" "Self.Challenge|自我质疑" || rc=$?
       ;;
     verification-path)
       check_sections "$file_path" \
-        "Intended.Checks" "Commands" "Dependencies" \
-        "Dry.Run" "Blockers" "Fallback" || rc=$?
+        "Intended.Checks|计划检查项" "Commands|精确命令" "Dependencies|Prerequisites|前置条件" "Execution.Provenance|Isolation" \
+        "Dry.Run" "Blockers|阻塞项" "Fallback|回退方案" || rc=$?
+      ;;
+    evaluation)
+      check_sections "$file_path" \
+        "Inputs|输入" "Execution.Provenance|Isolation.Provenance" "Findings|发现" \
+        "Verification.Results" "Verdict" "Residual.Risks" || rc=$?
       ;;
     module-status)
       check_sections "$file_path" "State.Notes" || rc=$?
@@ -69,6 +88,11 @@ run_checks() {
         printf 'ERROR: validate-artifact: module-status missing task table in %s\n' "$file_path" >&2
         rc=$((rc + 1))
       fi
+      ;;
+    generator-feedback)
+      check_sections "$file_path" \
+        "Original.Assumption|原始假设" "Actual.Finding|实际发现" \
+        "Impact|影响" "Recommended.Next.Owner|建议下一步负责方" || rc=$?
       ;;
     *)
       return 0

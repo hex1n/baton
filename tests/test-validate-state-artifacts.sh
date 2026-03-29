@@ -39,6 +39,20 @@ make_status() {
 EOF
 }
 
+make_legacy_status() {
+  local dir="$1" state="$2"
+  mkdir -p "$dir"
+  cat > "$dir/module-status.md" <<EOF
+# Module Status
+
+| Scope | Owner | State | Updated At | Notes |
+|------|------|------|-----------|------|
+| legacy-task | reviewer | $state | 2026-03-28 | legacy |
+
+## State Notes
+EOF
+}
+
 # no module-status.md → exit 0
 assert_exit "no module-status → pass" 0 bash "$SCRIPT" "$tmp/empty"
 
@@ -71,6 +85,44 @@ assert_exit "generating + verification-path missing → block" 2 bash "$SCRIPT" 
 
 # exit 2 output is valid JSON with decision:block
 assert_json_block "block output is JSON with decision:block" "$tmp/t6"
+
+# latest row determines current state
+mkdir -p "$tmp/t7"
+cat > "$tmp/t7/module-status.md" <<'EOF'
+# Module Status
+
+| Scope | Owner | State | Eval Round | Updated At | Notes |
+|------|------|------|-----------|-----------|------|
+| old-task | human | complete | 0 | 2026-03-28 | closed |
+| latest-task | generator | generating | 1 | 2026-03-28 | active |
+
+## State Notes
+EOF
+touch "$tmp/t7/scoped-map.md" "$tmp/t7/requirements.md" "$tmp/t7/architecture.md"
+assert_exit "latest row generating without verification-path -> block" 2 bash "$SCRIPT" "$tmp/t7"
+
+# legacy schema remains readable
+make_legacy_status "$tmp/t8" "specifying"
+touch "$tmp/t8/scoped-map.md"
+assert_exit "legacy schema specifying + scoped-map present -> pass" 0 bash "$SCRIPT" "$tmp/t8"
+
+# ready_for_human_close requires evaluation.md
+make_status "$tmp/t9" "ready_for_human_close"
+touch "$tmp/t9/scoped-map.md" "$tmp/t9/requirements.md" "$tmp/t9/architecture.md" "$tmp/t9/verification-path.md"
+assert_exit "ready_for_human_close without evaluation -> block" 2 bash "$SCRIPT" "$tmp/t9"
+
+make_status "$tmp/t10" "ready_for_human_close"
+touch "$tmp/t10/scoped-map.md" "$tmp/t10/requirements.md" "$tmp/t10/architecture.md" "$tmp/t10/verification-path.md" "$tmp/t10/evaluation.md"
+assert_exit "ready_for_human_close with evaluation -> pass" 0 bash "$SCRIPT" "$tmp/t10"
+
+# state=complete requires retrospective.md
+make_status "$tmp/t11" "complete"
+touch "$tmp/t11/scoped-map.md" "$tmp/t11/requirements.md" "$tmp/t11/architecture.md" "$tmp/t11/verification-path.md" "$tmp/t11/evaluation.md"
+assert_exit "complete without retrospective -> block" 2 bash "$SCRIPT" "$tmp/t11"
+
+make_status "$tmp/t12" "complete"
+touch "$tmp/t12/scoped-map.md" "$tmp/t12/requirements.md" "$tmp/t12/architecture.md" "$tmp/t12/verification-path.md" "$tmp/t12/evaluation.md" "$tmp/t12/retrospective.md"
+assert_exit "complete with retrospective -> pass" 0 bash "$SCRIPT" "$tmp/t12"
 
 echo ""; echo "Results: $PASS passed, $FAIL failed of $TOTAL total"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

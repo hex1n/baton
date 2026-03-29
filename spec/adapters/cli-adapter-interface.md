@@ -51,7 +51,7 @@ If unavailable, the adapter must fall back to sequential role execution.
 
 If unavailable, the adapter must still support a documented local review step.
 
-## Execution Modes
+## Workspace Execution Modes
 
 ### Mode A: Multi-Agent
 
@@ -63,6 +63,24 @@ If unavailable, the adapter must still support a documented local review step.
 - fallback when the CLI has only one execution context
 - roles still exist logically
 - artifacts and state transitions must remain explicit
+
+## Isolation Policy Modes
+
+### `strict`
+
+- `Verification Explorer` and `Evaluator` must run with true context isolation
+- if the current host or session policy cannot provide that isolation, the task
+  must transition to `blocked`
+- sequential fallback is not valid in this mode
+
+### `compat`
+
+- sequential fallback is allowed only if the repo or task explicitly opts in
+- verifier / evaluator artifacts must record:
+  - isolation mode
+  - actual execution context
+  - explicit fallback reason when degraded
+- human close must surface that independence was degraded
 
 ## Context Isolation Requirement
 
@@ -79,7 +97,8 @@ Acceptable mechanisms:
 - Explicit session reset followed by artifact reload
 
 Sequential execution WITHOUT isolation is not sufficient for Verification
-Explorer or Evaluator.
+Explorer or Evaluator in `strict` mode. Adapters may only describe sequential
+fallback for repos that explicitly run in `compat` mode.
 
 ## Adapter Responsibilities
 
@@ -95,3 +114,4 @@ The adapter may not change:
 - required gates
 - required artifacts
 - the need for explicit blockers
+- the strict/compat meaning of isolation policy

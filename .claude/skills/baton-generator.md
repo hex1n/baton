@@ -1,1 +1,0 @@
-../../skills/baton-generator.md

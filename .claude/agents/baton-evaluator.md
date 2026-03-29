@@ -1,1 +1,0 @@
-../../skills/baton-evaluator.md

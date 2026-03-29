@@ -76,17 +76,33 @@ _abs_repo="$(cd "$repo_root" && pwd)"
 _abs_bootstrap="$(cd "$bootstrap_dir" && pwd)"
 rel_bootstrap="$(python3 -c "import os,sys; print(os.path.relpath(sys.argv[1],sys.argv[2]))" \
   "$_abs_bootstrap" "$_abs_repo")"
+hooks_dir="$_abs_bootstrap/hooks"
+
+require_hook_script() {
+  local name="$1"
+  local path="$hooks_dir/$name"
+  if [[ ! -f "$path" ]]; then
+    printf 'ERROR: install-hooks: required hook script not found: %s\n' "$path" >&2
+    exit 1
+  fi
+}
+
+require_hook_script "pre-transition.sh"
+require_hook_script "post-artifact.sh"
+require_hook_script "stop-check.sh"
+require_hook_script "subagent-stop.sh"
+require_hook_script "session-start.sh"
 
 # ---------------------------------------------------------------------------
 # Claude Code hook command strings
 # Trigger: Write|Edit|MultiEdit — tool_input has file_path + content
 # ---------------------------------------------------------------------------
 
-# PostToolUse: after write to .harness/*.md → validate-artifact.sh
-cc_post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; at=\$(basename \"\$fp\" .md); bash \"\$root/${rel_bootstrap}/validate-artifact.sh\" \"\$at\" \"\$fp\" # baton-validate-artifact"
+# PostToolUse: after write to .harness/*.md → hooks/post-artifact.sh
+cc_post_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/post-artifact.sh\" # baton-validate-artifact"
 
-# PreToolUse: before write to module-status.md → validate-transition.sh
-cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/${rel_bootstrap}/validate-transition.sh\" \"\$cs\" \"\$ns\" # baton-validate-transition"
+# PreToolUse: before write to module-status.md → hooks/pre-transition.sh
+cc_pre_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/pre-transition.sh\" # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
 # Codex hook command strings
@@ -94,34 +110,31 @@ cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path
 # PreToolUse blocks on exit 2 (not exit 1)
 # ---------------------------------------------------------------------------
 
-# PostToolUse: after Bash command that wrote to .harness/*.md → validate-artifact.sh
-cx_post_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"\$cmd\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; for fp in \$(echo \"\$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"\$fp\" ]] || continue; at=\$(basename \"\$fp\" .md); bash \"\$root/${rel_bootstrap}/validate-artifact.sh\" \"\$at\" \"\$fp\"; done # baton-validate-artifact"
+# PostToolUse: after Bash command that wrote to .harness/*.md → hooks/post-artifact.sh
+cx_post_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/post-artifact.sh\" # baton-validate-artifact"
 
-# PreToolUse: before Bash command that writes to module-status.md → validate-transition.sh
-# Extract target state from known state names present in the command string.
-# Exit 2 (not 1) to signal Codex to block the pending tool call.
-cx_state_names="exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked"
-cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash \"\$root/${rel_bootstrap}/validate-transition.sh\" \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
+# PreToolUse: before Bash command that writes to module-status.md → hooks/pre-transition.sh
+cx_pre_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/pre-transition.sh\" # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
 # Stop hook command string (Claude Code + Codex — outputs JSON)
 # No matcher: Stop has no matcher support on either platform
 # ---------------------------------------------------------------------------
-stop_cmd="[[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/${rel_bootstrap}/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
+stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/stop-check.sh\" # baton-validate-state baton-validate-isolation"
 
 # ---------------------------------------------------------------------------
 # SubagentStop command string (Claude Code only)
 # Matcher: baton-evaluator|baton-verifier
 # Reads agent_type field; validates fork agent wrote its required artifact
 # ---------------------------------------------------------------------------
-subagent_stop_cmd="input=\$(cat); agent=\$(echo \"\$input\" | jq -r '.agent_type // empty' 2>/dev/null); case \"\$agent\" in baton-verifier|baton-evaluator) ;; *) exit 0 ;; esac; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bootstrap=\"\$root/${rel_bootstrap}\"; case \"\$agent\" in baton-verifier) [[ -f \"\$root/.harness/verification-path.md\" ]] || { jq -n '{\"decision\":\"block\",\"reason\":\"baton-verifier completed without writing verification-path.md\"}'; exit 2; }; bash \"\$bootstrap/validate-artifact.sh\" verification-path \"\$root/.harness/verification-path.md\" || exit 2 ;; baton-evaluator) state=\$(awk -F'|' 'NF>3 && \$4!~/---/ && \$4!~/^[[:space:]]*State[[:space:]]*\$/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$root/.harness/module-status.md\" 2>/dev/null); case \"\$state\" in blocked|reviewing|ready_for_human_close) ;; *) jq -n --arg s \"\$state\" '{\"decision\":\"block\",\"reason\":(\"baton-evaluator completed but module-status state is \\\\\"\" + \$s + \"\\\\\"\")}'; exit 2 ;; esac ;; esac # baton-subagent-stop"
+subagent_stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/subagent-stop.sh\" # baton-subagent-stop"
 
 # ---------------------------------------------------------------------------
 # SessionStart command string (Claude Code + Codex)
 # Matcher: startup|resume
 # Reads .harness/module-status.md and injects current task state as context
 # ---------------------------------------------------------------------------
-session_start_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/${rel_bootstrap}/harness-context.sh\" \"\$root/.harness\" # baton-harness-context"
+session_start_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"\$root/${rel_bootstrap}\" bash \"\$root/${rel_bootstrap}/hooks/session-start.sh\" # baton-harness-context"
 
 # ---------------------------------------------------------------------------
 # Dry-run: print what would be written, then exit

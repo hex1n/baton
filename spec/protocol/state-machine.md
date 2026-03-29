@@ -56,6 +56,7 @@
 
 - Active owner: `reviewer` or `evaluator`
 - Goal: independently assess correctness, regressions, and coverage
+- Exit artifact before human close: `evaluation.md`
 
 ### `blocked`
 
@@ -71,6 +72,7 @@
 
 - Active owner: `human`
 - Goal: accept residual risk and confirm the task can be closed
+- Required artifacts: `requirements.md`, `architecture.md`, `verification-path.md`, `evaluation.md`
 
 ### `complete`
 

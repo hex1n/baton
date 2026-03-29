@@ -20,6 +20,18 @@ assert_file_contains() {
   fi
 }
 
+assert_file_not_contains() {
+  local label="$1" file="$2" pattern="$3"
+  TOTAL=$((TOTAL + 1))
+  if grep -Fq "$pattern" "$file" 2>/dev/null; then
+    echo "  FAIL: $label — unexpected pattern '$pattern' found in $file"
+    FAIL=$((FAIL + 1))
+  else
+    echo "  pass: $label"
+    PASS=$((PASS + 1))
+  fi
+}
+
 assert_exit() {
   local label="$1" expected="$2"
   shift 2
@@ -47,13 +59,21 @@ assert_exit "install-hooks exits 0" 0 \
 
 assert_file_contains "CC PostToolUse written"           "$repo/.claude/settings.json" "PostToolUse"
 assert_file_contains "CC PreToolUse written"            "$repo/.claude/settings.json" "PreToolUse"
-assert_file_contains "CC validate-artifact in config"   "$repo/.claude/settings.json" "validate-artifact"
-assert_file_contains "CC validate-transition in config" "$repo/.claude/settings.json" "validate-transition"
+assert_file_contains "CC PostToolUse points at hook script" \
+  "$repo/.claude/settings.json" "hooks/post-artifact.sh"
+assert_file_contains "CC PreToolUse points at hook script" \
+  "$repo/.claude/settings.json" "hooks/pre-transition.sh"
+assert_file_contains "CC Stop points at hook script" \
+  "$repo/.claude/settings.json" "hooks/stop-check.sh"
+assert_file_contains "CC SubagentStop points at hook script" \
+  "$repo/.claude/settings.json" "hooks/subagent-stop.sh"
+assert_file_contains "CC SessionStart points at hook script" \
+  "$repo/.claude/settings.json" "hooks/session-start.sh"
 assert_file_contains "CC matcher is Write|Edit"         "$repo/.claude/settings.json" "Write|Edit|MultiEdit"
-assert_file_contains "CC commands use git rev-parse" \
-  "$repo/.claude/settings.json" "git rev-parse"
-assert_file_contains "Codex commands use git rev-parse" \
-  "$repo/.codex/hooks.json" "git rev-parse"
+assert_file_not_contains "CC settings no longer inline validate-artifact logic" \
+  "$repo/.claude/settings.json" "tool_input.file_path"
+assert_file_not_contains "CC settings no longer inline validate-transition logic" \
+  "$repo/.claude/settings.json" "tool_input.content"
 
 # Idempotent: running twice does not duplicate PostToolUse
 bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" >/dev/null 2>&1
@@ -72,10 +92,17 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "Codex hooks.json created"             "$repo/.codex/hooks.json"   "PostToolUse"
 assert_file_contains "Codex PreToolUse written"             "$repo/.codex/hooks.json"   "PreToolUse"
-assert_file_contains "Codex validate-artifact in hooks"     "$repo/.codex/hooks.json"   "validate-artifact"
-assert_file_contains "Codex validate-transition in hooks"   "$repo/.codex/hooks.json"   "validate-transition"
+assert_file_contains "Codex PostToolUse points at hook script" \
+  "$repo/.codex/hooks.json"   "hooks/post-artifact.sh"
+assert_file_contains "Codex PreToolUse points at hook script" \
+  "$repo/.codex/hooks.json"   "hooks/pre-transition.sh"
+assert_file_contains "Codex Stop points at hook script" \
+  "$repo/.codex/hooks.json"   "hooks/stop-check.sh"
+assert_file_contains "Codex SessionStart points at hook script" \
+  "$repo/.codex/hooks.json"   "hooks/session-start.sh"
 assert_file_contains "Codex matcher is Bash"                "$repo/.codex/hooks.json"   '"Bash"'
-assert_file_contains "Codex PreToolUse exits 2 to block"    "$repo/.codex/hooks.json"   "exit 2"
+assert_file_not_contains "Codex hooks no longer inline validate-artifact logic" \
+  "$repo/.codex/hooks.json" "tool_input.command"
 assert_file_contains "Codex config feature flag written"    "$repo/.codex/config.toml"  "codex_hooks = true"
 
 # Idempotent: running twice does not duplicate Codex PostToolUse
@@ -105,8 +132,8 @@ fi
 # Stop hooks
 # ---------------------------------------------------------------------------
 assert_file_contains "CC Stop hook written"             "$repo/.claude/settings.json" '"Stop"'
-assert_file_contains "CC Stop uses validate-state"      "$repo/.claude/settings.json" "validate-state-artifacts"
-assert_file_contains "Codex Stop hook written"          "$repo/.codex/hooks.json"     '"Stop"'
+assert_file_contains "CC Stop hook still registered"    "$repo/.claude/settings.json" '"Stop"'
+assert_file_contains "Codex Stop hook still registered" "$repo/.codex/hooks.json"     '"Stop"'
 assert_file_contains "Codex Stop has statusMessage"     "$repo/.codex/hooks.json"     "Checking harness state"
 
 # Stop idempotent (CC)
@@ -137,7 +164,7 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "CC SubagentStop written"            "$repo/.claude/settings.json" '"SubagentStop"'
 assert_file_contains "CC SubagentStop matcher is agents"  "$repo/.claude/settings.json" "baton-evaluator"
-assert_file_contains "CC SubagentStop checks agent_type"  "$repo/.claude/settings.json" "agent_type"
+assert_file_contains "CC SubagentStop points at hook script"  "$repo/.claude/settings.json" "hooks/subagent-stop.sh"
 TOTAL=$((TOTAL+1))
 if ! grep -q '"SubagentStop"' "$repo/.codex/hooks.json" 2>/dev/null; then
   echo "  pass: Codex has no SubagentStop"
@@ -152,7 +179,7 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "CC SessionStart written"               "$repo/.claude/settings.json" '"SessionStart"'
 assert_file_contains "CC SessionStart matcher"               "$repo/.claude/settings.json" "startup|resume"
-assert_file_contains "CC SessionStart calls harness-context" "$repo/.claude/settings.json" "harness-context"
+assert_file_contains "CC SessionStart points at hook script"  "$repo/.claude/settings.json" "hooks/session-start.sh"
 assert_file_contains "Codex SessionStart written"            "$repo/.codex/hooks.json"     '"SessionStart"'
 assert_file_contains "Codex SessionStart has statusMessage"  "$repo/.codex/hooks.json"     "Loading harness context"
 
@@ -176,6 +203,7 @@ fi
 # ---------------------------------------------------------------------------
 repo3="$tmp/repo3"
 mkdir -p "$repo3/custom-bootstrap"
+cp -R "$bootstrap"/. "$repo3/custom-bootstrap/"
 bash "$INSTALL_HOOKS" --repo-root "$repo3" --bootstrap-dir "$repo3/custom-bootstrap" >/dev/null 2>&1
 assert_file_contains "CC uses relative bootstrap path" \
   "$repo3/.claude/settings.json" "custom-bootstrap"

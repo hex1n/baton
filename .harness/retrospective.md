@@ -1,35 +1,34 @@
-# Retrospective: runtime-thickness-improvements
+# Retrospective: runtime-enforcement-hardening
 
 ## 1. 结果
 
-- 关闭状态: complete（2026-03-28）
-- 主要阻塞: 无。架构被否决两次（Rev1、Rev2），均通过 blocked 状态保存现场后重新架构，流程正常运转。
-- 人工决策: (1) 要求真正的运行时隔离（否决 Rev1 残余风险）；(2) 要求跨平台对称（否决 Rev2 CC-only 方案）；(3) 接受 Rev3 并确认关闭。
+- 关闭状态: complete
+- 主要阻塞: 评审阶段先后暴露了两个真实问题：`human_ack` 清理范围过宽，以及 `verification-path.md` 中原始 ShellCheck 命令与验收语义不一致
+- 人工决策: 人类批准了架构方案，并明确要求使用隔离子 agent 完成 strict verification / evaluation
 
 ## 2. 有效做法
 
-- **验证前置**：verification-path.md 在实现前 dry-run 确认所有命令可执行，实现阶段零阻塞。
-- **gap 分析先行**：baton-explorer 扫描出 10 个改进计划项，9 个已实现，只有 P0-3 确实缺失，避免了过度实现。
-- **跨平台对比分析**：在 Rev3 架构阶段对比 CC / Codex / Cursor 现状，发现 Codex 已正确，只需 CC 与其对称。
-- **不变式守护新机制**：新增 invariant 7 将 `.claude/agents/` 一致性纳入 check-consistency.sh，防止未来编辑 skills/ 后遗忘同步。
+- 先把 hook runtime 从宿主 JSON 内联命令抽成独立脚本，再在脚本层补 enforcement gap，显著降低了测试和调试成本
+- 用隔离 verifier / evaluator 复跑 Gate 3 和 Gate 4，确实抓出了主线程容易忽略的契约问题
+- 在生成阶段并行拆分 runtime、tests、templates/skills 三条写面，明显缩短了集成时间
 
 ## 3. 失败点
 
-- **Rev1 单层分析不足**：`context: fork` frontmatter 已设，但未追问"这在 CC 运行时是否真的强制"，导致架构被否决。应在架构阶段主动验证机制的实际约束边界。
-- **Rev2 平台视野窄**：仅设计 CC 修复方案，未主动扫描其他平台，需要 human 明确提示才补全。应在架构阶段默认列出所有目标平台现状。
+- 初版 `post-artifact.sh` 只按写后状态判断是否清理 `human_ack`，没有保存真实转移来源，导致清理范围过宽
+- 初版 `verification-path.md` 把 `shellcheck` 原始命令写得过宽，没有对齐 AC-17 的 error-level 语义
 
 ## 4. 仓库特定经验
 
-- `.claude/agents/` 是 Claude Code 的运行时 agent 类型注册目录，link-skills.sh 现在将 `context: fork` 的 skill 文件自动同步到此目录。
-- `.claude/skills/`（Skill 工具内联）和 `.claude/agents/`（Agent 工具隔离）是两个不同分发目标，语义不同，不可互换。
+- Baton 的 harness 任务在这个仓库里已经高度依赖 `.harness` 控制面和 bootstrap 脚本耦合，任何 runtime hardening 都必须同步更新 tests 和 consistency invariants
+- Bash 版本兼容性要保守处理，像 `mapfile` 这类较新的内建不适合作为默认实现前提
 
 ## 5. Harness 经验
 
-- **协议声明 ≠ 运行时强制**：`context: fork` frontmatter 只声明意图，需要配合 CC Agent 工具 / Codex spawn_agent 才能真正隔离。文档层与机制层必须同时完整。
-- **blocked 状态可正常复用**：被否决的架构通过 blocked 状态保存，重新设计后继续，无上下文丢失，流程符合预期。
-- **P1-2 已通过等价机制实现**：`baton-evaluator.md` State Notes（`Current eval round: N`）已满足 eval_round 追踪需求，无需修改 module-status 模板。
+- `human_ack` 这类 advisory gate 只有在“前置 hook 记录转移意图 + 后置 hook 精确消费”的组合下才可靠，不能只看最终状态
+- verification-path 里的“精确命令”必须真的能被 evaluator 原样重跑通过，否则 Gate 4 会把 Gate 3 重新打回
 
 ## 6. 可标准化候选
 
-- **架构检查清单扩展**：在架构阶段增加一项 "列出所有目标平台（CC / Codex / Cursor）现状，逐一确认机制对称性"，可防止 Rev2 式单平台盲区。
-- **Skill 分发目标说明**：在 link-skills.sh 注释中明确两个分发目标的语义差异（`.claude/skills/` = 内联，`.claude/agents/` = 隔离），方便后续维护者理解。
+- 为 hook 间短生命周期状态传递沉淀一个共享 cache 约定，而不是在单个脚本里各自实现
+- 把 `shellcheck -S error` 固化为 runtime hardening 类任务的标准验证命令模板
+- 为 `post-artifact` / `pre-transition` 这种成对 hook 增加更明确的 repo-level test fixture 约定

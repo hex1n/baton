@@ -2,6 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/module-status.sh"
 
 repo_root="."
 task_id=""
@@ -12,7 +13,7 @@ language=""
 dry_run="false"
 
 trim() {
-  printf '%s' "$1" | sed 's/^[[:space:]\r]*//;s/[[:space:]\r]*$//'
+  printf '%s' "$1" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 sanitize_cell() {
@@ -219,6 +220,15 @@ if [[ ! -f "$module_status_path" ]]; then
   exit 1
 fi
 
+module_status_schema_value="$(module_status_schema "$module_status_path")"
+case "$module_status_schema_value" in
+  current|legacy) ;;
+  *)
+    printf 'Unsupported module-status schema: %s\n' "$module_status_schema_value" >&2
+    exit 1
+    ;;
+esac
+
 profile_language="$(read_profile_language "$profile_local_path")"
 if [[ -n "$profile_language" ]]; then
   case "$profile_language" in
@@ -244,44 +254,11 @@ rows=()
 last_scope="bootstrap"
 duplicate_task="false"
 open_rows=()
-in_table="false"
 
-while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
-  line="$(trim "$raw_line")"
+while IFS=$'\t' read -r scope owner_column row_state eval_round updated_column notes_column; do
+  [[ -n "$scope" ]] || continue
 
-  if [[ "$line" == '## State Notes' ]]; then
-    break
-  fi
-
-  if [[ "$line" == '| Scope | Owner | State | Eval Round | Updated At | Notes |' ]]; then
-    in_table="true"
-    continue
-  fi
-
-  if [[ "$in_table" != "true" ]]; then
-    continue
-  fi
-
-  if [[ "$line" == '|------|------|------|-----------|-----------|------|' || -z "$line" ]]; then
-    continue
-  fi
-
-  if [[ "$line" != \|* ]]; then
-    continue
-  fi
-
-  trimmed_line="${line#|}"
-  trimmed_line="${trimmed_line%|}"
-  IFS='|' read -r scope_column owner_column state_column eval_round_column updated_column notes_column <<< "$trimmed_line"
-
-  scope="$(trim "$scope_column")"
-  row_state="$(trim "$state_column")"
-
-  if [[ "$scope" == '<task-id>' ]]; then
-    continue
-  fi
-
-  rows+=("$line")
+  rows+=("| $(sanitize_cell "$scope") | $(sanitize_cell "$owner_column") | $(sanitize_cell "$row_state") | $(sanitize_cell "$eval_round") | $(sanitize_cell "$updated_column") | $(sanitize_cell "$notes_column") |")
   last_scope="$scope"
 
   if [[ "$scope" == "$task_id" ]]; then
@@ -291,7 +268,7 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
   if [[ "$row_state" != 'complete' ]]; then
     open_rows+=("$scope:$row_state")
   fi
-done < "$module_status_path"
+done < <(module_status_rows_tsv "$module_status_path")
 
 if [[ "$duplicate_task" == "true" ]]; then
   printf 'Task already exists in module-status.md: %s\n' "$task_id" >&2
@@ -308,6 +285,7 @@ artifact_templates=(
   "requirements.template.md:requirements.md"
   "architecture.template.md:architecture.md"
   "verification-path.template.md:verification-path.md"
+  "evaluation.template.md:evaluation.md"
   "retrospective.template.md:retrospective.md"
 )
 
