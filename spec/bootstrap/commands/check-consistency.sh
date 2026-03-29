@@ -415,6 +415,7 @@ for hook_script in "$bootstrap_dir/hooks"/*; do
     *.cmd) continue ;;
   esac
   hook_name="$(basename "$hook_script")"
+  hook_name="${hook_name%.sh}"
   test_file="$repo_root/tests/test-hook-$hook_name.sh"
   if [[ ! -f "$test_file" ]]; then
     printf 'ERROR: invariant-12: missing hook test for %s at %s\n' "$hook_script" "$test_file"

@@ -130,6 +130,7 @@ require_hook_script "post-artifact"
 require_hook_script "stop-check"
 require_hook_script "subagent-stop"
 require_hook_script "session-start"
+require_hook_script "run-hook.sh"
 require_hook_script "run-hook.cmd"
 
 build_unix_hook_cmd() {
@@ -146,7 +147,7 @@ build_windows_hook_cmd() {
     "$rel_bootstrap_windows" "$handler" "$marker"
 }
 
-build_hook_cmd() {
+build_claude_hook_cmd() {
   local handler="$1"
   local marker="$2"
   if [[ "$resolved_hook_platform" == "windows" ]]; then
@@ -155,6 +156,31 @@ build_hook_cmd() {
   fi
 
   build_unix_hook_cmd "$handler" "$marker"
+}
+
+build_codex_unix_hook_cmd() {
+  local handler="$1"
+  local marker="$2"
+  printf 'bash "%s/run-hook.sh" %s %s' \
+    "$hooks_dir" "$handler" "$marker"
+}
+
+build_codex_windows_hook_cmd() {
+  local handler="$1"
+  local marker="$2"
+  printf 'cmd /d /c "\".\\%s\\hooks\\run-hook.cmd\" %s %s"' \
+    "$rel_bootstrap_windows" "$handler" "$marker"
+}
+
+build_codex_hook_cmd() {
+  local handler="$1"
+  local marker="$2"
+  if [[ "$resolved_hook_platform" == "windows" ]]; then
+    build_codex_windows_hook_cmd "$handler" "$marker"
+    return
+  fi
+
+  build_codex_unix_hook_cmd "$handler" "$marker"
 }
 
 print_manifest_json() {
@@ -167,8 +193,8 @@ print_manifest_json() {
     --arg cc_session "$session_start_cmd" \
     --arg cx_post "$cx_post_cmd" \
     --arg cx_pre "$cx_pre_cmd" \
-    --arg cx_stop "$stop_cmd" \
-    --arg cx_session "$session_start_cmd" \
+    --arg cx_stop "$cx_stop_cmd" \
+    --arg cx_session "$cx_session_start_cmd" \
     '{
       platform: $platform,
       claude: {
@@ -193,10 +219,10 @@ print_manifest_json() {
 # ---------------------------------------------------------------------------
 
 # PostToolUse: after write to .harness/*.md → hooks/post-artifact
-cc_post_cmd="$(build_hook_cmd "post-artifact" "baton-validate-artifact")"
+cc_post_cmd="$(build_claude_hook_cmd "post-artifact" "baton-validate-artifact")"
 
 # PreToolUse: before write to module-status.md → hooks/pre-transition
-cc_pre_cmd="$(build_hook_cmd "pre-transition" "baton-validate-transition")"
+cc_pre_cmd="$(build_claude_hook_cmd "pre-transition" "baton-validate-transition")"
 
 # ---------------------------------------------------------------------------
 # Codex hook command strings
@@ -205,30 +231,32 @@ cc_pre_cmd="$(build_hook_cmd "pre-transition" "baton-validate-transition")"
 # ---------------------------------------------------------------------------
 
 # PostToolUse: after Bash command that wrote to .harness/*.md → hooks/post-artifact
-cx_post_cmd="$(build_hook_cmd "post-artifact" "baton-validate-artifact")"
+cx_post_cmd="$(build_codex_hook_cmd "post-artifact" "baton-validate-artifact")"
 
 # PreToolUse: before Bash command that writes to module-status.md → hooks/pre-transition
-cx_pre_cmd="$(build_hook_cmd "pre-transition" "baton-validate-transition")"
+cx_pre_cmd="$(build_codex_hook_cmd "pre-transition" "baton-validate-transition")"
 
 # ---------------------------------------------------------------------------
 # Stop hook command string (Claude Code + Codex — outputs JSON)
 # No matcher: Stop has no matcher support on either platform
 # ---------------------------------------------------------------------------
-stop_cmd="$(build_hook_cmd "stop-check" "baton-validate-state baton-validate-isolation")"
+stop_cmd="$(build_claude_hook_cmd "stop-check" "baton-validate-state baton-validate-isolation")"
+cx_stop_cmd="$(build_codex_hook_cmd "stop-check" "baton-validate-state baton-validate-isolation")"
 
 # ---------------------------------------------------------------------------
 # SubagentStop command string (Claude Code only)
 # Matcher: baton-evaluator|baton-verifier
 # Reads agent_type field; validates fork agent wrote its required artifact
 # ---------------------------------------------------------------------------
-subagent_stop_cmd="$(build_hook_cmd "subagent-stop" "baton-subagent-stop")"
+subagent_stop_cmd="$(build_claude_hook_cmd "subagent-stop" "baton-subagent-stop")"
 
 # ---------------------------------------------------------------------------
 # SessionStart command string (Claude Code + Codex)
 # Matcher: startup|resume
 # Reads .harness/module-status.md and injects current task state as context
 # ---------------------------------------------------------------------------
-session_start_cmd="$(build_hook_cmd "session-start" "baton-harness-context")"
+session_start_cmd="$(build_claude_hook_cmd "session-start" "baton-harness-context")"
+cx_session_start_cmd="$(build_codex_hook_cmd "session-start" "baton-harness-context")"
 
 # ---------------------------------------------------------------------------
 # Machine-readable manifest: emit expected Baton-managed hook commands, then exit
@@ -381,8 +409,8 @@ fi
 cx_new="$(echo "$cx_existing" | jq \
   --arg post_cmd "$cx_post_cmd" \
   --arg pre_cmd "$cx_pre_cmd" \
-  --arg stop_cmd "$stop_cmd" \
-  --arg session_cmd "$session_start_cmd" \
+  --arg stop_cmd "$cx_stop_cmd" \
+  --arg session_cmd "$cx_session_start_cmd" \
   '
   def strip_baton_post:
     if type == "array" then

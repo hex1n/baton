@@ -92,17 +92,21 @@ fi
 # ---------------------------------------------------------------------------
 assert_file_contains "Codex hooks.json created"             "$repo/.codex/hooks.json"   "PostToolUse"
 assert_file_contains "Codex PreToolUse written"             "$repo/.codex/hooks.json"   "PreToolUse"
-assert_file_contains "Codex PostToolUse points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/post-artifact"
-assert_file_contains "Codex PreToolUse points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/pre-transition"
-assert_file_contains "Codex Stop points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/stop-check"
-assert_file_contains "Codex SessionStart points at hook script" \
-  "$repo/.codex/hooks.json"   "hooks/session-start"
+assert_file_contains "Codex PostToolUse uses unix dispatcher" \
+  "$repo/.codex/hooks.json"   "run-hook.sh"
+assert_file_contains "Codex PostToolUse names target handler" \
+  "$repo/.codex/hooks.json"   "post-artifact baton-validate-artifact"
+assert_file_contains "Codex PreToolUse names target handler" \
+  "$repo/.codex/hooks.json"   "pre-transition baton-validate-transition"
+assert_file_contains "Codex Stop names target handler" \
+  "$repo/.codex/hooks.json"   "stop-check baton-validate-state baton-validate-isolation"
+assert_file_contains "Codex SessionStart names target handler" \
+  "$repo/.codex/hooks.json"   "session-start baton-harness-context"
 assert_file_contains "Codex matcher is Bash"                "$repo/.codex/hooks.json"   '"Bash"'
 assert_file_not_contains "Codex hooks no longer inline validate-artifact logic" \
   "$repo/.codex/hooks.json" "tool_input.command"
+assert_file_not_contains "Codex hooks do not rely on shell assignment snippets" \
+  "$repo/.codex/hooks.json" 'root=$(git rev-parse'
 assert_file_contains "Codex config feature flag written"    "$repo/.codex/config.toml"  "codex_hooks = true"
 
 # Idempotent: running twice does not duplicate Codex PostToolUse
@@ -247,6 +251,7 @@ bash "$INSTALL_HOOKS" --repo-root "$repo" --bootstrap-dir "$bootstrap" --print-m
 assert_file_contains "manifest contains Claude session command" "$manifest" '"session_start"'
 assert_file_contains "manifest contains Codex post command" "$manifest" '"post"'
 assert_file_contains "manifest contains current handler path" "$manifest" 'hooks/session-start'
+assert_file_contains "manifest contains unix codex dispatcher" "$manifest" 'run-hook.sh'
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"
