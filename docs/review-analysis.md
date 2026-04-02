@@ -1,7 +1,7 @@
 # Baton 评审分析
 
 **问题**：如何评估一份针对 Baton 协议层、工件层、bootstrap/runtime、分发层与 Java strict extension 的深度评审？
-**结论**：这份评审的战略判断基本正确。Baton 的确已经进入“协议收敛与运行时硬化”阶段。但它低估了仓库里已经存在的 enforcement/runtime 基础设施，同时漏掉了一个更紧急的控制平面一致性问题：`module-status.md` 的读写约定已经发生真实漂移。
+**结论**：这份评审的战略判断基本正确。Baton 的确已经进入“协议收敛与运行时硬化”阶段。但它低估了仓库里已经存在的 enforcement/runtime 基础设施，同时漏掉了一个更紧急的控制平面一致性问题：`task-status.md` 的读写约定已经发生真实漂移。
 
 ---
 
@@ -70,7 +70,7 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 `spec/bootstrap/install-harness.sh` 在安装末尾调用 `install-hooks.sh`，后者会把以下检查注册进 Claude Code / Codex hooks：
 
 - 写 `.harness/*.md` 后做 artifact 校验
-- 写 `module-status.md` 前做状态迁移校验
+- 写 `task-status.md` 前做状态迁移校验
 - 会话结束时做 state-artifact 一致性校验
 - verifier / evaluator 子代理结束时做额外检查
 
@@ -107,13 +107,13 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 
 真正更紧急的问题，不是“Markdown table 会不会将来不够用”，而是：
 
-> 当前 `module-status.md` 已经出现 schema 漂移，而且多个 runtime reader 对“当前任务是哪一行”的理解并不一致。
+> 当前 `task-status.md` 已经出现 schema 漂移，而且多个 runtime reader 对“当前任务是哪一行”的理解并不一致。
 
-### 1. live `module-status.md` 还是旧 schema
+### 1. live `task-status.md` 还是旧 schema
 
 当前仓库中的 live 文件：
 
-- `.harness/module-status.md`
+- `.harness/task-status.md`
 
 它的表头仍是：
 
@@ -129,8 +129,8 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 
 对应文件：
 
-- `.harness/module-status.md`
-- `spec/templates/module-status.template.md`
+- `.harness/task-status.md`
+- `spec/templates/task-status.template.md`
 
 ### 2. `start-task.sh` 只识别新表头
 
@@ -164,7 +164,7 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 
 它并不校验：
 
-- live `.harness/module-status.md` 是否已迁移到当前 schema
+- live `.harness/task-status.md` 是否已迁移到当前 schema
 - 当前 active row 是否可被统一识别
 - 是否最多只有一个 non-complete row
 
@@ -176,13 +176,13 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 
 这份评审建议先做“schema 单一真源 + 校验器 + 分发同步 + 最小 enforcement runtime”，方向没错，但优先级还可以再收紧。
 
-### P0：先修 `module-status` 控制平面
+### P0：先修 `task-status` 控制平面
 
 最先该做的不是继续抽象 schema，而是统一控制平面约定：
 
 1. 定义“当前活动任务行”的唯一规则
 2. 统一 `start-task`、hooks、`harness-context`、`validate-state-artifacts`、status skill 的读取逻辑
-3. 为旧 `module-status.md` 提供 migration path
+3. 为旧 `task-status.md` 提供 migration path
 4. 把 live control-plane 校验纳入 `check-consistency.sh`
 
 ### P1：再扩大 schema 单源
@@ -191,7 +191,7 @@ README 双语也已经被明确为成对维护，并有独立检查脚本：
 
 - artifact required sections
 - gate 定义
-- module-status 列定义
+- task-status 列定义
 - bilingual README 关键结构
 - skill frontmatter 关键字段
 
@@ -225,7 +225,7 @@ Java strict extension 的价值是真实存在的，但下一步更需要工具�
 
 最值得优先落地的是一个很具体的硬化任务：
 
-**把 `module-status.md` 从“看起来是控制平面”升级成“所有 reader/writer 都按同一契约工作的控制平面”。**
+**把 `task-status.md` 从“看起来是控制平面”升级成“所有 reader/writer 都按同一契约工作的控制平面”。**
 
 如果这一步没有先收敛，后续再加更多字段、更多状态、更多 extension，只会放大漂移风险。
 
@@ -236,7 +236,7 @@ Java strict extension 的价值是真实存在的，但下一步更需要工具�
 - `spec/README.md`
 - `spec/protocol/gates.md`
 - `spec/templates/root-governance.template.md`
-- `spec/templates/module-status.template.md`
+- `spec/templates/task-status.template.md`
 - `spec/bootstrap/start-task.sh`
 - `spec/bootstrap/check-consistency.sh`
 - `spec/bootstrap/validate-transition.sh`
@@ -245,7 +245,7 @@ Java strict extension 的价值是真实存在的，但下一步更需要工具�
 - `spec/bootstrap/install-hooks.sh`
 - `spec/bootstrap/install-harness.sh`
 - `spec/bootstrap/harness-context.sh`
-- `.harness/module-status.md`
+- `.harness/task-status.md`
 - `.claude/settings.json`
 - `.codex/hooks.json`
 - `spec/extensions/java-backend-strict/README.md`

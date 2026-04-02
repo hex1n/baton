@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="$SCRIPT_DIR/../spec/bootstrap/hooks/subagent-stop"
-MODULE_STATUS="$SCRIPT_DIR/../spec/bootstrap/module-status.sh"
+TASK_STATUS="$SCRIPT_DIR/../spec/bootstrap/task-status.sh"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"
@@ -33,7 +33,7 @@ make_repo() {
 write_status() {
   local file="$1" state="$2" eval_round="$3"
   cat > "$file" <<EOF
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -78,7 +78,7 @@ run_hook() {
 }
 
 make_repo "$tmp/pass"
-write_status "$tmp/pass/.harness/module-status.md" "reviewing" 1
+write_status "$tmp/pass/.harness/task-status.md" "reviewing" 1
 cat > "$tmp/pass/.harness/profile.local.yaml" <<'EOF'
 execution:
   max_eval_rounds: 3
@@ -87,7 +87,7 @@ make_verification_path "$tmp/pass/.harness/verification-path.md"
 pass_payload='{"agent_type":"baton-evaluator"}'
 assert_exit "evaluator increments eval_round" 0 run_hook "$tmp/pass" "$pass_payload"
 TOTAL=$((TOTAL + 1))
-actual_round="$(bash "$MODULE_STATUS" current-field "$tmp/pass/.harness/module-status.md" eval_round 2>/dev/null || true)"
+actual_round="$(bash "$TASK_STATUS" current-field "$tmp/pass/.harness/task-status.md" eval_round 2>/dev/null || true)"
 if [[ "$actual_round" == "2" ]]; then
   echo "  pass: evaluator write updates eval_round to 2"
   PASS=$((PASS + 1))
@@ -97,7 +97,7 @@ else
 fi
 
 make_repo "$tmp/block"
-write_status "$tmp/block/.harness/module-status.md" "reviewing" 2
+write_status "$tmp/block/.harness/task-status.md" "reviewing" 2
 cat > "$tmp/block/.harness/profile.local.yaml" <<'EOF'
 execution:
   max_eval_rounds: 3
@@ -106,7 +106,7 @@ make_verification_path "$tmp/block/.harness/verification-path.md"
 block_payload='{"agent_type":"baton-evaluator"}'
 assert_exit "evaluator blocks when max_eval_rounds reached" 2 run_hook "$tmp/block" "$block_payload"
 TOTAL=$((TOTAL + 1))
-blocked_round="$(bash "$MODULE_STATUS" current-field "$tmp/block/.harness/module-status.md" eval_round 2>/dev/null || true)"
+blocked_round="$(bash "$TASK_STATUS" current-field "$tmp/block/.harness/task-status.md" eval_round 2>/dev/null || true)"
 if [[ "$blocked_round" == "3" ]]; then
   echo "  pass: blocked evaluator still records the reaching eval_round"
   PASS=$((PASS + 1))
@@ -116,7 +116,7 @@ else
 fi
 
 make_repo "$tmp/verifier"
-write_status "$tmp/verifier/.harness/module-status.md" "reviewing" 0
+write_status "$tmp/verifier/.harness/task-status.md" "reviewing" 0
 make_verification_path "$tmp/verifier/.harness/verification-path.md"
 verifier_payload='{"agent_type":"baton-verifier"}'
 assert_exit "verifier path passes when verification artifact is valid" 0 run_hook "$tmp/verifier" "$verifier_payload"

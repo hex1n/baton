@@ -65,7 +65,7 @@
 | `.harness/requirements.md` | L1 | modify | 固化需求 |
 | `.harness/architecture.md` | L1 | modify | 固化方案 |
 | `.harness/verification-path.md` | L1 | modify | 定义验证路径 |
-| `.harness/module-status.md` | L1 | modify | 状态跟踪 |
+| `.harness/task-status.md` | L1 | modify | 状态跟踪 |
 | `spec/templates/root-governance.template.md` | L1 | add | 共享治理真源 |
 | `spec/bootstrap/sync-governance-entrypoints.sh` | L1 | add | 物化和检查双入口 |
 | `spec/bootstrap/init-harness.sh` | L1 | modify | bootstrap 目标仓库根入口 |

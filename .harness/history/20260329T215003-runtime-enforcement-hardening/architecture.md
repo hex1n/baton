@@ -28,7 +28,7 @@
 - CC 和 Codex hook 能力不同（CC 有 SubagentStop + content access；Codex 只有 command string）
 - 无 YAML 库，profile 读取只能 grep 单键
 - 单任务/workspace，不考虑并发
-- 向后兼容：现有 `module-status.sh` 读函数签名不变
+- 向后兼容：现有 `task-status.sh` 读函数签名不变
 - Clean switch：旧内联和新脚本在同一提交切换
 
 ### 2.3 方案类别
@@ -117,13 +117,13 @@ read_profile_value 实现:
 source parse-input.sh
 
 目标文件检测:
-  CC: HOOK_FILE_PATH 包含 "module-status.md"
-  Codex: HOOK_COMMAND 包含 ".harness/module-status.md"
+  CC: HOOK_FILE_PATH 包含 "task-status.md"
+  Codex: HOOK_COMMAND 包含 ".harness/task-status.md"
   不匹配 → hook_pass
 
 提取新旧状态:
-  CC: 解析 HOOK_CONTENT → mktemp → module-status.sh current-field → new_state
-      读磁盘文件 → module-status.sh current-field → current_state
+  CC: 解析 HOOK_CONTENT → mktemp → task-status.sh current-field → new_state
+      读磁盘文件 → task-status.sh current-field → current_state
   Codex: grep 命令中的状态名 → new_state
          读磁盘文件 → current_state
 
@@ -133,7 +133,7 @@ source parse-input.sh
 检查 2: [新] Human gate 执行 (FR-7)
   if current_state in (awaiting_human_arch, ready_for_human_close)
      AND new_state != blocked:
-    读磁盘 module-status.md → grep "- human_ack: true" under "## State Notes"
+    读磁盘 task-status.md → grep "- human_ack: true" under "## State Notes"
     未找到 → hook_block "Human approval required..."
 
 检查 3: [新] Blocked 分类 (FR-4, CC only)
@@ -158,13 +158,13 @@ source parse-input.sh
   bash validate-artifact.sh "$artifact_type" "$file_path"
 
 检查 2: [新] Codex blocked 分类 (FR-4, Codex only)
-  if HOOK_HOST == codex AND artifact is module-status:
-    读磁盘 module-status.md → 检查最新行 state == blocked
+  if HOOK_HOST == codex AND artifact is task-status:
+    读磁盘 task-status.md → 检查最新行 state == blocked
     如果是 → 检查 Notes 列的 blocker 分类正则
     不匹配 → hook_block (exit 2, Codex post-write 检测)
 
 检查 3: [新] Human_ack 清除 (FR-7)
-  if artifact is module-status AND validate-artifact 成功:
+  if artifact is task-status AND validate-artifact 成功:
     读先前状态 (从 git diff 或缓存) → 判断是否从门控状态转出
     如果是 → export BATON_HOOK_ACTIVE=1
              sed -i '' '/^- human_ack: true$/d' "$file_path"
@@ -183,7 +183,7 @@ source parse-input.sh
 ```text
 source parse-input.sh
 
-[[ -f ".harness/module-status.md" ]] || hook_pass
+[[ -f ".harness/task-status.md" ]] || hook_pass
 
 bash validate-state-artifacts.sh "$HOOK_ROOT/.harness"
 bash validate-isolation.sh "$HOOK_ROOT/.harness"
@@ -205,8 +205,8 @@ case "$agent" in baton-verifier|baton-evaluator) ;; *) hook_pass ;; esac
 
 [新] Eval round 递增 (FR-3):
   if agent == baton-evaluator:
-    source module-status.sh
-    current_round=$(module_status_current_field ... eval_round)
+    source task-status.sh
+    current_round=$(task_status_current_field ... eval_round)
     new_round=$((current_round + 1))
 
     max_rounds=$(read_profile_value max_eval_rounds 3 "^[0-9]+$")
@@ -217,7 +217,7 @@ case "$agent" in baton-verifier|baton-evaluator) ;; *) hook_pass ;; esac
     fi
 
     export BATON_HOOK_ACTIVE=1
-    module_status_set_eval_round "$HOOK_ROOT/.harness/module-status.md" "$new_round"
+    task_status_set_eval_round "$HOOK_ROOT/.harness/task-status.md" "$new_round"
 ```
 
 #### session-start.sh (SessionStart)
@@ -230,16 +230,16 @@ bash harness-context.sh "$HOOK_ROOT/.harness"
 
 与现有逻辑一致，仅封装。`harness-context.sh` 内部新增 overlay recommendation 读取（见下文）。
 
-### 3.4 module_status_set_eval_round 设计
+### 3.4 task_status_set_eval_round 设计
 
-新增到 `module-status.sh`：
+新增到 `task-status.sh`：
 
 ```text
-module_status_set_eval_round() {
+task_status_set_eval_round() {
   local path="$1" new_value="$2"
   local schema line_num tmp_file
 
-  schema=$(module_status_schema "$path")
+  schema=$(task_status_schema "$path")
   [[ "$schema" == "current" ]] || return 1
 
   # 找到最后一个数据行的行号
@@ -269,7 +269,7 @@ module_status_set_eval_round() {
 **Decision: Eval Round 写入方式**
 - **Chosen**: awk 逐行处理 + temp file + mv。安全：不修改非目标行，原子替换。
 - **Not chosen**: sed in-place——难以安全定位 markdown table 中的特定列。
-- **When to revisit**: 如果需要更多 module-status 写操作，考虑通用的列更新函数。
+- **When to revisit**: 如果需要更多 task-status 写操作，考虑通用的列更新函数。
 
 ### 3.5 install-hooks.sh 重写
 
@@ -361,7 +361,7 @@ Phase 1 (Hook 基础设施):
   Step 5: 运行现有测试套件确认无退化
 
 Phase 2 (执行缺口):
-  Step 6:  module_status_set_eval_round + 测试
+  Step 6:  task_status_set_eval_round + 测试
   Step 7:  subagent-stop.sh 添加 eval round 递增 + max limit
   Step 8:  pre-transition.sh 添加 blocked 分类 (CC)
   Step 9:  post-artifact.sh 添加 blocked 分类 (Codex) + ack 清除
@@ -399,7 +399,7 @@ requirements 级别真相在当前架构下没有新增或收缩；若人类批�
 | `spec/bootstrap/hooks/subagent-stop.sh` | L1 | **add** | 提取自 CC SubagentStop 内联 + 新增 eval round |
 | `spec/bootstrap/hooks/session-start.sh` | L1 | **add** | 提取自 CC/Codex SessionStart 内联 |
 | `spec/bootstrap/install-hooks.sh` | L1 | **modify** | 命令字符串改为脚本路径调用 |
-| `spec/bootstrap/module-status.sh` | L1 | **modify** | 新增 `module_status_set_eval_round` |
+| `spec/bootstrap/task-status.sh` | L1 | **modify** | 新增 `task_status_set_eval_round` |
 | `spec/bootstrap/validate-artifact.sh` | L1 | **modify** | 新增 `generator-feedback` case |
 | `spec/bootstrap/validate-state-artifacts.sh` | L1 | **modify** | complete 状态追加 `retrospective.md` |
 | `spec/bootstrap/harness-context.sh` | L1 | **modify** | 读取 overlay recommendation |
@@ -413,7 +413,7 @@ requirements 级别真相在当前架构下没有新增或收缩；若人类批�
 | `skills/baton-generator/SKILL.md` | L2 | **modify** | 添加 feedback 指导 |
 | `skills/baton-explorer/SKILL.md` | L2 | **modify** | 添加 overlay 指导 |
 | `tests/test-install-hooks.sh` | L2 | **modify** | 适配新 hook 格式 |
-| `tests/test-module-status.sh` | L2 | **modify** | 覆盖 set_eval_round |
+| `tests/test-task-status.sh` | L2 | **modify** | 覆盖 set_eval_round |
 | `tests/test-validate-artifact.sh` | L2 | **modify** | 覆盖 generator-feedback |
 | `tests/test-validate-state-artifacts.sh` | L2 | **modify** | 覆盖 retrospective.md |
 | `tests/test-harness-context.sh` | L2 | **modify** | 覆盖 overlay output |
@@ -459,7 +459,7 @@ requirements 级别真相在当前架构下没有新增或收缩；若人类批�
 ### 5.3 评审重点
 
 - `parse-input.sh` 的宿主检测逻辑（CC vs Codex JSON 结构差异）
-- `module_status_set_eval_round` 的 awk 列定位（markdown table 对齐）
+- `task_status_set_eval_round` 的 awk 列定位（markdown table 对齐）
 - `post-artifact.sh` 中 ack 清除的排序和重入守卫
 - `pre-transition.sh` 中 human gate 读取磁盘文件的时序
 
@@ -504,9 +504,9 @@ Phase 1 单独来看确实是"重构现有功能而不新增功能"。但这是 
 
 `validate-isolation.sh` 也需要读 profile。当前方案是 `validate-isolation.sh` 保留自己的 `read_profile_mode`（只读 strict/compat），`parse-input.sh` 提供泛型 `read_profile_value`（支持任意 key）。两者不冲突——`validate-isolation.sh` 不 source parse-input.sh（它不是 hook），保持独立。长期可以将 `read_profile_mode` 迁移为调用 `read_profile_value`，但不在本次范围内。
 
-### 7.4 为什么不用 module-status.sh 写函数做 ack 清除？
+### 7.4 为什么不用 task-status.sh 写函数做 ack 清除？
 
-ack 清除是删除 `## State Notes` 下的一个 bullet (`- human_ack: true`)，不涉及 markdown table 结构。`module_status_set_eval_round` 写的是 table 中的一列，需要精确定位列和行——这才是 awk + temp + mv 的适用场景。ack 清除用 `sed -i '' '/^- human_ack: true$/d'` 更简洁，且风险极低（精确匹配完整行，不会误删其他内容）。
+ack 清除是删除 `## State Notes` 下的一个 bullet (`- human_ack: true`)，不涉及 markdown table 结构。`task_status_set_eval_round` 写的是 table 中的一列，需要精确定位列和行——这才是 awk + temp + mv 的适用场景。ack 清除用 `sed -i '' '/^- human_ack: true$/d'` 更简洁，且风险极低（精确匹配完整行，不会误删其他内容）。
 
 ### 7.5 如果 hook 自身被修改会怎样？
 
@@ -522,7 +522,7 @@ ack 清除是删除 `## State Notes` 下的一个 bullet (`- human_ack: true`)�
 ### D2: Eval round 写入方式
 - **Chosen**: awk + temp file + mv。安全替换 table 中特定列。
 - **Not chosen**: raw sed——markdown table 中的列定位用 sed 不可靠。
-- **Revisit**: 如果需要更多 module-status 列更新，考虑通用列写函数。
+- **Revisit**: 如果需要更多 task-status 列更新，考虑通用列写函数。
 
 ### D3: 先前状态传递
 - **Chosen**: `/tmp/baton-pre-state-$$` 临时文件。
@@ -531,7 +531,7 @@ ack 清除是删除 `## State Notes` 下的一个 bullet (`- human_ack: true`)�
 
 ### D4: ack 清除方式
 - **Chosen**: sed in-place 删除精确行。简洁，风险极低。
-- **Not chosen**: module-status.sh 写函数——ack 在 State Notes 区域，非 table 列。
+- **Not chosen**: task-status.sh 写函数——ack 在 State Notes 区域，非 table 列。
 - **Revisit**: 如果 State Notes 区域结构变复杂。
 
 ### D5: read_profile_value 位置

@@ -47,7 +47,7 @@ Copy these templates into the target repo:
   requirements.md
   architecture.md
   verification-path.md
-  module-status.md
+  task-status.md
   retrospective.md
   profile.local.yaml
 ```
@@ -118,7 +118,7 @@ Language policy rules:
 - `documentation.artifact_language: auto` makes bootstrap scripts resolve from
   locale, while writing skills follow the current user request language
 - if you omit the flag in this repo, the bootstrap default is `zh`
-- `module-status.md` stays English as the stable control-plane file
+- `task-status.md` stays English as the stable control-plane file
 
 Template resolution order:
 
@@ -194,7 +194,7 @@ After `Repo Explorer`, initialize the first concrete task:
 ./spec/bootstrap/start-task.sh --repo-root . --task-id pilot-task
 ```
 
-## Step 9: Keep `module-status.md` Live
+## Step 9: Keep `task-status.md` Live
 
 Create the task row at the start of the task, not at the end.
 

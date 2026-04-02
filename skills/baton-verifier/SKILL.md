@@ -96,7 +96,7 @@ Before writing any human-facing artifact:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Gate: Verification Path Check
@@ -124,12 +124,16 @@ Sections (all required):
 
 1. **Intended Checks** — what each check validates, mapped to requirements
 2. **Commands** — exact commands to run, with expected output patterns
-3. **Dependencies and Prerequisites** — tools, versions, env vars, test data
+3. **Dependencies and Prerequisites** — tools, versions, env vars, test data,
+   fixture setup commands
 4. **Execution Provenance** — `Role`, `Isolation mode`, `Execution context`,
    `Evidence`, `Fallback policy`, and `Fallback reason`
 5. **Dry-Run Result** — actual output from running the commands now
-6. **Blockers** — anything preventing validation, with category
-7. **Fallback Strategies** — alternative validation if primary path fails
+6. **CI Compatibility** — gaps between local and CI execution (if any)
+7. **Performance Baseline** — current metrics for performance-sensitive
+   tasks (High risk only; omit for Low/Medium)
+8. **Blockers** — anything preventing validation, with category
+9. **Fallback Strategies** — alternative validation if primary path fails
 
 ## Execution Guide
 
@@ -150,7 +154,7 @@ If the answer is **no** or **uncertain**, the task is **blocked**.
 ### 2. List Concrete Commands
 
 For each requirement or module:
-- Write the exact command (test runner, build, lint, curl, etc.)
+- Write the exact command to run
 - Include expected output or success criteria
 - Note any ordering dependencies between commands
 
@@ -159,8 +163,10 @@ For each requirement or module:
 For each command, verify:
 - Build tool is installed and configured
 - Dependencies are resolved (can the project build right now?)
-- Test infrastructure exists (test runner, fixtures, test DB)
+- Test infrastructure exists (test runner, fixtures, test dependencies)
 - Required environment variables or config files are present
+- Test data prerequisites: what fixtures, seeds, or mock data are needed?
+  Document setup commands in the artifact.
 
 ### 4. Dry-Run the Commands
 
@@ -171,21 +177,42 @@ For each command, verify:
   (blocker)
 - If commands cannot run at all → blocker with category
 
-### 5. Identify Blockers
+### 5. CI Pipeline Check
+
+Verify that the validation commands will also work in CI:
+- Are there CI-only environment variables or secrets needed?
+- Does CI use a different execution environment than local?
+- Are there CI-specific timeouts or resource limits?
+- If CI configuration exists in the repo, cross-reference the validation
+  commands against CI steps.
+
+If validation commands work locally but would fail in CI, document the
+gap and add CI-specific commands to the artifact.
+
+### 6. Performance Baseline (High risk only)
+
+For performance-sensitive tasks (identified by risk assessment):
+- Capture current performance metrics during dry-run (response time,
+  throughput, memory usage)
+- Record baseline values in the artifact
+- Define acceptable regression thresholds
+- Generator and Evaluator use these baselines for comparison
+
+### 7. Identify Blockers
 
 Categorize any blockers found:
 - `verification_blocker` — cannot validate at all
 - `environment_blocker` — missing tools, deps, or config
 - `scope_blocker` — validation requires changes outside approved scope
 
-### 6. Define Fallback Strategies
+### 8. Define Fallback Strategies
 
 For each primary validation path, define what to do if it fails:
 - Alternative commands or manual verification steps
 - Reduced-scope validation that still provides confidence
 - Explicit "no fallback available" if none exists
 
-### 7. Record Execution Provenance
+### 9. Record Execution Provenance
 
 - Read `verification_isolation_mode` from `.harness/profile.local.yaml` if present.
 - If absent, treat the task as `strict`.
@@ -204,15 +231,26 @@ For each primary validation path, define what to do if it fails:
 - In `compat`, sequential fallback is allowed only if you record a concrete
   fallback reason.
 
+### Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | Basic verification; skip CI check and performance baseline |
+| **Medium** | Standard — all checks, CI compatibility if CI config exists |
+| **High** | Full depth — all checks required, CI compatibility mandatory, performance baseline required, test data setup scripted |
+
 ### Quality Check
 
 - Every requirement has at least one validation command.
 - Every command has been dry-run with output recorded.
 - Blockers are categorized and actionable.
 - Fallback exists or is explicitly marked absent.
+- Test data prerequisites are documented with setup commands.
 
 ## State Transition
 
-On pass: update `module-status.md` → state `generating`, owner `generator`.
-On fail: update `module-status.md` → state `blocked` with `verification_blocker`,
+On pass: update `task-status.md` → state `generating`, owner `generator`.
+On fail: update `task-status.md` → state `blocked` with `verification_blocker`,
 include specific blockers and what is needed to unblock.

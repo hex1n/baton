@@ -71,7 +71,7 @@ The previous task retrospective exposed four repeatable workflow failures:
 
 - Adding a new canonical workflow state solely for the requirements sync pass.
 - Turning retrospective writing into a separate scheduler feature.
-- Enforcing every role transition through a helper script instead of direct `module-status.md` edits.
+- Enforcing every role transition through a helper script instead of direct `task-status.md` edits.
 
 ## 5. Acceptance Criteria
 

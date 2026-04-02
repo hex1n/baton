@@ -1,4 +1,4 @@
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -6,6 +6,7 @@
 
 ## State Notes
 
+- Risk level:
 - Current artifacts:
 - Current blockers:
 - Current residual risks:

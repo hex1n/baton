@@ -57,12 +57,12 @@ make_repo() {
 repo="$tmp/repo"
 make_repo "$repo"
 
-cc_payload='{"tool_input":{"file_path":".harness/module-status.md","content":"# Module Status\n"}}'
-assert_output "cc host detection" $'cc\n.harness/module-status.md' \
+cc_payload='{"tool_input":{"file_path":".harness/task-status.md","content":"# Task Status\n"}}'
+assert_output "cc host detection" $'cc\n.harness/task-status.md' \
   run_sourced "$repo" "$cc_payload" 'printf "%s\n%s\n" "$HOOK_HOST" "$HOOK_FILE_PATH"'
 
-codex_payload='{"tool_input":{"command":"echo update .harness/module-status.md"}}'
-assert_output "codex host detection" $'codex\necho update .harness/module-status.md' \
+codex_payload='{"tool_input":{"command":"echo update .harness/task-status.md"}}'
+assert_output "codex host detection" $'codex\necho update .harness/task-status.md' \
   run_sourced "$repo" "$codex_payload" 'printf "%s\n%s\n" "$HOOK_HOST" "$HOOK_COMMAND"'
 
 unknown_payload='{}'

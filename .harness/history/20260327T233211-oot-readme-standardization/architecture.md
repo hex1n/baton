@@ -62,7 +62,7 @@
 | `.harness/requirements.md` | L1 | modify | 固化需求 |
 | `.harness/architecture.md` | L1 | modify | 固化方案 |
 | `.harness/verification-path.md` | L1 | modify | 记录验证路径 |
-| `.harness/module-status.md` | L1 | modify | 跟踪当前任务状态 |
+| `.harness/task-status.md` | L1 | modify | 跟踪当前任务状态 |
 | `spec/bootstrap/check-root-readme-bilingual.sh` | L1 | add | 新增 README 双语自检 |
 | `spec/bootstrap/check-consistency.sh` | L1 | modify | 把 README 检查接入主自检 |
 | `CLAUDE.md` | L1 | modify | 写回治理规则 |

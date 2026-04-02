@@ -13,7 +13,7 @@
   - role skills that author artifact markdown
   - bootstrap docs / README that explain language selection
 - Out of scope:
-  - localizing machine-readable control-plane schema such as `module-status.md`
+  - localizing machine-readable control-plane schema such as `task-status.md`
   - translating the full portable spec and adapter docs into multiple languages
   - adding more than the initial `en` / `zh` support set
 - Expected write boundary:
@@ -61,7 +61,7 @@ user request language / explicit language option
   - `check-consistency.sh` validates owners, states, header alignment, and mirrored skill sync
   - no current check covers template language selection or artifact language policy
 - Existing implicit constraints:
-  - `module-status.md` is parsed by scripts and should keep a stable control-plane schema
+  - `task-status.md` is parsed by scripts and should keep a stable control-plane schema
   - Bash and PowerShell bootstrap behavior must stay aligned
   - any auto behavior in shell scripts cannot read chat history directly
 
@@ -97,7 +97,7 @@ user request language / explicit language option
 ## 8. Open Questions
 
 - Should `auto` for shell bootstrap resolve from environment locale while `auto` for skills resolves from current user request language?
-- Should `module-status.md` remain English-only as a control-plane file even when the human-facing artifacts switch to Chinese?
+- Should `task-status.md` remain English-only as a control-plane file even when the human-facing artifacts switch to Chinese?
 
 ## 9. Recommendation
 

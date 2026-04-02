@@ -36,7 +36,7 @@ For Java backend work, generator should usually operate:
 
 This is stricter than the core v1 task-level default.
 
-## Recommended `module-status.md` Convention
+## Recommended `task-status.md` Convention
 
 Keep the same file, but encode richer scope information in the `Scope` column:
 

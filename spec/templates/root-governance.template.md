@@ -49,7 +49,7 @@ Tasks produce artifacts in `.harness/`:
 | `architecture.md` | Change design |
 | `verification-path.md` | Validation proof |
 | `evaluation.md` | Independent review verdict and isolation provenance |
-| `module-status.md` | Control plane (state tracking) |
+| `task-status.md` | Control plane (state tracking) |
 | `retrospective.md` | Process lessons |
 
 ## Principles

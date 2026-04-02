@@ -23,7 +23,7 @@ It is intentionally split into:
 2. Repo-specific knowledge belongs in a profile, not in the core protocol.
 3. Multi-agent execution is preferred, not required. Sequential fallback must remain valid.
 4. Verification is a first-class gate, not a post-implementation afterthought.
-5. `module-status.md` is the minimum control plane.
+5. `task-status.md` is the minimum control plane.
 6. Heavier stack-specific behavior should be added as an extension, not pushed into the portable core by default.
 
 ## Minimum Closed Loop
@@ -56,7 +56,7 @@ CLAUDE.md
   requirements.md
   architecture.md
   verification-path.md
-  module-status.md
+  task-status.md
   retrospective.md
 ```
 
@@ -96,7 +96,7 @@ spec/
       subagent-stop
     lib/
       language.sh
-      module-status.sh
+      task-status.sh
       paths.sh
       profile.sh
       provenance.sh
@@ -128,7 +128,7 @@ spec/
     requirements.template.md
     architecture.template.md
     verification-path.template.md
-    module-status.template.md
+    task-status.template.md
     retrospective.template.md
     profile.local.template.yaml
     zh/
@@ -166,7 +166,7 @@ spec/
 5. Copy the templates into the target repo's `.harness/`, then materialize root
    governance entrypoints.
 6. Run the gates in `protocol/gates.md` in order.
-7. Record all status transitions in `module-status.md`.
+7. Record all status transitions in `task-status.md`.
 
 Reference bootstrap entrypoints are included for convenience:
 
@@ -190,7 +190,7 @@ Recommended bootstrap flow:
    architecture decisions that change requirements-level truth
 7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`
 8. run `bootstrap/prepare-review.sh` before isolated verifier / evaluator handoff
-9. let the current owner agent update `module-status.md` and fill the active task artifacts in `.harness/`
+9. let the current owner agent update `task-status.md` and fill the active task artifacts in `.harness/`
 
 ## Artifact Language
 
@@ -202,7 +202,7 @@ Portable harness v1 supports English and Chinese for human-facing artifacts.
 - this reference implementation defaults to Chinese when no policy is set
 - in scripts, `auto` resolves from the environment locale
 - in writing skills, `auto` means "follow the current user request language"
-- `module-status.md` remains English because it is the portable control plane
+- `task-status.md` remains English because it is the portable control plane
 
 ## Distribution Model
 

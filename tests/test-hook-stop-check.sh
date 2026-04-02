@@ -33,7 +33,7 @@ make_repo() {
 write_status() {
   local file="$1" state="$2"
   cat > "$file" <<EOF
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -71,7 +71,7 @@ EOF
 }
 
 make_repo "$tmp/pass"
-write_status "$tmp/pass/.harness/module-status.md" "generating"
+write_status "$tmp/pass/.harness/task-status.md" "generating"
 touch "$tmp/pass/.harness/scoped-map.md" \
   "$tmp/pass/.harness/requirements.md" \
   "$tmp/pass/.harness/architecture.md" \
@@ -81,7 +81,7 @@ assert_exit "stop-check passes on complete generating harness" 0 \
   bash -c 'cd "$1" && bash "$2"' bash "$tmp/pass" "$HOOK"
 
 make_repo "$tmp/fail"
-write_status "$tmp/fail/.harness/module-status.md" "ready_for_human_close"
+write_status "$tmp/fail/.harness/task-status.md" "ready_for_human_close"
 touch "$tmp/fail/.harness/scoped-map.md" \
   "$tmp/fail/.harness/requirements.md" \
   "$tmp/fail/.harness/architecture.md" \

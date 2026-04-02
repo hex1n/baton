@@ -130,4 +130,4 @@ re-entry points to represent repair, escalation, and retry.
    approved architecture decisions that affect requirements truth.
 5. If verification assumptions change materially, return to `verification_check`.
 6. Portable harness v1 assumes one non-complete active task per workspace. Use another worktree or clone for parallel tasks.
-7. `start-task` initializes the task row only. Ordinary state transitions are performed by the current owner agent updating `module-status.md`.
+7. `start-task` initializes the task row only. Ordinary state transitions are performed by the current owner agent updating `task-status.md`.

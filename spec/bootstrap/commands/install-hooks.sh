@@ -221,7 +221,7 @@ print_manifest_json() {
 # PostToolUse: after write to .harness/*.md → hooks/post-artifact
 cc_post_cmd="$(build_claude_hook_cmd "post-artifact" "baton-validate-artifact")"
 
-# PreToolUse: before write to module-status.md → hooks/pre-transition
+# PreToolUse: before write to task-status.md → hooks/pre-transition
 cc_pre_cmd="$(build_claude_hook_cmd "pre-transition" "baton-validate-transition")"
 
 # ---------------------------------------------------------------------------
@@ -233,7 +233,7 @@ cc_pre_cmd="$(build_claude_hook_cmd "pre-transition" "baton-validate-transition"
 # PostToolUse: after Bash command that wrote to .harness/*.md → hooks/post-artifact
 cx_post_cmd="$(build_codex_hook_cmd "post-artifact" "baton-validate-artifact")"
 
-# PreToolUse: before Bash command that writes to module-status.md → hooks/pre-transition
+# PreToolUse: before Bash command that writes to task-status.md → hooks/pre-transition
 cx_pre_cmd="$(build_codex_hook_cmd "pre-transition" "baton-validate-transition")"
 
 # ---------------------------------------------------------------------------
@@ -253,7 +253,7 @@ subagent_stop_cmd="$(build_claude_hook_cmd "subagent-stop" "baton-subagent-stop"
 # ---------------------------------------------------------------------------
 # SessionStart command string (Claude Code + Codex)
 # Matcher: startup|resume
-# Reads .harness/module-status.md and injects current task state as context
+# Reads .harness/task-status.md and injects current task state as context
 # ---------------------------------------------------------------------------
 session_start_cmd="$(build_claude_hook_cmd "session-start" "baton-harness-context")"
 cx_session_start_cmd="$(build_codex_hook_cmd "session-start" "baton-harness-context")"

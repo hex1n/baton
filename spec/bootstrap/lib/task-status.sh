@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-module_status_trim() {
+task_status_trim() {
   printf '%s' "$1" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
-module_status_current_header() {
+task_status_current_header() {
   printf '%s\n' '| Scope | Owner | State | Eval Round | Updated At | Notes |'
 }
 
-module_status_legacy_header() {
+task_status_legacy_header() {
   printf '%s\n' '| Scope | Owner | State | Updated At | Notes |'
 }
 
-module_status_schema() {
+task_status_schema() {
   local path="$1"
   local line=""
 
@@ -23,13 +23,13 @@ module_status_schema() {
   fi
 
   while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
-    line="$(module_status_trim "$raw_line")"
+    line="$(task_status_trim "$raw_line")"
     case "$line" in
-      "$(module_status_current_header)")
+      "$(task_status_current_header)")
         printf '%s\n' 'current'
         return 0
         ;;
-      "$(module_status_legacy_header)")
+      "$(task_status_legacy_header)")
         printf '%s\n' 'legacy'
         return 0
         ;;
@@ -42,7 +42,7 @@ module_status_schema() {
   printf '%s\n' 'unknown'
 }
 
-module_status_rows_tsv() {
+task_status_rows_tsv() {
   local path="$1"
   local schema=""
   local in_table="false"
@@ -56,7 +56,7 @@ module_status_rows_tsv() {
   local notes=""
   local scope_column="" owner_column="" state_column="" eval_round_column="" updated_column="" notes_column=""
 
-  schema="$(module_status_schema "$path")"
+  schema="$(task_status_schema "$path")"
   case "$schema" in
     current|legacy) ;;
     *)
@@ -65,18 +65,18 @@ module_status_rows_tsv() {
   esac
 
   while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
-    line="$(module_status_trim "$raw_line")"
+    line="$(task_status_trim "$raw_line")"
 
     if [[ "$line" == '## State Notes' ]]; then
       break
     fi
 
-    if [[ "$schema" == 'current' && "$line" == "$(module_status_current_header)" ]]; then
+    if [[ "$schema" == 'current' && "$line" == "$(task_status_current_header)" ]]; then
       in_table="true"
       continue
     fi
 
-    if [[ "$schema" == 'legacy' && "$line" == "$(module_status_legacy_header)" ]]; then
+    if [[ "$schema" == 'legacy' && "$line" == "$(task_status_legacy_header)" ]]; then
       in_table="true"
       continue
     fi
@@ -98,19 +98,19 @@ module_status_rows_tsv() {
 
     if [[ "$schema" == 'current' ]]; then
       IFS='|' read -r scope_column owner_column state_column eval_round_column updated_column notes_column <<< "$trimmed_line"
-      eval_round="$(module_status_trim "$eval_round_column")"
-      updated_at="$(module_status_trim "$updated_column")"
-      notes="$(module_status_trim "$notes_column")"
+      eval_round="$(task_status_trim "$eval_round_column")"
+      updated_at="$(task_status_trim "$updated_column")"
+      notes="$(task_status_trim "$notes_column")"
     else
       IFS='|' read -r scope_column owner_column state_column updated_column notes_column <<< "$trimmed_line"
       eval_round='0'
-      updated_at="$(module_status_trim "$updated_column")"
-      notes="$(module_status_trim "$notes_column")"
+      updated_at="$(task_status_trim "$updated_column")"
+      notes="$(task_status_trim "$notes_column")"
     fi
 
-    scope="$(module_status_trim "$scope_column")"
-    owner="$(module_status_trim "$owner_column")"
-    state="$(module_status_trim "$state_column")"
+    scope="$(task_status_trim "$scope_column")"
+    owner="$(task_status_trim "$owner_column")"
+    state="$(task_status_trim "$state_column")"
 
     if [[ -z "$scope" || "$scope" == '<task-id>' ]]; then
       continue
@@ -121,18 +121,18 @@ module_status_rows_tsv() {
   done < "$path"
 }
 
-module_status_current_row_tsv() {
+task_status_current_row_tsv() {
   local path="$1"
-  module_status_rows_tsv "$path" | tail -n 1
+  task_status_rows_tsv "$path" | tail -n 1
 }
 
-module_status_current_field() {
+task_status_current_field() {
   local path="$1"
   local field="$2"
   local row=""
   local scope="" owner="" state="" eval_round="" updated_at="" notes=""
 
-  row="$(module_status_current_row_tsv "$path")"
+  row="$(task_status_current_row_tsv "$path")"
   [[ -n "$row" ]] || return 0
 
   IFS=$'\t' read -r scope owner state eval_round updated_at notes <<< "$row"
@@ -151,16 +151,16 @@ module_status_current_field() {
   esac
 }
 
-module_status_row_count() {
+task_status_row_count() {
   local path="$1"
   local count=0
   while IFS= read -r _; do
     count=$((count + 1))
-  done < <(module_status_rows_tsv "$path")
+  done < <(task_status_rows_tsv "$path")
   printf '%s\n' "$count"
 }
 
-module_status_non_complete_count() {
+task_status_non_complete_count() {
   local path="$1"
   local count=0
   local state=""
@@ -169,12 +169,12 @@ module_status_non_complete_count() {
     if [[ "$state" != 'complete' ]]; then
       count=$((count + 1))
     fi
-  done < <(module_status_rows_tsv "$path")
+  done < <(task_status_rows_tsv "$path")
 
   printf '%s\n' "$count"
 }
 
-module_status_set_eval_round() {
+task_status_set_eval_round() {
   local path="$1"
   local new_value="$2"
   local schema=""
@@ -182,7 +182,7 @@ module_status_set_eval_round() {
   local tmp_file=""
 
   if [[ ! -f "$path" ]]; then
-    printf 'module-status not found: %s\n' "$path" >&2
+    printf 'task-status not found: %s\n' "$path" >&2
     return 1
   fi
 
@@ -191,7 +191,7 @@ module_status_set_eval_round() {
     return 1
   fi
 
-  schema="$(module_status_schema "$path")"
+  schema="$(task_status_schema "$path")"
   if [[ "$schema" != 'current' ]]; then
     printf 'Eval round write requires current schema, found: %s\n' "$schema" >&2
     return 1
@@ -242,52 +242,52 @@ module_status_set_eval_round() {
   mv "$tmp_file" "$path"
 }
 
-module_status_usage() {
+task_status_usage() {
   cat <<'EOF'
 Usage:
-  module-status.sh schema <module-status-path>
-  module-status.sh rows <module-status-path>
-  module-status.sh current-field <module-status-path> <scope|owner|state|eval_round|updated_at|notes>
-  module-status.sh row-count <module-status-path>
-  module-status.sh non-complete-count <module-status-path>
-  module-status.sh set-eval-round <module-status-path> <value>
+  task-status.sh schema <task-status-path>
+  task-status.sh rows <task-status-path>
+  task-status.sh current-field <task-status-path> <scope|owner|state|eval_round|updated_at|notes>
+  task-status.sh row-count <task-status-path>
+  task-status.sh non-complete-count <task-status-path>
+  task-status.sh set-eval-round <task-status-path> <value>
 EOF
 }
 
-module_status_main() {
+task_status_main() {
   local command="${1:-}"
   case "$command" in
     schema)
-      [[ $# -eq 2 ]] || { module_status_usage >&2; return 1; }
-      module_status_schema "$2"
+      [[ $# -eq 2 ]] || { task_status_usage >&2; return 1; }
+      task_status_schema "$2"
       ;;
     rows)
-      [[ $# -eq 2 ]] || { module_status_usage >&2; return 1; }
-      module_status_rows_tsv "$2"
+      [[ $# -eq 2 ]] || { task_status_usage >&2; return 1; }
+      task_status_rows_tsv "$2"
       ;;
     current-field)
-      [[ $# -eq 3 ]] || { module_status_usage >&2; return 1; }
-      module_status_current_field "$2" "$3"
+      [[ $# -eq 3 ]] || { task_status_usage >&2; return 1; }
+      task_status_current_field "$2" "$3"
       ;;
     row-count)
-      [[ $# -eq 2 ]] || { module_status_usage >&2; return 1; }
-      module_status_row_count "$2"
+      [[ $# -eq 2 ]] || { task_status_usage >&2; return 1; }
+      task_status_row_count "$2"
       ;;
     non-complete-count)
-      [[ $# -eq 2 ]] || { module_status_usage >&2; return 1; }
-      module_status_non_complete_count "$2"
+      [[ $# -eq 2 ]] || { task_status_usage >&2; return 1; }
+      task_status_non_complete_count "$2"
       ;;
     set-eval-round)
-      [[ $# -eq 3 ]] || { module_status_usage >&2; return 1; }
-      module_status_set_eval_round "$2" "$3"
+      [[ $# -eq 3 ]] || { task_status_usage >&2; return 1; }
+      task_status_set_eval_round "$2" "$3"
       ;;
     *)
-      module_status_usage >&2
+      task_status_usage >&2
       return 1
       ;;
   esac
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  module_status_main "$@"
+  task_status_main "$@"
 fi

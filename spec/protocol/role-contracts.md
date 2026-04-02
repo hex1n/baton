@@ -13,7 +13,7 @@
 - Typical artifact:
   - optional `repo-map.md`
 - Status responsibility:
-  - when acting as the current owner, update `module-status.md` before handoff
+  - when acting as the current owner, update `task-status.md` before handoff
 
 ## Scoped Explorer
 
@@ -29,7 +29,7 @@
 - Required artifact:
   - `scoped-map.md`
 - Status responsibility:
-  - when `scoped-map.md` is ready, hand off by updating `module-status.md`
+  - when `scoped-map.md` is ready, hand off by updating `task-status.md`
 
 ## Specifier
 
@@ -43,7 +43,7 @@
 - Required artifact:
   - `requirements.md`
 - Status responsibility:
-  - update `module-status.md` when handing off to `architect` or when blocked
+  - update `task-status.md` when handing off to `architect` or when blocked
   - when approved architecture decisions change requirements-level truth,
     update `requirements.md` before verification begins
 
@@ -61,7 +61,7 @@
 - Required artifact:
   - `architecture.md`
 - Status responsibility:
-  - update `module-status.md` when handing off to `human` or `verification-explorer`
+  - update `task-status.md` when handing off to `human` or `verification-explorer`
   - do not hand off to `verification-explorer` until `requirements.md`
     reflects approved architecture decisions
 
@@ -80,7 +80,7 @@
 - Required artifact:
   - `verification-path.md`
 - Status responsibility:
-  - update `module-status.md` with `verification_check` progress or blockers
+  - update `task-status.md` with `verification_check` progress or blockers
 
 ## Generator
 
@@ -91,9 +91,9 @@
 - Outputs:
   - code changes
   - local execution notes
-  - updated `module-status.md`
+  - updated `task-status.md`
 - Status responsibility:
-  - keep `module-status.md` current during implementation and before handoff to review
+  - keep `task-status.md` current during implementation and before handoff to review
 
 ## Reviewer
 
@@ -106,7 +106,7 @@
   - residual risks
   - explicit "no findings" if applicable
 - Status responsibility:
-  - update `module-status.md` with review outcome or blocker status
+  - update `task-status.md` with review outcome or blocker status
 
 ## Evaluator
 
@@ -121,7 +121,7 @@
 - Required artifact:
   - `evaluation.md`
 - Status responsibility:
-  - update `module-status.md` before handoff to `human`
+  - update `task-status.md` before handoff to `human`
 
 ## Context Isolation Note
 
@@ -157,5 +157,5 @@ Reviewer can run in parallel with final Generator cleanup.
 ## Shared Rule
 
 - `start-task` initializes a task row.
-- After that point, the current owner agent updates `module-status.md` as part of normal task execution.
+- After that point, the current owner agent updates `task-status.md` as part of normal task execution.
 - A helper script may exist in a local repo, but the protocol does not require one for ordinary state transitions.

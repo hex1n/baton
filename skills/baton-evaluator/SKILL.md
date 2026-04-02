@@ -27,9 +27,16 @@ Load these artifacts before proceeding:
 1. Read `.harness/requirements.md`
 2. Read `.harness/architecture.md`
 3. Read `.harness/verification-path.md`
-4. Read the implementation diff (`git diff HEAD~1` or as provided)
+4. Read `.harness/scoped-map.md` — use exploration findings to verify
+   implementation covers all identified risk areas and entry points
+5. Read the implementation diff (`git diff HEAD~1` or as provided)
+6. If this is a repair round (eval round > 1), read the previous
+   `.harness/evaluation.md` for prior findings (facts only — do not
+   inherit prior reasoning or judgments)
 
 Do not read Generator execution notes or inherit conversation history.
+Reading previous evaluation findings is allowed because they are facts
+("issue X was found"), not reasoning ("I think the approach is wrong").
 
 ## Isolation Self-Check
 
@@ -86,7 +93,8 @@ concrete spawn/wait example and the warning against `fork_context: true`.
 ## Role Contract
 
 - **Inputs**: changed files / diff, `requirements.md`, `architecture.md`,
-  `verification-path.md`
+  `verification-path.md`, `scoped-map.md`, previous `evaluation.md`
+  (repair rounds only)
 - **Outputs**: findings, residual risks, go/no-go conclusion
 - **Required artifact**: `evaluation.md`
 
@@ -99,7 +107,7 @@ Before writing any human-facing artifact:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Gate: Independent Review
@@ -122,11 +130,8 @@ replay the Generator's logic, you will miss what the Generator missed.
 
 ### Layer 1: Deterministic Checks
 
-Run the verification commands from `verification-path.md`:
-
-- Compile / build → must pass
-- Test suite → must pass
-- Lint / static analysis → must pass (or deviations explained)
+Run all verification commands defined in `verification-path.md`.
+Every command listed there must pass (or deviations must be explained).
 
 **Any failure in Layer 1 stops the evaluation.** Do not proceed to Layer 2
 with a broken build or failing tests. Return findings immediately.
@@ -135,12 +140,23 @@ with a broken build or failing tests. Return findings immediately.
 
 Review the actual diff against the architecture:
 
+- **Scope validation** — compare `git diff --stat` against the write surface
+  in `architecture.md`. Flag any files changed outside the approved surface.
+  Large divergence between predicted and actual scope is a warning.
 - **Architecture conformance** — do changes match the approved approach?
 - **Unexpected changes** — files or behaviors modified outside the approved
   write surface?
 - **Bug patterns** — null handling, off-by-one, resource leaks, race conditions
 - **Security** — injection, auth bypass, secret exposure, unsafe deserialization
 - **Pattern consistency** — does new code follow existing codebase conventions?
+- **Test quality** — are new tests meaningful (testing behavior and edge cases)
+  or superficial (testing implementation details, trivial assertions)?
+  Flag tests that would pass even with a wrong implementation.
+- **Dependency audit** — were new dependencies added? Check: are they
+  justified by the architecture? Are they actively maintained? Any known
+  security vulnerabilities? Flag unjustified or risky additions.
+- **Risk area coverage** — cross-reference `scoped-map.md` risks with the
+  diff. Are all identified risk areas addressed or explicitly accepted?
 
 ### Layer 3: Requirements Verification
 
@@ -194,10 +210,49 @@ When evaluation finds issues:
 1. Write findings with specific file paths and evidence.
 2. Generator fixes the findings.
 3. Re-evaluate from Layer 1 (full re-run, not incremental).
-4. After **3 consecutive BLOCKED rounds**, escalate to human — the repair
-   loop is not converging and needs human judgment.
+4. If findings are mostly RECURRING or REGRESSED across rounds, the
+   repair loop is not converging — escalate to human. Do not let the
+   loop run indefinitely; a few rounds without convergence is enough
+   signal to stop.
 
 Warnings do not trigger the repair loop unless they threaten correctness.
+
+### Repair Loop Memory
+
+When re-evaluating (eval round > 1), read the previous `evaluation.md`
+and apply these checks:
+
+- **Fixed**: was the previous blocker resolved? Record as
+  `[FIXED] <finding> — resolved by <evidence>`.
+- **Recurring**: is the same issue present again? Record as
+  `[RECURRING] <finding> — still present in round N`. Issues that recur
+  across multiple rounds should be flagged as "stubborn" and given
+  priority in the escalation report.
+- **Regressed**: did the fix introduce a new issue? Record as
+  `[REGRESSED] <new finding> — introduced while fixing <old finding>`.
+- **New**: genuinely new finding not related to previous rounds. Record
+  as `[NEW] <finding>`.
+
+This classification helps the human understand whether the repair loop
+is converging (mostly FIXED), diverging (mostly REGRESSED), or stuck
+(mostly RECURRING).
+
+## Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | Layer 1 (deterministic) + Layer 3 (requirements) only; skip Layer 2 diff review depth checks (dependency audit, test quality); P0 criteria only |
+| **Medium** | All 3 layers; full diff review; P0+P1 criteria |
+| **High** | All 3 layers + security audit + dependency audit + performance regression check (compare against verification-path baselines); all P0+P1+P2 criteria |
+
+### Priority-Aware Verdict
+
+When `requirements.md` uses P0/P1/P2 priorities:
+- Unmet P0 = **BLOCKED** (always)
+- Unmet P1 = **PASS WITH WARNINGS** (if all P0 met)
+- Unmet P2 = informational note (does not affect verdict)
 
 ## Isolation Provenance Rule
 
@@ -217,18 +272,20 @@ Warnings do not trigger the repair loop unless they threaten correctness.
 - In `compat`, sequential fallback is allowed only if you record a concrete
   fallback reason in `evaluation.md`.
 
-## Extension: java-backend-strict
+## Extension: Runtime Signal Collection
 
-When working with the java-backend-strict extension, add runtime signal
-collection between Layer 1 and Layer 3:
+When the project has a runnable service (any stack), consider adding
+runtime signal collection between Layer 1 and Layer 3:
 - Collect startup logs, health check responses, and runtime metrics
 - Include runtime signals as evidence in Layer 3 criteria evaluation
 
+This is most valuable for High-risk tasks involving service behavior changes.
+
 ## State Transition
 
-On PASS: update `module-status.md` → state `ready_for_human_close`,
+On PASS: update `task-status.md` → state `ready_for_human_close`,
 owner `human`.
-On BLOCKED: update `module-status.md` → state `blocked`, owner `generator`,
+On BLOCKED: update `task-status.md` → state `blocked`, owner `generator`,
 with findings written to `evaluation.md`. Increment the `Eval Round` column
 in the task table row (not in State Notes). Read the current value, add 1,
 write it back as a plain integer.

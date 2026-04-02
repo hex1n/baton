@@ -56,8 +56,8 @@ Replace lines 66–84 (the four `*_cmd` variables) with:
 # PostToolUse: after write to .harness/*.md → validate-artifact.sh
 cc_post_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\".harness/\"*\".md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; at=\$(basename \"\$fp\" .md); bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-artifact.sh\" \"\$at\" \"\$fp\" # baton-validate-artifact"
 
-# PreToolUse: before write to module-status.md → validate-transition.sh
-cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"module-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" # baton-validate-transition"
+# PreToolUse: before write to task-status.md → validate-transition.sh
+cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); [[ \"\$fp\" == *\"task-status.md\" ]] || exit 0; nc=\$(echo \"\$input\" | jq -r '.tool_input.content // empty' 2>/dev/null); [[ -n \"\$nc\" ]] || exit 0; ns=\$(echo \"\$nc\" | awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}'); [[ -n \"\$ns\" ]] || exit 0; [[ -f \"\$fp\" ]] || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$fp\"); [[ -n \"\$cs\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" # baton-validate-transition"
 
 # ---------------------------------------------------------------------------
 # Codex hook command strings
@@ -68,9 +68,9 @@ cc_pre_cmd="input=\$(cat); fp=\$(echo \"\$input\" | jq -r '.tool_input.file_path
 # PostToolUse: after Bash command that wrote to .harness/*.md → validate-artifact.sh
 cx_post_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); [[ -n \"\$cmd\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; for fp in \$(echo \"\$cmd\" | grep -oE '\\.harness/[A-Za-z0-9_-]+\\.md' | sort -u); do [[ -f \"\$fp\" ]] || continue; at=\$(basename \"\$fp\" .md); bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-artifact.sh\" \"\$at\" \"\$fp\"; done # baton-validate-artifact"
 
-# PreToolUse: before Bash command that writes to module-status.md → validate-transition.sh
+# PreToolUse: before Bash command that writes to task-status.md → validate-transition.sh
 cx_state_names="exploring|specifying|architecting|awaiting_human_arch|verification_check|generating|reviewing|ready_for_human_close|complete|blocked"
-cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/module-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/module-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/module-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
+cx_pre_cmd="input=\$(cat); cmd=\$(echo \"\$input\" | jq -r '.tool_input.command // empty' 2>/dev/null); echo \"\$cmd\" | grep -qF '.harness/task-status.md' || exit 0; ns=\$(echo \"\$cmd\" | grep -oE '\\| *(${cx_state_names}) *\\|' | head -1 | tr -d '| '); [[ -n \"\$ns\" ]] || exit 0; [[ -f \".harness/task-status.md\" ]] || exit 0; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; cs=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \".harness/task-status.md\"); [[ -n \"\$cs\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-transition.sh\" \"\$cs\" \"\$ns\" || exit 2 # baton-validate-transition"
 ```
 
 **Step 4: Run tests to verify they pass**
@@ -135,15 +135,15 @@ assert_json_block() {
 make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
+  cat > "$dir/task-status.md" <<EOF
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |-------|-------|-------|------------|------------|-------|
 | task1 | generator | $state | 0 | 2026-03-28 | - |
 EOF
 }
 
-# no module-status.md → exit 0
-assert_exit "no module-status → pass" 0 bash "$SCRIPT" "$tmp/empty"
+# no task-status.md → exit 0
+assert_exit "no task-status → pass" 0 bash "$SCRIPT" "$tmp/empty"
 
 # state=exploring → no artifacts required → exit 0
 make_status "$tmp/t1" "exploring"
@@ -194,11 +194,11 @@ Expected: multiple FAIL lines (script doesn't exist yet).
 set -euo pipefail
 
 harness_dir="${1:-.harness}"
-module_status="$harness_dir/module-status.md"
+task_status="$harness_dir/task-status.md"
 
-[[ -f "$module_status" ]] || exit 0
+[[ -f "$task_status" ]] || exit 0
 
-state=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' "$module_status")
+state=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' "$task_status")
 [[ -n "$state" ]] || exit 0
 
 required_for_state() {
@@ -300,7 +300,7 @@ After the `cx_pre_cmd` block (around line 85), add:
 # Stop hook command string (same for Claude Code and Codex — outputs JSON)
 # No matcher: Stop has no matcher support on either platform
 # ---------------------------------------------------------------------------
-stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [[ -f \"\$root/.harness/module-status.md\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
+stop_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; [[ -f \"\$root/.harness/task-status.md\" ]] || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/validate-state-artifacts.sh\" \"\$root/.harness\" # baton-validate-state"
 ```
 
 In the `# Install Claude Code hooks` jq block, add to the jq program (after the existing `new_pre_entry` def):
@@ -403,7 +403,7 @@ Add command string after the `stop_cmd` block:
 # Matcher: baton-evaluator|baton-verifier
 # Validates fork agent wrote its required artifact before parent is notified
 # ---------------------------------------------------------------------------
-subagent_stop_cmd="input=\$(cat); agent=\$(echo \"\$input\" | jq -r '.agent_type // empty' 2>/dev/null); case \"\$agent\" in baton-verifier|baton-evaluator) ;; *) exit 0 ;; esac; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bootstrap=\"\$root/.vendor/baton-harness/spec/bootstrap\"; case \"\$agent\" in baton-verifier) [[ -f \"\$root/.harness/verification-path.md\" ]] || { jq -n '{\"decision\":\"block\",\"reason\":\"baton-verifier completed without writing verification-path.md\"}'; exit 2; }; bash \"\$bootstrap/validate-artifact.sh\" verification-path \"\$root/.harness/verification-path.md\" || exit 2 ;; baton-evaluator) state=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$root/.harness/module-status.md\" 2>/dev/null); case \"\$state\" in blocked|reviewing|ready_for_human_close) ;; *) jq -n --arg s \"\$state\" '{\"decision\":\"block\",\"reason\":(\"baton-evaluator completed but module-status state is \\\\\"\" + \$s + \"\\\\\"\")}'; exit 2 ;; esac ;; esac # baton-subagent-stop"
+subagent_stop_cmd="input=\$(cat); agent=\$(echo \"\$input\" | jq -r '.agent_type // empty' 2>/dev/null); case \"\$agent\" in baton-verifier|baton-evaluator) ;; *) exit 0 ;; esac; root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bootstrap=\"\$root/.vendor/baton-harness/spec/bootstrap\"; case \"\$agent\" in baton-verifier) [[ -f \"\$root/.harness/verification-path.md\" ]] || { jq -n '{\"decision\":\"block\",\"reason\":\"baton-verifier completed without writing verification-path.md\"}'; exit 2; }; bash \"\$bootstrap/validate-artifact.sh\" verification-path \"\$root/.harness/verification-path.md\" || exit 2 ;; baton-evaluator) state=\$(awk -F'|' 'NR>2 && NF>3 && \$4!~/---/{gsub(/ /,\"\",\$4); print \$4; exit}' \"\$root/.harness/task-status.md\" 2>/dev/null); case \"\$state\" in blocked|reviewing|ready_for_human_close) ;; *) jq -n --arg s \"\$state\" '{\"decision\":\"block\",\"reason\":(\"baton-evaluator completed but task-status state is \\\\\"\" + \$s + \"\\\\\"\")}'; exit 2 ;; esac ;; esac # baton-subagent-stop"
 ```
 
 In the Claude Code jq block, add:
@@ -447,7 +447,7 @@ git commit -m "feat(hooks): add SubagentStop hook — fork agent output validati
 
 ## Task 5: `harness-context.sh` — script + tests
 
-New script: reads `.harness/module-status.md` and outputs JSON for `SessionStart` context injection.
+New script: reads `.harness/task-status.md` and outputs JSON for `SessionStart` context injection.
 
 **Files:**
 - Create: `spec/bootstrap/harness-context.sh`
@@ -482,14 +482,14 @@ assert_json_field() {
 make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
+  cat > "$dir/task-status.md" <<EOF
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |-------|-------|-------|------------|------------|-------|
 | task-abc | generator | $state | 1 | 2026-03-28 | - |
 EOF
 }
 
-# no module-status → valid JSON, hookEventName=SessionStart, "No active"
+# no task-status → valid JSON, hookEventName=SessionStart, "No active"
 assert_json_field "no task: valid JSON"           "$tmp/empty" '.hookSpecificOutput.hookEventName == "SessionStart"'
 assert_json_field "no task: no-task message"      "$tmp/empty" '.hookSpecificOutput.additionalContext | test("No active")'
 
@@ -529,17 +529,17 @@ Expected: multiple FAIL lines.
 set -euo pipefail
 
 harness_dir="${1:-.harness}"
-module_status="$harness_dir/module-status.md"
+task_status="$harness_dir/task-status.md"
 
-if [[ ! -f "$module_status" ]]; then
+if [[ ! -f "$task_status" ]]; then
   jq -n '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"No active harness task."}}'
   exit 0
 fi
 
-state=$(awk    -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' "$module_status")
-owner=$(awk    -F'|' 'NR>2 && NF>3 && $3!~/---/{gsub(/ /,"",$3); print $3; exit}' "$module_status")
-task_id=$(awk  -F'|' 'NR>2 && NF>2 && $2!~/---/{gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2; exit}' "$module_status")
-eval_round=$(awk -F'|' 'NR>2 && NF>5 && $5!~/---/{gsub(/ /,"",$5); print $5; exit}' "$module_status")
+state=$(awk    -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' "$task_status")
+owner=$(awk    -F'|' 'NR>2 && NF>3 && $3!~/---/{gsub(/ /,"",$3); print $3; exit}' "$task_status")
+task_id=$(awk  -F'|' 'NR>2 && NF>2 && $2!~/---/{gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2; exit}' "$task_status")
+eval_round=$(awk -F'|' 'NR>2 && NF>5 && $5!~/---/{gsub(/ /,"",$5); print $5; exit}' "$task_status")
 
 required_for_state() {
   case "$1" in
@@ -624,7 +624,7 @@ Add command string after the `subagent_stop_cmd` block:
 # ---------------------------------------------------------------------------
 # SessionStart command string (Claude Code + Codex)
 # Matcher: startup|resume
-# Reads .harness/module-status.md and injects current task state as context
+# Reads .harness/task-status.md and injects current task state as context
 # ---------------------------------------------------------------------------
 session_start_cmd="root=\$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; bash \"\$root/.vendor/baton-harness/spec/bootstrap/harness-context.sh\" \"\$root/.harness\" # baton-harness-context"
 ```

@@ -4,7 +4,7 @@
 
 **Goal:** Add runtime enforcement to the baton harness — artifact validation, state transition checks, structured eval_round tracking, and auto-installed Claude Code hooks — closing the gap between what the protocol specifies and what the runtime enforces.
 
-**Architecture:** Three scripts (`validate-artifact.sh`, `validate-transition.sh`, `install-hooks.sh`) handle logic; platform hooks in `.claude/settings.json` trigger them automatically on artifact writes. Skill edits (P0) close documentation-level gaps in isolation contracts and architect rejection paths. The eval_round column moves repair-round tracking from free-text notes into the module-status table, making it machine-readable.
+**Architecture:** Three scripts (`validate-artifact.sh`, `validate-transition.sh`, `install-hooks.sh`) handle logic; platform hooks in `.claude/settings.json` trigger them automatically on artifact writes. Skill edits (P0) close documentation-level gaps in isolation contracts and architect rejection paths. The eval_round column moves repair-round tracking from free-text notes into the task-status table, making it machine-readable.
 
 **Tech Stack:** Bash, `jq` (hook stdin parsing), Claude Code settings.json hooks (PostToolUse / PreToolUse), markdown section matching.
 
@@ -138,7 +138,7 @@ Find the existing branch (currently 2 lines). Replace with:
 ```markdown
 **Rejected — requirements misunderstood**
 
-1. Write `module-status.md` → state `blocked`, category `design_blocker`.
+1. Write `task-status.md` → state `blocked`, category `design_blocker`.
    Notes: name the specific requirement that is ambiguous or contradictory.
 
 2. Write `.harness/generator-feedback.md` with these fields:
@@ -168,16 +168,16 @@ git commit -m "feat(architect): complete rejection path — write generator-feed
 
 ---
 
-## Task 5: P1-3 — Add eval_round column to module-status template
+## Task 5: P1-3 — Add eval_round column to task-status template
 
 **Files:**
-- Modify: `spec/templates/module-status.template.md`
+- Modify: `spec/templates/task-status.template.md`
 - Modify: `spec/bootstrap/start-task.sh`
 - Modify: `spec/bootstrap/start-task.ps1`
 
 **Step 1: Update the template**
 
-In `spec/templates/module-status.template.md`, change lines 3-4 to:
+In `spec/templates/task-status.template.md`, change lines 3-4 to:
 
 ```markdown
 | Scope | Owner | State | Eval Round | Updated At | Notes |
@@ -238,8 +238,8 @@ Expected: `OK: invariant-3: template header matches start-task.sh header`
 **Step 5: Commit**
 
 ```bash
-git add spec/templates/module-status.template.md spec/bootstrap/start-task.sh spec/bootstrap/start-task.ps1
-git commit -m "feat(module-status): add Eval Round column to task table — structured repair-round tracking"
+git add spec/templates/task-status.template.md spec/bootstrap/start-task.sh spec/bootstrap/start-task.ps1
+git commit -m "feat(task-status): add Eval Round column to task table — structured repair-round tracking"
 ```
 
 ---
@@ -256,7 +256,7 @@ In `skills/baton-evaluator.md`, find the State Transition section at the bottom.
 
 Before:
 ```
-Increment the eval round counter in the State Notes section of `module-status.md` (format: `Current eval round: N`).
+Increment the eval round counter in the State Notes section of `task-status.md` (format: `Current eval round: N`).
 ```
 
 After:
@@ -413,7 +413,7 @@ Create `spec/bootstrap/validate-artifact.sh`:
 # validate-artifact.sh — verify a .harness/*.md artifact has all required sections
 #
 # Usage: validate-artifact.sh <artifact-type> <file-path>
-#   artifact-type: scoped-map | requirements | architecture | verification-path | module-status
+#   artifact-type: scoped-map | requirements | architecture | verification-path | task-status
 #   file-path:     path to the artifact file to validate
 #
 # Exit 0: artifact passes or type is unknown (skip)
@@ -474,11 +474,11 @@ case "$artifact_type" in
       "Intended.Checks" "Commands" "Dependencies" \
       "Dry.Run" "Blockers" "Fallback"
     ;;
-  module-status)
+  task-status)
     # Module status must have the table header and state notes section
     check_sections "$file_path" "State.Notes"
     if ! grep -q "| Scope |" "$file_path"; then
-      printf 'ERROR: validate-artifact: module-status missing task table in %s\n' "$file_path" >&2
+      printf 'ERROR: validate-artifact: task-status missing task table in %s\n' "$file_path" >&2
       exit 1
     fi
     ;;
@@ -831,8 +831,8 @@ rel_transition="$(realpath --relative-to="$repo_root" "$transition_script" 2>/de
 # PostToolUse hook: validate artifact sections after write (informational — does not block)
 post_hook_cmd="bash $rel_artifact \"\$(echo \$CLAUDE_TOOL_INPUT | jq -r '.file_path | split(\"/\") | last | split(\".\") | first')\" \"\$(echo \$CLAUDE_TOOL_INPUT | jq -r '.file_path')\" 2>&1 || true"
 
-# PreToolUse hook: validate transition before writing module-status.md (blocks on illegal)
-pre_hook_cmd="bash $rel_transition \"\$(jq -r 'if .file_path | test(\"module-status\") then \"__check__\" else \"__skip__\" end' <<< \"\$CLAUDE_TOOL_INPUT\")\" 2>&1 || true"
+# PreToolUse hook: validate transition before writing task-status.md (blocks on illegal)
+pre_hook_cmd="bash $rel_transition \"\$(jq -r 'if .file_path | test(\"task-status\") then \"__check__\" else \"__skip__\" end' <<< \"\$CLAUDE_TOOL_INPUT\")\" 2>&1 || true"
 
 # Build the hook entries as JSON
 post_entry="$(jq -n \
@@ -850,7 +850,7 @@ pre_entry="$(jq -n \
   --arg cmd "$(cat <<EOF
 # baton: validate state transition
 input=\$(cat); fp=\$(echo "\$input" | jq -r '.tool_input.file_path // empty')
-[[ "\$fp" == *"module-status.md" ]] || exit 0
+[[ "\$fp" == *"task-status.md" ]] || exit 0
 new_content=\$(echo "\$input" | jq -r '.tool_input.content // empty')
 [[ -n "\$new_content" ]] || exit 0
 new_state=\$(echo "\$new_content" | awk -F'|' '/^[|]/{if(\$4!~/State|---/){gsub(/ /,\"\",\$4); print \$4; exit}}')
@@ -866,7 +866,7 @@ EOF
 if [[ "$dry_run" == "true" ]]; then
   printf 'dry-run: would write baton hooks to %s\n' "$settings_file"
   printf '  PostToolUse: validate-artifact on .harness/*.md writes\n'
-  printf '  PreToolUse:  validate-transition on module-status.md writes\n'
+  printf '  PreToolUse:  validate-transition on task-status.md writes\n'
   exit 0
 fi
 
@@ -903,7 +903,7 @@ printf '%s\n' "$updated" > "$settings_file"
 printf 'write %s\n' "$settings_file"
 printf 'Hooks installed:\n'
 printf '  PostToolUse: validate-artifact.sh on .harness/*.md writes\n'
-printf '  PreToolUse:  validate-transition.sh on module-status.md writes\n'
+printf '  PreToolUse:  validate-transition.sh on task-status.md writes\n'
 ```
 
 **Step 4: Make executable**

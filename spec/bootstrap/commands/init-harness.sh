@@ -282,16 +282,16 @@ else
   mkdir -p "$harness_dir"
 fi
 
-module_status_existed="false"
-if [[ -e "$harness_dir/module-status.md" ]]; then
-  module_status_existed="true"
+task_status_existed="false"
+if [[ -e "$harness_dir/task-status.md" ]]; then
+  task_status_existed="true"
 fi
 
 copy_if_needed "$(human_template_path 'scoped-map.template.md' "$resolved_artifact_language")" "$harness_dir/scoped-map.md" "$force"
 copy_if_needed "$(human_template_path 'requirements.template.md' "$resolved_artifact_language")" "$harness_dir/requirements.md" "$force"
 copy_if_needed "$(human_template_path 'architecture.template.md' "$resolved_artifact_language")" "$harness_dir/architecture.md" "$force"
 copy_if_needed "$(human_template_path 'verification-path.template.md' "$resolved_artifact_language")" "$harness_dir/verification-path.md" "$force"
-copy_if_needed "$templates_dir/module-status.template.md" "$harness_dir/module-status.md" "$force"
+copy_if_needed "$templates_dir/task-status.template.md" "$harness_dir/task-status.md" "$force"
 copy_if_needed "$(human_template_path 'retrospective.template.md' "$resolved_artifact_language")" "$harness_dir/retrospective.md" "$force"
 copy_if_needed "$selected_profile_path" "$harness_dir/profile.base.yaml" "$force"
 copy_if_needed "$selected_adapter_path" "$harness_dir/adapter-reference.md" "$force"
@@ -333,10 +333,10 @@ else
   printf 'skip  %s\n' "$profile_local_target"
 fi
 
-if [[ -n "$task_id" && ( "$module_status_existed" == "false" || "$force" == "true" ) ]]; then
+if [[ -n "$task_id" && ( "$task_status_existed" == "false" || "$force" == "true" ) ]]; then
   timestamp="$(date '+%Y-%m-%dT%H:%M:%S%z')"
   if [[ "$dry_run" == "true" ]]; then
-    printf 'plan  %s (seed first task row)\n' "$harness_dir/module-status.md"
+    printf 'plan  %s (seed first task row)\n' "$harness_dir/task-status.md"
   else
     sed \
       -e "s|<task-id>|$task_id|g" \
@@ -344,8 +344,8 @@ if [[ -n "$task_id" && ( "$module_status_existed" == "false" || "$force" == "tru
       -e "s|<state>|exploring|g" \
       -e "s|<timestamp>|$timestamp|g" \
       -e "s|<notes>|initial task row created by init-harness bootstrap|g" \
-      "$templates_dir/module-status.template.md" > "$harness_dir/module-status.md"
-    printf 'write %s (seed first task row)\n' "$harness_dir/module-status.md"
+      "$templates_dir/task-status.template.md" > "$harness_dir/task-status.md"
+    printf 'write %s (seed first task row)\n' "$harness_dir/task-status.md"
   fi
 fi
 

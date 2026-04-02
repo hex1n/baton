@@ -30,8 +30,18 @@ Before writing any human-facing artifact:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
+
+## Structured Question Tool
+
+When this skill says "use structured question", use the platform's
+interactive question tool:
+
+- **Claude Code**: `AskUserQuestion` (supports single-select, multi-select)
+- **Codex**: `request_user_input` (present choices as a numbered list,
+  wait for reply)
+- **Other hosts**: present choices clearly and wait for the user's response
 
 ## Gate: Architecture Approved
 
@@ -54,9 +64,12 @@ Sections (all required):
 2. **First-Principles Decomposition** — break down into independent sub-problems
 3. **Recommended Approach** — chosen approach with tradeoff rationale
 4. **Surface Scan** — impact analysis at three depths
-5. **Verification Strategy** — how each requirement will be validated
-6. **Risks** — residual risks with mitigation or acceptance rationale
-7. **Self-Challenge** — strongest arguments against the chosen approach
+5. **Reversibility Analysis** — for each key decision, can it be undone?
+6. **Verification Strategy** — how each requirement will be validated
+7. **Delivery Order** — independently mergeable units in dependency order
+   (required for High risk; optional for Medium; skip for Low)
+8. **Risks** — residual risks with mitigation or acceptance rationale
+9. **Self-Challenge** — strongest arguments against the chosen approach
 
 ## Execution Guide
 
@@ -74,7 +87,8 @@ Sections (all required):
 
 ### 3. Enumerate Approaches
 
-Generate 2-3 approaches that differ in **mechanism**, not just parameters:
+Generate multiple approaches that differ in **mechanism**, not just
+parameters (at least 2 for non-trivial decisions):
 
 For each approach, state:
 - Core mechanism (how it works)
@@ -88,6 +102,8 @@ Choose one approach. Justify with:
 - Why it wins on the dimensions that matter most for this task
 - What it sacrifices compared to alternatives
 - When the rejected alternatives would be the better choice
+- Rough complexity per module: `trivial` / `moderate` / `complex` — this
+  helps Generator plan batch sizing and effort allocation
 
 ### 5. Module Breakdown (if applicable)
 
@@ -98,33 +114,135 @@ If the change spans multiple modules:
 
 ### 6. Surface Scan
 
-Three levels of impact analysis:
+Analyze impact at increasing distance from the change:
 
 1. **Direct references** — files that import/call the changed code
 2. **Dependency tracing** — transitive consumers of the changed interfaces
 3. **Behavioral equivalence** — code that assumes the current behavior without
    direct reference (config files, scripts, documentation)
 
-### 7. Verification Strategy
+For Low-risk tasks, direct references may be sufficient. For High-risk
+tasks, all levels are expected.
+
+### 7. Reversibility Analysis
+
+For each significant decision in the recommended approach:
+
+```markdown
+| Decision | Reversible? | Reversal Cost | Reversal Method |
+|----------|-------------|---------------|-----------------|
+| Add new internal module | Yes | Low | Delete module + revert |
+| Change public interface | No | High | Breaking change for consumers |
+| Internal refactor | Yes | Low | Revert commit |
+```
+
+This tells the Generator "how far back can I safely go if this assumption
+is wrong?" and tells the human reviewer which decisions are irreversible
+and need extra scrutiny.
+
+### 8. Delivery Order
+
+For High-risk tasks (required) and Medium-risk tasks (recommended):
+
+List independently mergeable units in dependency order:
+
+```markdown
+1. Unit A — [files] — can merge independently, no existing behavior change
+2. Unit B — [files] — depends on A
+3. Unit C — [files] — depends on A, can parallel with B
+```
+
+Each unit should be:
+- Independently testable
+- Safe to merge without the subsequent units
+- Small enough to review in one pass
+
+For Low-risk tasks, skip this section.
+
+### 9. Verification Strategy
 
 Map each requirement to a concrete verification approach:
 - What will be tested (unit, integration, manual)
 - What existing tests cover the affected code
 - What new tests are needed
+- Use test type hints from `requirements.md` if available
 
-### 8. Self-Challenge
+### 10. Self-Challenge
 
 Write the strongest arguments against your chosen approach:
 - What could go wrong that you haven't accounted for?
 - What assumption, if wrong, would invalidate the approach?
 - Is there a simpler solution you dismissed too quickly?
 
-### 9. Present and Wait
+### 11. Cross-Model Architecture Review (Medium/High risk only)
 
-Present the full `architecture.md` to the human. **Stop and wait for approval.**
+Before presenting to the human, if the Codex plugin is available and
+the task is Medium or High risk, run a cross-model challenge review:
+
+```
+Skill("codex:adversarial-review", args: "--wait --scope working-tree")
+```
+
+Codex reviews `architecture.md` as an adversarial challenger — questioning
+the approach choice, assumptions, and risk analysis.
+
+**Review → Repair Loop:**
+
+```
+Write architecture.md
+  │
+  ▼
+Codex adversarial review
+  │
+  ├─ No major issues → proceed to human gate
+  └─ Major issues found:
+       │
+       ▼
+     Revise architecture.md to address findings
+       │
+       ▼
+     Re-run Codex adversarial review
+       │
+       ├─ Resolved → proceed to human gate
+       └─ Still major → present both architecture and
+          unresolved findings to human for judgment
+```
+
+**Why here and not elsewhere:**
+- Architecture errors have the highest downstream cost
+- Architecture is a **reasoning quality** problem — a different model
+  can spot blind spots that the same model misses
+- The human gate comes right after, so the human sees an architecture
+  that has already survived cross-model challenge
+
+**What counts as "major issue":**
+- Logical contradiction in the approach
+- Missing failure mode that could block implementation
+- Requirement not addressed by any part of the approach
+- Security or data integrity risk not acknowledged
+
+**What does NOT count:**
+- Style preferences or alternative phrasings
+- Minor suggestions that don't affect correctness
+- Disagreements about approach preference (the architect chose, Codex
+  can disagree, but that alone is not a blocker)
+
+If the Codex plugin is not available, skip this step — the self-challenge
+(Step 10) and human gate still provide review coverage.
+
+### 12. Present and Wait
+
+Present the full `architecture.md` to the human, including:
+- The architecture itself
+- Codex review findings (if ran), noting which were addressed and
+  which remain as accepted trade-offs
+
+**Stop and wait for approval.** Use structured question (single-select):
+Options: Approved / Partial revision needed / Rejected — wrong direction / Rejected — requirements misunderstood
+
 Do not proceed to verification or implementation.
 
-### 10. Requirements Sync Pass
+### 13. Requirements Sync Pass
 
 After human approval, review the confirmed decisions in `architecture.md`.
 
@@ -134,11 +252,31 @@ After human approval, review the confirmed decisions in `architecture.md`.
 - Verification starts only after `requirements.md` and `architecture.md`
   describe the same approved reality.
 
+## Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | Single approach is sufficient; skip delivery order; minimal reversibility analysis |
+| **Medium** | Multiple approaches compared; delivery order recommended; reversibility for key decisions |
+| **High** | Full approach comparison; delivery order required; full reversibility analysis; add security threat modeling for auth/data/API changes; add performance/scalability considerations |
+
+### Security Considerations (High risk only)
+
+For changes involving authentication, authorization, user data, or
+external APIs, add a **Security Implications** section:
+
+- Authentication/authorization impact
+- Data exposure risks
+- Input validation requirements
+- Secrets management implications
+
 ## Human Feedback Handling
 
 **Approved**
 Ensure the requirements sync pass is complete, then update
-`module-status.md` → state `verification_check`, owner `verification-explorer`.
+`task-status.md` → state `verification_check`, owner `verification-explorer`.
 
 **Partial revision requested**
 Revise `architecture.md` per feedback. Re-present the changed sections.
@@ -150,7 +288,7 @@ categories before proposing a new direction. Re-present and wait.
 
 **Rejected — requirements misunderstood**
 
-1. Write `module-status.md` → state `blocked`, category `design_blocker`.
+1. Write `task-status.md` → state `blocked`, category `design_blocker`.
    Notes: name the specific requirement that is ambiguous or contradictory.
 
 2. Write `.harness/generator-feedback.md` with these fields:
@@ -173,10 +311,11 @@ For each significant decision:
 - **Not chosen**: what and why not
 - **When to revisit**: conditions that would change the decision
 
-Core v1: record decisions inline in `architecture.md`.
-java-backend-strict extension: use a separate `decisions.md`.
+Record decisions inline in `architecture.md`. If the project uses
+a strict overlay that requires a separate `decisions.md`, follow
+the overlay convention instead.
 
 ## State Transition
 
 On human approval: complete the requirements sync pass, then update
-`module-status.md` → state `verification_check`, owner `verification-explorer`.
+`task-status.md` → state `verification_check`, owner `verification-explorer`.

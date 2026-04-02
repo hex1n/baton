@@ -78,9 +78,9 @@ blocked → {verification_check | architecting | generating}
 | Specifier | 请求 + scoped-map | 需求、验收标准 | `requirements.md` |
 | Architect | scoped-map + requirements | 方案、文件影响、验证策略、权衡 | `architecture.md` |
 | Verification Explorer | architecture、Profile | 精确命令、可执行性证明、阻塞条件 | `verification-path.md` |
-| Generator | 已审批的需求 + 架构 + 验证路径 | 代码变更 | 更新 `module-status.md` |
-| Reviewer | 变更文件 + 需求 + 架构 | 发现项、残余风险 | 更新 `module-status.md` |
-| Evaluator | diff + 审查结论 + 验证结果 | 通过/拒绝、未满足标准 | 更新 `module-status.md` |
+| Generator | 已审批的需求 + 架构 + 验证路径 | 代码变更 | 更新 `task-status.md` |
+| Reviewer | 变更文件 + 需求 + 架构 | 发现项、残余风险 | 更新 `task-status.md` |
+| Evaluator | diff + 审查结论 + 验证结果 | 通过/拒绝、未满足标准 | 更新 `task-status.md` |
 
 **关键设计**：Reviewer 和 Evaluator 是不同角色。Reviewer 收集证据，Evaluator 做结论判断。在严格模式下，Evaluator 在主评估阶段被明确禁止阅读 Generator 的源代码（`runtime-evaluator.md` 第 19 行）——保护独立性，防止合理化偏差。
 
@@ -180,7 +180,7 @@ repo-explorer → specifier → architect → 人工架构审批
   → 人工关闭
 ```
 
-`module-status.md` 通过 scope 列编码模块 + 轮次粒度：
+`task-status.md` 通过 scope 列编码模块 + 轮次粒度：
 - `task-id/module-1`
 - `task-id/module-1#eval-1`
 - `task-id/module-1#eval-2`
@@ -241,7 +241,7 @@ Cross-Cutter 不是新角色，是所有模块完成后 Evaluator 的最终全�
 5 个显式关卡，2 个需要人工操作（关卡 2：架构审批；关卡 5：人工关闭）。严格模式再加 3 个（需求确认、迁移审批、3 轮 Evaluator 失败后的升级）。这是刻意的：协议不是全自动的，在架构和收尾决策上，人工判断是承重结构。
 
 **张力 3：文件控制平面 vs. 执行开销**
-所有状态在 `module-status.md` 中，不在会话记忆里。这使得上下文隔离成为可能（新 Agent 实例可以冷启动接手），但要求每个角色在交接时规范地更新文件。协议没有执行层——依赖适配器实现来保证合规。
+所有状态在 `task-status.md` 中，不在会话记忆里。这使得上下文隔离成为可能（新 Agent 实例可以冷启动接手），但要求每个角色在交接时规范地更新文件。协议没有执行层——依赖适配器实现来保证合规。
 
 **张力 4：Evaluator 独立性 vs. 修复效率**
 来源独立规则（Evaluator 不在主评估阶段读 Generator 代码）防止合理化偏差——先读代码往往会导致为代码辩护而非测试它。但这意味着 Evaluator 必须在第二遍才能定位阻塞项，增加了往返成本。3 轮修复上限是熔断器。
@@ -250,7 +250,7 @@ Cross-Cutter 不是新角色，是所有模块完成后 Evaluator 的最终全�
 
 ## 九、结构性空白 / 开放问题
 
-1. **无执行层**：协议是规范，不是实现。没有机制强制 Agent 不跳过关卡。协议规定"当前所有者 Agent 更新 `module-status.md`"，但未定义如果不更新会怎样。`.claude/skills/harness-*.md` 中的角色技能可能实现了硬性关卡检查——若如此，执行空白在实践中可能不存在，但规范本身仍缺少这一层。
+1. **无执行层**：协议是规范，不是实现。没有机制强制 Agent 不跳过关卡。协议规定"当前所有者 Agent 更新 `task-status.md`"，但未定义如果不更新会怎样。`.claude/skills/harness-*.md` 中的角色技能可能实现了硬性关卡检查——若如此，执行空白在实践中可能不存在，但规范本身仍缺少这一层。
 
 2. **Reviewer 角色欠规范**：相比 Evaluator 的三层模型和专用模板，Reviewer 只有"发现项优先 + 残余风险 + 明确无发现"。不对称是刻意的（Reviewer = 轻量，Evaluator = 重量），但 Reviewer 可以更具体。
 

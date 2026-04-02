@@ -12,7 +12,7 @@
   - `spec/bootstrap/start-task.sh` — 6 列 schema 支持（P1-b）
   - `spec/bootstrap/start-task.ps1` — 同步修改（P1-b）
   - `skills/harness-evaluator.md` — eval_round 引用方式（P2-a）
-  - `spec/templates/module-status.template.md` — 视向后兼容决策
+  - `spec/templates/task-status.template.md` — 视向后兼容决策
   - `README.md` — Quick Start 补 link-skills.sh，闭环图映射说明（P2-b, P3）
   - `spec/bootstrap/check-consistency.sh` — 新建（P2-c）
 - Out of scope:
@@ -24,8 +24,8 @@
 
 - Primary entry classes or files:
   - `skills/harness-architect.md` — role skill 状态转换指令
-  - `spec/bootstrap/start-task.sh` — module-status.md 读写核心逻辑
-  - `spec/templates/module-status.template.md` — 控制平面 schema 定义
+  - `spec/bootstrap/start-task.sh` — task-status.md 读写核心逻辑
+  - `spec/templates/task-status.template.md` — 控制平面 schema 定义
 - Methods, APIs, commands, or scripts:
   - `start-task.sh:100` — owner 白名单验证
   - `start-task.sh:144` — Header 检测（当前匹配 5 列）
@@ -45,7 +45,7 @@ P1-a（owner token 错误）
   → start-task.sh:100 白名单验证 → exit 1 (Unsupported owner)
 
 P1-b（Schema 不匹配 / 安全绕过）
-  init-harness.sh → 复制 6 列模板 → .harness/module-status.md
+  init-harness.sh → 复制 6 列模板 → .harness/task-status.md
   → start-task.sh:144 检测 5 列 Header → 不匹配 → in_table=false
   → rows=[] open_rows=[] → 安全守卫绕过 → 写出 5 列文件（schema 降级）
 
@@ -57,7 +57,7 @@ P2-a（eval_round 悬空）
 ## 4. Existing Behavior
 
 - Current observable behavior:
-  - `start-task.sh` 生成 5 列 module-status.md，Header 与模板不一致
+  - `start-task.sh` 生成 5 列 task-status.md，Header 与模板不一致
   - `harness-architect.md` 状态转换写 `verifier`，不在 start-task.sh 白名单
   - `harness-evaluator.md` 要求递增的 `eval_round` 列不存在于生成的文件中
   - `.agents/` 和 `.claude/skills/` 是 `skills/` 的副本（git 克隆解析了 symlink）
@@ -78,7 +78,7 @@ P2-a（eval_round 悬空）
 
 - Will this likely touch integration or infra? 否
 - Will this likely touch migrations or schema?
-  - 是（module-status.md 格式变化）— 需向后兼容已有 5 列文件的 repo
+  - 是（task-status.md 格式变化）— 需向后兼容已有 5 列文件的 repo
 - Will this likely cross business domains? 否
 
 关键风险：
@@ -96,7 +96,7 @@ P2-a（eval_round 悬空）
 - **Q1（需 Specifier 确认）**: `start-task.sh` 的向后兼容策略：仅支持 6 列新格式，还是同时兼容 5 列旧格式？
   - 影响：决定 Header 检测逻辑是单分支还是双分支
 - **Q2（需 Specifier 确认）**: `eval_round` 归宿：移入 State Notes 文本（推荐），还是彻底删除该概念？
-  - 影响：决定是否需要修改 `module-status.template.md`
+  - 影响：决定是否需要修改 `task-status.template.md`
 
 ## 9. Recommendation
 

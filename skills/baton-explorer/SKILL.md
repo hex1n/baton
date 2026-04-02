@@ -54,8 +54,10 @@ for the concrete spawn/wait example.
 
 ### Mode 2: Task-scoped (every task)
 
-- **Inputs**: user request, repo map or local repo context
-- **Outputs**: task-local call chain, direct change surfaces, test landing points, risk notes
+- **Inputs**: user request, repo map or local repo context,
+  `clarification-brief.md` (if exists)
+- **Outputs**: task-local call chain, data flow, direct change surfaces,
+  test landing points, risk notes
 - **Artifact**: required `scoped-map.md`
 
 ### Overlay Recommendation
@@ -65,10 +67,10 @@ When task-scoped exploration reveals higher complexity, add a
 
 Trigger signals include:
 
-- DB migration directories
-- multiple module write surfaces
-- API schema files
-- cross-module dependencies
+- Schema or migration directories
+- Multiple module write surfaces
+- Interface definition files (API specs, protobuf, GraphQL, etc.)
+- Cross-module dependencies
 
 Use one of these advisory values:
 
@@ -87,7 +89,7 @@ Before writing any human-facing artifact:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Gate: Scoped Exploration Complete
@@ -107,16 +109,21 @@ Sections (all required):
 2. **Scope** — boundaries of exploration
 3. **Entry Points** — files/functions where execution enters
 4. **Call Chain** — how control flows from entry to effect
-5. **Existing Behavior** — what the code does today in the affected area
-6. **Existing Tests** — tests that cover the affected area, with paths
-7. **Risks** — areas of fragility, coupling, or missing coverage
-8. **Suggested Next Step** — what the Specifier should focus on
+5. **Data Flow** — how data propagates through the affected area
+   (source → transform → sink); include data format changes and
+   state mutations at each boundary
+6. **Existing Behavior** — what the code does today in the affected area
+7. **Existing Tests** — tests that cover the affected area, with paths
+8. **Change History** — recent changes in the affected area from git log;
+   highlight high-churn files and active contributors
+9. **Risks** — areas of fragility, coupling, or missing coverage
+10. **Suggested Next Step** — what the Specifier should focus on
 
 ## Execution Guide
 
 ### Mode Selection
 
-- If no `repo-map.md` or `module-status.md` exists and the user asks for a
+- If no `repo-map.md` or `task-status.md` exists and the user asks for a
   general overview → **Repo mode**.
 - If there is a concrete task or feature request → **Scoped mode**.
 - When in doubt, ask the user.
@@ -139,16 +146,34 @@ Sections (all required):
 ### Scoped Mode Steps
 
 1. Read the user request — extract the intent and any named files/features.
-2. Find entry points: search for the feature name, endpoint, command, or UI
-   element that the request targets.
+   If `clarification-brief.md` exists, read it to understand confirmed
+   boundaries, non-goals, and success criteria. Use these to constrain
+   exploration scope — do not explore areas marked as non-goals.
+2. Find entry points: search for the feature name, handler, command, or
+   interface that the request targets.
 3. Trace the call chain: follow from entry point through the layers of
    invocation to where state changes or output is produced.
-4. Identify the write surface: files that must change to fulfill the request.
-5. Find test landing points: existing tests for the affected code, plus where
+4. Trace data flow: follow how data propagates through the affected area —
+   from source through transformations to sink. Note state mutations and
+   data format changes at each boundary.
+5. Identify the write surface: files that must change to fulfill the request.
+6. Find test landing points: existing tests for the affected code, plus where
    new tests would logically go.
-6. Assess risks: look for tight coupling, shared state, missing error handling,
+7. Check change history: review recent git history on affected files to
+   identify churn rate, recent changes, and active contributors.
+8. Assess risks: look for tight coupling, shared state, missing error handling,
    or areas with no test coverage.
-7. Write `scoped-map.md` with all required sections.
+9. Write `scoped-map.md` with all required sections.
+
+### Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt exploration depth:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | Skip data flow tracing and change history; focus on entry points and write surface |
+| **Medium** | Standard exploration — all steps above |
+| **High** | Deep exploration: trace data flow across module boundaries, analyze git blame for ownership, check for undocumented side effects, scan for security-sensitive patterns |
 
 ### Quality Check
 
@@ -158,4 +183,4 @@ Sections (all required):
 
 ## State Transition
 
-On completion: update `module-status.md` → state `specifying`, owner `specifier`.
+On completion: update `task-status.md` → state `specifying`, owner `specifier`.

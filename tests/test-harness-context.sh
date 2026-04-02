@@ -22,8 +22,8 @@ assert_json_field() {
 make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
-# Module Status
+  cat > "$dir/task-status.md" <<EOF
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |-------|-------|-------|------------|------------|-------|
@@ -34,8 +34,8 @@ EOF
 make_legacy_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
-# Module Status
+  cat > "$dir/task-status.md" <<EOF
+# Task Status
 
 | Scope | Owner | State | Updated At | Notes |
 |------|------|------|-----------|------|
@@ -45,7 +45,7 @@ make_legacy_status() {
 EOF
 }
 
-# no module-status → valid JSON, hookEventName=SessionStart, "No active"
+# no task-status → valid JSON, hookEventName=SessionStart, "No active"
 assert_json_field "no task: valid JSON"           "$tmp/empty" '.hookSpecificOutput.hookEventName == "SessionStart"'
 assert_json_field "no task: no-task message"      "$tmp/empty" '.hookSpecificOutput.additionalContext | test("No active")'
 
@@ -68,8 +68,8 @@ assert_json_field "present artifacts listed"      "$tmp/t2" '.hookSpecificOutput
 
 # latest row wins when multiple task rows exist
 mkdir -p "$tmp/t3"
-cat > "$tmp/t3/module-status.md" <<'EOF'
-# Module Status
+cat > "$tmp/t3/task-status.md" <<'EOF'
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|

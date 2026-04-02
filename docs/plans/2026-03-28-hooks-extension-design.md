@@ -62,7 +62,7 @@ Gap B: Fork agent output is not validated
 
 Gap C: Session-start harness state is invisible
   Claude starts a fresh session with no awareness of current task state
-  → relies on human to paste module-status.md or Claude to read it manually
+  → relies on human to paste task-status.md or Claude to read it manually
 ```
 
 ---
@@ -83,7 +83,7 @@ Since Codex requires JSON, the script always outputs JSON. Claude Code accepts b
 so JSON output works on both platforms.
 
 **Logic**:
-1. If `.harness/module-status.md` does not exist → exit 0 (no active task).
+1. If `.harness/task-status.md` does not exist → exit 0 (no active task).
 2. Read current state from the task table.
 3. Look up required artifacts for that state.
 4. For each required artifact, check it exists in `.harness/`.
@@ -132,7 +132,7 @@ so JSON output works on both platforms.
 | Agent | Check | Failure action |
 |-------|-------|----------------|
 | `baton-verifier` | `verification-path.md` exists + sections valid | exit 2, parent must re-dispatch |
-| `baton-evaluator` | `module-status.md` state is `blocked`, `reviewing`, or `ready_for_human_close` | exit 2, parent must re-dispatch |
+| `baton-evaluator` | `task-status.md` state is `blocked`, `reviewing`, or `ready_for_human_close` | exit 2, parent must re-dispatch |
 
 **Implementation**: inline hook command using existing `validate-artifact.sh`:
 
@@ -151,11 +151,11 @@ case "$agent" in
     ;;
   baton-evaluator)
     state=$(awk -F'|' 'NR>2 && NF>3 && $4!~/---/{gsub(/ /,"",$4); print $4; exit}' \
-            "$root/.harness/module-status.md" 2>/dev/null)
+            "$root/.harness/task-status.md" 2>/dev/null)
     case "$state" in
       blocked|reviewing|ready_for_human_close) ;;
       *)
-        printf '{"decision":"block","reason":"baton-evaluator completed but module-status state is \"%s\" (expected blocked/reviewing/ready_for_human_close)"}\n' "$state"
+        printf '{"decision":"block","reason":"baton-evaluator completed but task-status state is \"%s\" (expected blocked/reviewing/ready_for_human_close)"}\n' "$state"
         exit 2
         ;;
     esac
@@ -178,7 +178,7 @@ esac
 - Codex: plain text OR same JSON — use JSON for consistency across both platforms
 
 **Logic**:
-1. If `.harness/module-status.md` does not exist → minimal no-task context.
+1. If `.harness/task-status.md` does not exist → minimal no-task context.
 2. Read task id, owner, state, eval round from table.
 3. List which required artifacts for the current state exist vs. missing.
 4. Output JSON `additionalContext`.
@@ -263,7 +263,7 @@ so it works on both Claude Code and Codex without branching.
 
 ## Constraints
 
-- `Stop` must not block when no `.harness/module-status.md` exists —
+- `Stop` must not block when no `.harness/task-status.md` exists —
   hooks run on all sessions, not just harness sessions
 - `Stop` skips check on `blocked` state — intentionally incomplete
 - `SubagentStop` is a soft signal to parent — parent decides whether to re-dispatch

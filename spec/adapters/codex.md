@@ -36,7 +36,7 @@ may use the sequential fallback described below. `strict` mode must block.
 | Run repo checks | Shell command execution |
 | Isolated implementation workspace | `git worktree` via shell |
 | Independent review | Sub-agent in `strict`; explicit sequential review only in `compat` |
-| Control plane | `.harness/module-status.md` |
+| Control plane | `.harness/task-status.md` |
 
 ## Role Execution
 
@@ -167,7 +167,7 @@ If the repo explicitly opts into `compat` mode and sub-agents are not available:
 2. Treat `Verification Explorer` and `Evaluator` as hard cold-read boundaries
 3. Record `Execution context: sequential_fallback` in the produced artifact
 4. Record a concrete fallback reason, not "not available"
-5. Do not skip `module-status.md`
+5. Do not skip `task-status.md`
 6. Do not merge `verification_check` into `generating`
 
 ## Codex-Specific Advice

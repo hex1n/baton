@@ -18,15 +18,15 @@ When reporting status to the user:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Execution Steps
 
-1. Check that `.harness/module-status.md` exists. If not, prompt the user
+1. Check that `.harness/task-status.md` exists. If not, prompt the user
    to run `init-harness` first and stop.
 
-2. Read `.harness/module-status.md`.
+2. Read `.harness/task-status.md`.
    Treat the **last task row in the table** as the current task row.
 
 3. Report:
@@ -35,7 +35,8 @@ state tokens, and blocker categories in stable English.
    - **Next action** — derived from the state machine below
    - **Eval round** — read the `Eval Round` column from the current task row.
      If state is `reviewing`, `generating` (repair), or `blocked` from evaluator,
-     show `round N / 3`. If N ≥ 3, flag for human escalation.
+     show `round N`. If findings are not converging across rounds, flag
+     for human escalation.
    - **Blockers** — if state is `blocked`, show the blocker category and
      what is needed to unblock
    - If state is `ready_for_human_close` or `complete`, also show:
@@ -66,4 +67,4 @@ state tokens, and blocker categories in stable English.
 | `design_blocker` (architecture wrong) | `architecting` | architect |
 | `design_blocker` (requirements ambiguous) | `architecting` + specifier | architect + human |
 | `environment_blocker` | `generating` (after fix) | generator |
-| 3 repair rounds exhausted | human decision | human |
+| repair loop not converging | human decision | human |

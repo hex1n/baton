@@ -71,7 +71,7 @@ rg -n "artifact_language|Artifact Language Policy|Response Language Policy|--lan
   - Notes: `pwsh` is not installed in the current environment, so PowerShell scripts were aligned by code inspection only and not runtime-verified
 - Command: policy grep across docs, skills, and templates
   - Result: pass
-  - Notes: language policy, `auto`, and stable-English `module-status.md` guidance are present in the updated surfaces
+  - Notes: language policy, `auto`, and stable-English `task-status.md` guidance are present in the updated surfaces
 
 ## 5. Blockers
 

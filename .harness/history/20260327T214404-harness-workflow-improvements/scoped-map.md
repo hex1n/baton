@@ -61,7 +61,7 @@ retrospective findings
   - `start-task.sh` and `start-task.ps1` already use `owners.txt`, but state tokens are still duplicated in code.
   - `sync-skills.sh` trusts `.link-mode`, which can lie in fresh clones where git materializes symlinks as plain files.
 - Current validation rules:
-  - `check-consistency.sh` verifies owner tokens, module-status header alignment, and skill-copy parity.
+  - `check-consistency.sh` verifies owner tokens, task-status header alignment, and skill-copy parity.
   - `start-task --dry-run` proves initialization behavior without editing `.harness/`.
 - Existing implicit constraints:
   - mirrored skills under `.claude/skills/` and `.agents/` must stay aligned with `skills/`
@@ -84,7 +84,7 @@ retrospective findings
 - Will this likely touch integration or infra?
   - Yes. Skill mirroring and adapter docs affect Claude/Codex runtime behavior, even though no production service is involved.
 - Will this likely touch migrations or schema?
-  - Yes, in the lightweight sense of protocol schema: owner/state token sources and `module-status.md` workflow expectations.
+  - Yes, in the lightweight sense of protocol schema: owner/state token sources and `task-status.md` workflow expectations.
 - Will this likely cross business domains?
   - No. This is contained to the Baton Harness governance layer.
 

@@ -5,9 +5,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/lib/parse-input.sh"
 
 harness_dir="$HOOK_ROOT/.harness"
-module_status_path="$harness_dir/module-status.md"
+task_status_path="$harness_dir/task-status.md"
 
-if [[ ! -f "$module_status_path" ]]; then
+if [[ ! -f "$task_status_path" ]]; then
   hook_pass
 fi
 

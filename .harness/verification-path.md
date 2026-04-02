@@ -11,7 +11,7 @@
   - `bash tests/test-prepare-review.sh`
   - `bash tests/test-install-hooks.sh`
   - `bash tests/test-start-task.sh`
-  - `bash tests/test-module-status.sh`
+  - `bash tests/test-task-status.sh`
   - `bash tests/test-hook-post-artifact.sh`
   - `bash tests/test-hook-pre-transition.sh`
   - `bash tests/test-hook-session-start.sh`
@@ -35,7 +35,7 @@ bash tests/test-prepare-review.sh
 bash tests/test-install-hooks.sh
 bash tests/test-validate-isolation.sh
 bash tests/test-start-task.sh
-bash tests/test-module-status.sh
+bash tests/test-task-status.sh
 bash tests/test-hook-post-artifact.sh
 bash tests/test-hook-pre-transition.sh
 bash tests/test-hook-session-start.sh
@@ -66,7 +66,7 @@ cmd=$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harne
 - Isolation mode: strict
 - Execution context: isolated_subagent
 - Agent ID: 019d3a10-495a-7ca3-943e-e6355ea5e3fb
-- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动独立 verifier 子代理，并由其冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/module-status.md`、实现面与 tests，独立复跑 focused verification commands、`prepare-review.sh`，以及一条从 `.codex/hooks.json` 提取的真实 SessionStart hook 命令。
+- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动独立 verifier 子代理，并由其冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/task-status.md`、实现面与 tests，独立复跑 focused verification commands、`prepare-review.sh`，以及一条从 `.codex/hooks.json` 提取的真实 SessionStart hook 命令。
 - Fallback policy: strict 路径已可用并已执行；未来如果无法提供隔离 verifier，应阻塞 gate，而不是默认退回 compat。
 - Fallback reason: none
 
@@ -81,7 +81,7 @@ cmd=$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harne
   - `bash tests/test-skill-links.sh`
   - `bash tests/test-validate-isolation.sh`
   - `bash tests/test-start-task.sh`
-  - `bash tests/test-module-status.sh`
+  - `bash tests/test-task-status.sh`
   - `bash tests/test-harness-context.sh`
   - `bash tests/test-validate-artifact.sh`
   - `bash tests/test-validate-state-artifacts.sh`
@@ -102,7 +102,7 @@ cmd=$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harne
   - `tests/test-skill-links.sh`: pass，10/10
   - `tests/test-validate-isolation.sh`: pass，8/8
   - `tests/test-start-task.sh`: pass，6/6
-  - `tests/test-module-status.sh`: pass，11/11
+  - `tests/test-task-status.sh`: pass，11/11
   - `tests/test-harness-context.sh`: pass，18/18
   - `tests/test-validate-artifact.sh`: pass，12/12
   - `tests/test-validate-state-artifacts.sh`: pass，14/14

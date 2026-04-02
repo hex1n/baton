@@ -9,7 +9,7 @@
 当前 Baton 运行时存在以下执行缺口：
 
 1. **Hook 架构碎片化** — 所有 hook 逻辑以内联命令字符串嵌入 `.claude/settings.json` 和 `.codex/hooks.json`，导致：不可独立测试、不可调试、宿主检测逻辑重复、无法安全地扩展新检查。
-2. **Eval Round 不递增** — `module-status.md` 的 `Eval Round` 列始终为 0，修复循环没有上限控制，可能导致无限自修。
+2. **Eval Round 不递增** — `task-status.md` 的 `Eval Round` 列始终为 0，修复循环没有上限控制，可能导致无限自修。
 3. **blocked 状态缺少分类** — 进入 `blocked` 后 Notes 列内容自由文本，无法结构化区分阻塞原因。
 4. **generator-feedback.md 无核心支持** — 模板仅存在于 `java-backend-strict` 扩展中，核心流程无法使用。Generator 发现设计缺口时没有标准化反馈路径。
 5. **complete 状态不要求 retrospective.md** — `validate-state-artifacts.sh` 未将 `retrospective.md` 列入 `complete` 状态的必须工件。
@@ -62,7 +62,7 @@
 
 ### FR-3 Eval Round 自动递增与修复循环上限
 
-- 新增 `module_status_set_eval_round <path> <value>` 函数于 `module-status.sh`
+- 新增 `task_status_set_eval_round <path> <value>` 函数于 `task-status.sh`
 - 写入方式：temp file + `mv`（不使用 raw sed）
 - `subagent-stop.sh`（CC-only）在 baton-evaluator 完成时调用该函数递增 `Eval Round`
 - 从 `profile.local.yaml` 读取 `max_eval_rounds`（默认 3），通过 `read_profile_value` 解析
@@ -98,7 +98,7 @@
 - **排序约束**：ack 清除仅在工件验证成功后执行
 - **重入守卫**：ack 清除写操作前设置 `BATON_HOOK_ACTIVE=1`
 - **Advisory 性质**：这是 agent 可写的记账机制，非密码学证明。升级到宿主原生 API 前作为最佳努力执行
-- `start-task.sh` 在新任务初始化时覆写整个 `module-status.md`，自动清除残留 ack
+- `start-task.sh` 在新任务初始化时覆写整个 `task-status.md`，自动清除残留 ack
 
 ### FR-8 Strict Overlay 触发检测
 
@@ -159,7 +159,7 @@
 
 ### Phase 2: 执行缺口
 
-- [ ] AC-6: baton-evaluator SubagentStop 完成时 `module-status.md` 的 `Eval Round` 列自动 +1（通过 `module_status_set_eval_round` 的 temp+mv 写入）
+- [ ] AC-6: baton-evaluator SubagentStop 完成时 `task-status.md` 的 `Eval Round` 列自动 +1（通过 `task_status_set_eval_round` 的 temp+mv 写入）
 - [ ] AC-7: 当 eval_round ≥ max_eval_rounds（默认 3）时，SubagentStop hook 阻止并输出明确错误信息
 - [ ] AC-8: 转入 `blocked` 时，若 Notes 列不含 `[verification_blocker]`、`[scope_blocker]`、`[environment_blocker]`、`[design_blocker]` 之一，CC 端 PreToolUse 阻止（Codex 端 PostToolUse 检查磁盘）
 - [ ] AC-9: `spec/templates/generator-feedback.template.md` 和 `spec/templates/zh/generator-feedback.template.md` 存在，`validate-artifact.sh` 可校验其必需章节
@@ -181,7 +181,7 @@
 ### 跨切面
 
 - [ ] AC-21: 重入守卫生效——hook 写操作不触发自身或其他 hook 的递归
-- [ ] AC-22: 所有现有测试（`test-install-hooks.sh`、`test-validate-artifact.sh`、`test-validate-state-artifacts.sh`、`test-validate-isolation.sh`、`test-module-status.sh`）在完整变更后仍通过
+- [ ] AC-22: 所有现有测试（`test-install-hooks.sh`、`test-validate-artifact.sh`、`test-validate-state-artifacts.sh`、`test-validate-isolation.sh`、`test-task-status.sh`）在完整变更后仍通过
 
 ## 6. 约束
 
@@ -191,7 +191,7 @@
 - **单任务假设**：每个 workspace 同一时间只有一个活跃任务，不考虑并发写入
 - **Phase 顺序**：Phase 1（hook 提取）必须在 Phase 2（缺口填补）之前完成，因为 Phase 2 依赖新的 hook 基础设施
 - **Advisory human_ack**：human_ack 为 agent 可写记账，非密码学证明；在宿主原生审批 API 可用前不做更强保证
-- **向后兼容**：`module-status.sh` 的所有现有读函数签名不变；新增 `module_status_set_eval_round` 为唯一新函数
+- **向后兼容**：`task-status.sh` 的所有现有读函数签名不变；新增 `task_status_set_eval_round` 为唯一新函数
 - **Clean switch**：旧内联命令和新独立脚本在同一提交中切换，无自动检测回退
 
 ## 7. 验证意图
@@ -203,7 +203,7 @@
 - ShellCheck 扫描所有新脚本
 
 ### Phase 2 验证
-- 单元测试验证 `module_status_set_eval_round` 的 temp+mv 写入和边界值处理
+- 单元测试验证 `task_status_set_eval_round` 的 temp+mv 写入和边界值处理
 - 单元测试验证 blocked 分类正则匹配和拒绝
 - 单元测试验证 `generator-feedback` 工件校验的 section 检查
 - 单元测试验证 human_ack 门控逻辑（有 ack / 无 ack / 转入 blocked 豁免）

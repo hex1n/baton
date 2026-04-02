@@ -15,7 +15,7 @@ Each of the 8 architecture steps maps to one or more validation checks.
 | 1 | `spec/protocol/owners.txt` (new) | File exists, contains exactly 9 tokens | `wc -l`, `cat` |
 | 2 | `skills/harness-architect.md:116,143` | No `owner \`verifier\`` remains; `owner \`verification-explorer\`` present | `grep` |
 | 3 | `skills/harness-evaluator.md:137` | `eval_round` reference points to State Notes, not table column | `grep` |
-| 4 | `spec/templates/module-status.template.md:3-5` | **SEE BLOCKER B-1** — D1 vs FR-2 conflict |  |
+| 4 | `spec/templates/task-status.template.md:3-5` | **SEE BLOCKER B-1** — D1 vs FR-2 conflict |  |
 | 5a | `spec/bootstrap/start-task.sh:27-35` | Usage text no longer hardcodes owner list (or reads from file) | `grep` |
 | 5b | `spec/bootstrap/start-task.sh:99-105` | Whitelist validation uses `grep -Fxq "$owner" owners.txt` | `grep`, dry-run |
 | 6 | `spec/bootstrap/start-task.ps1:4` | `ValidateSet` removed; runtime `Get-Content` validation added | `grep` |
@@ -78,13 +78,13 @@ bash spec/bootstrap/start-task.sh --task-id test-ve --owner verification-explore
 
 ```bash
 # Current template header
-sed -n '3p' spec/templates/module-status.template.md
+sed -n '3p' spec/templates/task-status.template.md
 
 # Current script write header
 grep "printf '| Scope" spec/bootstrap/start-task.sh
 
 # After fix — these two must match (exact string equality)
-TEMPLATE=$(sed -n '3p' spec/templates/module-status.template.md)
+TEMPLATE=$(sed -n '3p' spec/templates/task-status.template.md)
 SCRIPT=$(grep -o "'| Scope.*|'" spec/bootstrap/start-task.sh | tr -d "'")
 [ "$TEMPLATE" = "$SCRIPT" ] && echo "MATCH" || echo "MISMATCH: template='$TEMPLATE' script='$SCRIPT'"
 ```
@@ -210,7 +210,7 @@ Infrastructure status: WORKING. The script correctly blocks due to the active ta
 ### FR-1 current state (before fix)
 
 ```
-skills/harness-architect.md:116: Update `module-status.md` -> state `verification_check`, owner `verifier`.
+skills/harness-architect.md:116: Update `task-status.md` -> state `verification_check`, owner `verifier`.
 skills/harness-architect.md:144: owner `verifier`.
 ```
 
@@ -230,7 +230,7 @@ Bug confirmed. Resolution depends on BLOCKER B-1.
 ### FR-3 current state (before fix)
 
 ```
-skills/harness-evaluator.md:136-137: Increment `eval_round` in `module-status.md`.
+skills/harness-evaluator.md:136-137: Increment `eval_round` in `task-status.md`.
 ```
 
 References table column. Bug confirmed. Fix: rewrite line 137 to reference State Notes.
@@ -306,7 +306,7 @@ bash start-task.sh --task-id x --owner verification-explorer --dry-run
 > `| Scope | Owner | State | Eval Round | Updated At | Notes |`
 
 **requirements.md Constraint (line 138)** explicitly states:
-> Do not modify `module-status.template.md` (it is already the correct 6-column format)
+> Do not modify `task-status.template.md` (it is already the correct 6-column format)
 
 **architecture.md D1** states:
 > Completely delete the Eval Round column.
@@ -314,9 +314,9 @@ bash start-task.sh --task-id x --owner verification-explorer --dry-run
 
 These two documents define incompatible implementations. The Generator cannot write correct code without a definitive answer:
 
-1. **If D1 wins (5-col)**: `module-status.template.md` line 3-5 changes to remove Eval Round. `start-task.sh` is unchanged for schema. requirements.md FR-2, AC-2, and Constraint must be updated to reflect 5-column reality.
+1. **If D1 wins (5-col)**: `task-status.template.md` line 3-5 changes to remove Eval Round. `start-task.sh` is unchanged for schema. requirements.md FR-2, AC-2, and Constraint must be updated to reflect 5-column reality.
 
-2. **If FR-2 wins (6-col)**: architecture.md D1 decision is reversed. `start-task.sh` lines 144, 153, 258-259 must be upgraded to detect and write 6-column format including Eval Round. `start-task.ps1` line 193 similarly upgraded. `module-status.template.md` is unchanged. This is the larger code change.
+2. **If FR-2 wins (6-col)**: architecture.md D1 decision is reversed. `start-task.sh` lines 144, 153, 258-259 must be upgraded to detect and write 6-column format including Eval Round. `start-task.ps1` line 193 similarly upgraded. `task-status.template.md` is unchanged. This is the larger code change.
 
 check-consistency.sh invariant-2 also depends on this decision (expected header value differs).
 
@@ -325,7 +325,7 @@ check-consistency.sh invariant-2 also depends on this decision (expected header 
 ### B-2 (DEPENDENT on B-1): check-consistency.sh invariant-2 expected value is undefined
 
 check-consistency.sh invariant-2 checks:
-> "start-task.sh 写出的 Header 与 module-status.template.md Header 一致"
+> "start-task.sh 写出的 Header 与 task-status.template.md Header 一致"
 
 The structural check is feasible, but the expected canonical value cannot be defined until B-1 is resolved.
 
@@ -346,7 +346,7 @@ The structural check is feasible, but the expected canonical value cannot be def
 - Update architecture.md D1 to reflect that start-task scripts are upgraded to 6-column
 - Generator modifies `start-task.sh` lines 144, 153, 251, 258-259 (detect + write 6-col with Eval Round `—`)
 - Generator modifies `start-task.ps1` line 193 (write 6-col)
-- `module-status.template.md` is NOT touched
+- `task-status.template.md` is NOT touched
 - check-consistency.sh invariant-2 compares against `| Scope | Owner | State | Eval Round | Updated At | Notes |`
 
 ### For steps independent of B-1

@@ -17,7 +17,7 @@ user-invocable: true
 
 - **Inputs**: approved `requirements.md`, approved `architecture.md`,
   verified `verification-path.md`
-- **Outputs**: code changes, execution notes, updated `module-status.md`
+- **Outputs**: code changes, execution notes, updated `task-status.md`
 
 ## Artifact Language Policy
 
@@ -28,7 +28,7 @@ Before writing any human-facing artifact or feedback file:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Precondition
@@ -47,22 +47,39 @@ Read artifacts in this order — each builds on the previous:
 3. `verification-path.md` — understand how correctness will be proved
 4. `decisions.md` (if exists) — understand rejected alternatives
 
-### 2. Implementation Phase
+### 2. Pre-Implementation Check
+
+Before writing any code:
+- Check for uncommitted changes: `git status`. If dirty, stash or
+  confirm with user before proceeding.
+- Verify write surface matches `architecture.md` — list all files to
+  create or modify.
+
+### 3. Implementation Phase
 
 **Scope files**: list all files to create or modify, cross-check against the
 architecture's write surface.
 
-**Implement in batches** of 3-5 files:
-- Complete one logical unit per batch
+**Implementation order**:
+1. If `requirements.md` has priorities, implement all P0 requirements first,
+   then P1, then P2.
+2. Within a priority level, respect `depends-on` links — implement
+   dependencies before dependents.
+3. If `architecture.md` has a Delivery Order section, follow its unit
+   ordering.
+
+**Implement in logical-unit batches**:
+- One batch = one independently verifiable requirement or sub-problem
+  (not a fixed file count)
+- Write tests alongside or before implementation for each batch — do not
+  defer all tests to the end
 - After each batch, run the relevant verification commands from
   `verification-path.md`
 - Record the checkpoint result (pass/fail/partial)
+- Update `task-status.md` notes: `batch N/M complete`
 - Commit at each passing checkpoint
 
-**Batch order**: implement dependencies before dependents. If the architecture
-defines a module order, follow it.
-
-### 3. Checkpoint Validation
+### 4. Checkpoint Validation
 
 After each batch:
 1. Run the verification commands relevant to the changed files
@@ -80,8 +97,9 @@ After each batch:
    making the change.
 3. **Minimize changes in high-risk areas** identified in `scoped-map.md`.
    Prefer isolated changes over restructuring.
-4. **Migration and DDL scripts are drafts** — mark them clearly as requiring
-   human review before execution.
+4. **Destructive or irreversible scripts are drafts** — mark migration
+   scripts, schema changes, and similar artifacts as requiring human
+   review before execution.
 
 ### Architecture Mismatch
 
@@ -121,6 +139,36 @@ Maintain running notes during implementation:
 - Files touched outside the approved write surface (with justification)
 - Verification results per checkpoint
 
+### Pre-Handoff Self-Review
+
+Before transitioning to Evaluator, complete this checklist. Self-review
+failures should be fixed by the Generator — do not consume Evaluator
+repair rounds on preventable issues.
+
+```markdown
+- [ ] All verification commands from verification-path.md pass
+- [ ] No unresolved TODO/FIXME in new code
+- [ ] Write surface matches architecture.md (no unauthorized file changes)
+- [ ] Every P0 requirement has at least one covering test
+- [ ] No secrets or credentials in the diff
+- [ ] `git diff --stat` matches expected scope
+- [ ] Execution notes document all deviations
+```
+
+If any item fails, fix it before transitioning. Do not hand off to
+Evaluator with known failures.
+
+## Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | No batching needed; implement all at once; simplified self-review (skip scope and deviation checks) |
+| **Medium** | Standard — logical-unit batches, full self-review checklist |
+| **High** | Strict batching following Delivery Order; each batch must include security-relevant tests; full self-review plus: no new dependencies without justification, lint/typecheck pass per batch |
+
 ## State Transition
 
-On completion: update `module-status.md` → state `reviewing`, owner `evaluator`.
+On completion (self-review passes): update `task-status.md` → state
+`reviewing`, owner `evaluator`.

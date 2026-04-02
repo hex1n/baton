@@ -26,7 +26,7 @@
 - Isolation mode: strict
 - Execution context: isolated_subagent
 - Agent ID: 019d3a10-4967-76d3-b2a4-fb9c01464e75
-- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动独立 evaluator 子代理，并由其冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/verification-path.md`、`.harness/module-status.md`、当前 working-tree 实现面与 focused tests；同时将已刷新后的 `.claude/settings.json` / `.codex/hooks.json` 视为本次改动的一部分进行评审。
+- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动独立 evaluator 子代理，并由其冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/verification-path.md`、`.harness/task-status.md`、当前 working-tree 实现面与 focused tests；同时将已刷新后的 `.claude/settings.json` / `.codex/hooks.json` 视为本次改动的一部分进行评审。
 - Fallback policy: strict 路径已可用并执行；若未来无法提供隔离子代理或无法记录 Agent ID，应阻塞 review gate，而不是再用 compat 结果充当最终评审。
 - Fallback reason: none
 
@@ -52,7 +52,7 @@
 - `bash tests/test-install-hooks.sh` -> pass（49/49）
 - `bash tests/test-skill-links.sh` -> pass（10/10）
 - `bash tests/test-start-task.sh` -> pass（6/6）
-- `bash tests/test-module-status.sh` -> pass（11/11）
+- `bash tests/test-task-status.sh` -> pass（11/11）
 - `bash tests/test-harness-context.sh` -> pass（18/18）
 - `bash tests/test-validate-artifact.sh` -> pass（12/12）
 - `bash tests/test-validate-transition.sh` -> pass（12/12）

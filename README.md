@@ -34,7 +34,7 @@ Repair loops:
 - `Generator BLOCKED` → back to `Architect` / `Specifier` / `Human`
 - `Evaluator BLOCKED` → back to `Generator`, then re-run `Evaluator`
 
-Each role produces file-based artifacts in `.harness/`. State is tracked in `module-status.md`.
+Each role produces file-based artifacts in `.harness/`. State is tracked in `task-status.md`.
 
 ## Artifact Language
 
@@ -48,7 +48,7 @@ Human-facing artifacts can be generated in English or Chinese.
   `--language auto` if you want a different default
 - in bootstrap scripts, `auto` resolves from the local environment locale
 - in writing skills, `auto` means "follow the current user request language"
-- `module-status.md` stays in English because it is the stable control plane
+- `task-status.md` stays in English because it is the stable control plane
 
 Two operating rules matter in practice:
 

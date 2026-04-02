@@ -2,7 +2,7 @@
 # validate-artifact.sh — verify a .harness/*.md artifact has all required sections
 #
 # Usage: validate-artifact.sh <artifact-type> <file-path>
-#   artifact-type: scoped-map | requirements | architecture | verification-path | evaluation | module-status | generator-feedback
+#   artifact-type: scoped-map | requirements | architecture | verification-path | evaluation | task-status | generator-feedback
 #   file-path:     path to the artifact file to validate
 #
 # Exit 0: artifact passes or type is unknown (skip)
@@ -82,10 +82,10 @@ run_checks() {
         "Inputs|输入" "Execution.Provenance|Isolation.Provenance" "Findings|发现" \
         "Verification.Results" "Verdict" "Residual.Risks" || rc=$?
       ;;
-    module-status)
+    task-status)
       check_sections "$file_path" "State.Notes" || rc=$?
       if ! grep -q "| Scope |" "$file_path"; then
-        printf 'ERROR: validate-artifact: module-status missing task table in %s\n' "$file_path" >&2
+        printf 'ERROR: validate-artifact: task-status missing task table in %s\n' "$file_path" >&2
         rc=$((rc + 1))
       fi
       ;;

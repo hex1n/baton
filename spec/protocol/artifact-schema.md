@@ -51,7 +51,7 @@
   - blockers
   - fallback strategies
 
-### `module-status.md`
+### `task-status.md`
 
 - Purpose: minimum control plane
 - Required sections:

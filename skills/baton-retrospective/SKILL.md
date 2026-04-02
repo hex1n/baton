@@ -12,7 +12,7 @@ user-invocable: true
 ## Role Contract
 
 - **Inputs**: all `.harness/` artifacts from the completed task
-- **Outputs**: `.harness/retrospective.md`, updated `module-status.md`
+- **Outputs**: `.harness/retrospective.md`, updated `task-status.md`
 
 ## Artifact Language Policy
 
@@ -23,40 +23,94 @@ Before writing any human-facing artifact:
 2. If it is `auto`, follow the current user request language.
 3. If the setting is missing, default to Chinese.
 
-Do not localize `module-status.md`. Keep the control-plane file, owner tokens,
+Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Execution Steps
 
 1. Read all artifacts: `scoped-map.md`, `requirements.md`, `architecture.md`,
-   `verification-path.md`, `module-status.md`, and `generator-feedback.md`
-   (if it exists).
+   `verification-path.md`, `evaluation.md`, `task-status.md`,
+   `clarification-brief.md` (if exists), and `generator-feedback.md`
+   (if exists).
 
-2. Write `.harness/retrospective.md` covering these dimensions:
+2. Extract metrics from the artifacts (see Metrics section below).
 
-   ### 1. What Worked
+3. Write `.harness/retrospective.md` covering these dimensions:
+
+   ### 1. Metrics
+   Quantitative data extracted from the task run. These accumulate across
+   tasks to reveal systemic patterns.
+
+   ### 2. What Worked
    Which gates, artifacts, or process steps actually prevented a problem?
    Be specific — "Gate 3 caught a missing test fixture before Generator began"
    is useful; "the process worked well" is not.
 
-   ### 2. What Failed or Was Skipped
+   ### 3. What Failed or Was Skipped
    Which steps were bypassed, produced low-quality output, or caused rework?
-   Include repair loop rounds and what drove them.
+   Include repair loop rounds and what drove them. If the evaluator's repair
+   loop memory classified findings, reference the classifications (FIXED,
+   RECURRING, REGRESSED, NEW).
 
-   ### 3. What Should Be Standardized
+   ### 4. What Should Be Standardized
    Findings worth writing into `profile.local.yaml` or the adapter doc for
    this repo — patterns that are repo-specific but should be default going
    forward.
 
-   ### 4. Repo-Specific Lessons
+   ### 5. Repo-Specific Lessons
    Discoveries that only apply to this repository (toolchain quirks,
    undocumented constraints, risky files).
 
-   ### 5. Spec or Skill Improvement Suggestions
-   Concrete suggestions for improving the harness spec or role skills.
-   Reference the specific file and section if possible.
+   ### 6. Skill Patches
+   Concrete, actionable improvements to specific skills. Each patch must
+   reference the target skill and section:
 
-3. Update `module-status.md` → state `complete`.
+   ```markdown
+   - **Target**: baton-generator, Section "Checkpoint Validation"
+     **Finding**: Generator did not lint per batch; evaluator Round 1
+     spent entirely on lint fixes
+     **Suggested Rule**: Add lint to checkpoint validation commands
+   ```
+
+   Only suggest patches for issues that actually caused problems in this
+   task — not hypothetical improvements.
+
+   ### 7. Profile Patches
+   Configuration changes that can be directly applied to
+   `profile.local.yaml` based on this task's experience:
+
+   ```markdown
+   - `generator.checkpoint_includes_lint: true`
+   - `evaluator.layer1_includes: [build, test, lint, typecheck]`
+   ```
+
+   ### 8. Follow-up Tasks
+   Concrete next steps that emerged from this task but are out of scope:
+   - Tech debt to address
+   - Tests to add for uncovered edge cases
+   - Documentation to update
+   - Monitoring or alerting to add
+
+4. Update `task-status.md` → state `complete`.
+
+## Metrics
+
+Extract these metrics from the task artifacts:
+
+| Metric | Source | Purpose |
+|--------|--------|---------|
+| Clarification questions asked | `clarification-brief.md` interview log | Measures requirement ambiguity |
+| Risk level assessed | `task-status.md` | Calibrates risk assessment accuracy |
+| Exploration depth used | `scoped-map.md` | Validates risk-adaptive depth |
+| Requirements count (P0/P1/P2) | `requirements.md` | Tracks scope creep |
+| Architecture approaches considered | `architecture.md` | Measures design rigor |
+| Verification commands count | `verification-path.md` | Measures test coverage planning |
+| Eval rounds | `task-status.md` / `evaluation.md` | Measures implementation quality |
+| Repair finding classification | `evaluation.md` | FIXED/RECURRING/REGRESSED/NEW ratio |
+| Blocked count | `task-status.md` | Measures flow interruptions |
+| Phases skipped | `task-status.md` | Tracks process shortcuts |
+| Actual vs predicted write surface | `architecture.md` vs `git diff --stat` | Measures architecture accuracy |
+| Self-review failures caught | Generator notes | Measures pre-handoff quality |
 
 ## Output Template
 
@@ -64,7 +118,21 @@ state tokens, and blocker categories in stable English.
 # Retrospective — [Task ID]
 
 **Completed**: [date]
+**Risk level**: [Low/Medium/High]
 **Eval rounds**: [N]
+
+## Metrics
+
+| Metric | Value |
+|--------|-------|
+| Clarification questions | N |
+| Requirements (P0/P1/P2) | N/N/N |
+| Architecture approaches | N |
+| Verification commands | N |
+| Eval rounds | N |
+| Repair findings | N FIXED, N RECURRING, N REGRESSED, N NEW |
+| Blocked count | N |
+| Write surface accuracy | N predicted / N actual files |
 
 ## What Worked
 -
@@ -78,6 +146,14 @@ state tokens, and blocker categories in stable English.
 ## Repo-Specific Lessons
 -
 
-## Spec / Skill Improvement Suggestions
--
+## Skill Patches
+- **Target**: [skill], Section "[section]"
+  **Finding**: [what went wrong]
+  **Suggested Rule**: [concrete improvement]
+
+## Profile Patches
+- `[config.key]: [value]`
+
+## Follow-up Tasks
+- [ ] [concrete next step]
 ```

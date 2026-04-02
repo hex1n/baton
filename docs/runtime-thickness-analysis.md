@@ -16,7 +16,7 @@ spec/bootstrap/        ← setup + consistency scripts
 skills/                ← agent role skills (canonical single source)
 .claude/skills/        ← symlinks → skills/ in dev; copies via vendor in target repos
 .agents/               ← same
-.harness/              ← runtime control plane (artifacts + module-status.md)
+.harness/              ← runtime control plane (artifacts + task-status.md)
 ```
 
 **Key asymmetry**: `spec/protocol/` tells agents what to do. `spec/bootstrap/` gets the scaffold in place. Nothing between them continuously enforces that agents actually did it.
@@ -29,13 +29,13 @@ skills/                ← agent role skills (canonical single source)
 
 `README.md:68-90` — Quick Start is: `install-harness.sh` → `init-harness.sh` → `start-task.sh` → "Run Scoped Explorer." There is no `run-harness.sh`, `advance-state.sh`, or continuous orchestrator.
 
-`init-harness.sh` writes artifact templates to `.harness/` and materializes governance entrypoints (`CLAUDE.md`, `AGENTS.md`). `start-task.sh` adds a row to `module-status.md` and resets artifact templates for a new task. These are one-shot setup operations, not an ongoing runtime.
+`init-harness.sh` writes artifact templates to `.harness/` and materializes governance entrypoints (`CLAUDE.md`, `AGENTS.md`). `start-task.sh` adds a row to `task-status.md` and resets artifact templates for a new task. These are one-shot setup operations, not an ongoing runtime.
 
 ### 2. 状态转移是 agent 自报告机制 — 且是明确的设计选择 ✅ verified
 
 `spec/protocol/role-contracts.md:154-156`:
 
-> "start-task initializes a task row. After that point, **the current owner agent updates module-status.md as part of normal task execution**. A helper script may exist in a local repo, but the protocol does not require one for ordinary state transitions."
+> "start-task initializes a task row. After that point, **the current owner agent updates task-status.md as part of normal task execution**. A helper script may exist in a local repo, but the protocol does not require one for ordinary state transitions."
 
 脚本层唯一的硬约束：`start-task.sh:296-304` 在非 complete 行存在时拒绝启动新任务。Gates 1–5（`spec/protocol/gates.md`）定义了通过/失败标准，由 agent 自行评估——没有任何脚本校验。
 
@@ -87,7 +87,7 @@ skills/                ← agent role skills (canonical single source)
 - **P0-1**：Evaluator 上下文隔离（`context: fork`）
 - **P0-2**：Architect 拒绝路径（当前是悬空状态分支）
 - **P1-1**：新建 `harness-status` skill，无需手动读文件即可查看任务状态
-- **P1-2**：`module-status.md` 增加 `eval_round` 字段，持久化修复轮次计数
+- **P1-2**：`task-status.md` 增加 `eval_round` 字段，持久化修复轮次计数
 - **P1-4**：`generator-feedback.md` 作为正式的向上游升级通道
 
 "优先补 runtime 厚度"的方向已在本计划中推进，但尚未实现。
@@ -154,7 +154,7 @@ Baton 在任务执行期间"强制执行"协议的机制是：agent 读取协议
 |------|------|
 | protocol-first | `spec/protocol/` 是规范；适配器和扩展引用它，从不改变它 |
 | adapter-aware | `spec/adapters/` 含 claude-code、codex、cursor + cli-adapter-interface.md |
-| file-based control plane | `.harness/` 制品 + `module-status.md` 作为唯一状态真源 |
+| file-based control plane | `.harness/` 制品 + `task-status.md` 作为唯一状态真源 |
 | optional strict enforcement | `spec/extensions/java-backend-strict/` 明确标注为可选叠加 |
 
 README 已称其为"portable AI coding agent collaboration protocol"并把 `.claude/skills/` 称为"reference implementation"。定位基本准确；缺失的是把第四个特性（强制执行扩展路径）作为 README 一级条目显式呈现。

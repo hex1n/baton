@@ -43,7 +43,7 @@ In `baton-evaluator.md` and `baton-verifier.md` Startup section:
 **P0-2: Architect rejection path**
 
 In `baton-architect.md` "Rejected — requirements misunderstood" branch:
-1. Write `module-status.md` → `blocked`, `design_blocker`, with specific ambiguity notes
+1. Write `task-status.md` → `blocked`, `design_blocker`, with specific ambiguity notes
 2. Write `generator-feedback.md` with `recommended_next_owner: specifier`
 3. Document: Specifier must resolve `generator-feedback.md` before rewriting `requirements.md`
 
@@ -60,7 +60,7 @@ platform-level, not voluntary.
 Script layer (logic)         Hook layer (trigger)
 ────────────────────         ──────────────────────────────────────
 validate-artifact.sh    ←    PostToolUse: Write/Edit → .harness/*.md
-validate-transition.sh  ←    PreToolUse:  Write/Edit → .harness/module-status.md
+validate-transition.sh  ←    PreToolUse:  Write/Edit → .harness/task-status.md
 ```
 
 **P1-1: `spec/bootstrap/validate-artifact.sh`**
@@ -68,7 +68,7 @@ validate-transition.sh  ←    PreToolUse:  Write/Edit → .harness/module-statu
 - Input: artifact name, file path
 - Logic: for each artifact type, check all required sections from `artifact-schema.md` exist (`## Section Name` headings)
 - Output: lists missing sections; exits non-zero on failure
-- Covers: `scoped-map`, `requirements`, `architecture`, `verification-path`, `module-status`
+- Covers: `scoped-map`, `requirements`, `architecture`, `verification-path`, `task-status`
 
 **P1-2: `spec/bootstrap/validate-transition.sh`**
 
@@ -77,7 +77,7 @@ validate-transition.sh  ←    PreToolUse:  Write/Edit → .harness/module-statu
 - Output: ALLOWED or ILLEGAL with reason; exits non-zero if illegal
 - Called via PreToolUse hook — can block the write before it happens
 
-**P1-3: Structured `eval_round` in `module-status.md` template**
+**P1-3: Structured `eval_round` in `task-status.md` template**
 
 - Add `Eval Round` column to the task table (default `0`)
 - Evaluator increments this column on each BLOCKED verdict
@@ -128,7 +128,7 @@ corresponding entry in `.claude/agents/`.
 | P0-2 | Architect rejection path in baton-architect.md | Skill edit | — |
 | P1-1 | `validate-artifact.sh` | New script | — |
 | P1-2 | `validate-transition.sh` | New script | — |
-| P1-3 | `module-status.template.md` eval_round column | Template edit | — |
+| P1-3 | `task-status.template.md` eval_round column | Template edit | — |
 | P1-3 | `baton-evaluator.md` eval_round increment update | Skill edit | P1-3 template |
 | P1-3 | `baton-status.md` eval_round read update | Skill edit | P1-3 template |
 | P1-4 | `install-hooks.sh` | New script | P1-1, P1-2 |

@@ -27,7 +27,7 @@ fallback.
 | Repo inspection | Terminal plus file reads |
 | Worktree creation | `git worktree` from terminal |
 | Independent review | Separate task context in `strict`; explicit second-pass review only in `compat` |
-| State control | `.harness/module-status.md` |
+| State control | `.harness/task-status.md` |
 
 ## Role Execution
 
@@ -133,7 +133,7 @@ without separate task contexts:
 1. Keep the role order unchanged
 2. Persist each role output to `.harness/`
 3. Record degraded execution context and fallback reason in the produced artifact
-4. Record state transitions in `module-status.md`
+4. Record state transitions in `task-status.md`
 5. Run an explicit review pass before asking for human close
 
 ## Claude Code-Specific Advice

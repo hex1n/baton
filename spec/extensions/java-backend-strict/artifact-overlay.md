@@ -13,7 +13,7 @@ Portable core keeps the minimum set:
 - `requirements.md`
 - `architecture.md`
 - `verification-path.md`
-- `module-status.md`
+- `task-status.md`
 - `retrospective.md`
 
 Java backend strict mode extends that set with:
@@ -49,7 +49,7 @@ Java backend strict mode extends that set with:
   verification-path.md
   evaluation-report.md
   generator-feedback.md
-  module-status.md
+  task-status.md
   retrospective.md
   runtime-signals/
     sql-log.txt

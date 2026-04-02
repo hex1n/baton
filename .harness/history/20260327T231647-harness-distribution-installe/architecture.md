@@ -56,7 +56,7 @@
   - upstream canonical payload: `.vendor/baton-harness/`
   - target local policy and overrides: `.harness/`
   - runtime skill entrypoints: `.claude/skills/` 与 `.agents/`
-  - machine-readable task control plane 继续留在 `.harness/module-status.md`
+  - machine-readable task control plane 继续留在 `.harness/task-status.md`
 - 向后兼容说明:
   - 现有 `init-harness` / `start-task` 仍可直接在 baton 源仓库对目标 repo 运行
   - 手工复制仍可作为 fallback，但不再是主推荐路径

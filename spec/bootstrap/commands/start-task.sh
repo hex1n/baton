@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bootstrap_dir="$(cd "$script_dir/.." && pwd)"
 spec_root="$(cd "$bootstrap_dir/.." && pwd)"
-source "$bootstrap_dir/lib/module-status.sh"
+source "$bootstrap_dir/lib/task-status.sh"
 source "$bootstrap_dir/lib/language.sh"
 source "$bootstrap_dir/lib/profile.sh"
 
@@ -164,7 +164,7 @@ fi
 templates_dir="$spec_root/templates"
 resolved_repo_root="$(cd "$repo_root" && pwd)"
 harness_dir="$resolved_repo_root/.harness"
-module_status_path="$harness_dir/module-status.md"
+task_status_path="$harness_dir/task-status.md"
 history_root="$harness_dir/history"
 profile_local_path="$harness_dir/profile.local.yaml"
 
@@ -172,16 +172,16 @@ if [[ ! -d "$harness_dir" ]]; then
   printf 'Harness directory not found: %s. Run init-harness first.\n' "$harness_dir" >&2
   exit 1
 fi
-if [[ ! -f "$module_status_path" ]]; then
-  printf 'Module status file not found: %s. Run init-harness first.\n' "$module_status_path" >&2
+if [[ ! -f "$task_status_path" ]]; then
+  printf 'Module status file not found: %s. Run init-harness first.\n' "$task_status_path" >&2
   exit 1
 fi
 
-module_status_schema_value="$(module_status_schema "$module_status_path")"
-case "$module_status_schema_value" in
+task_status_schema_value="$(task_status_schema "$task_status_path")"
+case "$task_status_schema_value" in
   current|legacy) ;;
   *)
-    printf 'Unsupported module-status schema: %s\n' "$module_status_schema_value" >&2
+    printf 'Unsupported task-status schema: %s\n' "$task_status_schema_value" >&2
     exit 1
     ;;
 esac
@@ -225,10 +225,10 @@ while IFS=$'\t' read -r scope owner_column row_state eval_round updated_column n
   if [[ "$row_state" != 'complete' ]]; then
     open_rows+=("$scope:$row_state")
   fi
-done < <(module_status_rows_tsv "$module_status_path")
+done < <(task_status_rows_tsv "$task_status_path")
 
 if [[ "$duplicate_task" == "true" ]]; then
-  printf 'Task already exists in module-status.md: %s\n' "$task_id" >&2
+  printf 'Task already exists in task-status.md: %s\n' "$task_id" >&2
   exit 1
 fi
 
@@ -299,10 +299,10 @@ safe_notes="$(sanitize_cell "$notes")"
 new_row="| $safe_task_id | $safe_owner | $safe_state | 0 | $timestamp | $safe_notes |"
 
 if [[ "$dry_run" == "true" ]]; then
-  printf 'plan  %s\n' "$module_status_path"
+  printf 'plan  %s\n' "$task_status_path"
 else
   {
-    printf '# Module Status\n\n'
+    printf '# Task Status\n\n'
     printf '| Scope | Owner | State | Eval Round | Updated At | Notes |\n'
     printf '|------|------|------|-----------|-----------|------|\n'
     if [[ "${#rows[@]}" -gt 0 ]]; then
@@ -312,12 +312,13 @@ else
     fi
     printf '%s\n' "$new_row"
     printf '\n## State Notes\n\n'
+    printf -- '- Risk level:\n'
     printf -- '- Current artifacts: active task initialized for %s\n' "$safe_task_id"
     printf -- '- Current blockers: none\n'
     printf -- '- Current residual risks: none recorded yet\n'
     printf -- '- Current next decision: run Scoped Explorer\n'
-  } > "$module_status_path"
-  printf 'write %s\n' "$module_status_path"
+  } > "$task_status_path"
+  printf 'write %s\n' "$task_status_path"
 fi
 
 printf '\nHarness task initialization complete.\n'
@@ -332,5 +333,5 @@ if [[ "$dry_run" == "true" ]]; then
 fi
 printf '\nNext steps:\n'
 printf '1. Fill .harness/scoped-map.md\n'
-printf '2. Update .harness/module-status.md on each state transition\n'
+printf '2. Update .harness/task-status.md on each state transition\n'
 printf '3. Archive completed task artifacts before the next task start\n'

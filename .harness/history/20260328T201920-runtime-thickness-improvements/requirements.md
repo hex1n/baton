@@ -26,7 +26,7 @@ Claude Code 的上下文隔离机制缺失：Codex 有完整的 `spawn_agent` �
 - validate-artifact.sh / validate-transition.sh（设计上不做）
 - .baton/git-hooks/ 填充（设计上不做）
 - Cursor 的程序化隔离（已知限制，无程序化手段）
-- spec/templates/module-status.template.md eval_round 列（State Notes 已满足需求）
+- spec/templates/task-status.template.md eval_round 列（State Notes 已满足需求）
 
 ## 3. 功能需求
 
@@ -70,7 +70,7 @@ Claude Code 的上下文隔离机制缺失：Codex 有完整的 `spawn_agent` �
 
 - 运行时验证 Agent 工具是否成功隔离（无法在文档层证明）
 - Cursor 程序化 dispatch（已知无此机制）
-- 更改 module-status.md 模板结构
+- 更改 task-status.md 模板结构
 
 ## 5. 验收标准
 

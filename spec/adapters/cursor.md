@@ -31,7 +31,7 @@ chat contexts or sequential role execution.
 | Repo inspection | Editor search plus terminal commands |
 | Worktree creation | `git worktree` in terminal |
 | Independent review | Separate chat/agent context when possible; otherwise explicit second-pass review |
-| Control plane | `.harness/module-status.md` |
+| Control plane | `.harness/task-status.md` |
 
 ## Role Execution
 
@@ -67,7 +67,7 @@ chat contexts or sequential role execution.
   `verification-path.md`, and the diff
 - Known limitation: Cursor has no programmatic spawn — isolation
   depends on user discipline. If context isolation cannot be
-  guaranteed, note this in `module-status.md` and have the human
+  guaranteed, note this in `task-status.md` and have the human
   perform a separate manual review pass before close.
 
 ## Cursor-Specific Advice
@@ -77,4 +77,4 @@ chat contexts or sequential role execution.
 - Do not let Cursor Rules become the only protocol definition. Keep the canonical protocol in files.
 - Treat the editor as an interaction layer, not the control plane.
 - In repositories with fragile build graphs, verify test/build reachability before generating code.
-- If multiple chats are used, synchronize through `.harness/module-status.md`, not by assuming shared memory.
+- If multiple chats are used, synchronize through `.harness/task-status.md`, not by assuming shared memory.

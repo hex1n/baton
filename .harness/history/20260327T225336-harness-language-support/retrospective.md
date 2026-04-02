@@ -8,7 +8,7 @@
 
 ## 2. 有效做法
 
-- 将人类可读制品与控制面分开处理是正确的，`module-status.md` 保持英文后，本地化风险明显下降
+- 将人类可读制品与控制面分开处理是正确的，`task-status.md` 保持英文后，本地化风险明显下降
 - 语言策略同时落在模板、bootstrap 脚本、profile 配置和 role skill 上，避免只改一层导致实际执行漂移
 - 用临时仓库做 `init-harness` / `start-task` 回归是必要的，这轮顺手抓到了 `start-task.sh` 在空 `rows` 下的 `set -u` 回归
 
@@ -32,4 +32,4 @@
 
 - 把默认 artifact 语言作为 bootstrap 明文策略，而不是隐含在 README 例子里
 - 为 `start-task.sh` 增加“仅模板占位行时也能正常写入”的回归检查，避免空数组在 `set -u` 下再次炸掉
-- 继续沿用“环境缺少 `pwsh` 时，必须在 verification-path 和 module-status 里显式记录静态验证残余风险”的做法
+- 继续沿用“环境缺少 `pwsh` 时，必须在 verification-path 和 task-status 里显式记录静态验证残余风险”的做法

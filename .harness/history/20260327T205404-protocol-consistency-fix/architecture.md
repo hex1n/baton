@@ -12,7 +12,7 @@
 
 ### 2.1 Problem Statement
 
-`skills/`、`spec/bootstrap/`、`spec/templates/` 三个目录各自维护对协议不变量的理解（合法 owner token、module-status 列结构、eval_round 写入位置），但没有单一权威定义，也没有测试可以检测漂移。
+`skills/`、`spec/bootstrap/`、`spec/templates/` 三个目录各自维护对协议不变量的理解（合法 owner token、task-status 列结构、eval_round 写入位置），但没有单一权威定义，也没有测试可以检测漂移。
 
 ### 2.2 Constraints
 
@@ -54,7 +54,7 @@
 1. 新建 `spec/protocol/owners.txt`（D2 基础，其他变更依赖它）
 2. 修 `skills/harness-architect.md`（P1-a，独立）
 3. 修 `skills/harness-evaluator.md`（P2-a，独立）
-4. 修 `spec/templates/module-status.template.md`（P1-b，删 Eval Round 列）
+4. 修 `spec/templates/task-status.template.md`（P1-b，删 Eval Round 列）
 5. 修 `spec/bootstrap/start-task.sh` — 从 `owners.txt` 读取白名单（D2）
 6. 同步修 `spec/bootstrap/start-task.ps1`（与步骤 5 同时）
 7. 新建 `spec/bootstrap/check-consistency.sh`（所有修复完成后建立，P2-c）
@@ -67,7 +67,7 @@
 | 1 | `spec/protocol/owners.txt` | 新建 | 每行一个合法 owner token |
 | 2 | `skills/harness-architect.md:116,143` | `verifier` → `verification-explorer` | 字符串替换 |
 | 3 | `skills/harness-evaluator.md:137` | eval_round 指向 State Notes | 改写一行指令 |
-| 4 | `spec/templates/module-status.template.md:3-5` | 删除 Eval Round 列（6列→5列） | 修改 Header、分隔符、占位行 |
+| 4 | `spec/templates/task-status.template.md:3-5` | 删除 Eval Round 列（6列→5列） | 修改 Header、分隔符、占位行 |
 | 5 | `spec/bootstrap/start-task.sh:27-35` | usage 中 owner 列表改为从文件读取 | 替换硬编码列表 |
 | 5 | `spec/bootstrap/start-task.sh:99-105` | 白名单验证改为从 `owners.txt` 读取 | `grep -Fxq "$owner" owners.txt` |
 | 6 | `spec/bootstrap/start-task.ps1:4` | `ValidateSet` 硬编码列表 → 运行时从 `owners.txt` 读取验证 | 移除 `ValidateSet`，改 `$validOwners = Get-Content` |
@@ -104,7 +104,7 @@ fi
 **check-consistency.sh 三条不变量**：
 ```
 1. skills/ 中使用的 owner token 均在 owners.txt 中
-2. start-task.sh 写出的 Header 与 module-status.template.md Header 一致
+2. start-task.sh 写出的 Header 与 task-status.template.md Header 一致
 3. skills/ 文件与 .claude/skills/ 和 .agents/ 内容一致
 ```
 
@@ -115,7 +115,7 @@ fi
 | `spec/protocol/owners.txt` | L1 | add | D2 单一真源，新建 |
 | `skills/harness-architect.md` | L1 | modify | P1-a，2 处 token 替换 |
 | `skills/harness-evaluator.md` | L1 | modify | P2-a，1 处指令改写 |
-| `spec/templates/module-status.template.md` | L1 | modify | P1-b，删 Eval Round（3 行） |
+| `spec/templates/task-status.template.md` | L1 | modify | P1-b，删 Eval Round（3 行） |
 | `spec/bootstrap/start-task.sh` | L1 | modify | D2，白名单验证改读文件 |
 | `spec/bootstrap/start-task.ps1:4` | L1 | modify | D2，移除 ValidateSet，改运行时从 owners.txt 读取 |
 | `spec/bootstrap/start-task.ps1:193,198` | L1 | no-change | 已是 5 列，D1 后自然对齐 |
@@ -133,7 +133,7 @@ fi
 | 需求 | 验证方式 |
 |------|---------|
 | FR-1 token 一致性 | `grep "owner \`" skills/harness-architect.md` 无 `verifier` |
-| FR-2 schema 一致性 | 对比 `module-status.template.md` Header 与 `start-task.sh` printf 输出 |
+| FR-2 schema 一致性 | 对比 `task-status.template.md` Header 与 `start-task.sh` printf 输出 |
 | FR-3 eval_round 可写 | `grep "Current eval round" skills/harness-evaluator.md` |
 | FR-4 link-skills 文档 | `grep "link-skills" README.md` |
 | FR-5 角色名映射 | `grep "verification-explorer" README.md` |

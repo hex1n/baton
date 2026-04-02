@@ -34,7 +34,7 @@ make_repo() {
 write_status() {
   local file="$1" state="$2"
   cat > "$file" <<EOF
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -48,7 +48,7 @@ make_repo "$tmp/empty"
 assert_json_field "no task session-start output is valid JSON" "$tmp/empty" '.hookSpecificOutput.hookEventName == "SessionStart"'
 
 make_repo "$tmp/overlay"
-write_status "$tmp/overlay/.harness/module-status.md" "generating"
+write_status "$tmp/overlay/.harness/task-status.md" "generating"
 cat > "$tmp/overlay/.harness/scoped-map.md" <<'EOF'
 # Scoped Map: runtime-enforcement-hardening
 ## 1. Scope

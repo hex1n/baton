@@ -52,7 +52,7 @@ bash spec/bootstrap/check-consistency.sh
 
 - 命令: `bash tests/test-start-task.sh`
 - 结果: 通过，6/6 passed。
-- 备注: start-task 会重置 `evaluation.md`，且旧版 module-status 兼容正常。
+- 备注: start-task 会重置 `evaluation.md`，且旧版 task-status 兼容正常。
 
 - 命令: `bash spec/bootstrap/check-consistency.sh`
 - 结果: 通过，全部 invariant OK。

@@ -40,7 +40,7 @@
 - 涉及的方法、API、命令或脚本:
   - vendored repo 安装路径引用
   - `.claude/settings.json` / `.codex/hooks.json` / `.codex/config.toml` 写入逻辑
-  - `.harness/module-status.md` 初始化与状态读取
+  - `.harness/task-status.md` 初始化与状态读取
   - docs 中公开暴露的 shell / PowerShell 调用示例
 - 这些入口为什么相关:
   - 它们共同构成当前 bootstrap 的公共表面
@@ -64,7 +64,7 @@ public bootstrap command
 
 - 当前可观察行为:
   - `spec/bootstrap` 顶层同时混放公共入口、内部 helper、validator、sync 工具、hooks 文档和 PowerShell 对应实现
-  - 同一逻辑在 `sh` 和 `ps1` 中重复维护，典型包括 language 解析、module-status 读取、template 解析
+  - 同一逻辑在 `sh` 和 `ps1` 中重复维护，典型包括 language 解析、task-status 读取、template 解析
   - hooks 运行时统一调用 `bash .../hooks/*.sh`
   - `install-hooks.sh` 额外要求 `python3` 仅用于计算相对路径，不是业务核心
   - 文档和 `spec/README.md` 仍把 `.ps1` 作为正式入口公开暴露
@@ -82,7 +82,7 @@ public bootstrap command
 - 直接相关的测试:
   - `tests/test-install-hooks.sh`
   - `tests/test-start-task.sh`
-  - `tests/test-module-status.sh`
+  - `tests/test-task-status.sh`
   - `tests/test-hook-parse-input.sh`
   - `tests/test-hook-post-artifact.sh`
   - `tests/test-hook-pre-transition.sh`

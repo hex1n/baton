@@ -27,7 +27,7 @@
 
 - **协议声明 ≠ 运行时强制**：`context: fork` frontmatter 只声明意图，需要配合 CC Agent 工具 / Codex spawn_agent 才能真正隔离。文档层与机制层必须同时完整。
 - **blocked 状态可正常复用**：被否决的架构通过 blocked 状态保存，重新设计后继续，无上下文丢失，流程符合预期。
-- **P1-2 已通过等价机制实现**：`baton-evaluator.md` State Notes（`Current eval round: N`）已满足 eval_round 追踪需求，无需修改 module-status 模板。
+- **P1-2 已通过等价机制实现**：`baton-evaluator.md` State Notes（`Current eval round: N`）已满足 eval_round 追踪需求，无需修改 task-status 模板。
 
 ## 6. 可标准化候选
 

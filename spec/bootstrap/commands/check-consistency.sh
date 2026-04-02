@@ -13,7 +13,7 @@ state_machine_file="$spec_root/protocol/state-machine.md"
 skills_dir="$repo_root/skills"
 claude_skills_dir="$repo_root/.claude/skills"
 agents_dir="$repo_root/.agents"
-template_file="$spec_root/templates/module-status.template.md"
+template_file="$spec_root/templates/task-status.template.md"
 verification_template="$spec_root/templates/verification-path.template.md"
 evaluation_template="$spec_root/templates/evaluation.template.md"
 zh_verification_template="$spec_root/templates/zh/verification-path.template.md"
@@ -29,12 +29,12 @@ harness_context_sh="$script_dir/harness-context.sh"
 provenance_sh="$bootstrap_dir/lib/provenance.sh"
 readme_check_sh="$bootstrap_dir/check-root-readme-bilingual.sh"
 governance_check_sh="$bootstrap_dir/sync-governance-entrypoints.sh"
-module_status_script="$bootstrap_dir/module-status.sh"
+task_status_script="$bootstrap_dir/task-status.sh"
 install_hooks_sh="$bootstrap_dir/install-hooks.sh"
 prepare_review_sh="$bootstrap_dir/prepare-review.sh"
 verifier_skill="$repo_root/skills/baton-verifier/SKILL.md"
 evaluator_skill="$repo_root/skills/baton-evaluator/SKILL.md"
-live_module_status="$repo_root/.harness/module-status.md"
+live_task_status="$repo_root/.harness/task-status.md"
 live_codex_hooks="$repo_root/.codex/hooks.json"
 live_claude_settings="$repo_root/.claude/settings.json"
 
@@ -95,7 +95,7 @@ fi
 errors=$((errors + inv2_errors))
 
 # ---------------------------------------------------------------------------
-# Invariant 3: start-task.sh header output matches module-status.template.md header
+# Invariant 3: start-task.sh header output matches task-status.template.md header
 # ---------------------------------------------------------------------------
 inv3_errors=0
 template_header="$(sed -n '3p' "$template_file")"
@@ -237,46 +237,46 @@ if [[ $inv8_errors -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Invariant 9: live module-status.md uses current schema and has one active row
+# Invariant 9: live task-status.md uses current schema and has one active row
 # ---------------------------------------------------------------------------
 inv9_errors=0
-if [[ -f "$live_module_status" ]]; then
-  if [[ ! -f "$module_status_script" ]]; then
-    printf 'ERROR: invariant-9: module-status parser missing: %s\n' "$module_status_script"
+if [[ -f "$live_task_status" ]]; then
+  if [[ ! -f "$task_status_script" ]]; then
+    printf 'ERROR: invariant-9: task-status parser missing: %s\n' "$task_status_script"
     inv9_errors=$((inv9_errors + 1))
   else
-    live_schema="$(bash "$module_status_script" schema "$live_module_status")"
-    current_scope="$(bash "$module_status_script" current-field "$live_module_status" scope)"
-    current_state="$(bash "$module_status_script" current-field "$live_module_status" state)"
-    row_count="$(bash "$module_status_script" row-count "$live_module_status")"
-    open_count="$(bash "$module_status_script" non-complete-count "$live_module_status")"
+    live_schema="$(bash "$task_status_script" schema "$live_task_status")"
+    current_scope="$(bash "$task_status_script" current-field "$live_task_status" scope)"
+    current_state="$(bash "$task_status_script" current-field "$live_task_status" state)"
+    row_count="$(bash "$task_status_script" row-count "$live_task_status")"
+    open_count="$(bash "$task_status_script" non-complete-count "$live_task_status")"
 
     if [[ "$live_schema" != 'current' ]]; then
-      printf 'ERROR: invariant-9: live module-status.md must use current schema, found %s\n' "$live_schema"
+      printf 'ERROR: invariant-9: live task-status.md must use current schema, found %s\n' "$live_schema"
       inv9_errors=$((inv9_errors + 1))
     fi
 
     if [[ -z "$current_scope" || -z "$current_state" ]]; then
-      printf 'ERROR: invariant-9: current task row is not readable from %s\n' "$live_module_status"
+      printf 'ERROR: invariant-9: current task row is not readable from %s\n' "$live_task_status"
       inv9_errors=$((inv9_errors + 1))
     fi
 
     if [[ "$row_count" -lt 1 ]]; then
-      printf 'ERROR: invariant-9: live module-status.md contains no task rows\n'
+      printf 'ERROR: invariant-9: live task-status.md contains no task rows\n'
       inv9_errors=$((inv9_errors + 1))
     fi
 
     if [[ "$open_count" -gt 1 ]]; then
-      printf 'ERROR: invariant-9: live module-status.md has %s non-complete rows; expected at most 1\n' "$open_count"
+      printf 'ERROR: invariant-9: live task-status.md has %s non-complete rows; expected at most 1\n' "$open_count"
       inv9_errors=$((inv9_errors + 1))
     fi
 
     if [[ $inv9_errors -eq 0 ]]; then
-      printf 'OK: invariant-9: live module-status.md uses current schema and a single active task\n'
+      printf 'OK: invariant-9: live task-status.md uses current schema and a single active task\n'
     fi
   fi
 else
-  printf 'OK: invariant-9: live module-status.md absent; skipping live control-plane checks\n'
+  printf 'OK: invariant-9: live task-status.md absent; skipping live control-plane checks\n'
 fi
 errors=$((errors + inv9_errors))
 

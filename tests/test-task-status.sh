@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT="$SCRIPT_DIR/../spec/bootstrap/module-status.sh"
+SCRIPT="$SCRIPT_DIR/../spec/bootstrap/task-status.sh"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"
@@ -25,7 +25,7 @@ assert_output() {
 
 current_file="$tmp/current.md"
 cat > "$current_file" <<'EOF'
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -37,7 +37,7 @@ EOF
 
 legacy_file="$tmp/legacy.md"
 cat > "$legacy_file" <<'EOF'
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Updated At | Notes |
 |------|------|------|-----------|------|
@@ -58,7 +58,7 @@ assert_output "legacy state readable" "reviewing" bash "$SCRIPT" current-field "
 
 updated_file="$tmp/updated.md"
 cat > "$updated_file" <<'EOF'
-# Module Status
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|
@@ -70,7 +70,7 @@ EOF
 
 TOTAL=$((TOTAL + 1))
 actual="$(
-  bash -c "source '$SCRIPT'; module_status_set_eval_round '$updated_file' 3; module_status_current_field '$updated_file' eval_round" 2>/dev/null || true
+  bash -c "source '$SCRIPT'; task_status_set_eval_round '$updated_file' 3; task_status_current_field '$updated_file' eval_round" 2>/dev/null || true
 )"
 if [[ "$actual" == "3" ]]; then
   echo "  pass: set_eval_round updates current row"
@@ -82,7 +82,7 @@ fi
 
 TOTAL=$((TOTAL + 1))
 state_after="$(
-  bash -c "source '$SCRIPT'; module_status_current_field '$updated_file' state" 2>/dev/null || true
+  bash -c "source '$SCRIPT'; task_status_current_field '$updated_file' state" 2>/dev/null || true
 )"
 if [[ "$state_after" == "reviewing" ]]; then
   echo "  pass: set_eval_round preserves other columns"

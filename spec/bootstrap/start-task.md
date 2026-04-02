@@ -7,7 +7,7 @@ bootstrapped.
 
 This step does three things:
 
-1. appends a new task row to `module-status.md`
+1. appends a new task row to `task-status.md`
 2. resets active task artifacts from the current templates
 3. archives the previous task's active artifacts into `.harness/history/` when needed
 
@@ -15,7 +15,7 @@ The active task is always the **last data row** in the task table.
 Readers and hooks must use that same rule.
 
 It does not manage normal in-task state transitions. After initialization, the
-current owner agent updates `module-status.md` directly at each handoff or
+current owner agent updates `task-status.md` directly at each handoff or
 blocker.
 
 ## v1 Assumption
@@ -70,7 +70,7 @@ Language selection for these human-facing artifacts resolves in this order:
 3. Chinese default
 
 If the selected policy is `auto`, the bootstrap script resolves the artifact
-language from the local environment locale. `module-status.md` is not localized.
+language from the local environment locale. `task-status.md` is not localized.
 
 Template resolution order:
 
@@ -98,13 +98,13 @@ This is a lightweight history mechanism, not a full scheduler.
 6. after architecture approval, sync `requirements.md` to any approved
    architecture decisions that change requirements-level truth
 7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`
-8. let the current owner agent move the task through the remaining states in `module-status.md`
+8. let the current owner agent move the task through the remaining states in `task-status.md`
 
 ## Failure Conditions
 
 `start-task` should stop instead of guessing when:
 
 - `.harness/` is missing
-- `module-status.md` is missing
+- `task-status.md` is missing
 - the task id already exists
 - another task row is not yet `complete`

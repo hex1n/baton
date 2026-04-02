@@ -3,15 +3,15 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bootstrap_dir="$(cd "$script_dir/.." && pwd)"
-source "$bootstrap_dir/lib/module-status.sh"
+source "$bootstrap_dir/lib/task-status.sh"
 source "$bootstrap_dir/lib/state-requirements.sh"
 
 harness_dir="${1:-.harness}"
-module_status="$harness_dir/module-status.md"
+task_status="$harness_dir/task-status.md"
 
-[[ -f "$module_status" ]] || exit 0
+[[ -f "$task_status" ]] || exit 0
 
-state="$(module_status_current_field "$module_status" state)"
+state="$(task_status_current_field "$task_status" state)"
 [[ -n "$state" ]] || exit 0
 
 missing=()

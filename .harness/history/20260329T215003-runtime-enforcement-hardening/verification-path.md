@@ -12,7 +12,7 @@
   - 通过 `tests/test-hook-parse-input.sh`、`tests/test-hook-pre-transition.sh`、`tests/test-hook-post-artifact.sh`、`tests/test-hook-stop-check.sh`、`tests/test-hook-subagent-stop.sh`、`tests/test-hook-session-start.sh` 覆盖宿主识别、blocked 分类、人类门控、ack 清除、eval round、自循环防护、BATON_DEBUG。
   - 覆盖 FR-1、FR-3、FR-4、FR-7、FR-8、FR-11、AC-6 到 AC-8、AC-12 到 AC-21。
 - 现有 bootstrap 回归:
-  - 运行 `tests/test-install-hooks.sh`、`tests/test-module-status.sh`、`tests/test-validate-artifact.sh`、`tests/test-validate-state-artifacts.sh`、`tests/test-validate-isolation.sh`、`tests/test-harness-context.sh`。
+  - 运行 `tests/test-install-hooks.sh`、`tests/test-task-status.sh`、`tests/test-validate-artifact.sh`、`tests/test-validate-state-artifacts.sh`、`tests/test-validate-isolation.sh`、`tests/test-harness-context.sh`。
   - 覆盖 FR-5、FR-6、FR-8、FR-13、AC-9 到 AC-11、AC-15、AC-20、AC-22。
 - 静态与一致性检查:
   - 运行 `spec/bootstrap/check-consistency.sh`。
@@ -25,14 +25,14 @@
 ```text
 bash spec/bootstrap/install-hooks.sh --repo-root . --bootstrap-dir spec/bootstrap --dry-run
 bash tests/test-install-hooks.sh
-bash tests/test-module-status.sh
+bash tests/test-task-status.sh
 bash tests/test-validate-artifact.sh
 bash tests/test-validate-state-artifacts.sh
 bash tests/test-validate-isolation.sh
 bash tests/test-harness-context.sh
 bash spec/bootstrap/check-consistency.sh
 command -v shellcheck
-shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/module-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh
+shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/task-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh
 bash tests/test-hook-parse-input.sh
 bash tests/test-hook-pre-transition.sh
 bash tests/test-hook-post-artifact.sh
@@ -63,7 +63,7 @@ rg -n "Overlay Recommendation|overlay:[[:space:]]*(core|strict)" skills/baton-ex
 - Role: verification_explorer
 - Isolation mode: strict
 - Execution context: isolated_subagent
-- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动了独立 verifier，会话内冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/scoped-map.md`、`skills/baton-verifier/SKILL.md` 与相关 bootstrap/tests 文件；并实际执行了 `install-hooks.sh --dry-run`、`tests/test-install-hooks.sh`、`tests/test-module-status.sh`、`tests/test-validate-artifact.sh`、`tests/test-validate-state-artifacts.sh`、`tests/test-validate-isolation.sh`、`tests/test-harness-context.sh`、`check-consistency.sh`，同时确认 `shellcheck` 可用。
+- Evidence: 通过 Codex `spawn_agent({ fork_context: false })` 启动了独立 verifier，会话内冷读 `.harness/requirements.md`、`.harness/architecture.md`、`.harness/scoped-map.md`、`skills/baton-verifier/SKILL.md` 与相关 bootstrap/tests 文件；并实际执行了 `install-hooks.sh --dry-run`、`tests/test-install-hooks.sh`、`tests/test-task-status.sh`、`tests/test-validate-artifact.sh`、`tests/test-validate-state-artifacts.sh`、`tests/test-validate-isolation.sh`、`tests/test-harness-context.sh`、`check-consistency.sh`，同时确认 `shellcheck` 可用。
 - Fallback policy: strict 路径已可用并已执行；若未来 strict 隔离不可用，则应阻塞而不是退化为未记录的顺序验证。
 - Fallback reason: none
 
@@ -89,9 +89,9 @@ rg -n "Overlay Recommendation|overlay:[[:space:]]*(core|strict)" skills/baton-ex
 - 结果: 通过，6/6 passed。
 - 备注: 当前 strict/compat 判定器正常，也正因为如此，本次 `strict + sequential_fallback` 不能被判成通过。
 
-- 命令: `bash tests/test-module-status.sh`
+- 命令: `bash tests/test-task-status.sh`
 - 结果: 通过，9/9 passed。
-- 备注: `module-status.sh` 当前只有读路径基线；`module_status_set_eval_round()` 仍需新增并补测。
+- 备注: `task-status.sh` 当前只有读路径基线；`task_status_set_eval_round()` 仍需新增并补测。
 
 - 命令: `bash tests/test-harness-context.sh`
 - 结果: 通过，17/17 passed。
@@ -101,7 +101,7 @@ rg -n "Overlay Recommendation|overlay:[[:space:]]*(core|strict)" skills/baton-ex
 - 结果: 通过，全部 invariants OK。
 - 备注: 当前 11 个不变量健康；FR-13 新增的 3 个不变量还未加入。
 
-- 命令: `shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/module-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh`
+- 命令: `shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/task-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh`
 - 结果: 通过。
 - 备注: 当前 runtime 脚本在 error 级别无 ShellCheck 发现；`SC1090/SC1091` 仅保留在非 error 级别。
 

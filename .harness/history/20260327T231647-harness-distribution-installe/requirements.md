@@ -106,7 +106,7 @@
 
 ### AC-6 控制面稳定
 
-- [ ] `module-status.md` 相关控制面行为不因 overrides 或本地化而漂移
+- [ ] `task-status.md` 相关控制面行为不因 overrides 或本地化而漂移
 
 ## 6. 约束
 

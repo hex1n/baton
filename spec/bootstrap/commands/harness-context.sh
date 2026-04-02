@@ -3,22 +3,22 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bootstrap_dir="$(cd "$script_dir/.." && pwd)"
-source "$bootstrap_dir/lib/module-status.sh"
+source "$bootstrap_dir/lib/task-status.sh"
 source "$bootstrap_dir/lib/provenance.sh"
 source "$bootstrap_dir/lib/state-requirements.sh"
 
 harness_dir="${1:-.harness}"
-module_status="$harness_dir/module-status.md"
+task_status="$harness_dir/task-status.md"
 
-if [[ ! -f "$module_status" ]]; then
+if [[ ! -f "$task_status" ]]; then
   jq -n '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"No active harness task."}}'
   exit 0
 fi
 
-state="$(module_status_current_field "$module_status" state)"
-owner="$(module_status_current_field "$module_status" owner)"
-task_id="$(module_status_current_field "$module_status" scope)"
-eval_round="$(module_status_current_field "$module_status" eval_round)"
+state="$(task_status_current_field "$task_status" state)"
+owner="$(task_status_current_field "$task_status" owner)"
+task_id="$(task_status_current_field "$task_status" scope)"
+eval_round="$(task_status_current_field "$task_status" eval_round)"
 
 present="" missing=""
 for artifact in $(state_required_artifacts_for_summary "$state"); do

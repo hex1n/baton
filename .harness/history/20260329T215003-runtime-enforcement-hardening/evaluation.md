@@ -39,14 +39,14 @@
 ## 4. Verification Results
 
 - `bash tests/test-install-hooks.sh` -> pass (`43/43`)
-- `bash tests/test-module-status.sh` -> pass (`11/11`)
+- `bash tests/test-task-status.sh` -> pass (`11/11`)
 - `bash tests/test-validate-artifact.sh` -> pass (`12/12`)
 - `bash tests/test-validate-state-artifacts.sh` -> pass (`14/14`)
 - `bash tests/test-validate-isolation.sh` -> pass (`6/6`)
 - `bash tests/test-harness-context.sh` -> pass (`18/18`)
 - `bash spec/bootstrap/check-consistency.sh` -> pass (invariants 1-14 全部通过)
 - `command -v shellcheck` -> pass (`/opt/homebrew/bin/shellcheck`)
-- `shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/module-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh` -> pass
+- `shellcheck -S error spec/bootstrap/install-hooks.sh spec/bootstrap/task-status.sh spec/bootstrap/validate-artifact.sh spec/bootstrap/validate-state-artifacts.sh spec/bootstrap/harness-context.sh spec/bootstrap/check-consistency.sh spec/bootstrap/hooks/*.sh spec/bootstrap/hooks/lib/parse-input.sh` -> pass
 - `bash tests/test-hook-parse-input.sh` -> pass (`10/10`)
 - `bash tests/test-hook-pre-transition.sh` -> pass (`6/6`)
 - `bash tests/test-hook-post-artifact.sh` -> pass (`5/5`)

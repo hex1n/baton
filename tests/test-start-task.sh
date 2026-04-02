@@ -38,8 +38,8 @@ assert_exit() {
 repo="$tmp/repo"
 mkdir -p "$repo/.harness/history"
 
-cat > "$repo/.harness/module-status.md" <<'EOF'
-# Module Status
+cat > "$repo/.harness/task-status.md" <<'EOF'
+# Task Status
 
 | Scope | Owner | State | Updated At | Notes |
 |------|------|------|-----------|------|
@@ -76,15 +76,15 @@ cat > "$repo/.harness/retrospective.md" <<'EOF'
 custom retrospective
 EOF
 
-assert_exit "start-task handles legacy module-status" 0 \
+assert_exit "start-task handles legacy task-status" 0 \
   bash "$START_TASK" --repo-root "$repo" --task-id "new-task" --notes "legacy migration test"
 
-assert_file_contains "module-status migrated to current header" \
-  "$repo/.harness/module-status.md" "| Scope | Owner | State | Eval Round | Updated At | Notes |"
+assert_file_contains "task-status migrated to current header" \
+  "$repo/.harness/task-status.md" "| Scope | Owner | State | Eval Round | Updated At | Notes |"
 assert_file_contains "legacy row preserved with eval round 0" \
-  "$repo/.harness/module-status.md" "| old-task | human | complete | 0 | 2026-03-28T10:00:00+0800 | done |"
+  "$repo/.harness/task-status.md" "| old-task | human | complete | 0 | 2026-03-28T10:00:00+0800 | done |"
 assert_file_contains "new row appended" \
-  "$repo/.harness/module-status.md" "| new-task | scoped-explorer | exploring | 0 |"
+  "$repo/.harness/task-status.md" "| new-task | scoped-explorer | exploring | 0 |"
 
 history_count="$(find "$repo/.harness/history" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
 TOTAL=$((TOTAL + 1))

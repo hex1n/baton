@@ -5,7 +5,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/lib/parse-input.sh"
 
 validate_artifact_script="$BOOTSTRAP_DIR/validate-artifact.sh"
-module_status_script="$BOOTSTRAP_DIR/module-status.sh"
+task_status_script="$BOOTSTRAP_DIR/task-status.sh"
 blocked_notes_regex='^\[(verification|scope|environment|design)_blocker\]'
 
 has_human_ack() {
@@ -59,7 +59,7 @@ clear_human_ack_if_needed() {
   done < "$cache_path"
   rm -f "$cache_path"
 
-  current_state="$(bash "$module_status_script" current-field "$file_path" state 2>/dev/null || true)"
+  current_state="$(bash "$task_status_script" current-field "$file_path" state 2>/dev/null || true)"
   [[ -n "$current_state" ]] || return 0
 
   if [[ "$current_state" != "$expected_state" ]]; then
@@ -102,9 +102,9 @@ for artifact_path in "${artifact_paths[@]}"; do
     hook_block "$artifact_output"
   fi
 
-  if [[ "$HOOK_HOST" == "codex" && "$artifact_type" == "module-status" ]]; then
-    current_state="$(bash "$module_status_script" current-field "$artifact_path" state 2>/dev/null || true)"
-    current_notes="$(bash "$module_status_script" current-field "$artifact_path" notes 2>/dev/null || true)"
+  if [[ "$HOOK_HOST" == "codex" && "$artifact_type" == "task-status" ]]; then
+    current_state="$(bash "$task_status_script" current-field "$artifact_path" state 2>/dev/null || true)"
+    current_notes="$(bash "$task_status_script" current-field "$artifact_path" notes 2>/dev/null || true)"
     current_notes="$(hook_trim "$current_notes")"
     if [[ "$current_state" == "blocked" ]]; then
       if [[ -z "$current_notes" || ! "$current_notes" =~ $blocked_notes_regex ]]; then
@@ -113,7 +113,7 @@ for artifact_path in "${artifact_paths[@]}"; do
     fi
   fi
 
-  if [[ "$artifact_type" == "module-status" ]]; then
+  if [[ "$artifact_type" == "task-status" ]]; then
     clear_human_ack_if_needed "$artifact_path"
   fi
 done

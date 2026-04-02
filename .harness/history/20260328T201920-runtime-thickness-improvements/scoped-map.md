@@ -9,14 +9,14 @@
 
 - **范围内**：改进计划 P0–P2 的全部 10 项；`check-consistency.sh` / `link-skills.sh` 的未提交修改
 - **范围外**：validate-artifact.sh、validate-transition.sh、git-hooks 填充（设计上已排除）；java-backend-strict 脚本实现（优先级未到）
-- **预期写入边界**：`skills/baton-explorer.md`（主要）；可选：`spec/templates/module-status.template.md`、`spec/bootstrap/start-task.sh`
+- **预期写入边界**：`skills/baton-explorer.md`（主要）；可选：`spec/templates/task-status.template.md`、`spec/bootstrap/start-task.sh`
 
 ## 2. 入口点
 
 | 文件 | 行号 | 说明 |
 |------|------|------|
 | `skills/baton-explorer.md` | 1-11 | P0-3：frontmatter 缺 `context: fork` |
-| `spec/templates/module-status.template.md` | 全文 | P1-2：无 `eval_round` 列（State Notes 方案已实现持久化） |
+| `spec/templates/task-status.template.md` | 全文 | P1-2：无 `eval_round` 列（State Notes 方案已实现持久化） |
 | `spec/bootstrap/check-consistency.sh` | 32, 104 | 已修改（harness-*.md → baton-*.md 模式），未提交 |
 | `spec/bootstrap/link-skills.sh` | 50-107 | 已修改（新增 SKILL.md 子目录支持），未提交 |
 
@@ -28,7 +28,7 @@
   → 如存在 context: fork → 启动新上下文
   → skill 执行探索步骤
   → 写 .harness/scoped-map.md
-  → 更新 module-status.md → specifying
+  → 更新 task-status.md → specifying
 ```
 
 check-consistency.sh 调用链（check-harness 时触发）：
@@ -48,7 +48,7 @@ check-consistency.sh
 
 **P1-2 现状**：
 - `skills/baton-evaluator.md:156-157`：State Notes `Current eval round: N` + 3 轮后强制升级
-- `spec/templates/module-status.template.md`：无 `eval_round` 列
+- `spec/templates/task-status.template.md`：无 `eval_round` 列
 - 核心行为（持久化 + 升级逻辑）已实现，仅模板列缺失
 
 **check-consistency.sh / link-skills.sh**：

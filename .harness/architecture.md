@@ -120,7 +120,7 @@ spec/bootstrap/
 
   lib/
     language.sh
-    module-status.sh
+    task-status.sh
     paths.sh
     profile.sh
     provenance.sh
@@ -174,7 +174,7 @@ spec/bootstrap/
 
 1. 抽出共享库：`language.sh`、`state-requirements.sh`、`paths.sh`
 2. 将顶层现有 `.sh` 逻辑迁移到 `commands/`，顶层保留 wrapper
-3. 将 `module-status.sh`、`provenance.sh` 等迁入 `lib/`，更新调用方
+3. 将 `task-status.sh`、`provenance.sh` 等迁入 `lib/`，更新调用方
 4. 将 hooks handlers 改为无扩展名，并加入 `run-hook.cmd`
 5. 重写 `install-hooks.sh` 的 command string 生成逻辑
 6. 删除 `.ps1`
@@ -190,7 +190,7 @@ spec/bootstrap/
 | `spec/bootstrap/install-hooks.sh` | L1 | modify | 降为 wrapper，且安装模型变更 |
 | `spec/bootstrap/check-consistency.sh` | L1 | modify | 新结构与新兼容边界需要重新校验 |
 | `spec/bootstrap/check-root-readme-bilingual.sh` | L1 | modify | 可能降为 wrapper 或更新路径断言 |
-| `spec/bootstrap/module-status.sh` | L2 | move/modify | 迁入共享库 |
+| `spec/bootstrap/task-status.sh` | L2 | move/modify | 迁入共享库 |
 | `spec/bootstrap/provenance.sh` | L2 | move/modify | 迁入共享库 |
 | `spec/bootstrap/harness-context.sh` | L2 | move/modify | 迁入 runtime/context 或 commands |
 | `spec/bootstrap/validate-artifact.sh` | L2 | move/modify | 迁入 validators 或 commands/lib |
@@ -222,7 +222,7 @@ spec/bootstrap/
   - `bash spec/bootstrap/prepare-review.sh --repo-root . --bootstrap-dir spec/bootstrap`
   - `bash tests/test-install-hooks.sh`
   - `bash tests/test-start-task.sh`
-  - `bash tests/test-module-status.sh`
+  - `bash tests/test-task-status.sh`
   - `bash tests/test-hook-parse-input.sh`
   - `bash tests/test-hook-post-artifact.sh`
   - `bash tests/test-hook-pre-transition.sh`

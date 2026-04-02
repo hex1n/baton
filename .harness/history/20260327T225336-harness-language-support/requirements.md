@@ -21,7 +21,7 @@ The current harness produces human-facing artifacts from English-only templates 
 ### 2.2 Out of Scope
 
 - Translating all portable spec / adapter / README content into fully localized copies.
-- Localizing the machine-readable control-plane file `module-status.md`.
+- Localizing the machine-readable control-plane file `task-status.md`.
 - Adding more languages than the first supported set (`en`, `zh`).
 - Building a general i18n framework or translation pipeline.
 
@@ -55,7 +55,7 @@ The current harness produces human-facing artifacts from English-only templates 
 
 ### FR-5 Stable Control Plane
 
-- `module-status.md` must remain in its existing stable control-plane shape so bootstrap parsing and status transitions do not become language-sensitive.
+- `task-status.md` must remain in its existing stable control-plane shape so bootstrap parsing and status transitions do not become language-sensitive.
 - The language policy must explicitly document that machine-readable protocol tokens and state names remain canonical English.
 
 ### FR-6 Skill-Level Language Compliance
@@ -67,7 +67,7 @@ The current harness produces human-facing artifacts from English-only templates 
 
 ## 4. Non-Goals
 
-- Translating `module-status.md` headings or state names.
+- Translating `task-status.md` headings or state names.
 - Translating every bootstrap console message into Chinese in this first pass.
 - Localizing repository-specific profile YAML keys.
 
@@ -98,12 +98,12 @@ The current harness produces human-facing artifacts from English-only templates 
 
 - [ ] Bootstrap docs explain the precedence order for language resolution.
 - [ ] The docs distinguish bootstrap auto detection from skill auto detection.
-- [ ] The docs explain why `module-status.md` remains stable in English.
+- [ ] The docs explain why `task-status.md` remains stable in English.
 
 ## 6. Constraints
 
 - Keep Bash and PowerShell behavior aligned.
-- Avoid introducing language-dependent parsing into `module-status.md`.
+- Avoid introducing language-dependent parsing into `task-status.md`.
 - Prefer a small explicit mechanism over a generic translation subsystem.
 - Preserve existing script behavior when language is left at the default English path.
 

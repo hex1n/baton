@@ -16,15 +16,15 @@ The solution should make human-facing artifact output language-aware without des
 
 ### 2.2 Constraints
 
-- Do not make `module-status.md` parsing language-sensitive.
+- Do not make `task-status.md` parsing language-sensitive.
 - Keep Bash and PowerShell bootstrap behavior aligned.
 - Support an explicit language override and a default automatic mode.
 - Avoid adding external dependencies for language detection.
 
 ### 2.3 Solution Categories
 
-- Category A: translate every template and every control-plane file, including `module-status.md`.
-- Category B: localize only the human-facing artifacts, keep `module-status.md` stable, and add a small persisted language policy plus bootstrap/skill rules.
+- Category A: translate every template and every control-plane file, including `task-status.md`.
+- Category B: localize only the human-facing artifacts, keep `task-status.md` stable, and add a small persisted language policy plus bootstrap/skill rules.
 - Category C: leave templates English-only and only tell skills to “write Chinese when needed”.
 
 ### 2.4 Evaluation
@@ -48,10 +48,10 @@ The solution should make human-facing artifact output language-aware without des
   - Resolve `auto` differently by execution layer:
     - bootstrap scripts: environment locale fallback
     - harness writing skills: current user request language
-  - Keep `module-status.md` and canonical protocol tokens in English.
+  - Keep `task-status.md` and canonical protocol tokens in English.
 - Confirmed decisions:
   - D1: only human-facing artifacts localize in this pass
-  - D2: `module-status.md` remains stable English control plane
+  - D2: `task-status.md` remains stable English control plane
   - D3: `auto` means locale-based fallback in shell/PowerShell, user-input-based fallback in skill execution
   - D4: CLI override takes precedence over profile-local default
 - Key change points:
@@ -113,7 +113,7 @@ The solution should make human-facing artifact output language-aware without des
 ## 6. Risks
 
 - `auto` semantics differ by layer; if the docs are unclear, users may assume shell bootstrap can read chat language.
-- If future contributors localize `module-status.md` casually, bootstrap parsing will break.
+- If future contributors localize `task-status.md` casually, bootstrap parsing will break.
 - Chinese templates and English templates can drift structurally if they are edited independently without discipline.
 
 ## 7. Self-Challenge
@@ -123,4 +123,4 @@ The solution should make human-facing artifact output language-aware without des
 2. Which assumptions remain unverified?
    - That locale-based `auto` is an acceptable fallback for bootstrap usage.
 3. What would a skeptic challenge first?
-   - Whether keeping `module-status.md` in English is surprising. The answer is yes, but the script-stability tradeoff is worth making explicit.
+   - Whether keeping `task-status.md` in English is surprising. The answer is yes, but the script-stability tradeoff is worth making explicit.

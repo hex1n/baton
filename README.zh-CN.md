@@ -33,7 +33,7 @@ AGENTS.md          给 Codex / Cursor 风格宿主使用的根级治理入口
 - `Generator BLOCKED` → 回到 `Architect` / `Specifier` / `Human`
 - `Evaluator BLOCKED` → 回到 `Generator` 修复，然后重新运行 `Evaluator`
 
-每个角色都会在 `.harness/` 中产出文件型制品，状态通过 `module-status.md` 跟踪。
+每个角色都会在 `.harness/` 中产出文件型制品，状态通过 `task-status.md` 跟踪。
 
 ## 制品语言
 
@@ -44,7 +44,7 @@ AGENTS.md          给 Codex / Cursor 风格宿主使用的根级治理入口
 - 这个仓库的 bootstrap 默认语言是中文；如果你想要别的默认值，显式传 `--language en` 或 `--language auto`
 - bootstrap 脚本里的 `auto` 按本机 locale 解析
 - 写制品的 role skill 里的 `auto` 表示“跟随当前用户输入语言”
-- `module-status.md` 保持英文，因为它是稳定的控制面
+- `task-status.md` 保持英文，因为它是稳定的控制面
 
 实践中有两条规则最重要：
 

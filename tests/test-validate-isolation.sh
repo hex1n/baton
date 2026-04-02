@@ -22,8 +22,8 @@ assert_exit() {
 make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
-# Module Status
+  cat > "$dir/task-status.md" <<EOF
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|

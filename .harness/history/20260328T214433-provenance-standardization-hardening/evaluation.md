@@ -15,7 +15,7 @@
 - Role: evaluator
 - Isolation mode: strict
 - Execution context: isolated_subagent
-- Evidence: 冷读 requirements、architecture、verification-path、artifact schema 与当前 diff；核对 `validate-isolation.sh`、`harness-context.sh`、`module-status.sh`、`start-task`、`check-consistency.sh` 以及相关测试，确认 provenance 契约已串联。
+- Evidence: 冷读 requirements、architecture、verification-path、artifact schema 与当前 diff；核对 `validate-isolation.sh`、`harness-context.sh`、`task-status.sh`、`start-task`、`check-consistency.sh` 以及相关测试，确认 provenance 契约已串联。
 - Fallback policy: strict 路径优先；仅在明确记录的 compat 回退可用时才降级。
 - Fallback reason: 本次未触发回退。
 

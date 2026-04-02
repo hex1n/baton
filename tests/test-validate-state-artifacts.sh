@@ -30,8 +30,8 @@ assert_json_block() {
 make_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
-# Module Status
+  cat > "$dir/task-status.md" <<EOF
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |-------|-------|-------|------------|------------|-------|
@@ -42,8 +42,8 @@ EOF
 make_legacy_status() {
   local dir="$1" state="$2"
   mkdir -p "$dir"
-  cat > "$dir/module-status.md" <<EOF
-# Module Status
+  cat > "$dir/task-status.md" <<EOF
+# Task Status
 
 | Scope | Owner | State | Updated At | Notes |
 |------|------|------|-----------|------|
@@ -53,8 +53,8 @@ make_legacy_status() {
 EOF
 }
 
-# no module-status.md → exit 0
-assert_exit "no module-status → pass" 0 bash "$SCRIPT" "$tmp/empty"
+# no task-status.md → exit 0
+assert_exit "no task-status → pass" 0 bash "$SCRIPT" "$tmp/empty"
 
 # state=exploring → no artifacts required → exit 0
 make_status "$tmp/t1" "exploring"
@@ -88,8 +88,8 @@ assert_json_block "block output is JSON with decision:block" "$tmp/t6"
 
 # latest row determines current state
 mkdir -p "$tmp/t7"
-cat > "$tmp/t7/module-status.md" <<'EOF'
-# Module Status
+cat > "$tmp/t7/task-status.md" <<'EOF'
+# Task Status
 
 | Scope | Owner | State | Eval Round | Updated At | Notes |
 |------|------|------|-----------|-----------|------|

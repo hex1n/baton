@@ -63,7 +63,7 @@
   - `validate-artifact.sh` / `validate-state-artifacts.sh` / 新 `validate-isolation.sh` 收紧 gate
   - `install-hooks.sh` 的 stop command 串联 isolation validator
 - 数据 / 控制边界:
-  - 当前任务状态仍以 `module-status.md` 为控制平面
+  - 当前任务状态仍以 `task-status.md` 为控制平面
   - isolation 合规性以 `verification-path.md` + `evaluation.md` 为事实源
   - stop hooks 只消费 artifacts，不消费对话记忆
 - 向后兼容说明:
