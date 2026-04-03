@@ -76,16 +76,26 @@ append_unique() {
 
 resolve_effective_skill_source() {
   local name="$1"
-  if [[ -f "$override_skills_dir/$name" ]]; then
+  if [[ -d "$override_skills_dir/$name" ]]; then
     printf '%s' "$override_skills_dir/$name"
     return
   fi
-  if [[ -f "$vendor_skills_root/$name" ]]; then
+  if [[ -d "$vendor_skills_root/$name" ]]; then
     printf '%s' "$vendor_skills_root/$name"
     return
   fi
   printf 'effective skill source not found for %s\n' "$name" >&2
   exit 1
+}
+
+_can_symlink() {
+  # MSYS, Cygwin, MinGW on Windows: symlinks are unreliable (may hang or
+  # require elevated privileges).  Fall back to copy on these platforms.
+  case "${OSTYPE:-}" in
+    msys*|cygwin*|mingw*) return 1 ;;
+  esac
+  [[ -n "${MSYSTEM:-}" ]] && return 1
+  return 0
 }
 
 link_one() {
@@ -94,25 +104,27 @@ link_one() {
   local relative_source
 
   if [[ "$dry_run" == "true" ]]; then
-    printf 'symlink'
+    printf 'copy'
     return 0
   fi
 
-  rm -f "$target"
+  rm -rf "$target"
 
-  relative_source="$(paths_relpath_from "$(dirname "$target")" "$source")"
-
-  if ln -s "$relative_source" "$target" 2>/dev/null; then
-    printf 'symlink'
-    return 0
+  if _can_symlink; then
+    relative_source="$(paths_relpath_from "$(dirname "$target")" "$source")"
+    if ln -s "$relative_source" "$target" 2>/dev/null; then
+      printf 'symlink'; return 0
+    fi
   fi
 
-  if ln "$source" "$target" 2>/dev/null; then
-    printf 'hardlink'
-    return 0
+  if [[ -d "$source" ]]; then
+    cp -R "$source" "$target"
+  else
+    if _can_symlink && ln "$source" "$target" 2>/dev/null; then
+      printf 'hardlink'; return 0
+    fi
+    cp "$source" "$target"
   fi
-
-  cp "$source" "$target"
   printf 'copy'
 }
 
@@ -130,9 +142,19 @@ materialize_runtime_dir() {
   for existing in "$target_dir"/harness-*.md; do
     [[ -e "$existing" ]] || continue
     if [[ "$dry_run" == "true" ]]; then
-      printf 'plan  rm -f %s\n' "$existing"
+      printf 'plan  rm -f %s\n' "$existing" >&2
     else
       rm -f "$existing"
+    fi
+  done
+
+  for name in "${skill_names[@]}"; do
+    existing="$target_dir/$name"
+    [[ -e "$existing" ]] || continue
+    if [[ "$dry_run" == "true" ]]; then
+      printf 'plan  rm -rf %s\n' "$existing" >&2
+    else
+      rm -rf "$existing"
     fi
   done
 
@@ -145,7 +167,7 @@ materialize_runtime_dir() {
     elif [[ "$mode_used" == "hardlink" && "$dir_mode" == "symlink" ]]; then
       dir_mode="hardlink"
     fi
-    printf '%s  %s\n' "$mode_used" "$target"
+    printf '%s  %s\n' "$mode_used" "$target" >&2
   done
 
   printf '%s' "$dir_mode"
@@ -245,28 +267,28 @@ copy_dir "$resolved_source_root/spec" "$vendor_spec_root"
 mkdir_if_needed "$vendor_skills_root"
 copy_file "$resolved_source_root/README.md" "$vendor_root/README.md"
 
-vendor_skill_files=()
-while IFS= read -r source_skill; do
-  vendor_skill_files+=("$source_skill")
-done < <(find "$resolved_source_root/skills" -maxdepth 1 -type f -name 'harness-*.md' | sort)
+vendor_skill_dirs=()
+for _d in "$resolved_source_root/skills"/*/; do
+  [[ -f "$_d/SKILL.md" ]] && vendor_skill_dirs+=("${_d%/}")
+done
 
-if [[ "${#vendor_skill_files[@]}" -eq 0 ]]; then
-  printf 'No harness skill files found under %s/skills\n' "$resolved_source_root" >&2
+if [[ "${#vendor_skill_dirs[@]}" -eq 0 ]]; then
+  printf 'No skill directories (containing SKILL.md) found under %s/skills\n' "$resolved_source_root" >&2
   exit 1
 fi
 
-for source_skill in "${vendor_skill_files[@]}"; do
-  copy_file "$source_skill" "$vendor_skills_root/$(basename "$source_skill")"
+for source_skill in "${vendor_skill_dirs[@]}"; do
+  copy_dir "$source_skill" "$vendor_skills_root/$(basename "$source_skill")"
 done
 
 skill_names=()
-for source_skill in "${vendor_skill_files[@]}"; do
+for source_skill in "${vendor_skill_dirs[@]}"; do
   append_unique "$(basename "$source_skill")"
 done
 
-while IFS= read -r override_skill; do
-  append_unique "$(basename "$override_skill")"
-done < <(find "$override_skills_dir" -maxdepth 1 -type f -name '*.md' | sort)
+for _d in "$override_skills_dir"/*/; do
+  [[ -d "$_d" && -f "$_d/SKILL.md" ]] && append_unique "$(basename "${_d%/}")"
+done
 
 runtime_mode="symlink"
 for runtime_target in "$resolved_repo_root/.claude/skills" "$resolved_repo_root/.agents"; do

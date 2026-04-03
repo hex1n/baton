@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Fast-exit: skip stdin parsing when no active task exists.
+_repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [[ ! -f "$_repo_root/.harness/task-status.md" ]]; then
+  exit 0
+fi
+unset _repo_root
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/lib/parse-input.sh"
 
 harness_dir="$HOOK_ROOT/.harness"
 task_status_path="$harness_dir/task-status.md"
-
-if [[ ! -f "$task_status_path" ]]; then
-  hook_pass
-fi
 
 debug_log "running stop checks for $harness_dir"
 bash "$BOOTSTRAP_DIR/validate-state-artifacts.sh" "$harness_dir" || exit $?
