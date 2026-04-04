@@ -35,6 +35,10 @@ Load these artifacts before proceeding:
      "WARNING: base_commit missing from State Notes. Falling back to
      HEAD~1. Diff range may be incomplete if Generator made multiple
      commits." Then use `git diff HEAD~1` as fallback.
+   - If `stash_restored: true` in State Notes: also review
+     `git stash show -p` output (or `git diff` for unstaged changes).
+     The committed diff alone may miss restored pre-existing changes
+     that now overlap with the implementation.
 6. If this is a repair round (eval round > 1), read the previous
    `.harness/evaluation.md` for prior findings (facts only — do not
    inherit prior reasoning or judgments)

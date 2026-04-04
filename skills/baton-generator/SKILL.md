@@ -47,12 +47,15 @@ Read artifacts in this order — each builds on the previous:
 ### 2. Pre-Implementation Check
 
 Before writing any code:
+- **Record base commit first**: run `git rev-parse HEAD` and write the
+  result to `task-status.md` under `## State Notes` as
+  `- base_commit: <hash>`. Do this BEFORE any stash/clean operations.
+  The Evaluator uses this to compute the correct diff range.
 - Check for uncommitted changes: `git status`. If dirty, stash or
-  confirm with user before proceeding.
-- **Record base commit**: run `git rev-parse HEAD` and write the result
-  to `task-status.md` under `## State Notes` as `- base_commit: <hash>`.
-  The Evaluator uses this to compute the correct diff range. If you
-  skip this step, the Evaluator may review an incomplete diff.
+  confirm with user before proceeding. Note: `git stash` does not
+  change HEAD, so base_commit remains valid. If you `stash pop` after
+  implementation, warn the Evaluator by adding a note:
+  `- stash_restored: true` in State Notes.
 - Verify write surface matches `architecture.md` — list all files to
   create or modify.
 
