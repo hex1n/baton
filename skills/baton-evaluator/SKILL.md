@@ -205,8 +205,12 @@ Sections (all required):
 1. **Inputs** — requirements, architecture, verification path, diff
 2. **Execution Provenance** — `Role`, `Isolation mode`, `Execution context`,
    `Evidence`, `Fallback policy`, and `Fallback reason`
-3. **Findings** — blockers, warnings, or explicit no-findings statement
-4. **Verification Results** — commands run and results observed
+3. **Findings** — three-layer sub-structure:
+   - Layer 1: Deterministic Checks — commands executed, results, hard failures
+   - Layer 2: Diff Review — scope validation, architecture conformance,
+     bug patterns, security, test quality (extensions may replace this layer)
+   - Layer 3: Requirements Verification — blockers, warnings, or no-findings
+4. **Verification Results** — acceptance criteria status with evidence
 5. **Verdict** — final go / no-go conclusion
 6. **Residual Risks** — accepted or unresolved residual risk
 

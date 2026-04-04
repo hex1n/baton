@@ -264,9 +264,9 @@ detail for its row. Per-phase sections below reference this matrix.
 | Phase | Low | Medium | High |
 |-------|-----|--------|------|
 | 1 Clarify | **Skip** (if Clear) or 1 question | Quick confirm — 1-2 key questions | Full interview — 6 dimensions |
-| 2 Explore | Convention Scan — entry points + write surface | Dependency Scan — + interfaces, data models | Impact Scan — full call chains + reverse refs + test coverage |
+| 2 Explore | Convention Scan — entry points + write surface | Dependency Scan — + interfaces, data models; `codebase-map.md` if repo-wide | Impact Scan — full call chains + reverse refs + test coverage; `codebase-map.md` if repo-wide |
 | 3 Specify | Minimal — P0 only, skip traceability | Standard — P0+P1, traceability if brief exists | Full — P0+P1+P2, mandatory traceability, security constraints |
-| 4 Architect | Single approach, skip delivery order | Multiple approaches, delivery order recommended | Full comparison + delivery order + security threat modeling |
+| 4 Architect | Single approach, skip delivery order | Multiple approaches, delivery order recommended; `decisions.md` if rejected alternatives | Full comparison + delivery order + security threat modeling; `decisions.md` required |
 | 5 Verify | Quick check — build/test infra only, no artifact | Standard — `verification-path.md`, skip perf baseline | Full — `verification-path.md` + CI compat + perf baseline |
 | 6 Generate | 1-2 batches, simplified self-review | Logical-unit batches, full self-review | Strict delivery order, security tests per batch |
 | 7 Review | Evaluator only (Layer 1+3) | Codex + Evaluator (all layers) | Codex adversarial + Evaluator (all layers) |

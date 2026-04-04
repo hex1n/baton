@@ -1,31 +1,31 @@
 # Codebase Map
 
+**Owner**: `explorer`  
+**Status**: `draft`
+
 ## Project Structure
 
 - Build tool:
-- Java version:
+- Language version:
 - Framework:
 - Data access stack:
 
 ## Module Dependencies
 
 | Module | Depends On | Notes |
-|------|------|------|
-| example-module | common-lib | replace |
+|--------|------------|-------|
 
 ## Existing API Surfaces
 
 | Path Or Interface | Layer | Notes |
-|------|------|------|
-| /example | controller | replace |
+|-------------------|-------|-------|
 
 ## Data Model
 
 | Table Or Aggregate | Key Fields | Notes |
-|------|------|------|
-| example_table | id, status | replace |
+|--------------------|------------|-------|
 
-## Spring Runtime Notes
+## Framework/Runtime Notes
 
 - Profiles:
 - Interceptors / filters:

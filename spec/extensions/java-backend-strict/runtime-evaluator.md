@@ -34,9 +34,14 @@ separate review activity, not as part of the primary independent judgment.
 
 ## Three Layers
 
+Core `evaluation.md` defines a three-layer evaluation structure:
+Layer 1 (Deterministic Checks), Layer 2 (Diff Review), Layer 3
+(Requirements Verification). This extension **replaces** core Layer 2
+with runtime signal collection while keeping Layers 1 and 3 aligned.
+
 ### Layer 1: Deterministic Checks
 
-Zero-AI-judgment checks where possible:
+Zero-AI-judgment checks where possible (extends core Layer 1):
 
 - compile
 - existing tests
@@ -46,7 +51,7 @@ Zero-AI-judgment checks where possible:
 
 Any hard failure here should block before higher-layer interpretation.
 
-### Layer 2: Runtime Signals
+### Layer 2: Runtime Signals (replaces core Diff Review)
 
 Collect facts first:
 
@@ -58,6 +63,8 @@ Collect facts first:
 - connection pool signals
 
 The output of this layer is evidence, not final judgment.
+Core's Layer 2 (Diff Review) is subsumed — runtime evidence provides
+stronger signal than static diff analysis for Java backend systems.
 
 ### Layer 3: Requirement-Driven Judgment
 

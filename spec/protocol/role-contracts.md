@@ -12,6 +12,7 @@
   - default verification entry points
 - Typical artifact:
   - optional `repo-map.md`
+  - conditionally required `codebase-map.md` (when running in repo-wide mode)
 - Status responsibility:
   - when acting as the current owner, update `task-status.md` before handoff
 
@@ -60,6 +61,7 @@
   - known tradeoffs and residual risks
 - Required artifact:
   - `architecture.md`
+  - conditionally required `decisions.md` (when architecture contains rejected alternatives)
 - Status responsibility:
   - update `task-status.md` when handing off to `human` or `verification-explorer`
   - do not hand off to `verification-explorer` until `requirements.md`

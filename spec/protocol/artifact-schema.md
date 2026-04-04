@@ -100,6 +100,31 @@ Required bullet fields:
 - fallback policy
 - fallback reason
 
+### `decisions.md`
+
+- **Required when**: `architecture.md` contains at least one rejected alternative
+  (i.e., significant architectural decisions that need Why / Why Not records)
+- Writer: Architect
+- Readers: Generator, Evaluator, Human
+- Purpose: record architectural decisions with rationale (chosen, rejected, why, why not)
+- Required sections:
+  - at least one decision block (D1, D2, ...)
+  - each block: choice, rejected alternatives, why, why not, impact
+
+### `codebase-map.md`
+
+- **Required when**: Explorer runs in repo-wide mode
+  (first adoption on an existing codebase)
+- Writer: Explorer
+- Readers: all roles
+- Purpose: structured understanding of the existing codebase for informed task scoping
+- Required sections:
+  - project structure
+  - module dependencies
+  - data model
+  - code style and conventions
+  - high-risk areas
+
 ### `generator-feedback.md`
 
 - **Required when**: Generator discovers a requirement gap or architectural

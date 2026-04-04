@@ -50,7 +50,13 @@ for the concrete spawn/wait example.
 
 - **Inputs**: repo root, repo profile
 - **Outputs**: repo map, high-risk directories, default verification entry points
-- **Artifact**: optional `repo-map.md`
+- **Artifact**: optional `repo-map.md`, conditionally required `codebase-map.md`
+
+When running in repo-wide mode on an existing codebase, produce
+`codebase-map.md` with structured sections (project structure, module
+dependencies, data model, code style, high-risk areas). If a free-form
+`repo-map.md` also exists, `codebase-map.md` is the validated artifact;
+`repo-map.md` may coexist as supplementary but is not validated.
 
 ### Mode 2: Task-scoped (every task)
 

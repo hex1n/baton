@@ -105,6 +105,24 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+TOTAL=$((TOTAL + 1))
+if [[ -f "$repo/.harness/decisions.md" ]]; then
+  echo "  pass: decisions.md distributed from template"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: decisions.md was not distributed from template"
+  FAIL=$((FAIL + 1))
+fi
+
+TOTAL=$((TOTAL + 1))
+if [[ -f "$repo/.harness/codebase-map.md" ]]; then
+  echo "  pass: codebase-map.md distributed from template"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: codebase-map.md was not distributed from template"
+  FAIL=$((FAIL + 1))
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

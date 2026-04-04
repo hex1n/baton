@@ -16,21 +16,25 @@ Portable core keeps the minimum set:
 - `task-status.md`
 - `retrospective.md`
 
-Java backend strict mode extends that set with:
+Core also provides these conditionally required artifacts (promoted from
+this extension):
 
-- `codebase-map.md`
-- `decisions.md`
+- `codebase-map.md` — required when Explorer runs in repo-wide mode
+- `decisions.md` — required when architecture contains rejected alternatives
+- `generator-feedback.md` — required when generator encounters design mismatch
+
+Java backend strict mode extends the core set with:
+
 - `api-contract.yaml`
 - `evaluation-report.md`
-- `generator-feedback.md`
 - `runtime-signals/`
 
 ## Ownership
 
 | Artifact | Writer | Primary Readers | Purpose |
 |------|------|------|------|
-| `codebase-map.md` | `repo-explorer` | all roles | global repo map for existing systems |
-| `decisions.md` | `architect` | `generator`, `reviewer`, `evaluator`, `human` | record Why and Why Not |
+| `codebase-map.md` | `repo-explorer` | all roles | global repo map for existing systems (**promoted to core**) |
+| `decisions.md` | `architect` | `generator`, `reviewer`, `evaluator`, `human` | record Why and Why Not (**promoted to core**) |
 | `api-contract.yaml` | `architect` | `generator`, `evaluator` | stable API validation contract |
 | `evaluation-report.md` | `evaluator` | `generator`, `human` | findings and go/no-go report |
 | `generator-feedback.md` | `generator` | `architect`, `human` | design mismatch escalation |
@@ -60,12 +64,14 @@ Java backend strict mode extends that set with:
 
 ## Required Promotions From Core
 
-In strict mode, treat these as effectively required rather than optional:
+`codebase-map.md` and `decisions.md` are now core conditionally required
+artifacts. In strict mode, their trigger conditions are always met:
 
-- `codebase-map.md`
-- `evaluation-report.md`
+- `codebase-map.md` — strict mode always runs repo-wide exploration
+- `decisions.md` — strict mode always requires explicit decision records
 
-Portable core leaves some similar artifacts optional. Strict mode does not.
+Additionally, treat `evaluation-report.md` as effectively required in
+strict mode (extends core `evaluation.md` with runtime signals).
 
 ## Communication Rules
 
@@ -79,9 +85,11 @@ Portable core leaves some similar artifacts optional. Strict mode does not.
 
 This extension provides starter templates for:
 
-- [codebase-map.template.md](./templates/codebase-map.template.md)
-- [decisions.template.md](./templates/decisions.template.md)
 - [api-contract.template.yaml](./templates/api-contract.template.yaml)
 - [evaluation-report.template.md](./templates/evaluation-report.template.md)
 - [generator-feedback.template.md](./templates/generator-feedback.template.md)
 - [runtime-signals.README.md](./templates/runtime-signals.README.md)
+
+Note: `codebase-map.template.md` and `decisions.template.md` have been
+promoted to core (`spec/templates/`). The extension no longer maintains
+separate copies.

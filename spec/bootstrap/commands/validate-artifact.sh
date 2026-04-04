@@ -36,7 +36,7 @@ fi
 
 has_section() {
   local file="$1" pattern="$2"
-  grep -qiE "^##[[:space:]].*${pattern}" "$file"
+  grep -qiE "^##[[:space:]].*(${pattern})" "$file"
 }
 
 check_sections() {
@@ -106,6 +106,23 @@ run_checks() {
       check_sections "$file_path" \
         "Original.Assumption|原始假设" "Actual.Finding|实际发现" \
         "Impact|影响" "Recommended.Next.Owner|建议下一步负责方" || rc=$?
+      ;;
+    decisions)
+      check_sections "$file_path" \
+        "D[0-9]+:" || rc=$?
+      local decisions_fields=("Choice|选择" "Rejected.Alternatives|被拒方案" "Why|为什么" "Why.Not|为什么不" "Impact|影响")
+      for field_pattern in "${decisions_fields[@]}"; do
+        if ! grep -qiE "^-[[:space:]]*(${field_pattern}):" "$file_path"; then
+          printf 'ERROR: validate-artifact: decisions.md missing required field matching "%s" in %s\n' "$field_pattern" "$file_path" >&2
+          rc=$((rc + 1))
+        fi
+      done
+      ;;
+    codebase-map)
+      check_sections "$file_path" \
+        "Project.Structure|项目结构" "Module.Dependencies|模块依赖" \
+        "Data.Model|数据模型" "Code.Style|代码风格" \
+        "High.Risk|高风险" || rc=$?
       ;;
     *)
       return 0

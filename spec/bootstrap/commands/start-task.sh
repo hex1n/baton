@@ -244,6 +244,8 @@ artifact_templates=(
   "verification-path.template.md:verification-path.md"
   "evaluation.template.md:evaluation.md"
   "retrospective.template.md:retrospective.md"
+  "decisions.template.md:decisions.md"
+  "codebase-map.template.md:codebase-map.md"
 )
 
 archive_files=()

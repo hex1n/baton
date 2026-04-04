@@ -21,6 +21,12 @@ zh_evaluation_template="$spec_root/templates/zh/evaluation.template.md"
 generator_feedback_template="$spec_root/templates/generator-feedback.template.md"
 zh_generator_feedback_template="$spec_root/templates/zh/generator-feedback.template.md"
 legacy_generator_feedback_template="$repo_root/spec/extensions/java-backend-strict/templates/generator-feedback.template.md"
+decisions_template="$spec_root/templates/decisions.template.md"
+zh_decisions_template="$spec_root/templates/zh/decisions.template.md"
+codebase_map_template="$spec_root/templates/codebase-map.template.md"
+zh_codebase_map_template="$spec_root/templates/zh/codebase-map.template.md"
+legacy_decisions_template="$repo_root/spec/extensions/java-backend-strict/templates/decisions.template.md"
+legacy_codebase_map_template="$repo_root/spec/extensions/java-backend-strict/templates/codebase-map.template.md"
 profile_template="$spec_root/templates/profile.local.template.yaml"
 start_task_sh="$script_dir/start-task.sh"
 validate_artifact_sh="$script_dir/validate-artifact.sh"
@@ -643,6 +649,130 @@ if [[ $inv16_errors -eq 0 ]]; then
   printf 'OK: invariant-16: live local hook configs match the current install-hooks manifest\n'
 fi
 errors=$((errors + inv16_errors))
+
+# ---------------------------------------------------------------------------
+# Invariant 17: decisions.md contract is synchronized across schema, validator, templates, and skills
+# ---------------------------------------------------------------------------
+inv17_errors=0
+if ! grep -Fq '### `decisions.md`' "$spec_root/protocol/artifact-schema.md"; then
+  printf 'ERROR: invariant-17: artifact-schema.md missing decisions.md entry\n'
+  inv17_errors=$((inv17_errors + 1))
+fi
+
+if ! grep -Fq 'decisions)' "$validate_artifact_sh"; then
+  printf 'ERROR: invariant-17: validate-artifact.sh missing decisions case\n'
+  inv17_errors=$((inv17_errors + 1))
+fi
+
+for template in "$decisions_template" "$zh_decisions_template"; do
+  if [[ ! -f "$template" ]]; then
+    printf 'ERROR: invariant-17: decisions template missing: %s\n' "$template"
+    inv17_errors=$((inv17_errors + 1))
+  fi
+done
+
+if [[ -f "$decisions_template" ]]; then
+  if ! grep -Fq '## D1:' "$decisions_template"; then
+    printf 'ERROR: invariant-17: %s missing heading ## D1:\n' "$decisions_template"
+    inv17_errors=$((inv17_errors + 1))
+  fi
+fi
+
+if [[ -f "$zh_decisions_template" ]]; then
+  if ! grep -Fq '## D1:' "$zh_decisions_template"; then
+    printf 'ERROR: invariant-17: %s missing heading ## D1:\n' "$zh_decisions_template"
+    inv17_errors=$((inv17_errors + 1))
+  fi
+fi
+
+if [[ -e "$legacy_decisions_template" ]]; then
+  printf 'ERROR: invariant-17: legacy decisions template still exists: %s\n' "$legacy_decisions_template"
+  inv17_errors=$((inv17_errors + 1))
+fi
+
+for field_kw in "Choice" "Rejected.Alternatives" 'Why\|' "Why.Not" "Impact"; do
+  if ! grep -qE "$field_kw" "$validate_artifact_sh"; then
+    printf 'ERROR: invariant-17: validate-artifact.sh decisions case missing field check for %s\n' "$field_kw"
+    inv17_errors=$((inv17_errors + 1))
+  fi
+done
+
+if [[ -f "$repo_root/skills/baton-architect/SKILL.md" ]]; then
+  if ! grep -Fq 'decisions.md' "$repo_root/skills/baton-architect/SKILL.md"; then
+    printf 'ERROR: invariant-17: baton-architect guidance missing decisions.md reference\n'
+    inv17_errors=$((inv17_errors + 1))
+  fi
+else
+  printf 'ERROR: invariant-17: missing %s\n' "$repo_root/skills/baton-architect/SKILL.md"
+  inv17_errors=$((inv17_errors + 1))
+fi
+
+if [[ $inv17_errors -eq 0 ]]; then
+  printf 'OK: invariant-17: decisions.md contract stays synchronized across schema, validator, templates, and skills\n'
+fi
+errors=$((errors + inv17_errors))
+
+# ---------------------------------------------------------------------------
+# Invariant 18: codebase-map.md contract is synchronized across schema, validator, templates, and skills
+# ---------------------------------------------------------------------------
+inv18_errors=0
+if ! grep -Fq '### `codebase-map.md`' "$spec_root/protocol/artifact-schema.md"; then
+  printf 'ERROR: invariant-18: artifact-schema.md missing codebase-map.md entry\n'
+  inv18_errors=$((inv18_errors + 1))
+fi
+
+if ! grep -Fq 'codebase-map)' "$validate_artifact_sh"; then
+  printf 'ERROR: invariant-18: validate-artifact.sh missing codebase-map case\n'
+  inv18_errors=$((inv18_errors + 1))
+fi
+
+for template in "$codebase_map_template" "$zh_codebase_map_template"; do
+  if [[ ! -f "$template" ]]; then
+    printf 'ERROR: invariant-18: codebase-map template missing: %s\n' "$template"
+    inv18_errors=$((inv18_errors + 1))
+  fi
+done
+
+if [[ -f "$codebase_map_template" ]]; then
+  if ! grep -Fq '## Project Structure' "$codebase_map_template"; then
+    printf 'ERROR: invariant-18: %s missing heading ## Project Structure\n' "$codebase_map_template"
+    inv18_errors=$((inv18_errors + 1))
+  fi
+fi
+
+if [[ -f "$zh_codebase_map_template" ]]; then
+  if ! grep -Fq '## 项目结构' "$zh_codebase_map_template"; then
+    printf 'ERROR: invariant-18: %s missing heading ## 项目结构\n' "$zh_codebase_map_template"
+    inv18_errors=$((inv18_errors + 1))
+  fi
+fi
+
+if [[ -e "$legacy_codebase_map_template" ]]; then
+  printf 'ERROR: invariant-18: legacy codebase-map template still exists: %s\n' "$legacy_codebase_map_template"
+  inv18_errors=$((inv18_errors + 1))
+fi
+
+for section_kw in "Project.Structure" "Module.Dependencies" "Data.Model" "Code.Style" "High.Risk"; do
+  if ! grep -qE "$section_kw" "$validate_artifact_sh"; then
+    printf 'ERROR: invariant-18: validate-artifact.sh codebase-map case missing section check for %s\n' "$section_kw"
+    inv18_errors=$((inv18_errors + 1))
+  fi
+done
+
+if [[ -f "$repo_root/skills/baton-explorer/SKILL.md" ]]; then
+  if ! grep -Fq 'codebase-map.md' "$repo_root/skills/baton-explorer/SKILL.md"; then
+    printf 'ERROR: invariant-18: baton-explorer guidance missing codebase-map.md reference\n'
+    inv18_errors=$((inv18_errors + 1))
+  fi
+else
+  printf 'ERROR: invariant-18: missing %s\n' "$repo_root/skills/baton-explorer/SKILL.md"
+  inv18_errors=$((inv18_errors + 1))
+fi
+
+if [[ $inv18_errors -eq 0 ]]; then
+  printf 'OK: invariant-18: codebase-map.md contract stays synchronized across schema, validator, templates, and skills\n'
+fi
+errors=$((errors + inv18_errors))
 
 # ---------------------------------------------------------------------------
 # Summary

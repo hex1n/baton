@@ -190,6 +190,135 @@ content
 EOF
 assert_exit "verification-path zh headings -> exit 0" 0 bash "$VALIDATE" "verification-path" "$tmp/verification-path-zh.md"
 
+# -- decisions: complete passes in English --
+cat > "$tmp/decisions.md" <<'EOF'
+# Technical Decisions
+
+**Owner**: `architect`
+**Status**: `approved`
+
+## D1: Test Decision
+
+- Choice: Option A
+- Rejected Alternatives: Option B
+- Why: Better performance
+- Why Not: More complex
+- Impact: Moderate
+EOF
+assert_exit "decisions complete -> exit 0" 0 bash "$VALIDATE" "decisions" "$tmp/decisions.md"
+
+# -- decisions: complete passes in Chinese --
+cat > "$tmp/decisions-zh.md" <<'EOF'
+# 技术决策
+
+**Owner**: `architect`
+**状态**: `approved`
+
+## D1: 测试决策
+
+- 选择: 方案 A
+- 被拒方案: 方案 B
+- 为什么: 性能更好
+- 为什么不: 更复杂
+- 影响: 中等
+EOF
+assert_exit "decisions zh headings -> exit 0" 0 bash "$VALIDATE" "decisions" "$tmp/decisions-zh.md"
+
+# -- decisions: missing D<N> heading fails --
+cat > "$tmp/decisions-bad.md" <<'EOF'
+# Technical Decisions
+
+**Owner**: `architect`
+**Status**: `approved`
+
+## Some heading without D pattern
+content only
+EOF
+assert_exit "decisions missing D heading -> exit 1" 1 bash "$VALIDATE" "decisions" "$tmp/decisions-bad.md"
+
+# -- decisions: missing required fields fails --
+cat > "$tmp/decisions-missing-fields.md" <<'EOF'
+# Technical Decisions
+
+**Owner**: `architect`
+**Status**: `approved`
+
+## D1: Partial Decision
+
+- Choice: Option A
+- Why: Performance
+EOF
+assert_exit "decisions missing fields -> exit 1" 1 bash "$VALIDATE" "decisions" "$tmp/decisions-missing-fields.md"
+
+# -- decisions: draft skips validation --
+cat > "$tmp/decisions-draft.md" <<'EOF'
+# Technical Decisions
+
+**Owner**: `architect`
+**Status**: `draft`
+EOF
+assert_exit "decisions draft -> exit 0 (skip)" 0 bash "$VALIDATE" "decisions" "$tmp/decisions-draft.md"
+
+# -- codebase-map: complete passes in English --
+cat > "$tmp/codebase-map.md" <<'EOF'
+# Codebase Map
+
+**Owner**: `explorer`
+**Status**: `approved`
+
+## Project Structure
+content
+
+## Module Dependencies
+content
+
+## Data Model
+content
+
+## Code Style And Conventions
+content
+
+## High-Risk Areas
+content
+EOF
+assert_exit "codebase-map complete -> exit 0" 0 bash "$VALIDATE" "codebase-map" "$tmp/codebase-map.md"
+
+# -- codebase-map: complete passes in Chinese --
+cat > "$tmp/codebase-map-zh.md" <<'EOF'
+# 代码地图
+
+**Owner**: `explorer`
+**状态**: `approved`
+
+## 项目结构
+content
+
+## 模块依赖
+content
+
+## 数据模型
+content
+
+## 代码风格与约定
+content
+
+## 高风险区域
+content
+EOF
+assert_exit "codebase-map zh headings -> exit 0" 0 bash "$VALIDATE" "codebase-map" "$tmp/codebase-map-zh.md"
+
+# -- codebase-map: missing section fails --
+cat > "$tmp/codebase-map-bad.md" <<'EOF'
+# Codebase Map
+
+**Owner**: `explorer`
+**Status**: `approved`
+
+## Project Structure
+content
+EOF
+assert_exit "codebase-map missing sections -> exit 1" 1 bash "$VALIDATE" "codebase-map" "$tmp/codebase-map-bad.md"
+
 # -- unknown artifact type -> exit 0 (skip, not error) --
 assert_exit "unknown artifact type -> exit 0 (skip)" 0 bash "$VALIDATE" "unknown-type" "$tmp/requirements.md"
 

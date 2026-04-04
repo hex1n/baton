@@ -321,9 +321,11 @@ For each significant decision:
 - **Not chosen**: what and why not
 - **When to revisit**: conditions that would change the decision
 
-Record decisions inline in `architecture.md`. If the project uses
-a strict overlay that requires a separate `decisions.md`, follow
-the overlay convention instead.
+Record decisions inline in `architecture.md`. When the architecture
+contains at least one rejected alternative, also write a separate
+`decisions.md` with structured decision records (Choice, Rejected
+Alternatives, Why, Why Not, Impact). This is a core conditional
+artifact — not extension-specific.
 
 ## State Transition
 
