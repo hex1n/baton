@@ -10,6 +10,8 @@ source "$bootstrap_dir/lib/state-requirements.sh"
 harness_dir="${1:-.harness}"
 task_status="$harness_dir/task-status.md"
 
+state_migrate_legacy_artifacts "$harness_dir"
+
 if [[ ! -f "$task_status" ]]; then
   jq -n '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"No active harness task."}}'
   exit 0
@@ -30,7 +32,7 @@ for artifact in $(state_required_artifacts_for_summary "$state"); do
 done
 
 overlay_summary() {
-  local scoped_map="$1"
+  local exploration_file="$1"
   awk '
     /^## Overlay Recommendation$/ { in_section = 1; next }
     /^## / && in_section { exit }
@@ -39,7 +41,7 @@ overlay_summary() {
       print $0
       exit
     }
-  ' "$scoped_map"
+  ' "$exploration_file"
 }
 
 summary_field() {
@@ -53,22 +55,22 @@ ctx+=$'\n'"  task: ${task_id:-?}  state: ${state:-?}  owner: ${owner:-?}  eval_r
 [[ -n "$present" ]] && ctx+=$'\n'"  present: $present"
 [[ -n "$missing" ]] && ctx+=$'\n'"  missing: $missing"
 
-scoped_map="$harness_dir/scoped-map.md"
-if [[ -f "$scoped_map" ]]; then
-  overlay="$(overlay_summary "$scoped_map" || true)"
+exploration="$harness_dir/exploration.md"
+if [[ -f "$exploration" ]]; then
+  overlay="$(overlay_summary "$exploration" || true)"
   if [[ -n "$overlay" ]]; then
     ctx+=$'\n'"  overlay: $overlay"
   fi
 fi
 
 if [[ "$state" == "ready_for_human_close" || "$state" == "complete" ]]; then
-  verification_path="$harness_dir/verification-path.md"
+  verification_file="$harness_dir/verification.md"
   evaluation_path="$harness_dir/evaluation.md"
 
-  if [[ -f "$verification_path" ]]; then
-    verifier_role="$(summary_field "$verification_path" "Role")"
-    verifier_mode="$(summary_field "$verification_path" "Isolation mode" "Verification mode")"
-    verifier_context="$(summary_field "$verification_path" "Execution context")"
+  if [[ -f "$verification_file" ]]; then
+    verifier_role="$(summary_field "$verification_file" "Role")"
+    verifier_mode="$(summary_field "$verification_file" "Isolation mode" "Verification mode")"
+    verifier_context="$(summary_field "$verification_file" "Execution context")"
     ctx+=$'\n'"  verifier: role=${verifier_role:-?} mode=${verifier_mode:-?} context=${verifier_context:-?}"
   fi
 

@@ -28,15 +28,15 @@
   - test landing points
   - risk notes
 - Required artifact:
-  - `scoped-map.md`
+  - `exploration.md`
 - Status responsibility:
-  - when `scoped-map.md` is ready, hand off by updating `task-status.md`
+  - when `exploration.md` is ready, hand off by updating `task-status.md`
 
 ## Specifier
 
 - Inputs:
   - user request
-  - `scoped-map.md`
+  - `exploration.md`
 - Outputs:
   - in-scope and out-of-scope boundaries
   - functional requirements
@@ -51,7 +51,7 @@
 ## Architect
 
 - Inputs:
-  - `scoped-map.md`
+  - `exploration.md`
   - `requirements.md`
 - Outputs:
   - recommended implementation category
@@ -80,7 +80,7 @@
   - proof that the validation path is executable
   - blocking conditions if validation is not reachable
 - Required artifact:
-  - `verification-path.md`
+  - `verification.md`
 - Status responsibility:
   - update `task-status.md` with `verification_check` progress or blockers
 
@@ -89,7 +89,7 @@
 - Inputs:
   - approved `requirements.md`
   - approved `architecture.md`
-  - verified `verification-path.md`
+  - verified `verification.md`
 - Outputs:
   - code changes
   - local execution notes

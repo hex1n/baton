@@ -22,11 +22,11 @@ extract_session_command() {
   local command=""
 
   if [[ -f "$codex_hooks" ]]; then
-    command="$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harness-context"))][0] // empty' "$codex_hooks")"
+    command="$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-show-context"))][0] // empty' "$codex_hooks")"
   fi
 
   if [[ -z "$command" && -f "$claude_settings" ]]; then
-    command="$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harness-context"))][0] // empty' "$claude_settings")"
+    command="$(jq -r '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-show-context"))][0] // empty' "$claude_settings")"
   fi
 
   printf '%s' "$command"
@@ -92,5 +92,5 @@ cat <<'EOF'
 prepare-review: next isolated review steps
 1. Spawn verifier with fork_context: false and include "Agent ID: <spawned-agent-id>" in the prompt.
 2. Spawn evaluator with fork_context: false and include "Agent ID: <spawned-agent-id>" in the prompt.
-3. Write both agent ids into verification-path.md and evaluation.md before moving to ready_for_human_close.
+3. Write both agent ids into verification.md and evaluation.md before moving to ready_for_human_close.
 EOF

@@ -3,7 +3,7 @@ name: baton-specifier
 description: >
   Convert exploration findings into explicit requirements. Trigger when the
   user asks to "specify requirements", "write requirements", "what needs to
-  be true", "define acceptance criteria", or "scope this". Takes scoped-map.md
+  be true", "define acceptance criteria", or "scope this". Takes exploration.md
   and produces requirements.md with testable acceptance criteria. Produces
   requirements, not architecture or code.
 user-invocable: true
@@ -15,7 +15,7 @@ user-invocable: true
 
 ## Role Contract
 
-- **Inputs**: user request, `scoped-map.md`, `clarification-brief.md` (if exists)
+- **Inputs**: user request, `exploration.md`, `clarification-brief.md` (if exists)
 - **Outputs**: prioritized requirements with dependencies, in-scope and
   out-of-scope boundaries, acceptance criteria with test type hints,
   traceability matrix
@@ -95,7 +95,7 @@ Each criterion includes a test type hint:
 
 ### 1. Read Inputs
 
-- Read `scoped-map.md` fully — entry points, call chain, data flow, risks,
+- Read `exploration.md` fully — entry points, call chain, data flow, risks,
   existing tests, change history.
 - If `clarification-brief.md` exists, read it fully — use clarified problem,
   boundaries, success criteria, and non-goals as the primary source. Do not
@@ -143,7 +143,7 @@ Record both the original request and the reframed problem in `requirements.md`
 #### 2c. Assumption Audit
 
 List the load-bearing assumptions embedded in the problem statement,
-scoped-map findings, and user constraints. Focus on assumptions where
+exploration findings, and user constraints. Focus on assumptions where
 "if wrong, the requirements collapse."
 
 | # | Assumption | Type | If wrong... |
@@ -158,7 +158,7 @@ assumptions and proceed. For Low: list 2-3 key assumptions inline
 
 #### 2d. Constraints vs. Conventions
 
-For each constraint from the scoped-map or user request, ask:
+For each constraint from the exploration or user request, ask:
 **"Can this be changed within scope, and what would happen if it were?"**
 
 - **True constraint** (external contract, physical limit, legal, API
@@ -284,7 +284,7 @@ After producing `requirements.md`, when Codex is available (check
 Medium or High risk, run a single advisory review:
 
 ```
-Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/scoped-map.md. Focus: internal contradictions, coverage gaps, priority assignment consistency, missing edge cases. Output a structured findings list.")
+Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/exploration.md. Focus: internal contradictions, coverage gaps, priority assignment consistency, missing edge cases. Output a structured findings list.")
 ```
 
 Focus: internal contradictions, coverage gaps, priority assignment

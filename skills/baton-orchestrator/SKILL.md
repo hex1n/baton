@@ -66,7 +66,7 @@ Phase 0  Triage ─────────────────────�
 Phase 1  Clarify ── baton-clarifier ──────→ clarification-brief.md
    │                                         ↓ entry: vague/partial request
    ▼                                         ↓ exit:  confidence sufficient
-Phase 2  Explore ── baton-explorer ───────→ scoped-map.md
+Phase 2  Explore ── baton-explorer ───────→ exploration.md
    │                                         ↓ exit:  Gate 1 pass
    ▼
 Phase 3  Specify ── baton-specifier ──────→ requirements.md
@@ -76,7 +76,7 @@ Phase 4  Architect ── baton-architect ────→ architecture.md
    │                 + codex:rescue (M/H)     ↓ adversarial review→repair loop
    ▼                                         ↓ exit:  Gate 2 (human approval)
    ▼
-Phase 5  Verify ── baton-verifier ────────→ verification-path.md
+Phase 5  Verify ── baton-verifier ────────→ verification.md
    │                                         ↓ exit:  Gate 3 pass
    ▼
 Phase 6  Generate ── baton-generator ─────→ code changes
@@ -128,10 +128,10 @@ previous skill was interrupted mid-write.
 
 | Draft artifact found | Action |
 |---------------------|--------|
-| `scoped-map.md` | Re-run Phase 2 (Explore) |
+| `exploration.md` | Re-run Phase 2 (Explore) |
 | `requirements.md` | Re-run Phase 3 (Specify) |
 | `architecture.md` | Re-run Phase 4 (Architect) |
-| `verification-path.md` | Re-run Phase 5 (Verify) |
+| `verification.md` | Re-run Phase 5 (Verify) |
 | `evaluation.md` | Re-run Phase 7 (Review) |
 
 If a draft is found, inform the user which artifact was incomplete and
@@ -247,7 +247,7 @@ detail for its row. Per-phase sections below reference this matrix.
 | 2 Explore | Convention Scan — entry points + write surface | Dependency Scan — + interfaces, data models; `codebase-map.md` if repo-wide | Impact Scan — full call chains + reverse refs + test coverage; `codebase-map.md` if repo-wide |
 | 3 Specify | Minimal — P0 only, skip traceability | Standard — P0+P1, traceability if brief exists | Full — P0+P1+P2, mandatory traceability, security constraints |
 | 4 Architect | Single approach, skip delivery order | Multiple approaches, delivery order recommended; `decisions.md` if rejected alternatives | Full comparison + delivery order + security threat modeling; `decisions.md` required |
-| 5 Verify | Quick check — build/test infra only, no artifact | Standard — `verification-path.md`, skip perf baseline | Full — `verification-path.md` + CI compat + perf baseline |
+| 5 Verify | Quick check — build/test infra only, no artifact | Standard — `verification.md`, skip perf baseline | Full — `verification.md` + CI compat + perf baseline |
 | 6 Generate | 1-2 batches, simplified self-review | Logical-unit batches, full self-review | Strict delivery order, security tests per batch |
 | 7 Review | Evaluator only (Layer 1+3) | Codex + Evaluator (all layers) | Codex adversarial + Evaluator (all layers) |
 | Repair | Max 1 round, then escalate | Up to 3 rounds | Up to 3 rounds |
@@ -297,7 +297,7 @@ risk than initially estimated.
 
 **Entry**: Clarification brief exists (or clarity was already Clear).
 **Tool**: `baton-explorer`
-**Output**: `.harness/scoped-map.md`
+**Output**: `.harness/exploration.md`
 
 Always invoke via Agent tool — explorer declares `context: fork` and
 requires isolation.
@@ -322,7 +322,7 @@ requirements guide the exploration scope.
 
 ## Phase 3: Specify — `specifying`
 
-**Entry**: `scoped-map.md` exists and Gate 1 passes.
+**Entry**: `exploration.md` exists and Gate 1 passes.
 **Tool**: `baton-specifier`
 **Output**: `.harness/requirements.md`
 
@@ -331,7 +331,7 @@ requirements guide the exploration scope.
 See **Risk-Adaptive Matrix** row "3 Specify" in Phase 0.
 
 The specifier takes three inputs:
-1. `scoped-map.md` from Phase 2
+1. `exploration.md` from Phase 2
 2. `clarification-brief.md` from Phase 1 (if exists)
 3. Risk level from Phase 0
 
@@ -350,7 +350,7 @@ Phase 0), run a single advisory review of `requirements.md` before
 presenting to the user:
 
 ```
-Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/scoped-map.md. Focus: internal contradictions, coverage gaps, priority consistency, missing edge cases. Output a structured findings list.")
+Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/exploration.md. Focus: internal contradictions, coverage gaps, priority consistency, missing edge cases. Output a structured findings list.")
 ```
 
 Focus: internal contradictions, coverage gaps, priority consistency.
@@ -438,7 +438,7 @@ Agent(subagent_type: "baton-verifier",
       prompt: "Verify the validation path for task <task-id>.")
 ```
 
-**Output**: `.harness/verification-path.md` (Medium/High only)
+**Output**: `.harness/verification.md` (Medium/High only)
 
 ### Gate 3: Verification Path Check
 
@@ -456,7 +456,7 @@ If BLOCKED: report blockers, route back to Phase 4 or Phase 3.
 
 ## Phase 6: Generate — `generating`
 
-**Entry**: `verification-path.md` exists and Gate 3 passes.
+**Entry**: `verification.md` exists and Gate 3 passes.
 **Tool**: `baton-generator`
 **Output**: Code changes, execution notes.
 
@@ -470,7 +470,7 @@ Skill("baton-generator")
 ```
 
 The generator reads artifacts in order (architecture → requirements →
-verification-path), implements in logical-unit batches (one batch per
+verification), implements in logical-unit batches (one batch per
 independently verifiable requirement), and runs checkpoint validation
 after each batch.
 
@@ -489,7 +489,7 @@ Run dependent units sequentially with `baton-generator`.
 ### Post-generation validation
 
 After all implementation is complete, run the verification commands from
-`verification-path.md` to confirm the implementation passes.
+`verification.md` to confirm the implementation passes.
 
 **Next** → Phase 7. State: `reviewing`, owner: `evaluator`.
 
@@ -679,5 +679,5 @@ exploring → specifying → architecting → awaiting_human_arch
   → ready_for_human_close → complete
 ```
 
-Any state can transition to `blocked`. See baton-status for the blocked
+Any state can transition to `blocked`. See baton-tracker for the blocked
 exit table.

@@ -21,8 +21,8 @@ Do not localize `task-status.md`.
 
 ## Execution Steps
 
-1. Read all artifacts: `scoped-map.md`, `requirements.md`, `architecture.md`,
-   `verification-path.md`, `evaluation.md`, `task-status.md`,
+1. Read all artifacts: `exploration.md`, `requirements.md`, `architecture.md`,
+   `verification.md`, `evaluation.md`, `task-status.md`,
    `clarification-brief.md` (if exists), and `generator-feedback.md`
    (if exists).
 
@@ -102,10 +102,10 @@ Extract these metrics from the task artifacts:
 |--------|--------|---------|
 | Clarification questions asked | `clarification-brief.md` interview log | Measures requirement ambiguity |
 | Risk level assessed | `task-status.md` | Calibrates risk assessment accuracy |
-| Exploration depth used | `scoped-map.md` | Validates risk-adaptive depth |
+| Exploration depth used | `exploration.md` | Validates risk-adaptive depth |
 | Requirements count (P0/P1/P2) | `requirements.md` | Tracks scope creep |
 | Architecture approaches considered | `architecture.md` | Measures design rigor |
-| Verification commands count | `verification-path.md` | Measures test coverage planning |
+| Verification commands count | `verification.md` | Measures test coverage planning |
 | Eval rounds | `task-status.md` / `evaluation.md` | Measures implementation quality |
 | Repair finding classification | `evaluation.md` | FIXED/RECURRING/REGRESSED/NEW ratio |
 | Blocked count | `task-status.md` | Measures flow interruptions |

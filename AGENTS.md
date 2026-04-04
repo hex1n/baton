@@ -10,7 +10,7 @@ This content is the shared root governance source for host-specific entrypoints:
 Do not hand-edit those files directly. Update this template and then run:
 
 ```bash
-bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force
+bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force
 ```
 
 ## State Machine
@@ -44,10 +44,10 @@ Tasks produce artifacts in `.harness/`:
 
 | Artifact | Purpose |
 |----------|---------|
-| `scoped-map.md` | Task-local understanding |
+| `exploration.md` | Task-local understanding |
 | `requirements.md` | Implementation contract |
 | `architecture.md` | Change design |
-| `verification-path.md` | Validation proof |
+| `verification.md` | Validation proof |
 | `evaluation.md` | Independent review verdict and isolation provenance |
 | `task-status.md` | Control plane (state tracking) |
 | `retrospective.md` | Process lessons |
@@ -63,7 +63,7 @@ Tasks produce artifacts in `.harness/`:
 ## Multi-Host Root Entry Rules
 
 - Keep root governance synchronized through `spec/templates/root-governance.template.md`
-- Materialize host entrypoints with `bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force`
+- Materialize host entrypoints with `bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force`
 - `CLAUDE.md` remains the root entrypoint for Claude Code style hosts
 - `AGENTS.md` is the shared root entrypoint for Codex and Cursor style hosts
 - If you change root governance rules, update the template first and let the sync script rewrite the host files

@@ -120,7 +120,7 @@ For baton maintainers, update root governance in
 `spec/templates/root-governance.template.md`, then run:
 
 ```bash
-bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force
+bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force
 ```
 
 ## Role Skills

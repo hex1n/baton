@@ -74,10 +74,10 @@ blocked → {verification_check | architecting | generating}
 | 角色 | 输入 | 输出 | 制品责任 |
 |------|------|------|----------|
 | Repo Explorer | 仓库根目录、Profile | 仓库地图、高风险目录 | 可选 `repo-map.md` |
-| Scoped Explorer | 用户请求、仓库地图 | 调用链、写入面、测试锚点、风险 | `scoped-map.md` |
-| Specifier | 请求 + scoped-map | 需求、验收标准 | `requirements.md` |
-| Architect | scoped-map + requirements | 方案、文件影响、验证策略、权衡 | `architecture.md` |
-| Verification Explorer | architecture、Profile | 精确命令、可执行性证明、阻塞条件 | `verification-path.md` |
+| Scoped Explorer | 用户请求、仓库地图 | 调用链、写入面、测试锚点、风险 | `exploration.md` |
+| Specifier | 请求 + exploration | 需求、验收标准 | `requirements.md` |
+| Architect | exploration + requirements | 方案、文件影响、验证策略、权衡 | `architecture.md` |
+| Verification Explorer | architecture、Profile | 精确命令、可执行性证明、阻塞条件 | `verification.md` |
 | Generator | 已审批的需求 + 架构 + 验证路径 | 代码变更 | 更新 `task-status.md` |
 | Reviewer | 变更文件 + 需求 + 架构 | 发现项、残余风险 | 更新 `task-status.md` |
 | Evaluator | diff + 审查结论 + 验证结果 | 通过/拒绝、未满足标准 | 更新 `task-status.md` |

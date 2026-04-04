@@ -64,24 +64,24 @@ assert_exit "exploring → no artifacts required" 0 bash "$SCRIPT" "$tmp/t1"
 make_status "$tmp/t2" "blocked"
 assert_exit "blocked → no artifact check" 0 bash "$SCRIPT" "$tmp/t2"
 
-# state=specifying, scoped-map.md present → exit 0
+# state=specifying, exploration.md present → exit 0
 make_status "$tmp/t3" "specifying"
-touch "$tmp/t3/scoped-map.md"
-assert_exit "specifying + scoped-map present → pass" 0 bash "$SCRIPT" "$tmp/t3"
+touch "$tmp/t3/exploration.md"
+assert_exit "specifying + exploration present → pass" 0 bash "$SCRIPT" "$tmp/t3"
 
-# state=specifying, scoped-map.md missing → exit 2
+# state=specifying, exploration.md missing → exit 2
 make_status "$tmp/t4" "specifying"
-assert_exit "specifying + scoped-map missing → block" 2 bash "$SCRIPT" "$tmp/t4"
+assert_exit "specifying + exploration missing → block" 2 bash "$SCRIPT" "$tmp/t4"
 
 # state=generating, all artifacts present → exit 0
 make_status "$tmp/t5" "generating"
-touch "$tmp/t5/scoped-map.md" "$tmp/t5/requirements.md" "$tmp/t5/architecture.md" "$tmp/t5/verification-path.md"
+touch "$tmp/t5/exploration.md" "$tmp/t5/requirements.md" "$tmp/t5/architecture.md" "$tmp/t5/verification.md"
 assert_exit "generating + all artifacts → pass" 0 bash "$SCRIPT" "$tmp/t5"
 
-# state=generating, verification-path.md missing → exit 2
+# state=generating, verification.md missing → exit 2
 make_status "$tmp/t6" "generating"
-touch "$tmp/t6/scoped-map.md" "$tmp/t6/requirements.md" "$tmp/t6/architecture.md"
-assert_exit "generating + verification-path missing → block" 2 bash "$SCRIPT" "$tmp/t6"
+touch "$tmp/t6/exploration.md" "$tmp/t6/requirements.md" "$tmp/t6/architecture.md"
+assert_exit "generating + verification missing → block" 2 bash "$SCRIPT" "$tmp/t6"
 
 # exit 2 output is valid JSON with decision:block
 assert_json_block "block output is JSON with decision:block" "$tmp/t6"
@@ -98,30 +98,30 @@ cat > "$tmp/t7/task-status.md" <<'EOF'
 
 ## State Notes
 EOF
-touch "$tmp/t7/scoped-map.md" "$tmp/t7/requirements.md" "$tmp/t7/architecture.md"
-assert_exit "latest row generating without verification-path -> block" 2 bash "$SCRIPT" "$tmp/t7"
+touch "$tmp/t7/exploration.md" "$tmp/t7/requirements.md" "$tmp/t7/architecture.md"
+assert_exit "latest row generating without verification -> block" 2 bash "$SCRIPT" "$tmp/t7"
 
 # legacy schema remains readable
 make_legacy_status "$tmp/t8" "specifying"
-touch "$tmp/t8/scoped-map.md"
-assert_exit "legacy schema specifying + scoped-map present -> pass" 0 bash "$SCRIPT" "$tmp/t8"
+touch "$tmp/t8/exploration.md"
+assert_exit "legacy schema specifying + exploration present -> pass" 0 bash "$SCRIPT" "$tmp/t8"
 
 # ready_for_human_close requires evaluation.md
 make_status "$tmp/t9" "ready_for_human_close"
-touch "$tmp/t9/scoped-map.md" "$tmp/t9/requirements.md" "$tmp/t9/architecture.md" "$tmp/t9/verification-path.md"
+touch "$tmp/t9/exploration.md" "$tmp/t9/requirements.md" "$tmp/t9/architecture.md" "$tmp/t9/verification.md"
 assert_exit "ready_for_human_close without evaluation -> block" 2 bash "$SCRIPT" "$tmp/t9"
 
 make_status "$tmp/t10" "ready_for_human_close"
-touch "$tmp/t10/scoped-map.md" "$tmp/t10/requirements.md" "$tmp/t10/architecture.md" "$tmp/t10/verification-path.md" "$tmp/t10/evaluation.md"
+touch "$tmp/t10/exploration.md" "$tmp/t10/requirements.md" "$tmp/t10/architecture.md" "$tmp/t10/verification.md" "$tmp/t10/evaluation.md"
 assert_exit "ready_for_human_close with evaluation -> pass" 0 bash "$SCRIPT" "$tmp/t10"
 
 # state=complete requires retrospective.md
 make_status "$tmp/t11" "complete"
-touch "$tmp/t11/scoped-map.md" "$tmp/t11/requirements.md" "$tmp/t11/architecture.md" "$tmp/t11/verification-path.md" "$tmp/t11/evaluation.md"
+touch "$tmp/t11/exploration.md" "$tmp/t11/requirements.md" "$tmp/t11/architecture.md" "$tmp/t11/verification.md" "$tmp/t11/evaluation.md"
 assert_exit "complete without retrospective -> block" 2 bash "$SCRIPT" "$tmp/t11"
 
 make_status "$tmp/t12" "complete"
-touch "$tmp/t12/scoped-map.md" "$tmp/t12/requirements.md" "$tmp/t12/architecture.md" "$tmp/t12/verification-path.md" "$tmp/t12/evaluation.md" "$tmp/t12/retrospective.md"
+touch "$tmp/t12/exploration.md" "$tmp/t12/requirements.md" "$tmp/t12/architecture.md" "$tmp/t12/verification.md" "$tmp/t12/evaluation.md" "$tmp/t12/retrospective.md"
 assert_exit "complete with retrospective -> pass" 0 bash "$SCRIPT" "$tmp/t12"
 
 echo ""; echo "Results: $PASS passed, $FAIL failed of $TOTAL total"

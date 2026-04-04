@@ -26,8 +26,8 @@ Load these artifacts before proceeding:
 
 1. Read `.harness/requirements.md`
 2. Read `.harness/architecture.md`
-3. Read `.harness/verification-path.md`
-4. Read `.harness/scoped-map.md` — use exploration findings to verify
+3. Read `.harness/verification.md`
+4. Read `.harness/exploration.md` — use exploration findings to verify
    implementation covers all identified risk areas and entry points
 5. Read `base_commit` from `task-status.md` § State Notes.
    Extract the write surface file list from `architecture.md` (the files
@@ -83,7 +83,7 @@ Fallback (always works):
 Agent(subagent_type: "general-purpose",
       prompt: "You are the Evaluator. Cold-read only:
                .harness/requirements.md, .harness/architecture.md,
-               .harness/verification-path.md, and the implementation diff.
+               .harness/verification.md, and the implementation diff.
                Follow baton-evaluator skill instructions.")
 ```
 
@@ -106,7 +106,7 @@ concrete spawn/wait example and the warning against `fork_context: true`.
 ## Role Contract
 
 - **Inputs**: changed files / diff, `requirements.md`, `architecture.md`,
-  `verification-path.md`, `scoped-map.md`, previous `evaluation.md`
+  `verification.md`, `exploration.md`, previous `evaluation.md`
   (repair rounds only)
 - **Outputs**: findings, residual risks, go/no-go conclusion
 - **Required artifact**: `evaluation.md`
@@ -136,7 +136,7 @@ replay the Generator's logic, you will miss what the Generator missed.
 
 ### Layer 1: Deterministic Checks
 
-Run all verification commands defined in `verification-path.md`.
+Run all verification commands defined in `verification.md`.
 Every command listed there must pass (or deviations must be explained).
 
 **Any failure in Layer 1 stops the evaluation.** Do not proceed to Layer 2
@@ -161,7 +161,7 @@ Review the actual diff against the architecture:
 - **Dependency audit** — were new dependencies added? Check: are they
   justified by the architecture? Are they actively maintained? Any known
   security vulnerabilities? Flag unjustified or risky additions.
-- **Risk area coverage** — cross-reference `scoped-map.md` risks with the
+- **Risk area coverage** — cross-reference `exploration.md` risks with the
   diff. Are all identified risk areas addressed or explicitly accepted?
 
 ### Layer 3: Requirements Verification
@@ -268,7 +268,7 @@ Read the risk level from `task-status.md` § State Notes and adapt:
 |------------|-------------------|
 | **Low** | Layer 1 (deterministic) + Layer 3 (requirements) only; skip Layer 2 diff review depth checks (dependency audit, test quality); P0 criteria only |
 | **Medium** | All 3 layers; full diff review; P0+P1 criteria |
-| **High** | All 3 layers + security audit + dependency audit + performance regression check (compare against verification-path baselines); all P0+P1+P2 criteria |
+| **High** | All 3 layers + security audit + dependency audit + performance regression check (compare against verification baselines); all P0+P1+P2 criteria |
 
 ### Priority-Aware Verdict
 

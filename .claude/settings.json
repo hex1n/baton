@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/session-start\" # baton-harness-context"
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; BATON_BOOTSTRAP=\"$root/spec/bootstrap\" bash \"$root/spec/bootstrap/hooks/session-start\" # baton-show-context"
           }
         ]
       }

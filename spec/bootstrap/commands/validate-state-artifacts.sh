@@ -11,6 +11,8 @@ task_status="$harness_dir/task-status.md"
 
 [[ -f "$task_status" ]] || exit 0
 
+state_migrate_legacy_artifacts "$harness_dir"
+
 state="$(task_status_current_field "$task_status" state)"
 [[ -n "$state" ]] || exit 0
 

@@ -72,21 +72,21 @@ EOF
 
 make_repo "$tmp/pass"
 write_status "$tmp/pass/.harness/task-status.md" "generating"
-touch "$tmp/pass/.harness/scoped-map.md" \
+touch "$tmp/pass/.harness/exploration.md" \
   "$tmp/pass/.harness/requirements.md" \
   "$tmp/pass/.harness/architecture.md" \
-  "$tmp/pass/.harness/verification-path.md"
-write_verification_path "$tmp/pass/.harness/verification-path.md"
+  "$tmp/pass/.harness/verification.md"
+write_verification_path "$tmp/pass/.harness/verification.md"
 assert_exit "stop-check passes on complete generating harness" 0 \
   bash -c 'cd "$1" && bash "$2"' bash "$tmp/pass" "$HOOK"
 
 make_repo "$tmp/fail"
 write_status "$tmp/fail/.harness/task-status.md" "ready_for_human_close"
-touch "$tmp/fail/.harness/scoped-map.md" \
+touch "$tmp/fail/.harness/exploration.md" \
   "$tmp/fail/.harness/requirements.md" \
   "$tmp/fail/.harness/architecture.md" \
-  "$tmp/fail/.harness/verification-path.md"
-write_verification_path "$tmp/fail/.harness/verification-path.md"
+  "$tmp/fail/.harness/verification.md"
+write_verification_path "$tmp/fail/.harness/verification.md"
 assert_exit "stop-check blocks missing evaluation on ready_for_human_close" 2 \
   bash -c 'cd "$1" && bash "$2"' bash "$tmp/fail" "$HOOK"
 

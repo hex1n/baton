@@ -255,8 +255,8 @@ subagent_stop_cmd="$(build_claude_hook_cmd "subagent-stop" "baton-subagent-stop"
 # Matcher: startup|resume
 # Reads .harness/task-status.md and injects current task state as context
 # ---------------------------------------------------------------------------
-session_start_cmd="$(build_claude_hook_cmd "session-start" "baton-harness-context")"
-cx_session_start_cmd="$(build_codex_hook_cmd "session-start" "baton-harness-context")"
+session_start_cmd="$(build_claude_hook_cmd "session-start" "baton-show-context")"
+cx_session_start_cmd="$(build_codex_hook_cmd "session-start" "baton-show-context")"
 
 # ---------------------------------------------------------------------------
 # Machine-readable manifest: emit expected Baton-managed hook commands, then exit
@@ -371,7 +371,7 @@ cc_new="$(echo "$cc_existing" | jq \
   def strip_baton_session:
     if type == "array" then
       map(
-        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-harness-context"))) then
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-show-context|baton-harness-context"))) then
           empty
         else .
         end
@@ -470,7 +470,7 @@ cx_new="$(echo "$cx_existing" | jq \
   def strip_baton_session:
     if type == "array" then
       map(
-        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-harness-context"))) then
+        if type == "object" and (.hooks // [] | map(.command // "") | any(test("baton-show-context|baton-harness-context"))) then
           empty
         else .
         end

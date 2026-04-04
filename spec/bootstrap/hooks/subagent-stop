@@ -5,7 +5,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/lib/parse-input.sh"
 
 task_status_path="$HOOK_ROOT/.harness/task-status.md"
-verification_path="$HOOK_ROOT/.harness/verification-path.md"
+verification_path="$HOOK_ROOT/.harness/verification.md"
 task_status_script="$BOOTSTRAP_DIR/task-status.sh"
 validate_artifact_script="$BOOTSTRAP_DIR/validate-artifact.sh"
 
@@ -18,8 +18,8 @@ debug_log "subagent-stop agent=$HOOK_AGENT"
 source "$task_status_script"
 
 if [[ "$HOOK_AGENT" == "baton-verifier" ]]; then
-  [[ -f "$verification_path" ]] || hook_block "baton-verifier completed without writing verification-path.md"
-  if ! verifier_output="$(bash "$validate_artifact_script" verification-path "$verification_path" 2>&1)"; then
+  [[ -f "$verification_path" ]] || hook_block "baton-verifier completed without writing verification.md"
+  if ! verifier_output="$(bash "$validate_artifact_script" verification "$verification_path" 2>&1)"; then
     hook_block "$verifier_output"
   fi
   hook_pass

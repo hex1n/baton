@@ -210,7 +210,7 @@ esac
 templates_dir="$spec_root/templates"
 profiles_dir="$spec_root/profiles"
 adapters_dir="$spec_root/adapters"
-governance_sync_sh="$bootstrap_dir/sync-governance-entrypoints.sh"
+governance_sync_sh="$bootstrap_dir/sync-entrypoints.sh"
 resolved_repo_root="$(cd "$repo_root" && pwd)"
 resolved_profile="$(resolve_profile "$resolved_repo_root" "$profile")"
 
@@ -259,10 +259,10 @@ if [[ -e "$harness_dir/task-status.md" ]]; then
   task_status_existed="true"
 fi
 
-copy_if_needed "$(human_template_path 'scoped-map.template.md')" "$harness_dir/scoped-map.md" "$force"
+copy_if_needed "$(human_template_path 'exploration.template.md')" "$harness_dir/exploration.md" "$force"
 copy_if_needed "$(human_template_path 'requirements.template.md')" "$harness_dir/requirements.md" "$force"
 copy_if_needed "$(human_template_path 'architecture.template.md')" "$harness_dir/architecture.md" "$force"
-copy_if_needed "$(human_template_path 'verification-path.template.md')" "$harness_dir/verification-path.md" "$force"
+copy_if_needed "$(human_template_path 'verification.template.md')" "$harness_dir/verification.md" "$force"
 copy_if_needed "$templates_dir/task-status.template.md" "$harness_dir/task-status.md" "$force"
 copy_if_needed "$(human_template_path 'retrospective.template.md')" "$harness_dir/retrospective.md" "$force"
 copy_if_needed "$selected_profile_path" "$harness_dir/profile.base.yaml" "$force"

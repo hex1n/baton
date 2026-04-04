@@ -2,7 +2,7 @@
 # validate-artifact.sh — verify a .harness/*.md artifact has all required sections
 #
 # Usage: validate-artifact.sh <artifact-type> <file-path>
-#   artifact-type: scoped-map | requirements | architecture | verification-path | evaluation | task-status | generator-feedback
+#   artifact-type: exploration | requirements | architecture | verification | evaluation | task-status | generator-feedback
 #   file-path:     path to the artifact file to validate
 #
 # Exit 0: artifact passes or type is unknown (skip)
@@ -60,7 +60,7 @@ check_optional_overlay_recommendation() {
   fi
 
   if ! grep -Eq '^overlay:[[:space:]]*(core|strict)[[:space:]]*$' "$file"; then
-    printf 'ERROR: validate-artifact: scoped-map overlay recommendation must contain "overlay: core" or "overlay: strict" in %s\n' "$file" >&2
+    printf 'ERROR: validate-artifact: exploration overlay recommendation must contain "overlay: core" or "overlay: strict" in %s\n' "$file" >&2
     return 1
   fi
 }
@@ -68,7 +68,7 @@ check_optional_overlay_recommendation() {
 run_checks() {
   local rc=0
   case "$artifact_type" in
-    scoped-map)
+    exploration)
       check_sections "$file_path" \
         "Scope|范围" "Entry|入口" "Call.Chain|调用链" "Existing.Behavior|现有行为" \
         "Existing.Tests|现有测试" "Risk|Dependency|风险" "Change.Shape|变更形态" \
@@ -85,7 +85,7 @@ run_checks() {
         "Problem.Framing|问题" "First.Principles|第一性原理" "Recommended.Approach|推荐架构" \
         "Surface.Scan|影响面扫描" "Verification.Strategy|验证策略" "Risk|风险" "Self.Challenge|自我质疑" || rc=$?
       ;;
-    verification-path)
+    verification)
       check_sections "$file_path" \
         "Intended.Checks|计划检查项" "Commands|精确命令" "Dependencies|Prerequisites|前置条件" "Execution.Provenance|Isolation" \
         "Dry.Run" "Blockers|阻塞项" "Fallback|回退方案" || rc=$?

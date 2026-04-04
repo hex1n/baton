@@ -5,7 +5,7 @@ description: >
   Verify that the planned validation path is executable before implementation
   begins. Trigger when the user asks to "verify the path", "check verification",
   "can we test this", "prove we can validate", or "Gate 3". Takes
-  architecture.md and repo profile, produces verification-path.md with exact
+  architecture.md and repo profile, produces verification.md with exact
   commands, dry-run results, and fallback strategies. Produces verification
   proof, not implementations.
 user-invocable: true
@@ -73,7 +73,7 @@ Do not run verifier logic inline in the parent thread and do not use
 `fork_context: true`.
 
 The orchestrator must pass the spawned agent id into the prompt, and the
-verifier must record it in `verification-path.md` as:
+verifier must record it in `verification.md` as:
 
 - `Agent ID: <spawned-agent-id>`
 
@@ -85,7 +85,7 @@ concrete spawn/wait example.
 
 - **Inputs**: `requirements.md`, `architecture.md`, repo profile
 - **Outputs**: exact commands or checks, executability proof, blocking conditions
-- **Required artifact**: `verification-path.md`
+- **Required artifact**: `verification.md`
 
 ## Artifact Language Policy
 
@@ -111,7 +111,7 @@ All criteria must pass before Generator can begin:
 - Task is `strict` but verification can only run as `sequential_fallback`
 - Generator would be forced to implement without a realistic verification path
 
-## Required Artifact: `verification-path.md`
+## Required Artifact: `verification.md`
 
 Sections (all required):
 
@@ -254,9 +254,9 @@ Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |
 |------------|-------------------|
-| **Low** | Quick check — verify build tool exists and test runner works (`mvn test` / `gradle test` / `npm test` passes or fails with test failures, not infra errors). Record the verification command in State Notes. Do NOT produce `verification-path.md`. If infra is broken, mark `blocked` with `environment_blocker`. |
-| **Medium** | Standard — all checks (Steps 0-5, 7-9), CI compatibility if CI config exists. Produce `verification-path.md` but skip performance baseline. |
-| **High** | Full depth — all checks required (Steps 0-9), CI compatibility mandatory, performance baseline required, test data setup scripted. Full `verification-path.md`. |
+| **Low** | Quick check — verify build tool exists and test runner works (`mvn test` / `gradle test` / `npm test` passes or fails with test failures, not infra errors). Record the verification command in State Notes. Do NOT produce `verification.md`. If infra is broken, mark `blocked` with `environment_blocker`. |
+| **Medium** | Standard — all checks (Steps 0-5, 7-9), CI compatibility if CI config exists. Produce `verification.md` but skip performance baseline. |
+| **High** | Full depth — all checks required (Steps 0-9), CI compatibility mandatory, performance baseline required, test data setup scripted. Full `verification.md`. |
 
 ### Quality Check
 

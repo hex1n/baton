@@ -47,17 +47,16 @@ Useful options:
 - `--owner scoped-explorer`
 - `--state exploring`
 - `--notes "user-approved pilot task"`
-- `--language auto|en|zh`
 - `--dry-run`
 
 ## What Gets Reset
 
 The active task surfaces are reset from templates:
 
-- `scoped-map.md`
+- `exploration.md`
 - `requirements.md`
 - `architecture.md`
-- `verification-path.md`
+- `verification.md`
 - `evaluation.md`
 - `retrospective.md`
 
@@ -85,7 +84,7 @@ This is a lightweight history mechanism, not a full scheduler.
 2. review `profile.local.yaml`
 3. run `Repo Explorer` once
 4. run `start-task`
-5. fill `scoped-map.md`
+5. fill `exploration.md`
 6. after architecture approval, sync `requirements.md` to any approved
    architecture decisions that change requirements-level truth
 7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`

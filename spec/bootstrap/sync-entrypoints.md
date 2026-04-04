@@ -17,7 +17,7 @@ and syncs it into:
 ## Bash
 
 ```bash
-./spec/bootstrap/sync-governance-entrypoints.sh --repo-root .
+./spec/bootstrap/sync-entrypoints.sh --repo-root .
 ```
 
 Useful options:

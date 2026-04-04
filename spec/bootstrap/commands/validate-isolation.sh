@@ -10,7 +10,7 @@ source "$bootstrap_dir/lib/profile.sh"
 harness_dir="${1:-.harness}"
 task_status="$harness_dir/task-status.md"
 profile_local="$harness_dir/profile.local.yaml"
-verification_path="$harness_dir/verification-path.md"
+verification_path="$harness_dir/verification.md"
 evaluation_path="$harness_dir/evaluation.md"
 validate_artifact="$bootstrap_dir/validate-artifact.sh"
 
@@ -45,9 +45,9 @@ check_verification_isolation() {
   local expected_mode declared_role declared_mode execution_context agent_id evidence fallback_policy fallback_reason
   expected_mode="$(profile_read_mode "$profile_local" verification_isolation_mode strict)"
 
-  [[ -f "$verification_path" ]] || block "State is \"$state\" but verification-path.md is missing."
-  bash "$validate_artifact" verification-path "$verification_path" >/dev/null 2>&1 \
-    || block "verification-path.md is present but does not satisfy the required schema."
+  [[ -f "$verification_path" ]] || block "State is \"$state\" but verification.md is missing."
+  bash "$validate_artifact" verification "$verification_path" >/dev/null 2>&1 \
+    || block "verification.md is present but does not satisfy the required schema."
 
   declared_role="$(provenance_normalize_value "$(provenance_read_field "$verification_path" "Role" || true)")"
   declared_mode="$(provenance_normalize_value "$(provenance_read_field "$verification_path" "Isolation mode" "Verification mode" || true)")"
@@ -58,26 +58,26 @@ check_verification_isolation() {
   fallback_reason="$(provenance_clean_value "$(provenance_read_field "$verification_path" "Fallback reason" || true)")"
 
   [[ "$declared_role" == "verification_explorer" ]] \
-    || block "verification-path.md must declare Role \"verification_explorer\"."
-  [[ -n "$declared_mode" ]] || block "verification-path.md must declare \"Isolation mode\"."
+    || block "verification.md must declare Role \"verification_explorer\"."
+  [[ -n "$declared_mode" ]] || block "verification.md must declare \"Isolation mode\"."
   [[ "$declared_mode" == "$expected_mode" ]] \
-    || block "verification-path.md declares Isolation mode \"$declared_mode\" but profile expects \"$expected_mode\"."
+    || block "verification.md declares Isolation mode \"$declared_mode\" but profile expects \"$expected_mode\"."
 
-  [[ -n "$execution_context" ]] || block "verification-path.md must declare \"Execution context\"."
-  require_context_value "verification-path.md" "$execution_context"
-  is_blank_or_none "$evidence" && block "verification-path.md must declare provenance evidence."
-  is_blank_or_none "$fallback_policy" && block "verification-path.md must declare a fallback policy."
+  [[ -n "$execution_context" ]] || block "verification.md must declare \"Execution context\"."
+  require_context_value "verification.md" "$execution_context"
+  is_blank_or_none "$evidence" && block "verification.md must declare provenance evidence."
+  is_blank_or_none "$fallback_policy" && block "verification.md must declare a fallback policy."
 
   if [[ "$expected_mode" == "strict" && "$execution_context" != "isolated_subagent" ]]; then
-    block "verification-path.md must use Execution context \"isolated_subagent\" while verification isolation mode is strict."
+    block "verification.md must use Execution context \"isolated_subagent\" while verification isolation mode is strict."
   fi
 
   if [[ "$execution_context" == "isolated_subagent" ]] && is_blank_or_none "$agent_id"; then
-    block "verification-path.md uses isolated_subagent but does not record Agent ID."
+    block "verification.md uses isolated_subagent but does not record Agent ID."
   fi
 
   if [[ "$expected_mode" == "compat" && "$execution_context" == "sequential_fallback" ]] && is_blank_or_none "$fallback_reason"; then
-    block "verification-path.md uses sequential_fallback in compat mode but does not record a concrete fallback reason."
+    block "verification.md uses sequential_fallback in compat mode but does not record a concrete fallback reason."
   fi
 }
 

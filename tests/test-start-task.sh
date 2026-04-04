@@ -52,7 +52,7 @@ cat > "$repo/.harness/task-status.md" <<'EOF'
 - Current residual risks: none
 EOF
 
-cat > "$repo/.harness/scoped-map.md" <<'EOF'
+cat > "$repo/.harness/exploration.md" <<'EOF'
 custom scoped map
 EOF
 
@@ -64,7 +64,7 @@ cat > "$repo/.harness/architecture.md" <<'EOF'
 custom architecture
 EOF
 
-cat > "$repo/.harness/verification-path.md" <<'EOF'
+cat > "$repo/.harness/verification.md" <<'EOF'
 custom verification path
 EOF
 

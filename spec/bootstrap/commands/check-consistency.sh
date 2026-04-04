@@ -14,7 +14,7 @@ skills_dir="$repo_root/skills"
 claude_skills_dir="$repo_root/.claude/skills"
 agents_dir="$repo_root/.agents"
 template_file="$spec_root/templates/task-status.template.md"
-verification_template="$spec_root/templates/verification-path.template.md"
+verification_template="$spec_root/templates/verification.template.md"
 evaluation_template="$spec_root/templates/evaluation.template.md"
 generator_feedback_template="$spec_root/templates/generator-feedback.template.md"
 legacy_generator_feedback_template="$repo_root/spec/extensions/java-backend-strict/templates/generator-feedback.template.md"
@@ -26,9 +26,9 @@ profile_template="$spec_root/templates/profile.local.template.yaml"
 start_task_sh="$script_dir/start-task.sh"
 validate_artifact_sh="$script_dir/validate-artifact.sh"
 validate_isolation_sh="$script_dir/validate-isolation.sh"
-harness_context_sh="$script_dir/harness-context.sh"
+harness_context_sh="$script_dir/show-context.sh"
 provenance_sh="$bootstrap_dir/lib/provenance.sh"
-governance_check_sh="$bootstrap_dir/sync-governance-entrypoints.sh"
+governance_check_sh="$bootstrap_dir/sync-entrypoints.sh"
 task_status_script="$bootstrap_dir/task-status.sh"
 install_hooks_sh="$bootstrap_dir/install-hooks.sh"
 prepare_review_sh="$bootstrap_dir/prepare-review.sh"
@@ -277,7 +277,7 @@ for template in "$verification_template" "$evaluation_template"; do
 done
 
 if [[ -f "$verification_template" ]] && ! grep -Fq '## 4. Execution Provenance' "$verification_template"; then
-  printf 'ERROR: invariant-10: verification-path template missing Execution Provenance section\n'
+  printf 'ERROR: invariant-10: verification template missing Execution Provenance section\n'
   inv10_errors=$((inv10_errors + 1))
 fi
 
@@ -326,7 +326,7 @@ for template in "$verification_template" "$evaluation_template"; do
 done
 
 if [[ -f "$validate_artifact_sh" ]]; then
-  for artifact in 'verification-path)' 'evaluation)'; do
+  for artifact in 'verification)' 'evaluation)'; do
     if ! grep -Fq "$artifact" "$validate_artifact_sh"; then
       printf 'ERROR: invariant-11: validate-artifact.sh missing case %s\n' "$artifact"
       inv11_errors=$((inv11_errors + 1))
@@ -346,7 +346,7 @@ fi
 for test_file in \
   "$repo_root/tests/test-validate-artifact.sh" \
   "$repo_root/tests/test-validate-isolation.sh" \
-  "$repo_root/tests/test-harness-context.sh" \
+  "$repo_root/tests/test-show-context.sh" \
   "$repo_root/tests/test-start-task.sh"
 do
   if [[ ! -f "$test_file" ]]; then
@@ -364,8 +364,8 @@ if [[ -f "$repo_root/tests/test-validate-isolation.sh" ]]; then
   done
 fi
 
-if [[ -f "$repo_root/tests/test-harness-context.sh" ]] && ! grep -Fq 'verifier:' "$repo_root/tests/test-harness-context.sh"; then
-  printf 'ERROR: invariant-11: test-harness-context.sh missing human-close provenance summary coverage\n'
+if [[ -f "$repo_root/tests/test-show-context.sh" ]] && ! grep -Fq 'verifier:' "$repo_root/tests/test-show-context.sh"; then
+  printf 'ERROR: invariant-11: test-show-context.sh missing human-close provenance summary coverage\n'
   inv11_errors=$((inv11_errors + 1))
 fi
 
@@ -515,7 +515,7 @@ for ps1_script in "$bootstrap_dir"/*.ps1; do
 done
 
 doc_refs="$(
-  grep -nH -E 'install-harness\.ps1|init-harness\.ps1|start-task\.ps1|update-harness\.ps1|link-skills\.ps1|sync-governance-entrypoints\.ps1|sync-skills\.ps1|pwsh[[:space:]].*spec/bootstrap/' \
+  grep -nH -E 'install-harness\.ps1|init-harness\.ps1|start-task\.ps1|update-harness\.ps1|link-skills\.ps1|sync-entrypoints\.ps1|sync-skills\.ps1|pwsh[[:space:]].*spec/bootstrap/' \
     "$spec_root/README.md" "$bootstrap_dir"/*.md || true
 )"
 if [[ -n "$doc_refs" ]]; then
@@ -561,7 +561,7 @@ else
     actual_cc_pre="$(extract_live_hook_command "$live_claude_settings" '[.hooks.PreToolUse[]?.hooks[]?.command | select(test("baton-validate-transition"))][0] // empty')"
     actual_cc_stop="$(extract_live_hook_command "$live_claude_settings" '[.hooks.Stop[]?.hooks[]?.command | select(test("baton-validate-state"))][0] // empty')"
     actual_cc_subagent="$(extract_live_hook_command "$live_claude_settings" '[.hooks.SubagentStop[]?.hooks[]?.command | select(test("baton-subagent-stop"))][0] // empty')"
-    actual_cc_session="$(extract_live_hook_command "$live_claude_settings" '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harness-context"))][0] // empty')"
+    actual_cc_session="$(extract_live_hook_command "$live_claude_settings" '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-show-context"))][0] // empty')"
 
     for pair in \
       "Claude PostToolUse:$expected_cc_post:$actual_cc_post" \
@@ -593,7 +593,7 @@ else
     actual_cx_post="$(extract_live_hook_command "$live_codex_hooks" '[.hooks.PostToolUse[]?.hooks[]?.command | select(test("baton-validate-artifact"))][0] // empty')"
     actual_cx_pre="$(extract_live_hook_command "$live_codex_hooks" '[.hooks.PreToolUse[]?.hooks[]?.command | select(test("baton-validate-transition"))][0] // empty')"
     actual_cx_stop="$(extract_live_hook_command "$live_codex_hooks" '[.hooks.Stop[]?.hooks[]?.command | select(test("baton-validate-state"))][0] // empty')"
-    actual_cx_session="$(extract_live_hook_command "$live_codex_hooks" '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-harness-context"))][0] // empty')"
+    actual_cx_session="$(extract_live_hook_command "$live_codex_hooks" '[.hooks.SessionStart[]?.hooks[]?.command | select(test("baton-show-context"))][0] // empty')"
 
     for pair in \
       "Codex PostToolUse:$expected_cx_post:$actual_cx_post" \

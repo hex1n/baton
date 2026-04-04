@@ -67,7 +67,7 @@ may use the sequential fallback described below. `strict` mode must block.
 - Dry-run the intended build/test path
 - If strict isolation is unavailable, block instead of continuing
 - Compat mode may fall back to a same-thread cold-read only if
-  `verification-path.md` records `Verification mode: compat`,
+  `verification.md` records `Verification mode: compat`,
   `Execution context: sequential_fallback`, and a concrete fallback reason
 
 ### Generator
@@ -87,7 +87,7 @@ may use the sequential fallback described below. `strict` mode must block.
 - Explicitly pass only:
   - `.harness/requirements.md`
   - `.harness/architecture.md`
-  - `.harness/verification-path.md`
+  - `.harness/verification.md`
   - implementation diff
 - Do NOT use `fork_context: true` — this copies Generator's reasoning chain
   and defeats context independence
@@ -113,7 +113,7 @@ verifier_id = spawn_agent({
     - .harness/architecture.md
     - repo validation config such as .harness/profile.local.yaml if present
     Do not rely on prior conversation history.
-    Produce .harness/verification-path.md and report blockers explicitly.
+    Produce .harness/verification.md and report blockers explicitly.
   "
 })
 
@@ -138,7 +138,7 @@ evaluator_id = spawn_agent({
     Cold-read only:
     - .harness/requirements.md
     - .harness/architecture.md
-    - .harness/verification-path.md
+    - .harness/verification.md
     - the implementation diff from git
     Do not inherit Generator reasoning or prior conversation history.
     Run verification first, then produce findings-first output and a

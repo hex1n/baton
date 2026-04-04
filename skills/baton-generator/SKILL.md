@@ -4,7 +4,7 @@ description: >
   Implement approved changes following the architecture and verification path.
   Trigger when the user asks to "implement", "generate code", "write the code",
   "build this", or "execute the plan". Takes approved requirements.md,
-  architecture.md, and verified verification-path.md. Produces code changes
+  architecture.md, and verified verification.md. Produces code changes
   with checkpoint validation. Produces implementations, not designs or reviews.
 user-invocable: true
 ---
@@ -16,7 +16,7 @@ user-invocable: true
 ## Role Contract
 
 - **Inputs**: approved `requirements.md`, approved `architecture.md`,
-  verified `verification-path.md`
+  verified `verification.md`
 - **Outputs**: code changes, execution notes, updated `task-status.md`
 
 ## Artifact Language Policy
@@ -26,7 +26,7 @@ Do not localize `task-status.md`.
 
 ## Precondition
 
-`verification-path.md` must exist and pass Gate 3. If it does not exist or
+`verification.md` must exist and pass Gate 3. If it does not exist or
 has unresolved blockers, **hand back to Verifier** — do not proceed.
 
 ## Execution Guide
@@ -37,7 +37,7 @@ Read artifacts in this order — each builds on the previous:
 
 1. `architecture.md` — understand the approach and module breakdown
 2. `requirements.md` — understand what must be true when done
-3. `verification-path.md` — understand how correctness will be proved
+3. `verification.md` — understand how correctness will be proved
 4. `decisions.md` (if exists) — understand rejected alternatives
 5. `profile.local.yaml` `generator` section (if exists) — apply
    repo-specific overrides (e.g., `checkpoint_includes_lint`,
@@ -84,7 +84,7 @@ proactively rather than consuming repair rounds.
    - User input is validated at system boundaries.
    - No injection vulnerabilities (SQL, XSS, command injection).
 7. **Performance**: No obvious regressions in paths identified as
-   performance-sensitive in `verification-path.md`.
+   performance-sensitive in `verification.md`.
 8. **Comments**: Public APIs and non-obvious logic have comments explaining
    *why*, not *what*. Do not add comments to self-evident code.
 
@@ -107,7 +107,7 @@ architecture's write surface.
 - Write tests alongside or before implementation for each batch — do not
   defer all tests to the end
 - After each batch, run the relevant verification commands from
-  `verification-path.md`
+  `verification.md`
 - Record the checkpoint result (pass/fail/partial)
 - Update `task-status.md` notes: `batch N/M complete`
 - Commit at each passing checkpoint
@@ -128,7 +128,7 @@ After each batch:
 2. **Stick to the approved write surface** — files listed in the architecture.
    If a file outside the write surface must change, record the reason before
    making the change.
-3. **Minimize changes in high-risk areas** identified in `scoped-map.md`.
+3. **Minimize changes in high-risk areas** identified in `exploration.md`.
    Prefer isolated changes over restructuring.
 4. **Destructive or irreversible scripts are drafts** — mark migration
    scripts, schema changes, and similar artifacts as requiring human
@@ -180,7 +180,7 @@ failures should be fixed by the Generator — do not consume Evaluator
 repair rounds on preventable issues.
 
 ```markdown
-- [ ] All verification commands from verification-path.md pass
+- [ ] All verification commands from verification.md pass
 - [ ] No unresolved TODO/FIXME in new code
 - [ ] Write surface matches architecture.md (no unauthorized file changes)
 - [ ] Every P0 requirement has at least one covering test

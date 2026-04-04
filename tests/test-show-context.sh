@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT="$SCRIPT_DIR/../spec/bootstrap/harness-context.sh"
+SCRIPT="$SCRIPT_DIR/../spec/bootstrap/show-context.sh"
 PASS=0; FAIL=0; TOTAL=0
 
 tmp="$(mktemp -d)"
@@ -59,11 +59,11 @@ assert_json_field "active task: contains eval_round" "$tmp/t1" '.hookSpecificOut
 
 # missing artifacts appear in output
 make_status "$tmp/t2" "generating"
-touch "$tmp/t2/scoped-map.md" "$tmp/t2/requirements.md"
+touch "$tmp/t2/exploration.md" "$tmp/t2/requirements.md"
 assert_json_field "missing artifacts listed"      "$tmp/t2" '.hookSpecificOutput.additionalContext | test("missing")'
 
 # present artifacts appear in output
-touch "$tmp/t2/architecture.md" "$tmp/t2/verification-path.md"
+touch "$tmp/t2/architecture.md" "$tmp/t2/verification.md"
 assert_json_field "present artifacts listed"      "$tmp/t2" '.hookSpecificOutput.additionalContext | test("present")'
 
 # latest row wins when multiple task rows exist
@@ -89,11 +89,11 @@ assert_json_field "legacy eval_round defaults 0"  "$tmp/t4" '.hookSpecificOutput
 
 # ready_for_human_close includes evaluation.md in visible artifact set
 make_status "$tmp/t5" "ready_for_human_close"
-touch "$tmp/t5/scoped-map.md" "$tmp/t5/requirements.md" "$tmp/t5/architecture.md" "$tmp/t5/verification-path.md"
+touch "$tmp/t5/exploration.md" "$tmp/t5/requirements.md" "$tmp/t5/architecture.md" "$tmp/t5/verification.md"
 assert_json_field "ready_for_human_close missing evaluation listed" "$tmp/t5" '.hookSpecificOutput.additionalContext | test("evaluation.md")'
 
 # human-close context includes verifier/evaluator provenance and verdict
-cat > "$tmp/t5/verification-path.md" <<'EOF'
+cat > "$tmp/t5/verification.md" <<'EOF'
 # Verification Path: test
 ## 1. Intended Checks
 ok
@@ -139,9 +139,9 @@ EOF
 assert_json_field "human-close context shows verifier provenance" "$tmp/t5" '.hookSpecificOutput.additionalContext | test("verifier: role=verification_explorer mode=strict context=isolated_subagent")'
 assert_json_field "human-close context shows evaluator verdict" "$tmp/t5" '.hookSpecificOutput.additionalContext | test("evaluator: role=evaluator mode=strict context=isolated_subagent verdict=pass")'
 
-# overlay recommendation from scoped-map is surfaced in context
+# overlay recommendation from exploration is surfaced in context
 make_status "$tmp/t6" "generating"
-cat > "$tmp/t6/scoped-map.md" <<'EOF'
+cat > "$tmp/t6/exploration.md" <<'EOF'
 # Scoped Map: test
 ## 1. Scope
 content
@@ -163,7 +163,7 @@ content
 ## Overlay Recommendation
 overlay: strict
 EOF
-touch "$tmp/t6/requirements.md" "$tmp/t6/architecture.md" "$tmp/t6/verification-path.md"
+touch "$tmp/t6/requirements.md" "$tmp/t6/architecture.md" "$tmp/t6/verification.md"
 assert_json_field "overlay recommendation surfaced" "$tmp/t6" '.hookSpecificOutput.additionalContext | test("overlay: strict")'
 
 echo ""; echo "Results: $PASS passed, $FAIL failed of $TOTAL total"

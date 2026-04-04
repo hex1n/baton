@@ -6,7 +6,7 @@ description: >
   "explore", "map the code", "understand the codebase", "trace the call chain",
   "what does this touch", or "scope this task". Two modes: repo-wide overview
   (first adoption) and task-scoped exploration (every task). Produces a
-  scoped-map.md artifact, not implementations or designs.
+  exploration.md artifact, not implementations or designs.
 user-invocable: true
 ---
 
@@ -64,12 +64,12 @@ dependencies, data model, code style, high-risk areas). If a free-form
   `clarification-brief.md` (if exists)
 - **Outputs**: task-local call chain, data flow, direct change surfaces,
   test landing points, risk notes
-- **Artifact**: required `scoped-map.md`
+- **Artifact**: required `exploration.md`
 
 ### Overlay Recommendation
 
 When task-scoped exploration reveals higher complexity, add a
-`## Overlay Recommendation` section to `scoped-map.md`.
+`## Overlay Recommendation` section to `exploration.md`.
 
 Trigger signals include:
 
@@ -105,9 +105,9 @@ All criteria must pass before handing off to Specifier:
 - [ ] Test landing points identified
 - [ ] High-risk directories called out
 
-## Required Artifact: `scoped-map.md`
+## Required Artifact: `exploration.md`
 
-Use the template at `spec/templates/scoped-map.template.md` as the
+Use the template at `spec/templates/exploration.template.md` as the
 starting point. Sections:
 
 1. **Scope** — boundaries of exploration (in/out of scope, write boundary)
@@ -171,7 +171,7 @@ starting point. Sections:
    identify churn rate, recent changes, and active contributors.
 8. Assess risks: look for tight coupling, shared state, missing error handling,
    or areas with no test coverage.
-9. Write `scoped-map.md` with all required sections.
+9. Write `exploration.md` with all required sections.
 
 ### Risk-Adaptive Depth
 

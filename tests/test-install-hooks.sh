@@ -101,7 +101,7 @@ assert_file_contains "Codex PreToolUse names target handler" \
 assert_file_contains "Codex Stop names target handler" \
   "$repo/.codex/hooks.json"   "stop-check baton-validate-state baton-validate-isolation"
 assert_file_contains "Codex SessionStart names target handler" \
-  "$repo/.codex/hooks.json"   "session-start baton-harness-context"
+  "$repo/.codex/hooks.json"   "session-start baton-show-context"
 assert_file_contains "Codex matcher is Bash"                "$repo/.codex/hooks.json"   '"Bash"'
 assert_file_not_contains "Codex hooks no longer inline validate-artifact logic" \
   "$repo/.codex/hooks.json" "tool_input.command"

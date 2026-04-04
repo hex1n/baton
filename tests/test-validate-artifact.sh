@@ -24,8 +24,8 @@ assert_exit() {
   fi
 }
 
-# -- scoped-map: complete artifact passes --
-cat > "$tmp/scoped-map.md" <<'EOF'
+# -- exploration: complete artifact passes --
+cat > "$tmp/exploration.md" <<'EOF'
 # Scoped Map: test-task
 ## 1. Scope
 content
@@ -44,17 +44,17 @@ content
 ## 9. Recommendation
 content
 EOF
-assert_exit "scoped-map complete -> exit 0" 0 bash "$VALIDATE" "scoped-map" "$tmp/scoped-map.md"
+assert_exit "exploration complete -> exit 0" 0 bash "$VALIDATE" "exploration" "$tmp/exploration.md"
 
-# -- scoped-map: missing section fails --
-cat > "$tmp/scoped-map-bad.md" <<'EOF'
+# -- exploration: missing section fails --
+cat > "$tmp/exploration-bad.md" <<'EOF'
 # Scoped Map: test-task
 ## 1. Scope
 content
 ## 2. Entry Point
 content
 EOF
-assert_exit "scoped-map missing sections -> exit 1" 1 bash "$VALIDATE" "scoped-map" "$tmp/scoped-map-bad.md"
+assert_exit "exploration missing sections -> exit 1" 1 bash "$VALIDATE" "exploration" "$tmp/exploration-bad.md"
 
 # -- requirements: complete passes --
 cat > "$tmp/requirements.md" <<'EOF'
@@ -98,8 +98,8 @@ content
 EOF
 assert_exit "requirements missing Assumptions -> exit 1" 1 bash "$VALIDATE" "requirements" "$tmp/requirements-no-assumptions.md"
 
-# -- verification-path: complete passes with isolation plan --
-cat > "$tmp/verification-path.md" <<'EOF'
+# -- verification: complete passes with isolation plan --
+cat > "$tmp/verification.md" <<'EOF'
 # Verification Path: test-task
 ## 1. Intended Checks
 content
@@ -116,7 +116,7 @@ content
 ## 7. Fallbacks
 content
 EOF
-assert_exit "verification-path complete -> exit 0" 0 bash "$VALIDATE" "verification-path" "$tmp/verification-path.md"
+assert_exit "verification complete -> exit 0" 0 bash "$VALIDATE" "verification" "$tmp/verification.md"
 
 # -- evaluation: complete passes --
 cat > "$tmp/evaluation.md" <<'EOF'
@@ -192,8 +192,8 @@ content
 EOF
 assert_exit "generator-feedback missing sections -> exit 1" 1 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback-bad.md"
 
-# -- chinese verification-path headings also pass --
-cat > "$tmp/verification-path-zh.md" <<'EOF'
+# -- chinese verification headings also pass --
+cat > "$tmp/verification-zh.md" <<'EOF'
 # Verification Path: test-task
 ## 1. 计划检查项
 content
@@ -210,7 +210,7 @@ content
 ## 7. 回退方案
 content
 EOF
-assert_exit "verification-path zh headings -> exit 0" 0 bash "$VALIDATE" "verification-path" "$tmp/verification-path-zh.md"
+assert_exit "verification zh headings -> exit 0" 0 bash "$VALIDATE" "verification" "$tmp/verification-zh.md"
 
 # -- decisions: complete passes in English --
 cat > "$tmp/decisions.md" <<'EOF'
@@ -345,7 +345,7 @@ assert_exit "codebase-map missing sections -> exit 1" 1 bash "$VALIDATE" "codeba
 assert_exit "unknown artifact type -> exit 0 (skip)" 0 bash "$VALIDATE" "unknown-type" "$tmp/requirements.md"
 
 # -- file not found -> exit 1 --
-assert_exit "missing file -> exit 1" 1 bash "$VALIDATE" "scoped-map" "$tmp/nonexistent.md"
+assert_exit "missing file -> exit 1" 1 bash "$VALIDATE" "exploration" "$tmp/nonexistent.md"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed of $TOTAL total"

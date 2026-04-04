@@ -97,10 +97,10 @@ fi
 # output artifact must no longer be draft.
 artifact_for_state() {
   case "$1" in
-    exploring)             printf 'scoped-map.md\n' ;;
+    exploring)             printf 'exploration.md\n' ;;
     specifying)            printf 'requirements.md\n' ;;
     architecting)          printf 'architecture.md\n' ;;
-    verification_check)    printf 'verification-path.md\n' ;;
+    verification_check)    printf 'verification.md\n' ;;
     reviewing)             printf 'evaluation.md\n' ;;
     *)                     printf '\n' ;;
   esac

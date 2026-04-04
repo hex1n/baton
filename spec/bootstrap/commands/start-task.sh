@@ -191,10 +191,10 @@ if [[ "${#open_rows[@]}" -gt 0 ]]; then
 fi
 
 artifact_templates=(
-  "scoped-map.template.md:scoped-map.md"
+  "exploration.template.md:exploration.md"
   "requirements.template.md:requirements.md"
   "architecture.template.md:architecture.md"
-  "verification-path.template.md:verification-path.md"
+  "verification.template.md:verification.md"
   "evaluation.template.md:evaluation.md"
   "retrospective.template.md:retrospective.md"
   "decisions.template.md:decisions.md"
@@ -285,6 +285,6 @@ if [[ "$dry_run" == "true" ]]; then
   printf 'Mode:     dry-run\n'
 fi
 printf '\nNext steps:\n'
-printf '1. Fill .harness/scoped-map.md\n'
+printf '1. Fill .harness/exploration.md\n'
 printf '2. Update .harness/task-status.md on each state transition\n'
 printf '3. Archive completed task artifacts before the next task start\n'

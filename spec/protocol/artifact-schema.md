@@ -2,7 +2,7 @@
 
 ## Required Artifacts
 
-### `scoped-map.md`
+### `exploration.md`
 
 - Purpose: local task understanding
 - Required sections:
@@ -39,7 +39,7 @@
   - risks
   - self-challenge
 
-### `verification-path.md`
+### `verification.md`
 
 - Purpose: prove validation can actually run
 - Required sections:
@@ -88,7 +88,7 @@
 
 ## Shared Provenance Block
 
-`verification-path.md` and `evaluation.md` must use one shared provenance block
+`verification.md` and `evaluation.md` must use one shared provenance block
 so validators, status surfaces, and human close can consume the same fields.
 
 Required bullet fields:

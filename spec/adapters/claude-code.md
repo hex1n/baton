@@ -46,7 +46,7 @@ fallback.
 - Must run before implementation
 - Confirm the intended validation path is executable in the current repo
 - In `strict`, inability to dispatch an isolated context is a blocker
-- In `compat`, the produced `verification-path.md` must record the degraded
+- In `compat`, the produced `verification.md` must record the degraded
   execution context and fallback reason
 
 ### Generator
@@ -84,7 +84,7 @@ Agent(
 The agent is pre-loaded with the role's instructions from
 `.claude/agents/baton-evaluator.md`. It starts with a blank context and must
 cold-read `.harness/requirements.md`, `.harness/architecture.md`,
-`.harness/verification-path.md`, and the implementation diff.
+`.harness/verification.md`, and the implementation diff.
 
 ### Fallback dispatch (always works)
 
@@ -96,7 +96,7 @@ Agent(
     Cold-read only:
     - .harness/requirements.md
     - .harness/architecture.md
-    - .harness/verification-path.md
+    - .harness/verification.md
     - the implementation diff from git
     Do not inherit Generator reasoning or prior conversation history.
     Run verification first, then produce findings-first output and a
@@ -140,5 +140,5 @@ without separate task contexts:
 
 - Do not depend on session memory as the control plane.
 - File-based artifacts matter more than prompt conventions.
-- Treat verification-path discovery as mandatory in older or environment-heavy repos.
+- Treat verification discovery as mandatory in older or environment-heavy repos.
 - Keep repo-specific rules in the repo profile, not in the adapter.

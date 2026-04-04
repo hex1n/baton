@@ -22,7 +22,6 @@ target-repo/
     overrides/
       skills/
       templates/
-        zh/
   .claude/
     skills/
   .agents/

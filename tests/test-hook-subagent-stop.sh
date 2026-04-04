@@ -83,7 +83,7 @@ cat > "$tmp/pass/.harness/profile.local.yaml" <<'EOF'
 execution:
   max_eval_rounds: 3
 EOF
-make_verification_path "$tmp/pass/.harness/verification-path.md"
+make_verification_path "$tmp/pass/.harness/verification.md"
 pass_payload='{"agent_type":"baton-evaluator"}'
 assert_exit "evaluator increments eval_round" 0 run_hook "$tmp/pass" "$pass_payload"
 TOTAL=$((TOTAL + 1))
@@ -102,7 +102,7 @@ cat > "$tmp/block/.harness/profile.local.yaml" <<'EOF'
 execution:
   max_eval_rounds: 3
 EOF
-make_verification_path "$tmp/block/.harness/verification-path.md"
+make_verification_path "$tmp/block/.harness/verification.md"
 block_payload='{"agent_type":"baton-evaluator"}'
 assert_exit "evaluator blocks when max_eval_rounds reached" 2 run_hook "$tmp/block" "$block_payload"
 TOTAL=$((TOTAL + 1))
@@ -117,7 +117,7 @@ fi
 
 make_repo "$tmp/verifier"
 write_status "$tmp/verifier/.harness/task-status.md" "reviewing" 0
-make_verification_path "$tmp/verifier/.harness/verification-path.md"
+make_verification_path "$tmp/verifier/.harness/verification.md"
 verifier_payload='{"agent_type":"baton-verifier"}'
 assert_exit "verifier path passes when verification artifact is valid" 0 run_hook "$tmp/verifier" "$verifier_payload"
 

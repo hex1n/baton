@@ -15,7 +15,7 @@ template_path="$spec_root/templates/root-governance.template.md"
 usage() {
   cat <<'EOF'
 Usage:
-  sync-governance-entrypoints.sh [--repo-root PATH] [--mode sync|check] [--force] [--dry-run]
+  sync-entrypoints.sh [--repo-root PATH] [--mode sync|check] [--force] [--dry-run]
 
 Synchronize the shared governance template into root-level host entrypoints:
   - CLAUDE.md

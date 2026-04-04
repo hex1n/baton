@@ -29,7 +29,7 @@ assert_json_field() {
   local out=""
   out="$(PAYLOAD='{}' HOOK_PATH="$HOOK" bash -c '
     cd "$1"
-    printf "%s" "$PAYLOAD" | bash "$HOOK_PATH" session-start baton-harness-context
+    printf "%s" "$PAYLOAD" | bash "$HOOK_PATH" session-start baton-show-context
   ' bash "$repo" 2>/dev/null || true)"
   if echo "$out" | jq -e "$jq_expr" >/dev/null 2>&1; then
     echo "  pass: $label"

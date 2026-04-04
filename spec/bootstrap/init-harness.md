@@ -43,10 +43,10 @@ Copy these templates into the target repo:
 
 ```text
 .harness/
-  scoped-map.md
+  exploration.md
   requirements.md
   architecture.md
-  verification-path.md
+  verification.md
   task-status.md
   retrospective.md
   profile.local.yaml
@@ -71,7 +71,7 @@ vendored script inside the target repo:
 If you want a generated starting point instead of manual copying:
 
 ```bash
-./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task --language zh
+./spec/bootstrap/init-harness.sh --repo-root . --profile auto --adapter codex --task-id pilot-task
 ```
 
 On Windows, run the same shell command in Git Bash, or invoke it from
@@ -84,7 +84,6 @@ refresh them from the template.
 Useful options:
 
 - `--profile auto`
-- `--language auto|en|zh`
 - `--dry-run`
 - `--detect-only`
 - `--task-id <id>`
@@ -102,7 +101,6 @@ At minimum, set:
 
 - repo name
 - base profile
-- artifact language policy
 - build command
 - test command
 - worktree policy
@@ -154,7 +152,7 @@ Before implementation on the first task, run the intended validation path once.
 
 You are not checking the feature yet. You are checking whether validation itself is reachable.
 
-Record in `verification-path.md`:
+Record in `verification.md`:
 
 - the commands
 - the prerequisites

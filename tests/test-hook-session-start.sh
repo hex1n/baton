@@ -49,7 +49,7 @@ assert_json_field "no task session-start output is valid JSON" "$tmp/empty" '.ho
 
 make_repo "$tmp/overlay"
 write_status "$tmp/overlay/.harness/task-status.md" "generating"
-cat > "$tmp/overlay/.harness/scoped-map.md" <<'EOF'
+cat > "$tmp/overlay/.harness/exploration.md" <<'EOF'
 # Scoped Map: runtime-enforcement-hardening
 ## 1. Scope
 content
@@ -73,7 +73,7 @@ overlay: core
 EOF
 touch "$tmp/overlay/.harness/requirements.md" \
   "$tmp/overlay/.harness/architecture.md" \
-  "$tmp/overlay/.harness/verification-path.md"
+  "$tmp/overlay/.harness/verification.md"
 assert_json_field "overlay recommendation surfaces in session-start" "$tmp/overlay" '.hookSpecificOutput.additionalContext | test("overlay: core")'
 
 echo ""

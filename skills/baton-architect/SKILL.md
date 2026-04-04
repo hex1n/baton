@@ -4,7 +4,7 @@ description: >
   Design the technical approach for an approved set of requirements. Trigger
   when the user asks to "design the architecture", "write architecture",
   "technical approach", "how should we build this", or "propose an approach".
-  Takes scoped-map.md and requirements.md, produces architecture.md with
+  Takes exploration.md and requirements.md, produces architecture.md with
   first-principles decomposition, approach comparison, and verification
   strategy. Produces designs, not implementations.
 user-invocable: true
@@ -16,7 +16,7 @@ user-invocable: true
 
 ## Role Contract
 
-- **Inputs**: `scoped-map.md`, `requirements.md`
+- **Inputs**: `exploration.md`, `requirements.md`
 - **Outputs**: implementation category, file-level impact, validation strategy,
   tradeoffs and residual risks
 - **Required artifact**: `architecture.md`
@@ -81,7 +81,7 @@ Sections (all required):
 
 ### 1. Read Inputs
 
-- Read `scoped-map.md` for entry points, call chain, write surface, risks.
+- Read `exploration.md` for entry points, call chain, write surface, risks.
 - Read `requirements.md` for requirements and acceptance criteria.
 - Identify any tensions between what the code does and what is required.
 

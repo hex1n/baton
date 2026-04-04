@@ -52,7 +52,7 @@ skills/                ← agent role skills (canonical single source)
 | 5 | README 中英文双语对一致 |
 | 6 | 治理入口文件跨宿主同步 |
 
-**零制品内容校验**。`spec/protocol/artifact-schema.md` 定义了每个制品的必需节，但不存在 `validate-harness.sh` 来检查用户填写的 `scoped-map.md` 是否包含所有必需节。
+**零制品内容校验**。`spec/protocol/artifact-schema.md` 定义了每个制品的必需节，但不存在 `validate-harness.sh` 来检查用户填写的 `exploration.md` 是否包含所有必需节。
 
 最精确的表述：**`check-consistency.sh` 校验 spec 内部一致性；它不校验用户制品质量。** 这是两个不同的问题。
 

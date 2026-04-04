@@ -37,7 +37,7 @@ chat contexts or sequential role execution.
 
 ### Explorer
 
-- Use editor search and terminal inspection to create `scoped-map.md`
+- Use editor search and terminal inspection to create `exploration.md`
 - Prefer a separate chat context if available
 
 ### Specifier / Architect
@@ -64,7 +64,7 @@ chat contexts or sequential role execution.
 
 - Open a new chat or agent context before starting evaluation
 - Load only: `.harness/requirements.md`, `architecture.md`,
-  `verification-path.md`, and the diff
+  `verification.md`, and the diff
 - Known limitation: Cursor has no programmatic spawn — isolation
   depends on user discipline. If context isolation cannot be
   guaranteed, note this in `task-status.md` and have the human

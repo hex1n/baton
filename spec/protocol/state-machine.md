@@ -19,7 +19,7 @@
 
 - Active owner: `repo-explorer` or `scoped-explorer`
 - Goal: establish repo map or task-local map
-- Required artifact: `scoped-map.md`
+- Required artifact: `exploration.md`
 
 ### `specifying`
 
@@ -45,7 +45,7 @@
 
 - Active owner: `verification-explorer` or `architect`
 - Goal: prove the intended verification path is executable
-- Required artifacts: `requirements.md`, `architecture.md`, `verification-path.md`
+- Required artifacts: `requirements.md`, `architecture.md`, `verification.md`
 
 ### `generating`
 
@@ -72,7 +72,7 @@
 
 - Active owner: `human`
 - Goal: accept residual risk and confirm the task can be closed
-- Required artifacts: `requirements.md`, `architecture.md`, `verification-path.md`, `evaluation.md`
+- Required artifacts: `requirements.md`, `architecture.md`, `verification.md`, `evaluation.md`
 
 ### `complete`
 

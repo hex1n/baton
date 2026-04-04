@@ -108,7 +108,7 @@ cp .claude/skills/baton-*.md /path/to/repo/.claude/skills/
 然后执行：
 
 ```bash
-bash spec/bootstrap/sync-governance-entrypoints.sh --repo-root . --force
+bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force
 ```
 
 ## 角色技能

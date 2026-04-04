@@ -1,5 +1,5 @@
 ---
-name: baton-status
+name: baton-tracker
 description: >
   Report the current task state, owner, next recommended action, and repair
   round. Trigger when the user asks "what's the status", "where are we",
@@ -41,11 +41,11 @@ Do not localize `task-status.md`.
 
 | State | Next Action |
 |-------|-------------|
-| `exploring` | Run `/baton-explorer` to produce `scoped-map.md` |
+| `exploring` | Run `/baton-explorer` to produce `exploration.md` |
 | `specifying` | Run `/baton-specifier` to produce `requirements.md` |
 | `architecting` | Run `/baton-architect` to produce `architecture.md` |
 | `awaiting_human_arch` | Human reviews and approves `architecture.md` |
-| `verification_check` | Run `/baton-verifier` to produce `verification-path.md` with isolation mode and execution context |
+| `verification_check` | Run `/baton-verifier` to produce `verification.md` with isolation mode and execution context |
 | `generating` | Run `/baton-generator` to implement the changes |
 | `reviewing` | Run `/baton-evaluator` to produce `evaluation.md` and evaluate the implementation |
 | `ready_for_human_close` | Human reviews `evaluation.md`, residual risks, and confirms task complete |

@@ -53,7 +53,7 @@ Baton 的目标不是把每个任务都抬成大型流程工程，而是：
 用户需求（1-4 句话）
         │
         ├─ 存量项目? YES → Explorer
-        │                 输出: scoped-map.md
+        │                 输出: exploration.md
         │
         └─ 存量项目? NO  → 直接进入 Specifier
         ▼
@@ -72,7 +72,7 @@ Architect
         │
         ▼
 Verifier
-输出: verification-path.md
+输出: verification.md
         │
         ├─ BLOCKED → 回 Architect / Specifier / Human
         └─ PASS
@@ -195,7 +195,7 @@ complete
 用户需求
    │
 Explorer
-输出: scoped-map.md + codebase-map.md
+输出: exploration.md + codebase-map.md
    │
 Specifier
 输出: requirements.md
@@ -209,7 +209,7 @@ Architect
 ⛔ Human #2 架构 / 数据模型 / 风险检查
    │
 Verifier
-输出: verification-path.md
+输出: verification.md
    │
 Generator（模块 A）
    │

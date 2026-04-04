@@ -9,10 +9,10 @@ Java backend strict mode.
 
 Portable core keeps the minimum set:
 
-- `scoped-map.md`
+- `exploration.md`
 - `requirements.md`
 - `architecture.md`
-- `verification-path.md`
+- `verification.md`
 - `task-status.md`
 - `retrospective.md`
 
@@ -45,12 +45,12 @@ Java backend strict mode extends the core set with:
 ```text
 .harness/
   codebase-map.md
-  scoped-map.md
+  exploration.md
   requirements.md
   architecture.md
   decisions.md
   api-contract.yaml
-  verification-path.md
+  verification.md
   evaluation-report.md
   generator-feedback.md
   task-status.md

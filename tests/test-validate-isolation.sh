@@ -35,7 +35,7 @@ EOF
 
 make_verification() {
   local dir="$1" mode="$2" context="$3" agent_id="$4" reason="$5"
-  cat > "$dir/verification-path.md" <<EOF
+  cat > "$dir/verification.md" <<EOF
 # Verification Path: test
 ## 1. Intended Checks
 ok

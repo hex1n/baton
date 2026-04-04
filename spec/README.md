@@ -52,10 +52,10 @@ Repair loops:
 AGENTS.md
 CLAUDE.md
 .harness/
-  scoped-map.md
+  exploration.md
   requirements.md
   architecture.md
-  verification-path.md
+  verification.md
   task-status.md
   retrospective.md
 ```
@@ -78,14 +78,14 @@ spec/
       update-harness.sh
       link-skills.sh
       sync-skills.sh
-      sync-governance-entrypoints.sh
+      sync-entrypoints.sh
       check-consistency.sh
       install-hooks.sh
       validate-artifact.sh
       validate-isolation.sh
       validate-state-artifacts.sh
       validate-transition.sh
-      harness-context.sh
+      show-context.sh
     hooks/
       run-hook.cmd
       session-start
@@ -105,8 +105,8 @@ spec/
     init-harness.sh
     prepare-review.md
     prepare-review.sh
-    sync-governance-entrypoints.md
-    sync-governance-entrypoints.sh
+    sync-entrypoints.md
+    sync-entrypoints.sh
     start-task.md
     start-task.sh
     update-harness.md
@@ -122,10 +122,10 @@ spec/
     claude-code.md
     cursor.md
   templates/
-    scoped-map.template.md
+    exploration.template.md
     requirements.template.md
     architecture.template.md
-    verification-path.template.md
+    verification.template.md
     task-status.template.md
     retrospective.template.md
     profile.local.template.yaml

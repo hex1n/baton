@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"/Users/hex1n/IdeaProjects/baton/spec/bootstrap/hooks/run-hook.sh\" session-start baton-harness-context",
+            "command": "bash \"/Users/hex1n/IdeaProjects/baton/spec/bootstrap/hooks/run-hook.sh\" session-start baton-show-context",
             "statusMessage": "Loading harness context"
           }
         ]
