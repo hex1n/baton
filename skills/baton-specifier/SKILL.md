@@ -27,16 +27,9 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-Before writing any human-facing artifact:
-
-1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that language.
-2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, follow the language of the current user
-   request. If the request language is indeterminate, default to Chinese.
-
-Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
-state tokens, and blocker categories in stable English.
+Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
+Write all human-facing artifacts in that language.
+Do not localize `task-status.md`.
 
 ## Required Artifact: `requirements.md`
 

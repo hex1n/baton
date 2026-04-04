@@ -19,16 +19,9 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-Before writing any human-facing artifact or asking questions:
-
-1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that language.
-2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, follow the language of the current user
-   request. If the request language is indeterminate, default to Chinese.
-
-Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
-state tokens, and blocker categories in stable English.
+Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
+Write all human-facing artifacts and questions in that language.
+Do not localize `task-status.md`.
 
 ## Core Principles
 
@@ -283,6 +276,16 @@ If the target project has CE skills installed, the orchestrator may use
 - For large complex projects, `baton-clarifier`'s focus is usually more
   appropriate — approach exploration belongs in the Architect phase
   where codebase context is available
+
+## Risk-Adaptive Depth
+
+Read the risk level from `task-status.md` § State Notes and adapt:
+
+| Risk Level | Depth Adjustments |
+|------------|-------------------|
+| **Low** | Skip entirely — orchestrator routes directly to Phase 2 (Explore). If invoked despite Low risk, ask at most 1 critical boundary question, then exit. |
+| **Medium** | Quick confirmation mode — restate understanding, ask 1-2 key questions about boundaries and success criteria, exit when Problem and Boundaries are clear. Do not pursue full interview. |
+| **High** | Full interview — complete confidence matrix across all 6 dimensions, use all probing techniques, exit only when overall confidence is sufficient. |
 
 ## State Transition
 

@@ -17,13 +17,18 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-Before writing any human-facing artifact or status message:
+The orchestrator detects the artifact language once in Phase 0 and
+writes it to `task-status.md` § State Notes as `- artifact_language: <value>`.
+All downstream skills read this value instead of re-detecting.
 
+Detection logic (run once in Phase 0, after harness check):
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that language.
-2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, follow the language of the current user
-   request. If the request language is indeterminate, default to Chinese.
+   `zh` or `en`, use that value.
+2. If it is `auto`, detect from the current user request language.
+3. If the setting is missing, detect from the current user request language.
+   If indeterminate, default to `zh`.
+
+Write the resolved value (always `zh` or `en`, never `auto`) to State Notes.
 
 Do not localize `task-status.md`.
 
@@ -125,6 +130,14 @@ Check whether `.harness/task-status.md` exists.
   Options: Resume / Start new
   - If resuming: read the current state from `task-status.md` and jump
     to the corresponding phase.
+
+### 0.1c Artifact Language Detection
+
+Resolve the artifact language and write to `task-status.md` § State Notes
+as `- artifact_language: zh` or `- artifact_language: en`. See the
+Artifact Language Policy section above for detection logic. All
+downstream skills read this value from State Notes instead of
+independently detecting the language.
 
 ### 0.2 Requirement Clarity Assessment
 
@@ -258,14 +271,17 @@ findings to review), but human confirmation is still required.
 **Tool**: `baton-clarifier`
 **Output**: `.harness/clarification-brief.md`
 
+### Risk-adaptive depth
+
+| Risk | Behavior |
+|------|----------|
+| **Low** | **Skip Phase 1** — route directly to Phase 2. Low risk + Clear clarity means requirements are already actionable. |
+| **Medium** | Quick confirmation — 1-2 key questions on boundaries and success criteria, then proceed. |
+| **High** | Full interview — complete confidence matrix across all 6 dimensions. |
+
 ```
 Skill("baton-clarifier", args: "<user's original request>")
 ```
-
-The clarifier interviews the user with one question at a time, tracking
-confidence across 6 dimensions (problem, users, boundaries, success
-criteria, constraints, risks). See `baton-clarifier` SKILL.md for the
-full interview protocol.
 
 ### Exit criteria
 
@@ -289,12 +305,18 @@ risk than initially estimated.
 **Output**: `.harness/scoped-map.md`
 
 Always invoke via Agent tool — explorer declares `context: fork` and
-requires isolation. Low-risk explorers produce abbreviated output
-(entry points + write surface only) but still run in a separate context.
+requires isolation.
+
+### Risk-adaptive depth
+
+| Risk | Exploration strategy |
+|------|---------------------|
+| **Low** | Convention Scan — project structure, naming conventions, similar reference code. Abbreviated output: entry points + write surface only. |
+| **Medium** | Dependency Scan — Convention Scan + interface signatures, data models, reusable capabilities. Standard output. |
+| **High** | Impact Scan — full behavior understanding + call chains + reverse references + test coverage. Full output with risk analysis. |
 
 Pass `clarification-brief.md` (if exists) to the explorer so clarified
-requirements guide the exploration scope. The explorer adapts its depth
-based on the risk level from Phase 0.
+requirements guide the exploration scope.
 
 ### Gate 1: Scoped Exploration Complete
 
@@ -312,6 +334,14 @@ based on the risk level from Phase 0.
 **Entry**: `scoped-map.md` exists and Gate 1 passes.
 **Tool**: `baton-specifier`
 **Output**: `.harness/requirements.md`
+
+### Risk-adaptive depth
+
+| Risk | Specification depth |
+|------|---------------------|
+| **Low** | Minimal — P0 requirements only, skip traceability. Implementation scope can be embedded directly in `scoped-map.md` if simple enough. |
+| **Medium** | Standard — P0+P1, traceability if clarification brief exists, edge cases from exploration. |
+| **High** | Full — all priorities (P0+P1+P2), mandatory traceability, security requirements, data integrity constraints. |
 
 The specifier takes three inputs:
 1. `scoped-map.md` from Phase 2
@@ -438,6 +468,11 @@ If BLOCKED: report blockers, route back to Phase 4 or Phase 3.
 **Entry**: `verification-path.md` exists and Gate 3 passes.
 **Tool**: `baton-generator`
 **Output**: Code changes, execution notes.
+
+**Before invoking the generator**, ensure the generator records
+`base_commit` (current HEAD) to State Notes. The Evaluator in Phase 7
+uses this to compute `git diff <base_commit>..HEAD` instead of the
+unreliable `HEAD~1`.
 
 ```
 Skill("baton-generator")

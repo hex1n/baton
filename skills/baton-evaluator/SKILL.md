@@ -29,7 +29,12 @@ Load these artifacts before proceeding:
 3. Read `.harness/verification-path.md`
 4. Read `.harness/scoped-map.md` — use exploration findings to verify
    implementation covers all identified risk areas and entry points
-5. Read the implementation diff (`git diff HEAD~1` or as provided)
+5. Read `base_commit` from `task-status.md` § State Notes.
+   - If present: use `git diff <base_commit>..HEAD` for the implementation diff.
+   - If missing: **write a warning** in `evaluation.md` § Findings:
+     "WARNING: base_commit missing from State Notes. Falling back to
+     HEAD~1. Diff range may be incomplete if Generator made multiple
+     commits." Then use `git diff HEAD~1` as fallback.
 6. If this is a repair round (eval round > 1), read the previous
    `.harness/evaluation.md` for prior findings (facts only — do not
    inherit prior reasoning or judgments)
@@ -100,16 +105,9 @@ concrete spawn/wait example and the warning against `fork_context: true`.
 
 ## Artifact Language Policy
 
-Before writing any human-facing artifact:
-
-1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that language.
-2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, follow the language of the current user
-   request. If the request language is indeterminate, default to Chinese.
-
-Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
-state tokens, and blocker categories in stable English.
+Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
+Write all human-facing artifacts in that language.
+Do not localize `task-status.md`.
 
 ## Gate: Independent Review
 

@@ -21,16 +21,9 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-Before writing any human-facing artifact or feedback file:
-
-1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that language.
-2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, follow the language of the current user
-   request. If the request language is indeterminate, default to Chinese.
-
-Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
-state tokens, and blocker categories in stable English.
+Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
+Write all human-facing artifacts and feedback files in that language.
+Do not localize `task-status.md`.
 
 ## Precondition
 
@@ -53,6 +46,10 @@ Read artifacts in this order — each builds on the previous:
 Before writing any code:
 - Check for uncommitted changes: `git status`. If dirty, stash or
   confirm with user before proceeding.
+- **Record base commit**: run `git rev-parse HEAD` and write the result
+  to `task-status.md` under `## State Notes` as `- base_commit: <hash>`.
+  The Evaluator uses this to compute the correct diff range. If you
+  skip this step, the Evaluator may review an incomplete diff.
 - Verify write surface matches `architecture.md` — list all files to
   create or modify.
 
