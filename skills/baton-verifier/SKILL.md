@@ -249,13 +249,15 @@ For each primary validation path, define what to do if it fails:
 
 ### Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "5 Verify".
+
 Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |
 |------------|-------------------|
-| **Low** | Basic verification; skip CI check and performance baseline |
-| **Medium** | Standard — all checks, CI compatibility if CI config exists |
-| **High** | Full depth — all checks required, CI compatibility mandatory, performance baseline required, test data setup scripted |
+| **Low** | Quick check — verify build tool exists and test runner works (`mvn test` / `gradle test` / `npm test` passes or fails with test failures, not infra errors). Record the verification command in State Notes. Do NOT produce `verification-path.md`. If infra is broken, mark `blocked` with `environment_blocker`. |
+| **Medium** | Standard — all checks (Steps 0-5, 7-9), CI compatibility if CI config exists. Produce `verification-path.md` but skip performance baseline. |
+| **High** | Full depth — all checks required (Steps 0-9), CI compatibility mandatory, performance baseline required, test data setup scripted. Full `verification-path.md`. |
 
 ### Quality Check
 

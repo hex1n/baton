@@ -37,6 +37,18 @@ collect_artifacts() {
   fi
 }
 
+log_transition() {
+  local file_path="$1" from_state="$2" to_state="$3"
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M)"
+  # Append a row to the Transition Log table if the section exists
+  if grep -q '^## Transition Log' "$file_path" 2>/dev/null; then
+    export BATON_HOOK_ACTIVE=1
+    printf '| %s | %s | %s |\n' "$from_state" "$to_state" "$ts" >> "$file_path"
+    debug_log "logged transition $from_state -> $to_state at $ts"
+  fi
+}
+
 clear_human_ack_if_needed() {
   local file_path="$1"
   local current_state=""
@@ -65,6 +77,9 @@ clear_human_ack_if_needed() {
   if [[ "$current_state" != "$expected_state" ]]; then
     return 0
   fi
+
+  # Log the transition before any other processing
+  log_transition "$file_path" "$previous_state" "$current_state"
 
   if [[ "$previous_state" != "awaiting_human_arch" && "$previous_state" != "ready_for_human_close" ]]; then
     return 0

@@ -235,30 +235,29 @@ The task table uses this exact format (do not deviate):
   `[verification_blocker]`, `[scope_blocker]`, `[environment_blocker]`,
   or `[design_blocker]`
 
-### Low-Risk Fast Track
+### Risk-Adaptive Matrix (canonical reference)
 
-When risk is Low AND clarity is Clear, apply these optimizations to
-reduce overhead without sacrificing correctness:
+This is the single source of truth for phase depth across all risk
+levels. Each skill's Risk-Adaptive Depth section implements the
+detail for its row. Per-phase sections below reference this matrix.
 
-| Phase | Standard | Low-Risk Fast Track |
-|-------|----------|---------------------|
-| Phase 1 (Clarify) | Run if Vague/Partial | **Skip** — clarity is already Clear |
-| Phase 2 (Explore) | Full exploration | Abbreviated — entry points + write surface only |
-| Phase 3 (Specify) | Full requirements | Minimal — P0 requirements only, skip traceability |
-| Phase 4 (Architect) | Full approach comparison | Single approach, skip delivery order |
-| Phase 5 (Verify) | Full verification path | Standard — verification is never skipped |
-| Phase 6 (Generate) | Logical-unit batches | 1-2 batches with checkpoint validation |
-| Phase 7 (Review) | Codex + Evaluator | **Evaluator only** — skip Codex review |
-| Repair rounds | Up to 3 before escalation | **Max 1** — escalate to human immediately |
+| Phase | Low | Medium | High |
+|-------|-----|--------|------|
+| 1 Clarify | **Skip** (if Clear) or 1 question | Quick confirm — 1-2 key questions | Full interview — 6 dimensions |
+| 2 Explore | Convention Scan — entry points + write surface | Dependency Scan — + interfaces, data models | Impact Scan — full call chains + reverse refs + test coverage |
+| 3 Specify | Minimal — P0 only, skip traceability | Standard — P0+P1, traceability if brief exists | Full — P0+P1+P2, mandatory traceability, security constraints |
+| 4 Architect | Single approach, skip delivery order | Multiple approaches, delivery order recommended | Full comparison + delivery order + security threat modeling |
+| 5 Verify | Quick check — build/test infra only, no artifact | Standard — `verification-path.md`, skip perf baseline | Full — `verification-path.md` + CI compat + perf baseline |
+| 6 Generate | 1-2 batches, simplified self-review | Logical-unit batches, full self-review | Strict delivery order, security tests per batch |
+| 7 Review | Evaluator only (Layer 1+3) | Codex + Evaluator (all layers) | Codex adversarial + Evaluator (all layers) |
+| Repair | Max 1 round, then escalate | Up to 3 rounds | Up to 3 rounds |
 
-The fast track does NOT skip phases entirely (except Phase 1 when
-Clear). It reduces depth within each phase. Verification (Phase 5)
-and Evaluation (Phase 7 Layer B) always run at full rigor.
+**Invariants across all risk levels:**
 
-**Human gates still apply.** Low-risk fast track still transitions
-through `awaiting_human_arch` (Gate 2) and `ready_for_human_close`
-(Gate 5). The presentation is lighter (single approach, no Codex
-findings to review), but human confirmation is still required.
+- Verification (Phase 5) and Evaluation (Phase 7 Layer B) never skip.
+- Human gates still apply — `awaiting_human_arch` (Gate 2) and
+  `ready_for_human_close` (Gate 5) require confirmation at all levels.
+- State machine path is the same; only execution depth varies.
 
 ---
 
@@ -273,11 +272,7 @@ findings to review), but human confirmation is still required.
 
 ### Risk-adaptive depth
 
-| Risk | Behavior |
-|------|----------|
-| **Low** | **Skip Phase 1** — route directly to Phase 2. Low risk + Clear clarity means requirements are already actionable. |
-| **Medium** | Quick confirmation — 1-2 key questions on boundaries and success criteria, then proceed. |
-| **High** | Full interview — complete confidence matrix across all 6 dimensions. |
+See **Risk-Adaptive Matrix** row "1 Clarify" in Phase 0.
 
 ```
 Skill("baton-clarifier", args: "<user's original request>")
@@ -309,11 +304,7 @@ requires isolation.
 
 ### Risk-adaptive depth
 
-| Risk | Exploration strategy |
-|------|---------------------|
-| **Low** | Convention Scan — project structure, naming conventions, similar reference code. Abbreviated output: entry points + write surface only. |
-| **Medium** | Dependency Scan — Convention Scan + interface signatures, data models, reusable capabilities. Standard output. |
-| **High** | Impact Scan — full behavior understanding + call chains + reverse references + test coverage. Full output with risk analysis. |
+See **Risk-Adaptive Matrix** row "2 Explore" in Phase 0.
 
 Pass `clarification-brief.md` (if exists) to the explorer so clarified
 requirements guide the exploration scope.
@@ -337,11 +328,7 @@ requirements guide the exploration scope.
 
 ### Risk-adaptive depth
 
-| Risk | Specification depth |
-|------|---------------------|
-| **Low** | Minimal — P0 requirements only, skip traceability. Implementation scope can be embedded directly in `scoped-map.md` if simple enough. |
-| **Medium** | Standard — P0+P1, traceability if clarification brief exists, edge cases from exploration. |
-| **High** | Full — all priorities (P0+P1+P2), mandatory traceability, security requirements, data integrity constraints. |
+See **Risk-Adaptive Matrix** row "3 Specify" in Phase 0.
 
 The specifier takes three inputs:
 1. `scoped-map.md` from Phase 2
@@ -442,20 +429,24 @@ Do not proceed without explicit human confirmation.
 **Entry**: `architecture.md` exists, human approved, requirements synced.
 **Tool**: `baton-verifier` (Agent — **must be isolated**)
 
+### Risk-adaptive depth
+
+See **Risk-Adaptive Matrix** row "5 Verify" in Phase 0.
+
 ```
 Agent(subagent_type: "baton-verifier",
       prompt: "Verify the validation path for task <task-id>.")
 ```
 
-**Output**: `.harness/verification-path.md`
+**Output**: `.harness/verification-path.md` (Medium/High only)
 
 ### Gate 3: Verification Path Check
 
 - [ ] Requirements and architecture contain no unresolved contradiction
-- [ ] Exact validation commands listed
+- [ ] Exact validation commands listed (or recorded in State Notes for Low)
 - [ ] Commands executable in current repo context
-- [ ] Isolation mode declared
-- [ ] Fallback validation defined
+- [ ] Isolation mode declared (Medium/High)
+- [ ] Fallback validation defined (Medium/High)
 
 If BLOCKED: report blockers, route back to Phase 4 or Phase 3.
 
@@ -595,7 +586,13 @@ The user must explicitly accept the result.
 **Entry**: Human confirmed close.
 
 1. Update `task-status.md` → state `complete`
-2. Offer to run `baton-retrospective` for process lessons
+2. **Conditional retrospective** — run `baton-retrospective` only when
+   any of these conditions is true:
+   - User explicitly requests it
+   - Repair loop occurred (eval round > 1 in task-status.md)
+   - Task entered `blocked` state at any point (check Transition Log)
+   - Risk level is High
+   Otherwise, skip retrospective for routine completions.
 3. Suggest next steps:
    - Commit changes
    - Create PR

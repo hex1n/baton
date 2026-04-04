@@ -14,7 +14,7 @@ state_required_artifacts_for_validation() {
     ready_for_human_close)
       echo "scoped-map.md requirements.md architecture.md verification-path.md evaluation.md" ;;
     complete)
-      echo "scoped-map.md requirements.md architecture.md verification-path.md evaluation.md retrospective.md" ;;
+      echo "scoped-map.md requirements.md architecture.md verification-path.md evaluation.md" ;;
     *)
       echo "" ;;
   esac

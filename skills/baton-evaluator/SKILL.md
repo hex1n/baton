@@ -244,6 +244,8 @@ is converging (mostly FIXED), diverging (mostly REGRESSED), or stuck
 
 ## Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "7 Review".
+
 Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |

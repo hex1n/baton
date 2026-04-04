@@ -262,6 +262,8 @@ After human approval, review the confirmed decisions in `architecture.md`.
 
 ## Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "4 Architect".
+
 Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |

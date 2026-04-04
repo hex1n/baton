@@ -279,6 +279,8 @@ If the target project has CE skills installed, the orchestrator may use
 
 ## Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "1 Clarify".
+
 Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |

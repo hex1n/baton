@@ -170,6 +170,8 @@ starting point. Sections:
 
 ### Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "2 Explore".
+
 Read the risk level from `task-status.md` § State Notes and adapt exploration depth:
 
 | Risk Level | Depth Adjustments |

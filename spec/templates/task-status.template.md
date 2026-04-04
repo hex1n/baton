@@ -6,8 +6,17 @@
 
 ## State Notes
 
-- Risk level:
-- Current artifacts:
-- Current blockers:
-- Current residual risks:
-- Current next decision:
+- risk_level:
+- task_type:
+- artifact_language:
+- codex_available:
+- codex_skill:
+- human_ack: false
+- base_commit:
+- current_blockers:
+- next_decision:
+
+## Transition Log
+
+| From | To | Timestamp |
+|------|----|-----------|

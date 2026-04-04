@@ -189,6 +189,8 @@ Evaluator with known failures.
 
 ## Risk-Adaptive Depth
 
+> Canonical source: orchestrator's Risk-Adaptive Matrix, row "6 Generate".
+
 Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |
