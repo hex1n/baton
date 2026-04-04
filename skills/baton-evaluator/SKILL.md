@@ -30,15 +30,16 @@ Load these artifacts before proceeding:
 4. Read `.harness/scoped-map.md` — use exploration findings to verify
    implementation covers all identified risk areas and entry points
 5. Read `base_commit` from `task-status.md` § State Notes.
-   - If present: use `git diff <base_commit>..HEAD` for the implementation diff.
-   - If missing: **write a warning** in `evaluation.md` § Findings:
-     "WARNING: base_commit missing from State Notes. Falling back to
-     HEAD~1. Diff range may be incomplete if Generator made multiple
-     commits." Then use `git diff HEAD~1` as fallback.
-   - If `stash_restored: true` in State Notes: also review
-     `git stash show -p` output (or `git diff` for unstaged changes).
-     The committed diff alone may miss restored pre-existing changes
-     that now overlap with the implementation.
+   Extract the write surface file list from `architecture.md` (the files
+   the Generator was approved to create or modify). **Always scope the
+   diff to these files** to exclude unrelated commits on shared branches:
+   ```
+   git diff <base_commit>..HEAD -- file1 file2 ...
+   ```
+   - If `base_commit` is missing: **write a warning** in `evaluation.md`
+     § Findings and fall back to `git diff HEAD~1 -- <write surface>`.
+   - If `stash_restored: true` in State Notes: also review unstaged
+     changes in the write surface files (`git diff -- <write surface>`).
 6. If this is a repair round (eval round > 1), read the previous
    `.harness/evaluation.md` for prior findings (facts only — do not
    inherit prior reasoning or judgments)
