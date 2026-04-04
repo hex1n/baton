@@ -129,7 +129,27 @@ Check whether `.harness/task-status.md` exists.
   (single-select): "Resume existing task [task-id] or start new?"
   Options: Resume / Start new
   - If resuming: read the current state from `task-status.md` and jump
-    to the corresponding phase.
+    to the corresponding phase. Also run the **Draft Artifact Recovery**
+    check below.
+
+### 0.1b Draft Artifact Recovery
+
+When resuming an active task, scan `.harness/` for artifacts that have
+`**Status**: \`draft\`` in their header. A draft artifact means the
+previous skill was interrupted mid-write.
+
+| Draft artifact found | Action |
+|---------------------|--------|
+| `scoped-map.md` | Re-run Phase 2 (Explore) |
+| `requirements.md` | Re-run Phase 3 (Specify) |
+| `architecture.md` | Re-run Phase 4 (Architect) |
+| `verification-path.md` | Re-run Phase 5 (Verify) |
+| `evaluation.md` | Re-run Phase 7 (Review) |
+
+If a draft is found, inform the user which artifact was incomplete and
+which phase will re-run. The re-run overwrites the draft — no manual
+cleanup needed. If no drafts are found, resume normally from the
+current state.
 
 ### 0.1c Artifact Language Detection
 

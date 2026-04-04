@@ -40,6 +40,9 @@ Read artifacts in this order — each builds on the previous:
 2. `requirements.md` — understand what must be true when done
 3. `verification-path.md` — understand how correctness will be proved
 4. `decisions.md` (if exists) — understand rejected alternatives
+5. `profile.local.yaml` `generator` section (if exists) — apply
+   repo-specific overrides (e.g., `checkpoint_includes_lint`,
+   `checkpoint_includes_typecheck`, `max_batch_size`)
 
 ### 2. Pre-Implementation Check
 

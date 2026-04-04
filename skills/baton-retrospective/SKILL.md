@@ -71,7 +71,15 @@ Do not localize `task-status.md`.
 
    ### 7. Profile Patches
    Configuration changes that can be directly applied to
-   `profile.local.yaml` based on this task's experience:
+   `profile.local.yaml` based on this task's experience. Use only
+   keys from the standard schema — the generator and evaluator
+   skills read these on startup:
+
+   **Generator keys**: `generator.checkpoint_includes_lint`,
+   `generator.checkpoint_includes_typecheck`, `generator.max_batch_size`
+
+   **Evaluator keys**: `evaluator.layer1_includes`,
+   `evaluator.layer2_skip_patterns`
 
    ```markdown
    - `generator.checkpoint_includes_lint: true`

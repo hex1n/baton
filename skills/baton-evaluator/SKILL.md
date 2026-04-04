@@ -38,6 +38,9 @@ Load these artifacts before proceeding:
 6. If this is a repair round (eval round > 1), read the previous
    `.harness/evaluation.md` for prior findings (facts only — do not
    inherit prior reasoning or judgments)
+7. Read `profile.local.yaml` `evaluator` section (if exists) — apply
+   repo-specific overrides (e.g., `layer1_includes` for deterministic
+   checks, `layer2_skip_patterns` for diff review exclusions)
 
 Do not read Generator execution notes or inherit conversation history.
 Reading previous evaluation findings is allowed because they are facts
@@ -208,7 +211,12 @@ When evaluation finds issues:
 
 1. Write findings with specific file paths and evidence.
 2. Generator fixes the findings.
-3. Re-evaluate from Layer 1 (full re-run, not incremental).
+3. Re-evaluate with partial scope:
+   - **Layer 1** (deterministic): full re-run — build/test/lint must pass.
+   - **Layer 2** (diff review): review only the repair diff
+     (`git diff <prev_eval_commit>..HEAD`), not the entire implementation.
+   - **Layer 3** (requirements): re-verify only the criteria that were
+     previously BLOCKED or REGRESSED, plus spot-check one passing criterion.
 4. Track convergence across rounds using the classification below.
 
 **Convergence thresholds** — escalate to human when:

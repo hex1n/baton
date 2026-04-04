@@ -26,6 +26,15 @@ verification:
     - __OPTIONAL_STATIC_CHECK__
   dry_run_required_before_generator: true
 
+generator:
+  # checkpoint_includes_lint: false
+  # checkpoint_includes_typecheck: false
+  # max_batch_size: 5
+
+evaluator:
+  # layer1_includes: [build, test]
+  # layer2_skip_patterns: []
+
 risk:
   high_risk_paths:
     - __HIGH_RISK_PATH_1__
