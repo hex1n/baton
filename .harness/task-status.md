@@ -17,10 +17,27 @@
 | workflow-best-practice-doc | — | complete | 0 | 2026-03-28T22:23:00+0800 | human accepted the workflow best-practice result; docs/baton-workflow-best-practice.md now defines default core flow plus conditional strict overlay and aligns with baton-positioning; retrospective recorded |
 | runtime-enforcement-hardening | — | complete | 1 | 2026-03-29T23:24:00+0800 | human confirmed close; isolated verification/evaluation passed; retrospective recorded; advisory human_ack residual risk accepted |
 | bootstrap-structure-rationalization | — | complete | 0 | 2026-03-29T22:56:52+0800 | human confirmed close; best-practice guardrails implemented; strict isolated verifier/evaluator passed with Agent IDs; retrospective recorded; Windows live smoke-test residual risk accepted |
+| promote-java-artifacts | — | complete | 2 | 2026-04-04T15:30:00+0800 | human confirmed close; all warnings fixed; 28 tests pass; invariant 17+18 pass; 3 pre-existing invariant-7 errors accepted |
 
 ## State Notes
 
-- Current artifacts: scoped-map.md, requirements.md, architecture.md, verification-path.md, evaluation.md, retrospective.md
-- Current blockers: none
-- Current residual risks: no live Windows host smoke test for `run-hook.cmd`; current evidence is command-generation and shell-test coverage
-- Current next decision: none
+- risk_level: Medium
+- artifact_language: zh
+- codex_available: true
+- codex_skill: codex:rescue
+- human_ack: true
+- base_commit: cc00a5a
+- current_blockers: none
+- next_decision: task complete
+
+## Transition Log
+
+| From | To | Timestamp |
+|------|----|-----------|
+| exploring | specifying | 2026-04-04T11:30:00+0800 |
+| specifying | architecting | 2026-04-04T12:15:00+0800 |
+| architecting | verification_check | 2026-04-04T13:00:00+0800 |
+| verification_check | generating | 2026-04-04T13:30:00+0800 |
+| generating | reviewing | 2026-04-04T14:20:00+0800 |
+| reviewing | ready_for_human_close | 2026-04-04T15:00:00+0800 |
+| ready_for_human_close | complete | 2026-04-04T15:30:00+0800 |
