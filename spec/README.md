@@ -86,7 +86,6 @@ spec/
       validate-state-artifacts.sh
       validate-transition.sh
       harness-context.sh
-      check-root-readme-bilingual.sh
     hooks/
       run-hook.cmd
       session-start
@@ -95,7 +94,6 @@ spec/
       stop-check
       subagent-stop
     lib/
-      language.sh
       task-status.sh
       paths.sh
       profile.sh
@@ -131,12 +129,6 @@ spec/
     task-status.template.md
     retrospective.template.md
     profile.local.template.yaml
-    zh/
-      scoped-map.template.md
-      requirements.template.md
-      architecture.template.md
-      verification-path.template.md
-      retrospective.template.md
   profiles/
     java-maven.yaml
     node-monorepo.yaml
@@ -191,18 +183,6 @@ Recommended bootstrap flow:
 7. run `spec/bootstrap/check-consistency.sh` before or during `verification_check`
 8. run `bootstrap/prepare-review.sh` before isolated verifier / evaluator handoff
 9. let the current owner agent update `task-status.md` and fill the active task artifacts in `.harness/`
-
-## Artifact Language
-
-Portable harness v1 supports English and Chinese for human-facing artifacts.
-
-- bootstrap scripts accept `--language auto|en|zh`
-- `.harness/profile.local.yaml` persists the choice in
-  `documentation.artifact_language`
-- this reference implementation defaults to Chinese when no policy is set
-- in scripts, `auto` resolves from the environment locale
-- in writing skills, `auto` means "follow the current user request language"
-- `task-status.md` remains English because it is the portable control plane
 
 ## Distribution Model
 

@@ -17,19 +17,7 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-The orchestrator detects the artifact language once in Phase 0 and
-writes it to `task-status.md` § State Notes as `- artifact_language: <value>`.
-All downstream skills read this value instead of re-detecting.
-
-Detection logic (run once in Phase 0, after harness check):
-1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
-   `zh` or `en`, use that value.
-2. If it is `auto`, detect from the current user request language.
-3. If the setting is missing, detect from the current user request language.
-   If indeterminate, default to `zh`.
-
-Write the resolved value (always `zh` or `en`, never `auto`) to State Notes.
-
+Write all human-facing artifacts in the language of the user's request.
 Do not localize `task-status.md`.
 
 ## Structured Question Tool
@@ -113,7 +101,7 @@ Check whether `.harness/task-status.md` exists.
 
 - **No `.harness/` at all** — first-time setup. Run `init-harness.sh`:
   ```bash
-  bash spec/bootstrap/init-harness.sh --adapter <host> --language <lang> --task-id <id> --force
+  bash spec/bootstrap/init-harness.sh --adapter <host> --task-id <id> --force
   ```
   This creates the `.harness/` directory, seeds `profile.local.yaml`,
   copies templates, AND registers the first task row. After this,
@@ -150,14 +138,6 @@ If a draft is found, inform the user which artifact was incomplete and
 which phase will re-run. The re-run overwrites the draft — no manual
 cleanup needed. If no drafts are found, resume normally from the
 current state.
-
-### 0.1c Artifact Language Detection
-
-Resolve the artifact language and write to `task-status.md` § State Notes
-as `- artifact_language: zh` or `- artifact_language: en`. See the
-Artifact Language Policy section above for detection logic. All
-downstream skills read this value from State Notes instead of
-independently detecting the language.
 
 ### 0.2 Requirement Clarity Assessment
 

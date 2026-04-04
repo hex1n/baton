@@ -27,11 +27,6 @@ profile_read_scalar() {
   printf '%s\n' "$value"
 }
 
-profile_read_artifact_language() {
-  local profile_path="$1"
-  profile_read_scalar "$profile_path" "artifact_language" || true
-}
-
 profile_read_mode() {
   local profile_path="$1"
   local key="$2"

@@ -16,15 +16,10 @@ agents_dir="$repo_root/.agents"
 template_file="$spec_root/templates/task-status.template.md"
 verification_template="$spec_root/templates/verification-path.template.md"
 evaluation_template="$spec_root/templates/evaluation.template.md"
-zh_verification_template="$spec_root/templates/zh/verification-path.template.md"
-zh_evaluation_template="$spec_root/templates/zh/evaluation.template.md"
 generator_feedback_template="$spec_root/templates/generator-feedback.template.md"
-zh_generator_feedback_template="$spec_root/templates/zh/generator-feedback.template.md"
 legacy_generator_feedback_template="$repo_root/spec/extensions/java-backend-strict/templates/generator-feedback.template.md"
 decisions_template="$spec_root/templates/decisions.template.md"
-zh_decisions_template="$spec_root/templates/zh/decisions.template.md"
 codebase_map_template="$spec_root/templates/codebase-map.template.md"
-zh_codebase_map_template="$spec_root/templates/zh/codebase-map.template.md"
 legacy_decisions_template="$repo_root/spec/extensions/java-backend-strict/templates/decisions.template.md"
 legacy_codebase_map_template="$repo_root/spec/extensions/java-backend-strict/templates/codebase-map.template.md"
 profile_template="$spec_root/templates/profile.local.template.yaml"
@@ -33,7 +28,6 @@ validate_artifact_sh="$script_dir/validate-artifact.sh"
 validate_isolation_sh="$script_dir/validate-isolation.sh"
 harness_context_sh="$script_dir/harness-context.sh"
 provenance_sh="$bootstrap_dir/lib/provenance.sh"
-readme_check_sh="$bootstrap_dir/check-root-readme-bilingual.sh"
 governance_check_sh="$bootstrap_dir/sync-governance-entrypoints.sh"
 task_status_script="$bootstrap_dir/task-status.sh"
 install_hooks_sh="$bootstrap_dir/install-hooks.sh"
@@ -159,21 +153,6 @@ if [[ $inv4_errors -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Invariant 5: root README bilingual pair remains structurally aligned
-# ---------------------------------------------------------------------------
-inv5_errors=0
-if [[ ! -f "$readme_check_sh" ]]; then
-  printf 'ERROR: invariant-5: README bilingual check script not found: %s\n' "$readme_check_sh"
-  inv5_errors=$((inv5_errors + 1))
-elif ! bash "$readme_check_sh" --repo-root "$repo_root"; then
-  printf 'ERROR: invariant-5: root README bilingual checks failed\n'
-  inv5_errors=$((inv5_errors + 1))
-else
-  printf 'OK: invariant-5: root README bilingual checks passed\n'
-fi
-errors=$((errors + inv5_errors))
-
-# ---------------------------------------------------------------------------
 # Invariant 6: root governance entrypoints remain synced across hosts
 # ---------------------------------------------------------------------------
 inv6_errors=0
@@ -290,7 +269,7 @@ errors=$((errors + inv9_errors))
 # Invariant 10: isolation templates exist and start-task resets evaluation.md
 # ---------------------------------------------------------------------------
 inv10_errors=0
-for template in "$verification_template" "$evaluation_template" "$zh_verification_template" "$zh_evaluation_template"; do
+for template in "$verification_template" "$evaluation_template"; do
   if [[ ! -f "$template" ]]; then
     printf 'ERROR: invariant-10: required template missing: %s\n' "$template"
     inv10_errors=$((inv10_errors + 1))
@@ -336,7 +315,7 @@ for consumer in "$validate_isolation_sh" "$harness_context_sh"; do
   fi
 done
 
-for template in "$verification_template" "$evaluation_template" "$zh_verification_template" "$zh_evaluation_template"; do
+for template in "$verification_template" "$evaluation_template"; do
   [[ -f "$template" ]] || continue
   for needle in 'Execution Provenance' '- Role:' '- Isolation mode:' '- Execution context:' '- Agent ID:' '- Evidence:' '- Fallback policy:' '- Fallback reason:'; do
     if ! grep -Fq -- "$needle" "$template"; then
@@ -477,26 +456,15 @@ if ! grep -Fq 'generator-feedback)' "$validate_artifact_sh"; then
   inv14_errors=$((inv14_errors + 1))
 fi
 
-for template in "$generator_feedback_template" "$zh_generator_feedback_template"; do
-  if [[ ! -f "$template" ]]; then
-    printf 'ERROR: invariant-14: generator-feedback template missing: %s\n' "$template"
-    inv14_errors=$((inv14_errors + 1))
-  fi
-done
+if [[ ! -f "$generator_feedback_template" ]]; then
+  printf 'ERROR: invariant-14: generator-feedback template missing: %s\n' "$generator_feedback_template"
+  inv14_errors=$((inv14_errors + 1))
+fi
 
 if [[ -f "$generator_feedback_template" ]]; then
   for needle in '## Original Assumption' '## Actual Finding' '## Impact' '## Recommended Next Owner'; do
     if ! grep -Fq "$needle" "$generator_feedback_template"; then
       printf 'ERROR: invariant-14: %s missing heading %s\n' "$generator_feedback_template" "$needle"
-      inv14_errors=$((inv14_errors + 1))
-    fi
-  done
-fi
-
-if [[ -f "$zh_generator_feedback_template" ]]; then
-  for needle in '## 原始假设' '## 实际发现' '## 影响' '## 建议下一步负责方'; do
-    if ! grep -Fq "$needle" "$zh_generator_feedback_template"; then
-      printf 'ERROR: invariant-14: %s missing heading %s\n' "$zh_generator_feedback_template" "$needle"
       inv14_errors=$((inv14_errors + 1))
     fi
   done
@@ -664,23 +632,14 @@ if ! grep -Fq 'decisions)' "$validate_artifact_sh"; then
   inv17_errors=$((inv17_errors + 1))
 fi
 
-for template in "$decisions_template" "$zh_decisions_template"; do
-  if [[ ! -f "$template" ]]; then
-    printf 'ERROR: invariant-17: decisions template missing: %s\n' "$template"
-    inv17_errors=$((inv17_errors + 1))
-  fi
-done
+if [[ ! -f "$decisions_template" ]]; then
+  printf 'ERROR: invariant-17: decisions template missing: %s\n' "$decisions_template"
+  inv17_errors=$((inv17_errors + 1))
+fi
 
 if [[ -f "$decisions_template" ]]; then
   if ! grep -Fq '## D1:' "$decisions_template"; then
     printf 'ERROR: invariant-17: %s missing heading ## D1:\n' "$decisions_template"
-    inv17_errors=$((inv17_errors + 1))
-  fi
-fi
-
-if [[ -f "$zh_decisions_template" ]]; then
-  if ! grep -Fq '## D1:' "$zh_decisions_template"; then
-    printf 'ERROR: invariant-17: %s missing heading ## D1:\n' "$zh_decisions_template"
     inv17_errors=$((inv17_errors + 1))
   fi
 fi
@@ -726,23 +685,14 @@ if ! grep -Fq 'codebase-map)' "$validate_artifact_sh"; then
   inv18_errors=$((inv18_errors + 1))
 fi
 
-for template in "$codebase_map_template" "$zh_codebase_map_template"; do
-  if [[ ! -f "$template" ]]; then
-    printf 'ERROR: invariant-18: codebase-map template missing: %s\n' "$template"
-    inv18_errors=$((inv18_errors + 1))
-  fi
-done
+if [[ ! -f "$codebase_map_template" ]]; then
+  printf 'ERROR: invariant-18: codebase-map template missing: %s\n' "$codebase_map_template"
+  inv18_errors=$((inv18_errors + 1))
+fi
 
 if [[ -f "$codebase_map_template" ]]; then
   if ! grep -Fq '## Project Structure' "$codebase_map_template"; then
     printf 'ERROR: invariant-18: %s missing heading ## Project Structure\n' "$codebase_map_template"
-    inv18_errors=$((inv18_errors + 1))
-  fi
-fi
-
-if [[ -f "$zh_codebase_map_template" ]]; then
-  if ! grep -Fq '## 项目结构' "$zh_codebase_map_template"; then
-    printf 'ERROR: invariant-18: %s missing heading ## 项目结构\n' "$zh_codebase_map_template"
     inv18_errors=$((inv18_errors + 1))
   fi
 fi

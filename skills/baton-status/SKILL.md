@@ -11,8 +11,7 @@ user-invocable: true
 
 ## Response Language Policy
 
-Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
-Report status to the user in that language.
+Report status to the user in the language of the user's request.
 Do not localize `task-status.md`.
 
 ## Execution Steps

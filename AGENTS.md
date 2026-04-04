@@ -60,14 +60,6 @@ Tasks produce artifacts in `.harness/`:
 4. **Human gates** — architecture approval and task close require human confirmation
 5. **Context isolation** — `Verification Explorer` and `Evaluator` must use isolated judgment in `strict`; `compat` fallback must be explicit in artifacts
 
-## Documentation Contribution Rules
-
-- Root entry docs are maintained as a bilingual pair: `README.md` remains the official English entry, and `README.zh-CN.md` is the official Chinese companion
-- Changes to root onboarding, install/update flow, vendor/override layout, or skill distribution guidance must update both README files in the same change
-- Root entry-document tasks still use the harness workflow: scope the change, write requirements / architecture / verification artifacts, then verify
-- After editing either root README, run `bash spec/bootstrap/check-root-readme-bilingual.sh`
-- Other Chinese root-level docs are supplemental; they do not replace the official README pair
-
 ## Multi-Host Root Entry Rules
 
 - Keep root governance synchronized through `spec/templates/root-governance.template.md`

@@ -16,8 +16,7 @@ user-invocable: true
 
 ## Artifact Language Policy
 
-Read `artifact_language` from `task-status.md` § State Notes (`zh` or `en`).
-Write all human-facing artifacts in that language.
+Write all human-facing artifacts in the language of the user's request.
 Do not localize `task-status.md`.
 
 ## Execution Steps

@@ -61,6 +61,28 @@ cat > "$tmp/requirements.md" <<'EOF'
 # Requirements: test-task
 ## 1. Problem
 content
+## 2. Assumptions
+content
+## 3. Scope
+content
+## 4. Functional Requirements
+content
+## 5. Non-Goals
+content
+## 6. Acceptance Criteria
+content
+## 7. Constraints
+content
+## 8. Validation Intent
+content
+EOF
+assert_exit "requirements complete -> exit 0" 0 bash "$VALIDATE" "requirements" "$tmp/requirements.md"
+
+# -- requirements: missing Assumptions -> exit 1 --
+cat > "$tmp/requirements-no-assumptions.md" <<'EOF'
+# Requirements: test-task
+## 1. Problem
+content
 ## 2. Scope
 content
 ## 3. Functional Requirements
@@ -74,7 +96,7 @@ content
 ## 7. Validation Intent
 content
 EOF
-assert_exit "requirements complete -> exit 0" 0 bash "$VALIDATE" "requirements" "$tmp/requirements.md"
+assert_exit "requirements missing Assumptions -> exit 1" 1 bash "$VALIDATE" "requirements" "$tmp/requirements-no-assumptions.md"
 
 # -- verification-path: complete passes with isolation plan --
 cat > "$tmp/verification-path.md" <<'EOF'

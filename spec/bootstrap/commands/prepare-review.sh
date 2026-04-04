@@ -66,7 +66,6 @@ if [[ "$dry_run" == true ]]; then
     --repo-root "$resolved_repo_root" \
     --bootstrap-dir "$resolved_bootstrap_dir" \
     --dry-run
-  printf 'prepare-review: would run %s/check-root-readme-bilingual.sh\n' "$resolved_bootstrap_dir"
   printf 'prepare-review: would run %s/check-consistency.sh\n' "$resolved_bootstrap_dir"
   printf 'prepare-review: would execute generated SessionStart hook command from local config\n'
 else
@@ -74,7 +73,6 @@ else
     --repo-root "$resolved_repo_root" \
     --bootstrap-dir "$resolved_bootstrap_dir"
 
-  bash "$resolved_bootstrap_dir/check-root-readme-bilingual.sh" --repo-root "$resolved_repo_root"
   bash "$resolved_bootstrap_dir/check-consistency.sh"
 
   session_cmd="$(extract_session_command "$resolved_repo_root")"

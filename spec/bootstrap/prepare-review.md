@@ -17,10 +17,9 @@ next isolated review steps are reproducible and less dependent on memory.
 ## What It Does
 
 1. re-runs `install-hooks.sh` for the target repo
-2. runs `check-root-readme-bilingual.sh`
-3. runs `check-consistency.sh`
-4. extracts a generated `SessionStart` hook command from local config and executes it once
-5. prints the next isolated verifier / evaluator instructions
+2. runs `check-consistency.sh`
+3. extracts a generated `SessionStart` hook command from local config and executes it once
+4. prints the next isolated verifier / evaluator instructions
 
 ## Why It Exists
 

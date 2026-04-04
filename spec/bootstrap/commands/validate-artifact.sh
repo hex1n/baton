@@ -77,7 +77,7 @@ run_checks() {
       ;;
     requirements)
       check_sections "$file_path" \
-        "Problem|问题" "Scope|范围" "Functional.Requirements|功能需求" "Non.Goals|非目标" \
+        "Problem|问题" "Assumptions|假设" "Scope|范围" "Functional.Requirements|功能需求" "Non.Goals|非目标" \
         "Acceptance.Criteria|验收标准" "Constraints|约束" "Validation.Intent|验证意图" || rc=$?
       ;;
     architecture)

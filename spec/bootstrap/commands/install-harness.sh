@@ -235,7 +235,6 @@ lockfile_path="$harness_dir/harness.lock.yaml"
 override_root="$harness_dir/overrides"
 override_skills_dir="$override_root/skills"
 override_templates_dir="$override_root/templates"
-override_templates_zh_dir="$override_templates_dir/zh"
 
 if [[ "$mode" == "install" && -f "$lockfile_path" && "$force" != "true" ]]; then
   printf 'Lockfile already exists at %s. Run update-harness or pass --force.\n' "$lockfile_path" >&2
@@ -256,7 +255,6 @@ mkdir_if_needed "$harness_dir"
 mkdir_if_needed "$override_root"
 mkdir_if_needed "$override_skills_dir"
 mkdir_if_needed "$override_templates_dir"
-mkdir_if_needed "$override_templates_zh_dir"
 
 remove_if_exists "$vendor_spec_root"
 remove_if_exists "$vendor_skills_root"

@@ -1,11 +1,5 @@
 # Baton Harness
 
-[English](README.md) | [简体中文](README.zh-CN.md)
-
-根目录入口文档规则：凡是涉及 onboarding、install/update、vendor、override
-或 skill 分发的改动，都要同步更新本文件和 `README.md`。规则见 `CLAUDE.md`
-和 `AGENTS.md`，改完后执行 `bash spec/bootstrap/check-root-readme-bilingual.sh`。
-
 一个可移植的 AI 编码代理协作协议，当前仓库提供 Claude Code 参考实现。
 
 设计来源参考 [Anthropic 关于 long-running apps 的 harness 设计](https://www.anthropic.com/engineering/harness-design-long-running-apps)。
@@ -34,17 +28,6 @@ AGENTS.md          给 Codex / Cursor 风格宿主使用的根级治理入口
 - `Evaluator BLOCKED` → 回到 `Generator` 修复，然后重新运行 `Evaluator`
 
 每个角色都会在 `.harness/` 中产出文件型制品，状态通过 `task-status.md` 跟踪。
-
-## 制品语言
-
-人类可读制品支持中英文。
-
-- `init-harness` 接受 `--language auto|en|zh`，并把策略写入 `.harness/profile.local.yaml`
-- `start-task` 接受同样的参数作为覆盖；不传时会先读 profile，再回退到中文
-- 这个仓库的 bootstrap 默认语言是中文；如果你想要别的默认值，显式传 `--language en` 或 `--language auto`
-- bootstrap 脚本里的 `auto` 按本机 locale 解析
-- 写制品的 role skill 里的 `auto` 表示“跟随当前用户输入语言”
-- `task-status.md` 保持英文，因为它是稳定的控制面
 
 实践中有两条规则最重要：
 

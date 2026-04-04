@@ -8,7 +8,6 @@
 
 - risk_level:
 - task_type:
-- artifact_language:
 - codex_available:
 - codex_skill:
 - human_ack: false

@@ -111,15 +111,6 @@ At minimum, set:
 
 Do not leave validation commands implicit.
 
-Language policy rules:
-
-- `documentation.artifact_language: zh` writes human-facing artifacts in Chinese
-- `documentation.artifact_language: en` writes them in English
-- `documentation.artifact_language: auto` makes bootstrap scripts resolve from
-  locale, while writing skills follow the current user request language
-- if you omit the flag in this repo, the bootstrap default is `zh`
-- `task-status.md` stays English as the stable control-plane file
-
 Template resolution order:
 
 1. `repo/.harness/overrides/templates/`

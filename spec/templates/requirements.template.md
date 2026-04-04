@@ -6,38 +6,51 @@
 
 ## 1. Problem
 
-<state the problem without prescribing a solution>
+<root problem statement — describe the undesirable state, not a solution>
+<if the user's original request was reframed, include both versions>
 
-## 2. Scope
+## 2. Assumptions
 
-### 2.1 In Scope
+<load-bearing assumptions from Problem Archaeology (Step 2c)>
+
+| # | Assumption | Type | If wrong... |
+|---|-----------|------|-------------|
+| A1 | <assumption> | <Testable / User intent / Convention> | <consequence> |
+
+<for Low risk: inline bullet list instead of table>
+
+## 3. Scope
+
+### 3.1 In Scope
 
 - <item>
 
-### 2.2 Out of Scope
+### 3.2 Out of Scope
 
 - <item>
 
-## 3. Functional Requirements
+## 4. Functional Requirements
 
 ### FR-1 <title>
 
 - <requirement>
 
-## 4. Non-Goals
+## 5. Non-Goals
 
 - <non-goal>
 
-## 5. Acceptance Criteria
+## 6. Acceptance Criteria
 
 ### AC-1 <title>
 
 - <criteria>
 
-## 6. Constraints
+## 7. Constraints
+
+<true constraints only — conventions stripped or explicitly preserved with rationale>
 
 - <constraint>
 
-## 7. Validation Intent
+## 8. Validation Intent
 
 - <how success should be validated>

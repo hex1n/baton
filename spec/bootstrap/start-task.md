@@ -63,15 +63,6 @@ The active task surfaces are reset from templates:
 
 This keeps the top-level `.harness/` focused on the current task.
 
-Language selection for these human-facing artifacts resolves in this order:
-
-1. explicit `--language` / `-Language`
-2. `.harness/profile.local.yaml` → `documentation.artifact_language`
-3. Chinese default
-
-If the selected policy is `auto`, the bootstrap script resolves the artifact
-language from the local environment locale. `task-status.md` is not localized.
-
 Template resolution order:
 
 1. `repo/.harness/overrides/templates/`

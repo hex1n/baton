@@ -5,7 +5,6 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bootstrap_dir="$(cd "$script_dir/.." && pwd)"
 spec_root="$(cd "$bootstrap_dir/.." && pwd)"
 source "$bootstrap_dir/lib/task-status.sh"
-source "$bootstrap_dir/lib/language.sh"
 source "$bootstrap_dir/lib/profile.sh"
 
 repo_root="."
@@ -13,7 +12,6 @@ task_id=""
 owner="scoped-explorer"
 state="exploring"
 notes="task row created by start-task bootstrap"
-language=""
 dry_run="false"
 
 trim() {
@@ -26,27 +24,18 @@ sanitize_cell() {
 
 human_template_path() {
   local template_name="$1"
-  local resolved_language="$2"
   local override_root=""
   local override_candidate=""
   local candidate="$templates_dir/$template_name"
 
   if [[ -n "${resolved_repo_root:-}" ]]; then
     override_root="$resolved_repo_root/.harness/overrides/templates"
-    if [[ "$resolved_language" == 'zh' ]]; then
-      override_candidate="$override_root/zh/$template_name"
-    else
-      override_candidate="$override_root/$template_name"
-    fi
+    override_candidate="$override_root/$template_name"
 
     if [[ -f "$override_candidate" ]]; then
       printf '%s' "$override_candidate"
       return 0
     fi
-  fi
-
-  if [[ "$resolved_language" == 'zh' ]]; then
-    candidate="$templates_dir/zh/$template_name"
   fi
 
   if [[ ! -f "$candidate" ]]; then
@@ -60,7 +49,7 @@ human_template_path() {
 usage() {
   local owners_file="$spec_root/protocol/owners.txt"
   local states_file="$spec_root/protocol/states.txt"
-  printf 'Usage:\n  start-task.sh --task-id ID [--repo-root PATH] [--owner ROLE] [--state STATE] [--notes TEXT] [--language auto|en|zh] [--dry-run]\n\nOwners:\n'
+  printf 'Usage:\n  start-task.sh --task-id ID [--repo-root PATH] [--owner ROLE] [--state STATE] [--notes TEXT] [--dry-run]\n\nOwners:\n'
   if [[ -f "$owners_file" ]]; then
     while IFS= read -r token; do
       printf '  %s\n' "$token"
@@ -100,10 +89,6 @@ while [[ $# -gt 0 ]]; do
       notes="$2"
       shift 2
       ;;
-    --language)
-      language="$2"
-      shift 2
-      ;;
     --dry-run)
       dry_run="true"
       shift
@@ -128,17 +113,6 @@ if [[ -z "$task_id" ]]; then
   printf 'Missing required argument: --task-id\n' >&2
   usage >&2
   exit 1
-fi
-
-language="$(language_normalize "$language")"
-if [[ -n "$language" ]]; then
-  case "$language" in
-    auto|en|zh) ;;
-    *)
-      printf 'Unsupported language: %s\n' "$language" >&2
-      exit 1
-      ;;
-  esac
 fi
 
 owners_file="$spec_root/protocol/owners.txt"
@@ -186,27 +160,6 @@ case "$task_status_schema_value" in
     ;;
 esac
 
-profile_language="$(profile_read_artifact_language "$profile_local_path")"
-if [[ -n "$profile_language" ]]; then
-  case "$profile_language" in
-    auto|en|zh) ;;
-    *)
-      printf 'Unsupported artifact language in profile.local.yaml: %s\n' "$profile_language" >&2
-      exit 1
-      ;;
-  esac
-fi
-
-language_policy="$language"
-if [[ -z "$language_policy" ]]; then
-  language_policy="$profile_language"
-fi
-if [[ -z "$language_policy" ]]; then
-  language_policy='zh'
-fi
-
-resolved_artifact_language="$(language_resolve_artifact "$language_policy")"
-
 rows=()
 last_scope="bootstrap"
 duplicate_task="false"
@@ -252,7 +205,7 @@ archive_files=()
 for entry in "${artifact_templates[@]}"; do
   template_name="${entry%%:*}"
   target_name="${entry##*:}"
-  template_path="$(human_template_path "$template_name" "$resolved_artifact_language")"
+  template_path="$(human_template_path "$template_name")"
   target_path="$harness_dir/$target_name"
 
   if [[ -f "$target_path" ]] && ! cmp -s "$template_path" "$target_path"; then
@@ -283,7 +236,7 @@ fi
 for entry in "${artifact_templates[@]}"; do
   template_name="${entry%%:*}"
   target_name="${entry##*:}"
-  template_path="$(human_template_path "$template_name" "$resolved_artifact_language")"
+  template_path="$(human_template_path "$template_name")"
   target_path="$harness_dir/$target_name"
 
   if [[ "$dry_run" == "true" ]]; then
@@ -328,8 +281,6 @@ printf 'Repo:     %s\n' "$resolved_repo_root"
 printf 'TaskId:   %s\n' "$safe_task_id"
 printf 'Owner:    %s\n' "$safe_owner"
 printf 'State:    %s\n' "$safe_state"
-printf 'Language Policy:   %s\n' "$language_policy"
-printf 'Artifact Language: %s\n' "$resolved_artifact_language"
 if [[ "$dry_run" == "true" ]]; then
   printf 'Mode:     dry-run\n'
 fi

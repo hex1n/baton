@@ -1,12 +1,5 @@
 # Baton Harness
 
-[English](README.md) | [简体中文](README.zh-CN.md)
-
-Root entry-doc rule: keep this file and `README.zh-CN.md` in sync for
-onboarding, install/update, vendor, override, and skill-distribution changes.
-See `CLAUDE.md` and `AGENTS.md`, and run
-`bash spec/bootstrap/check-root-readme-bilingual.sh` after edits.
-
 A portable AI coding agent collaboration protocol with a Claude Code reference implementation.
 
 Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps).
@@ -35,20 +28,6 @@ Repair loops:
 - `Evaluator BLOCKED` → back to `Generator`, then re-run `Evaluator`
 
 Each role produces file-based artifacts in `.harness/`. State is tracked in `task-status.md`.
-
-## Artifact Language
-
-Human-facing artifacts can be generated in English or Chinese.
-
-- `init-harness` accepts `--language auto|en|zh` and stores the policy in
-  `.harness/profile.local.yaml`
-- `start-task` accepts the same flag as an override; otherwise it uses the
-  stored profile policy, then falls back to Chinese
-- this repo's bootstrap default is Chinese; use `--language en` or
-  `--language auto` if you want a different default
-- in bootstrap scripts, `auto` resolves from the local environment locale
-- in writing skills, `auto` means "follow the current user request language"
-- `task-status.md` stays in English because it is the stable control plane
 
 Two operating rules matter in practice:
 
