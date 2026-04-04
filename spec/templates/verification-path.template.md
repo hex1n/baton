@@ -1,7 +1,7 @@
 # Verification Path: <task-id>
 
 **Owner**: `verification-explorer`  
-**Status**: `draft`
+**Status**: `template`
 
 ## 1. Intended Checks
 

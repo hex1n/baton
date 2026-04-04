@@ -84,6 +84,19 @@ clear_human_ack_if_needed() {
   rm -f "$file_path.bak"
 }
 
+# Skip validation when the file is outside this repo (e.g., writing to
+# an external project in /tmp/). The hook fires because Claude Code's
+# hook dispatch uses the baton repo root, but the file may belong to a
+# different project entirely.
+if [[ "$HOOK_HOST" == "cc" && -n "$HOOK_FILE_PATH" ]]; then
+  real_hook_root="$(cd "$HOOK_ROOT" 2>/dev/null && pwd -P || true)"
+  real_file_dir="$(cd "$(dirname "$HOOK_FILE_PATH")" 2>/dev/null && pwd -P || true)"
+  if [[ -n "$real_hook_root" && -n "$real_file_dir" && "$real_file_dir" != "$real_hook_root"* ]]; then
+    debug_log "file $HOOK_FILE_PATH is outside repo root $HOOK_ROOT — skipping validation"
+    hook_pass
+  fi
+fi
+
 artifact_paths=()
 while IFS= read -r artifact_path; do
   [[ -n "$artifact_path" ]] || continue

@@ -94,7 +94,8 @@ Before writing any human-facing artifact:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -142,6 +143,28 @@ Sections (all required):
 > "If Generator writes the code correctly, can we prove it works?"
 
 If the answer is **no** or **uncertain**, the task is **blocked**.
+
+### 0. Environment Prerequisite Check
+
+Before dry-running any commands, verify the project can build and test
+at all. This catches infrastructure issues early (missing deps, no test
+runner config, broken toolchain) so they don't block Phase 6.
+
+1. **Dependencies installed?** Check whether `node_modules/`, `vendor/`,
+   `.venv/`, or equivalent exist. If not, run the install command
+   (`npm install`, `pip install -r requirements.txt`, etc.) and record it
+   as a prerequisite in the artifact.
+2. **Build tool present?** Verify the build command (`tsc`, `go build`,
+   `mvn`, etc.) is available and the project compiles.
+3. **Test runner configured?** Check that a test config file exists
+   (`jest.config.*`, `pytest.ini`, `phpunit.xml`, etc.). If missing,
+   record it as an `environment_blocker` — Generator must create the
+   config before tests can run.
+4. **CI config readable?** If a CI config exists (`.github/workflows/`,
+   `.gitlab-ci.yml`, `Jenkinsfile`), confirm it parses.
+
+Record all findings in the **Dependencies and Prerequisites** section.
+Any unresolvable issue is a blocker with category `environment_blocker`.
 
 ### 1. Read Architecture Verification Strategy
 

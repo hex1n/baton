@@ -22,6 +22,18 @@ if [[ ! -f "$file_path" ]]; then
   exit 1
 fi
 
+# Skip full validation for draft artifacts. Authors can set
+# **Status**: `draft` in the artifact header to allow iterative writing
+# without triggering section-completeness checks during post-artifact.
+#
+# Safety: pre-transition hook (L94-115) independently blocks state
+# transitions when the required artifact for the current state still
+# carries draft/template status. So draft artifacts pass mid-phase
+# writes but cannot advance the state machine.
+if grep -qE '^\*\*Status\*\*.*`draft`' "$file_path" 2>/dev/null; then
+  exit 0
+fi
+
 has_section() {
   local file="$1" pattern="$2"
   grep -qiE "^##[[:space:]].*${pattern}" "$file"
@@ -59,7 +71,8 @@ run_checks() {
     scoped-map)
       check_sections "$file_path" \
         "Scope|范围" "Entry|入口" "Call.Chain|调用链" "Existing.Behavior|现有行为" \
-        "Existing.Tests|现有测试" "Risk|风险" "Change.Shape|变更形态" "Recommendation|建议" || rc=$?
+        "Existing.Tests|现有测试" "Risk|Dependency|风险" "Change.Shape|变更形态" \
+        "Recommendation|Suggested.Next|建议" || rc=$?
       check_optional_overlay_recommendation "$file_path" || rc=$((rc + 1))
       ;;
     requirements)

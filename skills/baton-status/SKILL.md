@@ -16,7 +16,8 @@ When reporting status to the user:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, prefer that language for the response.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.

@@ -26,7 +26,8 @@ Before writing any human-facing artifact or feedback file:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -54,6 +55,36 @@ Before writing any code:
   confirm with user before proceeding.
 - Verify write surface matches `architecture.md` — list all files to
   create or modify.
+
+### Quality Standards
+
+Every implementation must meet these criteria before handoff. The
+Evaluator will reject code that fails these checks, so fix them
+proactively rather than consuming repair rounds.
+
+1. **Linting**: Repo linter passes with no new warnings. Fix violations
+   instead of suppressing them. If no repo linter exists, follow the
+   language's standard style guide.
+2. **Typecheck**: Passes cleanly. No untyped escape hatches (`any`,
+   `Object`, `dynamic`) without a justifying comment.
+3. **Tests**:
+   - New public functions and behaviors must have tests.
+   - Tests are behavior-driven: they describe *what* the code should do,
+     not *how* it does it. A test that passes with a wrong implementation
+     is not a test.
+   - Write tests alongside or before implementation — do not defer to end.
+4. **Code style**: Follow existing repo conventions (naming, formatting,
+   module structure). Run the repo's auto-formatter if one exists.
+5. **Dependencies**: New dependencies require justification traceable to
+   `architecture.md`. No dependencies with known critical vulnerabilities.
+6. **Security**:
+   - No secrets in code (API keys, passwords, tokens).
+   - User input is validated at system boundaries.
+   - No injection vulnerabilities (SQL, XSS, command injection).
+7. **Performance**: No obvious regressions in paths identified as
+   performance-sensitive in `verification-path.md`.
+8. **Comments**: Public APIs and non-obvious logic have comments explaining
+   *why*, not *what*. Do not add comments to self-evident code.
 
 ### 3. Implementation Phase
 
@@ -129,7 +160,8 @@ Use the core generator-feedback template and keep the four sections aligned:
 - Recommended Next Owner
 
 The feedback file should explain the mismatch, why it matters, and who must
-decide next. Do not invent a new format.
+decide next. The Architect must review `generator-feedback.md` before the
+task can resume from blocked. Do not invent a new format.
 
 ### Execution Notes
 
@@ -164,7 +196,7 @@ Read the risk level from `task-status.md` § State Notes and adapt:
 
 | Risk Level | Depth Adjustments |
 |------------|-------------------|
-| **Low** | No batching needed; implement all at once; simplified self-review (skip scope and deviation checks) |
+| **Low** | Implement in 1-2 batches; checkpoint validate after each; commit at passing checkpoints. Simplified self-review: skip scope and deviation checks, but Quality Standards still fully apply. |
 | **Medium** | Standard — logical-unit batches, full self-review checklist |
 | **High** | Strict batching following Delivery Order; each batch must include security-relevant tests; full self-review plus: no new dependencies without justification, lint/typecheck pass per batch |
 

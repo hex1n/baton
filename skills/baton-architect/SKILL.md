@@ -28,20 +28,34 @@ Before writing any human-facing artifact:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
 
 ## Structured Question Tool
 
-When this skill says "use structured question", use the platform's
-interactive question tool:
+When this skill says "use structured question", you MUST use the
+platform's structured input mechanism — not free-form text:
 
-- **Claude Code**: `AskUserQuestion` (supports single-select, multi-select)
-- **Codex**: `request_user_input` (present choices as a numbered list,
-  wait for reply)
-- **Other hosts**: present choices clearly and wait for the user's response
+- **Claude Code**: Invoke the `AskUserQuestion` tool as a tool call.
+- **Codex / Cursor**: Present choices as a numbered list in chat and
+  wait for the user to reply with a number (per AGENTS.md contract).
+  Do NOT call `request_user_input` — it is only available in Plan mode.
+- **Other hosts**: Present choices clearly and wait for the user's response.
+
+**Do NOT present options as unstructured prose.** The user must see
+distinct, selectable options.
+
+Right — Claude Code:
+> AskUserQuestion({ question: "审批架构？", options: ["通过", "需修改"] })
+
+Right — Codex:
+> 审批架构？
+> 1. 通过
+> 2. 需修改
+> (reply with a number)
 
 ## Gate: Architecture Approved
 
@@ -174,13 +188,14 @@ Write the strongest arguments against your chosen approach:
 - What assumption, if wrong, would invalidate the approach?
 - Is there a simpler solution you dismissed too quickly?
 
-### 11. Cross-Model Architecture Review (Medium/High risk only)
+### 11. Cross-Model Architecture Review (Medium/High risk, default when available)
 
-Before presenting to the human, if the Codex plugin is available and
-the task is Medium or High risk, run a cross-model challenge review:
+Before presenting to the human, when Codex is available (check
+`codex_available` in `task-status.md` State Notes) and the task is
+Medium or High risk, run a cross-model challenge review:
 
 ```
-Skill("codex:adversarial-review", args: "--wait --scope working-tree")
+Skill("codex:rescue", args: "--wait --fresh Adversarial review of .harness/architecture.md. Challenge: approach choice, assumptions, risk analysis, failure modes. Question whether the current design is the right one. Compare against .harness/requirements.md for coverage. Output: major issues (blockers) vs minor suggestions.")
 ```
 
 Codex reviews `architecture.md` as an adversarial challenger — questioning
@@ -192,7 +207,7 @@ the approach choice, assumptions, and risk analysis.
 Write architecture.md
   │
   ▼
-Codex adversarial review
+Codex adversarial review (via codex:rescue)
   │
   ├─ No major issues → proceed to human gate
   └─ Major issues found:
@@ -227,7 +242,7 @@ Codex adversarial review
 - Disagreements about approach preference (the architect chose, Codex
   can disagree, but that alone is not a blocker)
 
-If the Codex plugin is not available, skip this step — the self-challenge
+If Codex is not available, skip this step — the self-challenge
 (Step 10) and human gate still provide review coverage.
 
 ### 12. Present and Wait

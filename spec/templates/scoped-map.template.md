@@ -3,7 +3,7 @@
 **Requirement**: <one-line task statement>  
 **Domain**: <domain>  
 **Owner**: `scoped-explorer`  
-**Status**: `draft`
+**Status**: `template`
 
 ## 1. Scope
 
@@ -23,35 +23,53 @@
 entry -> layer -> dependency -> output
 ```
 
-## 4. Existing Behavior
+## 4. Data Flow
+
+- Source: where data originates
+- Transforms: intermediate processing steps
+- Sink: where data lands (DB, API response, file, etc.)
+- State mutations at each boundary:
+
+> For Low-risk tasks: this section may be abbreviated or merged into Call Chain.
+
+## 5. Existing Behavior
 
 - Current observable behavior:
 - Current validation rules:
 - Existing implicit constraints:
 
-## 5. Existing Tests
+## 6. Existing Tests
 
 - Directly relevant tests:
 - Nearby reusable tests:
 - No useful tests found:
 
-## 6. Dependency / Risk Scan
+## 7. Change History
+
+- Recent changes in affected area (from git log):
+- High-churn files:
+- Active contributors:
+
+> For Low-risk tasks: this section may be omitted.
+
+## 8. Dependency / Risk Scan
 
 - Will this likely touch integration or infra?
 - Will this likely touch migrations or schema?
 - Will this likely cross business domains?
+- Areas of fragility, coupling, or missing coverage:
 
-## 7. Change Shape
+## 9. Change Shape
 
 - This looks like:
 - Estimated file count:
 - Preferred implementation depth:
 
-## 8. Open Questions
+## 10. Open Questions
 
 - <question>
 
-## 9. Recommendation
+## 11. Recommendation
 
 - Proceed?
 - Suggested next step:

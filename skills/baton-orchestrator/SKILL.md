@@ -22,19 +22,38 @@ Before writing any human-facing artifact or status message:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`.
 
 ## Structured Question Tool
 
-When this skill says "use structured question", use the platform's
-interactive question tool:
+When this skill says "use structured question", you MUST use the
+platform's structured input mechanism — not free-form text:
 
-- **Claude Code**: `AskUserQuestion` (supports single-select, multi-select)
-- **Codex**: `request_user_input` (present choices as a numbered list,
-  wait for reply)
-- **Other hosts**: present choices clearly and wait for the user's response
+- **Claude Code**: Invoke the `AskUserQuestion` tool as a tool call.
+- **Codex / Cursor**: Present choices as a numbered list in chat and
+  wait for the user to reply with a number. This matches the AGENTS.md
+  host contract (`AskUserQuestion → numbered list`). Do NOT call
+  `request_user_input` — it is only available in Plan mode.
+- **Other hosts**: Present choices clearly and wait for the user's response.
+
+**Do NOT present options as unstructured prose.** The user must see
+distinct, selectable options — not a paragraph that mentions choices.
+
+Wrong — buried in prose (DO NOT do this):
+> "I think we should proceed. Do you agree? We could also adjust the
+> risk level or change the clarity assessment if you prefer."
+
+Right — Claude Code tool call:
+> AskUserQuestion({ question: "是否继续？", options: ["是", "否"] })
+
+Right — Codex numbered list:
+> 是否继续？
+> 1. 是
+> 2. 否
+> (reply with a number)
 
 ## Input
 
@@ -58,10 +77,10 @@ Phase 2  Explore ── baton-explorer ───────→ scoped-map.md
    │                                         ↓ exit:  Gate 1 pass
    ▼
 Phase 3  Specify ── baton-specifier ──────→ requirements.md
-   │                + codex:review (opt)      ↓ advisory consistency check
+   │                + codex:rescue (M/H)      ↓ advisory consistency check
    ▼                                         ↓ exit:  user confirms
 Phase 4  Architect ── baton-architect ────→ architecture.md
-   │                 + codex:adversarial (opt) ↓ review→repair loop
+   │                 + codex:rescue (M/H)     ↓ adversarial review→repair loop
    ▼                                         ↓ exit:  Gate 2 (human approval)
    ▼
 Phase 5  Verify ── baton-verifier ────────→ verification-path.md
@@ -70,7 +89,7 @@ Phase 5  Verify ── baton-verifier ────────→ verification-p
 Phase 6  Generate ── baton-generator ─────→ code changes
    │                  + codex:rescue (opt)    ↓ exit:  verification pass
    ▼
-Phase 7  Review ── codex:review (opt) ────→ review findings
+Phase 7  Review ── codex:rescue (M/H) ───→ review findings
    │               + baton-evaluator          ↓ exit:  Gate 4 (evaluator verdict)
    ▼
 Phase 8  Human Close ────────────────────→ Gate 5 (human confirms)
@@ -87,11 +106,23 @@ Phase 9  Complete ── baton-retrospective ─→ retrospective.md (optional)
 
 Check whether `.harness/task-status.md` exists.
 
-- If not, run `init-harness.sh` first.
-- If it exists, check for an active (non-complete) task.
-  - Active task found: use structured question (single-select):
-    "Resume existing task [task-id] or start a new task?"
-    Options: Resume / Start new
+- **No `.harness/` at all** — first-time setup. Run `init-harness.sh`:
+  ```bash
+  bash spec/bootstrap/init-harness.sh --adapter <host> --language <lang> --task-id <id> --force
+  ```
+  This creates the `.harness/` directory, seeds `profile.local.yaml`,
+  copies templates, AND registers the first task row. After this,
+  skip `start-task.sh` — the task is already registered.
+
+- **`.harness/` exists but no active task** — harness was initialized
+  in a previous session. Register a new task with `start-task.sh`:
+  ```bash
+  bash spec/bootstrap/start-task.sh --repo-root . --task-id <id>
+  ```
+
+- **Active (non-complete) task found** — use structured question
+  (single-select): "Resume existing task [task-id] or start new?"
+  Options: Resume / Start new
   - If resuming: read the current state from `task-status.md` and jump
     to the corresponding phase.
 
@@ -130,13 +161,91 @@ Present clarity assessment, risk level, and reasoning to the user.
 Use structured question (single-select) to confirm:
 Options: Confirm / Adjust clarity level / Adjust risk level
 
+### 0.3b Codex Availability Check
+
+Detect whether the Codex cross-model review capability is available.
+Check in order (stop at the first match):
+
+1. `codex:rescue` — the programmatically-invocable skill from the
+   Claude Code Codex plugin (openai-codex). This is the preferred path
+   because it does NOT set `disable-model-invocation` and can be called
+   via `Skill()`.
+2. `codex:codex-rescue` — fully qualified name for the same skill.
+3. If neither is found, check whether any skill matching `codex*` with
+   review/rescue capabilities is available.
+
+Record in `task-status.md` under `## State Notes`:
+
+- **Available**: `codex_available: true` + the detected skill name
+  (e.g., `codex_skill: codex:rescue`). Cross-model review is the
+  **default** for Medium/High risk tasks — run it automatically.
+- **Unavailable**: `codex_available: false`. Skip all Codex integration
+  points silently. The self-challenge step and baton-evaluator still
+  provide review coverage.
+
+> **Why `codex:rescue`?** The `codex:review` and `codex:adversarial-review`
+> skills set `disable-model-invocation: true`, which prevents programmatic
+> invocation via `Skill()`. Only `codex:rescue` can be called
+> automatically. Users can still manually run `/codex:review` or
+> `/codex:adversarial-review` for structured pipeline output.
+
 ### 0.4 Start Task
+
+If `init-harness.sh` was already run in step 0.1 (with `--task-id`), it
+has already created the task row — skip straight to Phase 1 or Phase 2.
+
+Otherwise, register the task:
 
 ```bash
 bash spec/bootstrap/start-task.sh --repo-root . --task-id <task-id>
 ```
 
 **Next** → Phase 1 (if Vague/Partial) or Phase 2 (if Clear).
+
+### task-status.md Schema Reference
+
+The task table uses this exact format (do not deviate):
+
+```
+| Scope | Owner | State | Eval Round | Updated At | Notes |
+|-------|-------|-------|------------|------------|-------|
+| <task-id> | <role> | <state> | 0 | <timestamp> | <notes> |
+```
+
+- **Scope**: task identifier (e.g., `rate-limit-001`)
+- **Owner**: current role token (`orchestrator`, `explorer`, `specifier`,
+  `architect`, `human`, `generator`, `evaluator`)
+- **State**: current state machine state
+- **Eval Round**: incremented on each evaluator re-run (starts at 0)
+- **Updated At**: ISO timestamp or short date
+- **Notes**: free-form; for `blocked` state, must start with
+  `[verification_blocker]`, `[scope_blocker]`, `[environment_blocker]`,
+  or `[design_blocker]`
+
+### Low-Risk Fast Track
+
+When risk is Low AND clarity is Clear, apply these optimizations to
+reduce overhead without sacrificing correctness:
+
+| Phase | Standard | Low-Risk Fast Track |
+|-------|----------|---------------------|
+| Phase 1 (Clarify) | Run if Vague/Partial | **Skip** — clarity is already Clear |
+| Phase 2 (Explore) | Full exploration | Abbreviated — entry points + write surface only |
+| Phase 3 (Specify) | Full requirements | Minimal — P0 requirements only, skip traceability |
+| Phase 4 (Architect) | Full approach comparison | Single approach, skip delivery order |
+| Phase 5 (Verify) | Full verification path | Standard — verification is never skipped |
+| Phase 6 (Generate) | Logical-unit batches | 1-2 batches with checkpoint validation |
+| Phase 7 (Review) | Codex + Evaluator | **Evaluator only** — skip Codex review |
+| Repair rounds | Up to 3 before escalation | **Max 1** — escalate to human immediately |
+
+The fast track does NOT skip phases entirely (except Phase 1 when
+Clear). It reduces depth within each phase. Verification (Phase 5)
+and Evaluation (Phase 7 Layer B) always run at full rigor.
+
+**Human gates still apply.** Low-risk fast track still transitions
+through `awaiting_human_arch` (Gate 2) and `ready_for_human_close`
+(Gate 5). The presentation is lighter (single approach, no Codex
+findings to review), but human confirmation is still required.
 
 ---
 
@@ -179,8 +288,9 @@ risk than initially estimated.
 **Tool**: `baton-explorer`
 **Output**: `.harness/scoped-map.md`
 
-- Low risk: invoke inline via Skill tool.
-- Medium/High risk: invoke via Agent tool for context isolation.
+Always invoke via Agent tool — explorer declares `context: fork` and
+requires isolation. Low-risk explorers produce abbreviated output
+(entry points + write surface only) but still run in a separate context.
 
 Pass `clarification-brief.md` (if exists) to the explorer so clarified
 requirements guide the exploration scope. The explorer adapts its depth
@@ -216,13 +326,14 @@ formalizes** it rather than starting from scratch:
 - Adds edge cases discovered during exploration
 - Hints test type (unit/integration/e2e) for each acceptance criterion
 
-### Codex Advisory Review (Medium/High risk, optional)
+### Codex Advisory Review (Medium/High risk, default when available)
 
-For Medium/High risk tasks, if the Codex plugin is available, run a
-single advisory review of `requirements.md` before presenting to the user:
+For Medium/High risk tasks, when Codex is available (detected in
+Phase 0), run a single advisory review of `requirements.md` before
+presenting to the user:
 
 ```
-Skill("codex:review", args: "--wait --scope working-tree")
+Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/scoped-map.md. Focus: internal contradictions, coverage gaps, priority consistency, missing edge cases. Output a structured findings list.")
 ```
 
 Focus: internal contradictions, coverage gaps, priority consistency.
@@ -247,13 +358,14 @@ doc. Skip Codex advisory.
 **Tool**: `baton-architect`
 **Output**: `.harness/architecture.md`
 
-### Codex Architecture Challenge (Medium/High risk, optional)
+### Codex Architecture Challenge (Medium/High risk, default when available)
 
-For Medium/High risk tasks, if the Codex plugin is available, run a
-cross-model adversarial review before presenting to the human:
+For Medium/High risk tasks, when Codex is available (detected in
+Phase 0), run a cross-model adversarial review before presenting to
+the human:
 
 ```
-Skill("codex:adversarial-review", args: "--wait --scope working-tree")
+Skill("codex:rescue", args: "--wait --fresh Adversarial review of .harness/architecture.md. Challenge: approach choice, assumptions, risk analysis, failure modes. Question whether the current design is the right one. Compare against .harness/requirements.md for coverage. Output: major issues (blockers) vs minor suggestions.")
 ```
 
 If Codex finds major issues (logical contradictions, missing failure
@@ -265,6 +377,15 @@ modes, unaddressed requirements, security/data risks):
 
 This ensures the human reviews an architecture that has already
 survived cross-model challenge.
+
+### Delivery Order Check (High risk)
+
+For **High risk** tasks, `architecture.md` MUST include a `## Delivery
+Order` section with an ordered list of implementation units and their
+dependencies. If this section is missing, send the architecture back
+to the architect for revision before presenting to the human.
+
+Low/Medium risk: delivery order is recommended but not required.
 
 ### Gate 2: Architecture Approved
 
@@ -355,26 +476,27 @@ After all implementation is complete, run the verification commands from
 This phase has two layers: optional cross-model review, then the
 mandatory evaluator gate.
 
-### Layer A: Codex Review (optional, cross-model)
+### Layer A: Codex Review (Medium/High risk, default when available)
 
-If the codex plugin is available, run cross-model review for an
-independent second opinion from a different AI model:
+For Medium/High risk tasks, when Codex is available (detected in
+Phase 0), run cross-model review for an independent second opinion.
+**Skip for Low-risk tasks** — the evaluator provides sufficient coverage.
 
 ```
-Skill("codex:review", args: "--wait")
+Skill("codex:rescue", args: "--wait --fresh Review the implementation changes (git diff). Check against .harness/requirements.md and .harness/architecture.md. Focus: correctness, regressions, missing tests, edge cases. Output: structured findings list with severity.")
 ```
 
 For Large tasks, also run adversarial review:
 
 ```
-Skill("codex:adversarial-review", args: "--wait")
+Skill("codex:rescue", args: "--wait --fresh Adversarial review of the implementation. Challenge design choices and tradeoffs in the current diff. Compare against .harness/architecture.md. Output: major issues (blockers) vs minor suggestions.")
 ```
 
 Codex review findings are collected and passed to the evaluator as
 additional context. They are advisory input, not the final verdict.
 
-If the codex plugin is not available, skip this layer — the evaluator
-still runs independently.
+If Codex is not available, skip this layer — the evaluator still
+runs independently.
 
 ### Layer B: Evaluator (mandatory, gate of record)
 
@@ -486,12 +608,36 @@ Increment eval round in task-status.md
 | `baton-generator` | Implementation | Yes |
 | `baton-evaluator` | Independent review gate | Yes (isolated) |
 | `baton-retrospective` | Process lessons | Optional |
-| `codex:review` | Requirements advisory + code review | Optional (Medium/High) |
-| `codex:adversarial-review` | Architecture challenge + design review | Optional (Medium/High) |
-| `codex:rescue` | Parallel task delegation | Optional (High only) |
+| `codex:rescue` | Cross-model review + parallel delegation | Default when available (Medium/High) |
 
 All required tools are baton-native. Codex tools enhance quality but
 are not required for the flow to complete.
+
+### Agent vs Skill Decision Tree
+
+Use this to decide how to invoke each role:
+
+- **Agent tool** (isolated context): Use for roles that declare
+  `context: fork` — `baton-explorer` (repo-wide), `baton-verifier`,
+  `baton-evaluator`. These roles must NOT see prior conversation to
+  ensure independent judgment.
+- **Skill tool** (same context): Use for roles that need conversation
+  state — `baton-clarifier` (needs interview history),
+  `baton-specifier`, `baton-architect`, `baton-generator`.
+  These roles benefit from seeing prior context.
+- **Codex rescue**: Use for cross-model review. Always via
+  `Skill("codex:rescue", ...)` since it is the only codex skill
+  that supports programmatic invocation.
+
+When `Agent` tool is unavailable (e.g., host does not support it),
+fall back to `Skill` tool with `compat` isolation mode and document
+the fallback in the artifact's Execution Provenance section.
+
+**Codex invocation note**: `codex:review` and `codex:adversarial-review`
+have `disable-model-invocation: true` and cannot be called via `Skill()`.
+All automated Codex integration uses `codex:rescue` with task-specific
+review prompts. Users can still manually run `/codex:review` or
+`/codex:adversarial-review` for structured pipeline output.
 
 ## State Machine Reference
 

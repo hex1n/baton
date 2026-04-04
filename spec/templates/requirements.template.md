@@ -1,7 +1,7 @@
 # Requirements: <task-id>
 
 **Topic**: <topic>  
-**Status**: `draft`  
+**Status**: `template`  
 **Sizing**: `<Small|Medium|Large>`
 
 ## 1. Problem

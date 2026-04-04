@@ -1,7 +1,7 @@
 # Evaluation: <task-id>
 
 **Owner**: `evaluator`  
-**Status**: `draft`
+**Status**: `template`
 
 ## 1. Inputs
 

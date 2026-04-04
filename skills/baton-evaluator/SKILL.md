@@ -105,7 +105,8 @@ Before writing any human-facing artifact:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -210,10 +211,16 @@ When evaluation finds issues:
 1. Write findings with specific file paths and evidence.
 2. Generator fixes the findings.
 3. Re-evaluate from Layer 1 (full re-run, not incremental).
-4. If findings are mostly RECURRING or REGRESSED across rounds, the
-   repair loop is not converging — escalate to human. Do not let the
-   loop run indefinitely; a few rounds without convergence is enough
-   signal to stop.
+4. Track convergence across rounds using the classification below.
+
+**Convergence thresholds** — escalate to human when:
+- **Low risk**: 1 repair round with no progress → escalate immediately
+- **Medium risk**: 2 rounds with no FIXED findings → escalate
+- **High risk**: 3 rounds with no FIXED findings, or >50% RECURRING
+  across consecutive rounds → escalate
+
+"No progress" means the round produced zero FIXED classifications.
+Do not let the loop run beyond these thresholds.
 
 Warnings do not trigger the repair loop unless they threaten correctness.
 

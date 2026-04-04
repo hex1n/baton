@@ -77,6 +77,11 @@ Use one of these advisory values:
 - `overlay: core`
 - `overlay: strict`
 
+**If none of the trigger signals are present, omit the Overlay
+Recommendation section entirely.** Do not add the section with an
+empty or "none" value — the validation hook requires a concrete
+overlay value when the section exists.
+
 Keep the recommendation brief and factual. It is advisory input for later
 planning, not a forced runtime switch.
 
@@ -87,7 +92,8 @@ Before writing any human-facing artifact:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -103,21 +109,25 @@ All criteria must pass before handing off to Specifier:
 
 ## Required Artifact: `scoped-map.md`
 
-Sections (all required):
+Use the template at `spec/templates/scoped-map.template.md` as the
+starting point. Sections:
 
-1. **Task Statement** — what was requested, in one sentence
-2. **Scope** — boundaries of exploration
-3. **Entry Points** — files/functions where execution enters
-4. **Call Chain** — how control flows from entry to effect
-5. **Data Flow** — how data propagates through the affected area
+1. **Scope** — boundaries of exploration (in/out of scope, write boundary)
+2. **Entry Points** — files/functions where execution enters
+3. **Call Chain** — how control flows from entry to effect
+4. **Data Flow** — how data propagates through the affected area
    (source → transform → sink); include data format changes and
-   state mutations at each boundary
-6. **Existing Behavior** — what the code does today in the affected area
-7. **Existing Tests** — tests that cover the affected area, with paths
-8. **Change History** — recent changes in the affected area from git log;
-   highlight high-churn files and active contributors
-9. **Risks** — areas of fragility, coupling, or missing coverage
-10. **Suggested Next Step** — what the Specifier should focus on
+   state mutations at each boundary.
+   *Low risk: may abbreviate or merge into Call Chain.*
+5. **Existing Behavior** — what the code does today in the affected area
+6. **Existing Tests** — tests that cover the affected area, with paths
+7. **Change History** — recent changes in the affected area from git log;
+   highlight high-churn files and active contributors.
+   *Low risk: may omit.*
+8. **Dependency / Risk Scan** — areas of fragility, coupling, missing
+   coverage, and cross-domain dependencies
+9. **Change Shape** — estimated file count, change type, implementation depth
+10. **Recommendation** — proceed? suggested next step for the Specifier
 
 ## Execution Guide
 

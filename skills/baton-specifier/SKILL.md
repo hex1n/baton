@@ -32,7 +32,8 @@ Before writing any human-facing artifact:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -196,13 +197,14 @@ Read the risk level from `task-status.md` § State Notes and adapt:
 - P0 requirements have no unresolved dependencies.
 - If clarification brief exists, traceability matrix covers all brief findings.
 
-## Cross-Model Advisory Review (Medium/High risk only)
+## Cross-Model Advisory Review (Medium/High risk, default when available)
 
-After producing `requirements.md`, if the Codex plugin is available and
-the task is Medium or High risk, run a single advisory review:
+After producing `requirements.md`, when Codex is available (check
+`codex_available` in `task-status.md` State Notes) and the task is
+Medium or High risk, run a single advisory review:
 
 ```
-Skill("codex:review", args: "--wait --scope working-tree")
+Skill("codex:rescue", args: "--wait --fresh Review .harness/requirements.md against .harness/scoped-map.md. Focus: internal contradictions, coverage gaps, priority assignment consistency, missing edge cases. Output a structured findings list.")
 ```
 
 Focus: internal contradictions, coverage gaps, priority assignment
@@ -214,7 +216,7 @@ The user decides whether to revise; the specifier does not auto-fix
 based on Codex findings alone, because requirements correctness depends
 on user intent.
 
-If the Codex plugin is not available, skip this step.
+If Codex is not available, skip this step.
 
 ## State Transition
 

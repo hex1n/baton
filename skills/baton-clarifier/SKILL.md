@@ -24,7 +24,8 @@ Before writing any human-facing artifact or asking questions:
 1. If `.harness/profile.local.yaml` sets `documentation.artifact_language` to
    `zh` or `en`, use that language.
 2. If it is `auto`, follow the current user request language.
-3. If the setting is missing, default to Chinese.
+3. If the setting is missing, follow the language of the current user
+   request. If the request language is indeterminate, default to Chinese.
 
 Do not localize `task-status.md`. Keep the control-plane file, owner tokens,
 state tokens, and blocker categories in stable English.
@@ -147,10 +148,18 @@ Use these questioning patterns in priority order:
 
 #### Question Tool Selection
 
-Use the platform's structured question tool (`AskUserQuestion` in Claude
-Code, `request_user_input` in Codex) when the question has **finite,
-predictable choices**. Use plain text when the question is genuinely
-open-ended.
+When the question has **finite, predictable choices**, you MUST use
+the platform's structured input mechanism:
+
+- **Claude Code**: Invoke the `AskUserQuestion` tool as a tool call.
+- **Codex / Cursor**: Present choices as a numbered list in chat and
+  wait for the user to reply with a number (per AGENTS.md contract).
+  Do NOT call `request_user_input` — it is only available in Plan mode.
+
+**Do NOT present options as unstructured prose.** The user must see
+distinct, selectable options.
+
+Use plain text only when the question is genuinely open-ended.
 
 | Question Pattern | Tool | Mode | Example |
 |-----------------|------|------|---------|
