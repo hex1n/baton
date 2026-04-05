@@ -38,6 +38,8 @@
   - verification strategy
   - risks
   - self-challenge
+- Optional sections:
+  - human judgment notes (populated during Gate 2; not machine-editable)
 
 ### `verification.md`
 
@@ -85,6 +87,8 @@
   - verification results
   - verdict
   - residual risks
+- Optional sections:
+  - human judgment notes (populated during Gate 5; not machine-editable)
 
 ## Shared Provenance Block
 
@@ -125,7 +129,7 @@ Required bullet fields:
   - code style and conventions
   - high-risk areas
 
-### `generator-feedback.md`
+### `escalation.md`
 
 - **Required when**: Generator discovers a requirement gap or architectural
   mismatch that cannot be resolved within the approved write surface
@@ -143,6 +147,19 @@ Required bullet fields:
 - `repo-map.md`
 - `review-notes.md`
 - `handoff.md`
+- `lesson-index.md`
+
+### `lesson-index.md`
+
+- Purpose: accumulated subsidiary knowledge from past task retrospectives
+- Writer: `start-task.sh` (auto-extracted during task archival)
+- Readers: non-isolated roles only (explorer, specifier, architect, generator)
+- **Not consumed by**: verification-explorer, evaluator — these roles require
+  independent judgment and must not inherit historical reasoning bias
+- Growth policy: LRU — retain lessons from the most recent 10 tasks;
+  older entries are pruned on each archival cycle
+- Content: repo-specific lessons and harness lessons extracted from
+  `retrospective.md` § Repo-Specific Lessons and § Harness Lessons
 
 ## Formatting Rules
 
@@ -150,3 +167,7 @@ Required bullet fields:
 2. Facts, assumptions, and judgments should be separable.
 3. Blockers must be explicit, not implied.
 4. Repo-specific paths should be concrete.
+5. When a judgment is based on pattern recognition rather than explicit
+   reasoning, flag it as uncertain. Do not fabricate reasoning to
+   justify intuitive judgments — honest uncertainty is more useful
+   than false precision.

@@ -58,3 +58,14 @@
 1. Is this the best category, or only the first workable one?
 2. Which assumptions remain unverified?
 3. What would a skeptic challenge first?
+4. Which judgments in this architecture are pattern-match intuition
+   rather than derivation? What would change if those intuitions
+   are wrong?
+
+## 8. Human Judgment Notes
+
+> Populated during Gate 2 review. Not machine-editable.
+> Space for the reviewer's tacit signals — intuitions, pattern recalls,
+> or concerns that resist full articulation.
+
+- <human annotation, if any>

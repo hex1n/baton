@@ -16,7 +16,8 @@ user-invocable: true
 
 ## Role Contract
 
-- **Inputs**: `exploration.md`, `requirements.md`
+- **Inputs**: `exploration.md`, `requirements.md`,
+  `lesson-index.md` (if exists; subsidiary context for risk assessment)
 - **Outputs**: implementation category, file-level impact, validation strategy,
   tradeoffs and residual risks
 - **Required artifact**: `architecture.md`
@@ -76,6 +77,7 @@ Sections (all required):
    (required for High risk; optional for Medium; skip for Low)
 8. **Risks** — residual risks with mitigation or acceptance rationale
 9. **Self-Challenge** — strongest arguments against the chosen approach
+10. **Human Judgment Notes** — populated during Gate 2 review (not machine-editable)
 
 ## Execution Guide
 
@@ -83,6 +85,9 @@ Sections (all required):
 
 - Read `exploration.md` for entry points, call chain, write surface, risks.
 - Read `requirements.md` for requirements and acceptance criteria.
+- If `.harness/lesson-index.md` exists, read entries tagged with repo-specific
+  or harness lessons. Use as subsidiary cues when assessing risks and
+  tradeoffs — do not copy-paste into architecture.
 - Identify any tensions between what the code does and what is required.
 
 ### 2. First-Principles Decomposition
@@ -244,8 +249,18 @@ Present the full `architecture.md` to the human, including:
 - Codex review findings (if ran), noting which were addressed and
   which remain as accepted trade-offs
 
+**Before presenting options**, show judgment prompts to activate the
+human's tacit knowledge (answering is optional):
+
+1. Does this approach remind you of a previous change? How did that go?
+2. If something feels off but you cannot articulate it, which part triggers that sense?
+3. Which assumption in this architecture worries you most?
+
 **Stop and wait for approval.** Use structured question (single-select):
-Options: Approved / Partial revision needed / Rejected — wrong direction / Rejected — requirements misunderstood
+Options: Approved / Approved with annotation / Partial revision needed / Rejected — wrong direction / Rejected — requirements misunderstood
+
+If the human selects "Approved with annotation", capture their free-text
+response in `architecture.md` § Human Judgment Notes before proceeding.
 
 Do not proceed to verification or implementation.
 
@@ -297,10 +312,11 @@ categories before proposing a new direction. Re-present and wait.
 
 **Rejected — requirements misunderstood**
 
-1. Write `task-status.md` → state `blocked`, category `design_blocker`.
+1. Write `task-status.md` → state `blocked`, category `premise_blocker`.
    Notes: name the specific requirement that is ambiguous or contradictory.
+   Set `blocker_level: L3-intent`.
 
-2. Write `.harness/generator-feedback.md` with these fields:
+2. Write `.harness/escalation.md` with these fields:
    - **Original assumption**: what `architecture.md` assumed about the requirement
    - **Actual finding**: why that assumption cannot be satisfied as-is
    - **Impact on implementation**: what breaks if proceeding without clarity
@@ -308,7 +324,7 @@ categories before proposing a new direction. Re-present and wait.
 
 3. Stop. Do not re-attempt architecture.
 
-Specifier entry condition: when `generator-feedback.md` exists and
+Specifier entry condition: when `escalation.md` exists and
 `recommended_next_owner` is `specifier`, resolve the ambiguity in
 `requirements.md` before architecture resumes. Architect will then
 re-read both files and restart from Step 2 (First-Principles Decomposition).

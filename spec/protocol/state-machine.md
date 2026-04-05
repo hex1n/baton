@@ -62,11 +62,14 @@
 
 - Active owner: whoever surfaced the blocker
 - Goal: stop unsafe forward progress and make the blocker explicit
-- Blockers should be categorized:
-  - `verification_blocker`
-  - `scope_blocker`
-  - `environment_blocker`
-  - `design_blocker`
+- Blockers should be categorized by level:
+  - `verification_blocker` — validation path broken (L1: execution)
+  - `environment_blocker` — toolchain/infra issue (L1: execution)
+  - `scope_blocker` — scope assumptions invalid (L2: design)
+  - `design_blocker` — architecture approach flawed (L2: design)
+  - `premise_blocker` — task premise or requirements themselves are suspect;
+    cannot be resolved by retrying at architecture or generation level
+    (L3: intent — requires re-examination of problem framing)
 
 ### `ready_for_human_close`
 
@@ -94,6 +97,8 @@ any -> blocked
 blocked -> verification_check
 blocked -> architecting
 blocked -> generating
+blocked -> specifying
+blocked -> exploring
 ```
 
 ## Interpretation
@@ -118,8 +123,23 @@ generating -> blocked -> generating
 reviewing -> blocked -> generating -> reviewing
 ```
 
+Premise escalation loops (L3 — premise_blocker only):
+
+```text
+blocked (premise) -> specifying -> architecting -> ...
+blocked (premise) -> exploring -> specifying -> ...
+```
+
 The protocol keeps the main path readable and uses `blocked` plus explicit
 re-entry points to represent repair, escalation, and retry.
+
+## Escalation Advisory
+
+When the same blocker category occurs twice in the same stage without
+resolution, the blocked state owner should consider:
+- Whether the blocker is actually a `premise_blocker`
+- Advising the human that requirements or problem framing may need
+  re-examination rather than another same-level retry
 
 ## Rules
 

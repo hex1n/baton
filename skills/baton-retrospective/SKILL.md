@@ -23,7 +23,7 @@ Do not localize `task-status.md`.
 
 1. Read all artifacts: `exploration.md`, `requirements.md`, `architecture.md`,
    `verification.md`, `evaluation.md`, `task-status.md`,
-   `clarification-brief.md` (if exists), and `generator-feedback.md`
+   `clarification-brief.md` (if exists), and `escalation.md`
    (if exists).
 
 2. Extract metrics from the artifacts (see Metrics section below).

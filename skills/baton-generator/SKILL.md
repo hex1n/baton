@@ -143,26 +143,26 @@ During implementation, if the code does not match architectural assumptions:
 - **Structural mismatch** (module doesn't exist, interface is fundamentally
   different, assumption about behavior is wrong) → **stop, go blocked**.
   State the original assumption, the actual finding, and the impact. Write
-  `.harness/generator-feedback.md` with: original assumption (from
+  `.harness/escalation.md` with: original assumption (from
   `architecture.md`), actual finding, impact on implementation, and
   recommended next owner (`architect` | `specifier` | `human`).
 
-### Generator Feedback Escalation
+### Escalation
 
 If you discover a design-level gap that cannot be solved inside the approved
 write surface, do not patch around it. Stop, write
-`.harness/generator-feedback.md`, and mark the task `blocked` with
+`.harness/escalation.md`, and mark the task `blocked` with
 `[design_blocker]`.
 
-Use the core generator-feedback template and keep the four sections aligned:
+Use the core escalation template and keep the four sections aligned:
 
 - Original Assumption
 - Actual Finding
 - Impact
 - Recommended Next Owner
 
-The feedback file should explain the mismatch, why it matters, and who must
-decide next. The Architect must review `generator-feedback.md` before the
+The escalation file should explain the mismatch, why it matters, and who must
+decide next. The Architect must review `escalation.md` before the
 task can resume from blocked. Do not invent a new format.
 
 ### Execution Notes

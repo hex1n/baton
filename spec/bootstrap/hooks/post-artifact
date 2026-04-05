@@ -6,7 +6,7 @@ source "$script_dir/lib/parse-input.sh"
 
 validate_artifact_script="$BOOTSTRAP_DIR/validate-artifact.sh"
 task_status_script="$BOOTSTRAP_DIR/task-status.sh"
-blocked_notes_regex='^\[(verification|scope|environment|design)_blocker\]'
+blocked_notes_regex='^\[(verification|scope|environment|design|premise)_blocker\]'
 
 has_human_ack() {
   local file_path="$1"
@@ -136,7 +136,7 @@ for artifact_path in "${artifact_paths[@]}"; do
     current_notes="$(hook_trim "$current_notes")"
     if [[ "$current_state" == "blocked" ]]; then
       if [[ -z "$current_notes" || ! "$current_notes" =~ $blocked_notes_regex ]]; then
-        hook_block "Blocked state Notes must start with [verification_blocker], [scope_blocker], [environment_blocker], or [design_blocker]."
+        hook_block "Blocked state Notes must start with [verification_blocker], [scope_blocker], [environment_blocker], [design_blocker], or [premise_blocker]."
       fi
     fi
   fi

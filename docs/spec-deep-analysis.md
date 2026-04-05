@@ -161,10 +161,10 @@ Profile 是**证据目录**——告诉 Explorer 要找什么、告诉 Verificat
 | `decisions.md` | architect | 记录"为什么"和"为什么不" |
 | `api-contract.yaml` | architect | 稳定的 API 验证契约 |
 | `evaluation-report.md` | evaluator | 发现项 + 通过/拒绝 |
-| `generator-feedback.md` | generator | 设计不匹配升级通道 |
+| `escalation.md` | generator | 设计不匹配升级通道 |
 | `runtime-signals/` | evaluator | 原始运行时证据（SQL 日志、性能、事务、actuator） |
 
-**通信规则（严格模式）**：Agent 只通过文件通信。Generator 不得重写 `requirements.md` 或 `decisions.md`。Evaluator 在主评估期间不得修改源代码。Generator 通过 `generator-feedback.md` 升级设计不匹配问题，而非临时修改源码。
+**通信规则（严格模式）**：Agent 只通过文件通信。Generator 不得重写 `requirements.md` 或 `decisions.md`。Evaluator 在主评估期间不得修改源代码。Generator 通过 `escalation.md` 升级设计不匹配问题，而非临时修改源码。
 
 ### 状态叠加（`state-overlay.md`）
 

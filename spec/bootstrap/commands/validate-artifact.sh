@@ -2,7 +2,7 @@
 # validate-artifact.sh — verify a .harness/*.md artifact has all required sections
 #
 # Usage: validate-artifact.sh <artifact-type> <file-path>
-#   artifact-type: exploration | requirements | architecture | verification | evaluation | task-status | generator-feedback
+#   artifact-type: exploration | requirements | architecture | verification | evaluation | task-status | escalation
 #   file-path:     path to the artifact file to validate
 #
 # Exit 0: artifact passes or type is unknown (skip)
@@ -102,7 +102,7 @@ run_checks() {
         rc=$((rc + 1))
       fi
       ;;
-    generator-feedback)
+    escalation)
       check_sections "$file_path" \
         "Original.Assumption|原始假设" "Actual.Finding|实际发现" \
         "Impact|影响" "Recommended.Next.Owner|建议下一步负责方" || rc=$?

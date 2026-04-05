@@ -8,7 +8,7 @@ task_status_path="$HOOK_ROOT/.harness/task-status.md"
 task_status_script="$BOOTSTRAP_DIR/task-status.sh"
 validate_transition_script="$BOOTSTRAP_DIR/validate-transition.sh"
 states_file="$BOOTSTRAP_DIR/../protocol/states.txt"
-blocked_notes_regex='^\[(verification|scope|environment|design)_blocker\]'
+blocked_notes_regex='^\[(verification|scope|environment|design|premise)_blocker\]'
 
 has_human_ack() {
   local file_path="$1"
@@ -117,11 +117,11 @@ fi
 if [[ "$HOOK_HOST" == "cc" && "$new_state" == "blocked" ]]; then
   new_notes="$(hook_trim "$new_notes")"
   if [[ -z "$new_notes" ]]; then
-    hook_block "Blocked state requires a categorized Notes value with prefix [verification_blocker], [scope_blocker], [environment_blocker], or [design_blocker]."
+    hook_block "Blocked state requires a categorized Notes value with prefix [verification_blocker], [scope_blocker], [environment_blocker], [design_blocker], or [premise_blocker]."
   fi
 
   if ! printf '%s\n' "$new_notes" | grep -Eq "$blocked_notes_regex"; then
-    hook_block "Blocked state Notes must start with [verification_blocker], [scope_blocker], [environment_blocker], or [design_blocker]."
+    hook_block "Blocked state Notes must start with [verification_blocker], [scope_blocker], [environment_blocker], [design_blocker], or [premise_blocker]."
   fi
 fi
 

@@ -22,6 +22,7 @@
 - Inputs:
   - user request
   - repo map or local repo context
+  - `lesson-index.md` (if exists; read as subsidiary context, not constraints)
 - Outputs:
   - task-local call chain
   - direct change surfaces
@@ -37,6 +38,7 @@
 - Inputs:
   - user request
   - `exploration.md`
+  - `escalation.md` (if exists; escalation context from premise_blocker)
 - Outputs:
   - in-scope and out-of-scope boundaries
   - functional requirements
@@ -53,6 +55,7 @@
 - Inputs:
   - `exploration.md`
   - `requirements.md`
+  - `lesson-index.md` (if exists; read as subsidiary context for risk assessment)
 - Outputs:
   - recommended implementation category
   - confirmed decisions that affect requirements truth
@@ -127,6 +130,9 @@
 
 ## Context Isolation Note
 
+- `Verification Explorer` and `Evaluator` do NOT read `lesson-index.md`.
+  These roles require independent judgment; historical lessons could
+  introduce reasoning bias that compromises isolation.
 - `Verification Explorer` and `Evaluator` are the mandatory artifact-isolated
   judgment roles in `strict` mode.
 - Repos may opt into `compat` mode, but only if the produced artifacts make the

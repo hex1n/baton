@@ -145,7 +145,7 @@ spec/
         decisions.template.md
         api-contract.template.yaml
         evaluation-report.template.md
-        generator-feedback.template.md
+        escalation.template.md
         runtime-signals.README.md
 ```
 

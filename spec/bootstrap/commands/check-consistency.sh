@@ -16,8 +16,8 @@ agents_dir="$repo_root/.agents"
 template_file="$spec_root/templates/task-status.template.md"
 verification_template="$spec_root/templates/verification.template.md"
 evaluation_template="$spec_root/templates/evaluation.template.md"
-generator_feedback_template="$spec_root/templates/generator-feedback.template.md"
-legacy_generator_feedback_template="$repo_root/spec/extensions/java-backend-strict/templates/generator-feedback.template.md"
+escalation_template="$spec_root/templates/escalation.template.md"
+legacy_escalation_template="$repo_root/spec/extensions/java-backend-strict/templates/escalation.template.md"
 decisions_template="$spec_root/templates/decisions.template.md"
 codebase_map_template="$spec_root/templates/codebase-map.template.md"
 legacy_decisions_template="$repo_root/spec/extensions/java-backend-strict/templates/decisions.template.md"
@@ -443,40 +443,40 @@ fi
 errors=$((errors + inv13_errors))
 
 # ---------------------------------------------------------------------------
-# Invariant 14: generator-feedback contract is synchronized across schema, validator, templates, and skills
+# Invariant 14: escalation contract is synchronized across schema, validator, templates, and skills
 # ---------------------------------------------------------------------------
 inv14_errors=0
-if ! grep -Fq '### `generator-feedback.md`' "$spec_root/protocol/artifact-schema.md"; then
-  printf 'ERROR: invariant-14: artifact-schema.md missing generator-feedback.md entry\n'
+if ! grep -Fq '### `escalation.md`' "$spec_root/protocol/artifact-schema.md"; then
+  printf 'ERROR: invariant-14: artifact-schema.md missing escalation.md entry\n'
   inv14_errors=$((inv14_errors + 1))
 fi
 
-if ! grep -Fq 'generator-feedback)' "$validate_artifact_sh"; then
-  printf 'ERROR: invariant-14: validate-artifact.sh missing generator-feedback case\n'
+if ! grep -Fq 'escalation)' "$validate_artifact_sh"; then
+  printf 'ERROR: invariant-14: validate-artifact.sh missing escalation case\n'
   inv14_errors=$((inv14_errors + 1))
 fi
 
-if [[ ! -f "$generator_feedback_template" ]]; then
-  printf 'ERROR: invariant-14: generator-feedback template missing: %s\n' "$generator_feedback_template"
+if [[ ! -f "$escalation_template" ]]; then
+  printf 'ERROR: invariant-14: escalation template missing: %s\n' "$escalation_template"
   inv14_errors=$((inv14_errors + 1))
 fi
 
-if [[ -f "$generator_feedback_template" ]]; then
+if [[ -f "$escalation_template" ]]; then
   for needle in '## Original Assumption' '## Actual Finding' '## Impact' '## Recommended Next Owner'; do
-    if ! grep -Fq "$needle" "$generator_feedback_template"; then
-      printf 'ERROR: invariant-14: %s missing heading %s\n' "$generator_feedback_template" "$needle"
+    if ! grep -Fq "$needle" "$escalation_template"; then
+      printf 'ERROR: invariant-14: %s missing heading %s\n' "$escalation_template" "$needle"
       inv14_errors=$((inv14_errors + 1))
     fi
   done
 fi
 
-if [[ -e "$legacy_generator_feedback_template" ]]; then
-  printf 'ERROR: invariant-14: legacy generator-feedback template still exists: %s\n' "$legacy_generator_feedback_template"
+if [[ -e "$legacy_escalation_template" ]]; then
+  printf 'ERROR: invariant-14: legacy escalation template still exists: %s\n' "$legacy_escalation_template"
   inv14_errors=$((inv14_errors + 1))
 fi
 
 if [[ -f "$repo_root/skills/baton-generator/SKILL.md" ]]; then
-  for needle in '.harness/generator-feedback.md' '[design_blocker]'; do
+  for needle in '.harness/escalation.md' '[design_blocker]'; do
     if ! grep -Fq "$needle" "$repo_root/skills/baton-generator/SKILL.md"; then
       printf 'ERROR: invariant-14: baton-generator guidance missing %s\n' "$needle"
       inv14_errors=$((inv14_errors + 1))
@@ -500,7 +500,7 @@ else
 fi
 
 if [[ $inv14_errors -eq 0 ]]; then
-  printf 'OK: invariant-14: generator-feedback contract stays synchronized across schema, validator, templates, and skills\n'
+  printf 'OK: invariant-14: escalation contract stays synchronized across schema, validator, templates, and skills\n'
 fi
 errors=$((errors + inv14_errors))
 

@@ -233,7 +233,7 @@ The task table uses this exact format (do not deviate):
 - **Updated At**: ISO timestamp or short date
 - **Notes**: free-form; for `blocked` state, must start with
   `[verification_blocker]`, `[scope_blocker]`, `[environment_blocker]`,
-  or `[design_blocker]`
+  `[design_blocker]`, or `[premise_blocker]`
 
 ### Risk-Adaptive Matrix (canonical reference)
 

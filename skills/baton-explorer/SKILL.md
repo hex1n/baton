@@ -61,7 +61,8 @@ dependencies, data model, code style, high-risk areas). If a free-form
 ### Mode 2: Task-scoped (every task)
 
 - **Inputs**: user request, repo map or local repo context,
-  `clarification-brief.md` (if exists)
+  `clarification-brief.md` (if exists),
+  `lesson-index.md` (if exists; subsidiary context, not constraints)
 - **Outputs**: task-local call chain, data flow, direct change surfaces,
   test landing points, risk notes
 - **Artifact**: required `exploration.md`
@@ -126,6 +127,8 @@ starting point. Sections:
    coverage, and cross-domain dependencies
 9. **Change Shape** — estimated file count, change type, implementation depth
 10. **Recommendation** — proceed? suggested next step for the Specifier
+11. **Historical Lessons** — relevant prior lessons from `lesson-index.md`
+    (subsidiary context only; omit if no lesson-index exists)
 
 ## Execution Guide
 
@@ -157,6 +160,10 @@ starting point. Sections:
    If `clarification-brief.md` exists, read it to understand confirmed
    boundaries, non-goals, and success criteria. Use these to constrain
    exploration scope — do not explore areas marked as non-goals.
+1b. If `.harness/lesson-index.md` exists, scan it for entries related to
+   the current task's write surface. Treat as background awareness — do
+   not quote lessons as requirements. Note relevant lessons in §12 of
+   `exploration.md`.
 2. Find entry points: search for the feature name, handler, command, or
    interface that the request targets.
 3. Trace the call chain: follow from entry point through the layers of

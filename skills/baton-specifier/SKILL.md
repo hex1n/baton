@@ -15,7 +15,10 @@ user-invocable: true
 
 ## Role Contract
 
-- **Inputs**: user request, `exploration.md`, `clarification-brief.md` (if exists)
+- **Inputs**: user request, `exploration.md`, `clarification-brief.md` (if exists),
+  `escalation.md` (if exists; contains escalation context from
+  a premise_blocker — read to understand what requirement was ambiguous
+  or contradictory before re-specifying)
 - **Outputs**: prioritized requirements with dependencies, in-scope and
   out-of-scope boundaries, acceptance criteria with test type hints,
   traceability matrix

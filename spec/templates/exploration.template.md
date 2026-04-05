@@ -73,3 +73,14 @@ entry -> layer -> dependency -> output
 
 - Proceed?
 - Suggested next step:
+- Uncertainty flags: <areas where exploration was shallow or findings
+  are based on inference rather than direct evidence>
+
+## 12. Historical Lessons
+
+> Auto-populated by start-task. Explorer should review and keep only
+> lessons relevant to current task scope. Treat as subsidiary awareness
+> — do not quote lessons as requirements or constraints.
+
+- Relevant prior lessons:
+- Lessons explicitly not applicable:

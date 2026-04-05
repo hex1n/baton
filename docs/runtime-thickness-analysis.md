@@ -88,7 +88,7 @@ skills/                ← agent role skills (canonical single source)
 - **P0-2**：Architect 拒绝路径（当前是悬空状态分支）
 - **P1-1**：新建 `harness-status` skill，无需手动读文件即可查看任务状态
 - **P1-2**：`task-status.md` 增加 `eval_round` 字段，持久化修复轮次计数
-- **P1-4**：`generator-feedback.md` 作为正式的向上游升级通道
+- **P1-4**：`escalation.md` 作为正式的向上游升级通道
 
 "优先补 runtime 厚度"的方向已在本计划中推进，但尚未实现。
 

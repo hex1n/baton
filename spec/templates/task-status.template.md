@@ -13,6 +13,8 @@
 - human_ack: false
 - base_commit:
 - current_blockers:
+- blocker_level:
+- premise_escalation_count: 0
 - next_decision:
 
 ## Transition Log

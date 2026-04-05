@@ -13,9 +13,9 @@
 
 <load-bearing assumptions from Problem Archaeology (Step 2c)>
 
-| # | Assumption | Type | If wrong... |
-|---|-----------|------|-------------|
-| A1 | <assumption> | <Testable / User intent / Convention> | <consequence> |
+| # | Assumption | Type | Confidence | If wrong... |
+|---|-----------|------|------------|-------------|
+| A1 | <assumption> | <Testable / User intent / Convention> | <High/Medium/Low> | <consequence> |
 
 <for Low risk: inline bullet list instead of table>
 

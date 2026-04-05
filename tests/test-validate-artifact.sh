@@ -154,9 +154,9 @@ content
 EOF
 assert_exit "evaluation zh headings -> exit 0" 0 bash "$VALIDATE" "evaluation" "$tmp/evaluation-zh.md"
 
-# -- generator-feedback: complete passes in English --
-cat > "$tmp/generator-feedback.md" <<'EOF'
-# Generator Feedback: test-task
+# -- escalation: complete passes in English --
+cat > "$tmp/escalation.md" <<'EOF'
+# Escalation: test-task
 ## 1. Original Assumption
 content
 ## 2. Actual Finding
@@ -166,11 +166,11 @@ content
 ## 4. Recommended Next Owner
 content
 EOF
-assert_exit "generator-feedback complete -> exit 0" 0 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback.md"
+assert_exit "escalation complete -> exit 0" 0 bash "$VALIDATE" "escalation" "$tmp/escalation.md"
 
-# -- generator-feedback: complete passes in Chinese --
-cat > "$tmp/generator-feedback-zh.md" <<'EOF'
-# Generator Feedback: test-task
+# -- escalation: complete passes in Chinese --
+cat > "$tmp/escalation-zh.md" <<'EOF'
+# Escalation: test-task
 ## 1. 原始假设
 content
 ## 2. 实际发现
@@ -180,17 +180,17 @@ content
 ## 4. 建议下一步负责方
 content
 EOF
-assert_exit "generator-feedback zh headings -> exit 0" 0 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback-zh.md"
+assert_exit "escalation zh headings -> exit 0" 0 bash "$VALIDATE" "escalation" "$tmp/escalation-zh.md"
 
-# -- generator-feedback: missing section fails --
-cat > "$tmp/generator-feedback-bad.md" <<'EOF'
-# Generator Feedback: test-task
+# -- escalation: missing section fails --
+cat > "$tmp/escalation-bad.md" <<'EOF'
+# Escalation: test-task
 ## 1. Original Assumption
 content
 ## 2. Actual Finding
 content
 EOF
-assert_exit "generator-feedback missing sections -> exit 1" 1 bash "$VALIDATE" "generator-feedback" "$tmp/generator-feedback-bad.md"
+assert_exit "escalation missing sections -> exit 1" 1 bash "$VALIDATE" "escalation" "$tmp/escalation-bad.md"
 
 # -- chinese verification headings also pass --
 cat > "$tmp/verification-zh.md" <<'EOF'

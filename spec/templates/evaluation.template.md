@@ -69,3 +69,11 @@
 ## 6. Residual Risks
 
 - <risk or "none">
+
+## 7. Human Judgment Notes
+
+> Populated during Gate 5 review. Not machine-editable.
+> Space for the reviewer's tacit signals — intuitions, pattern recalls,
+> or concerns that resist full articulation.
+
+- <human annotation, if any>

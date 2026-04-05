@@ -233,6 +233,59 @@ if [[ "${#archive_files[@]}" -gt 0 ]]; then
   fi
 fi
 
+# -- lesson-index extraction from outgoing retrospective --
+lesson_index_path="$harness_dir/lesson-index.md"
+retro_path="$harness_dir/retrospective.md"
+max_lesson_tasks=10
+
+if [[ "${#archive_files[@]}" -gt 0 && -f "$retro_path" ]]; then
+  # Extract Repo-Specific Lessons and Harness Lessons sections
+  extracted=""
+  for section_pattern in 'Repo.Specific Lessons' 'Harness Lessons'; do
+    block="$(sed -n "/^###.*${section_pattern}/,/^###/{ /^###.*${section_pattern}/d; /^###/d; p; }" "$retro_path" 2>/dev/null || true)"
+    if [[ -n "$block" ]]; then
+      extracted="${extracted}${block}"$'\n'
+    fi
+  done
+
+  if [[ -n "$(printf '%s' "$extracted" | tr -d '[:space:]')" ]]; then
+    entry_header="## ${last_scope} ($(date '+%Y-%m-%d'))"
+    new_entry="${entry_header}"$'\n'"${extracted}"
+
+    if [[ "$dry_run" == "true" ]]; then
+      printf 'plan  %s (append lesson)\n' "$lesson_index_path"
+    else
+      # Ensure lesson-index.md exists with the template header
+      if [[ ! -f "$lesson_index_path" ]]; then
+        cp "$(human_template_path "lesson-index.template.md")" "$lesson_index_path"
+      fi
+
+      # Read existing header (lines before first ## entry)
+      header="$(sed -n '1,/^## /{/^## /!p;}' "$lesson_index_path")"
+      # Read existing entries
+      existing_entries="$(sed -n '/^## /,$p' "$lesson_index_path")"
+
+      # Rebuild: header + new entry (newest first) + existing entries, pruned to max tasks
+      {
+        printf '%s\n\n' "$header"
+        printf '%s\n' "$new_entry"
+        if [[ -n "$existing_entries" ]]; then
+          printf '%s\n' "$existing_entries"
+        fi
+      } > "$lesson_index_path.tmp"
+
+      # LRU prune: keep only the most recent $max_lesson_tasks entry blocks
+      awk -v max="$max_lesson_tasks" '
+        /^## / { count++ }
+        count <= max { print }
+      ' "$lesson_index_path.tmp" > "$lesson_index_path"
+      rm -f "$lesson_index_path.tmp"
+
+      printf 'write %s\n' "$lesson_index_path"
+    fi
+  fi
+fi
+
 for entry in "${artifact_templates[@]}"; do
   template_name="${entry%%:*}"
   target_name="${entry##*:}"

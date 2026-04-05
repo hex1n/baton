@@ -21,7 +21,7 @@ this extension):
 
 - `codebase-map.md` — required when Explorer runs in repo-wide mode
 - `decisions.md` — required when architecture contains rejected alternatives
-- `generator-feedback.md` — required when generator encounters design mismatch
+- `escalation.md` — required when generator encounters design mismatch
 
 Java backend strict mode extends the core set with:
 
@@ -37,7 +37,7 @@ Java backend strict mode extends the core set with:
 | `decisions.md` | `architect` | `generator`, `reviewer`, `evaluator`, `human` | record Why and Why Not (**promoted to core**) |
 | `api-contract.yaml` | `architect` | `generator`, `evaluator` | stable API validation contract |
 | `evaluation-report.md` | `evaluator` | `generator`, `human` | findings and go/no-go report |
-| `generator-feedback.md` | `generator` | `architect`, `human` | design mismatch escalation |
+| `escalation.md` | `generator` | `architect`, `human` | design mismatch escalation |
 | `runtime-signals/` | `evaluator` | `evaluator`, `human` | raw runtime evidence |
 
 ## Recommended Layout
@@ -52,7 +52,7 @@ Java backend strict mode extends the core set with:
   api-contract.yaml
   verification.md
   evaluation-report.md
-  generator-feedback.md
+  escalation.md
   task-status.md
   retrospective.md
   runtime-signals/
@@ -79,7 +79,7 @@ strict mode (extends core `evaluation.md` with runtime signals).
 2. A role should not edit another role's owned artifact except for explicit archival or bootstrap mechanics.
 3. `Generator` must not rewrite `requirements.md` or `decisions.md`.
 4. `Evaluator` must not patch source code while writing `evaluation-report.md`.
-5. `generator-feedback.md` is the correct place to raise architecture mismatch, not ad hoc source edits.
+5. `escalation.md` is the correct place to raise architecture mismatch, not ad hoc source edits.
 
 ## Templates
 
@@ -87,7 +87,7 @@ This extension provides starter templates for:
 
 - [api-contract.template.yaml](./templates/api-contract.template.yaml)
 - [evaluation-report.template.md](./templates/evaluation-report.template.md)
-- [generator-feedback.template.md](./templates/generator-feedback.template.md)
+- [escalation.template.md](./templates/escalation.template.md)
 - [runtime-signals.README.md](./templates/runtime-signals.README.md)
 
 Note: `codebase-map.template.md` and `decisions.template.md` have been

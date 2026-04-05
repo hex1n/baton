@@ -60,4 +60,6 @@ Do not localize `task-status.md`.
 | `design_blocker` (architecture wrong) | `architecting` | architect |
 | `design_blocker` (requirements ambiguous) | `architecting` + specifier | architect + human |
 | `environment_blocker` | `generating` (after fix) | generator |
+| `premise_blocker` (requirements wrong) | `specifying` | specifier |
+| `premise_blocker` (problem framing wrong) | `exploring` | scoped-explorer |
 | repair loop not converging | human decision | human |
