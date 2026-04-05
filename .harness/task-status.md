@@ -22,7 +22,7 @@
 ## State Notes
 
 - risk_level: Medium
-- artifact_language: zh
+- artifact_language: en
 - codex_available: true
 - codex_skill: codex:rescue
 - human_ack: true

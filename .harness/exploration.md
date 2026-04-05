@@ -1,11 +1,11 @@
 # Scoped Map: promote-java-artifacts
 
-**需求**: 将 Java 扩展中的 `decisions.md` 和 `codebase-map.md` 提升为核心条件必需制品，将三层评估结构合并进核心 `evaluation.md`，保留 `api-contract.yaml` 和 `runtime-signals/` 在 Java 扩展  
-**领域**: harness protocol / artifact schema  
+**Objective**: Promote `decisions.md` and `codebase-map.md` from Java extension to core conditionally-required artifacts, merge three-layer evaluation structure into core `evaluation.md`, keep `api-contract.yaml` and `runtime-signals/` in Java extension  
+**Domain**: harness protocol / artifact schema  
 **Owner**: `scoped-explorer`  
-**状态**: `complete`
+**Status**: `complete`
 
-## 1. 范围
+## 1. Scope
 
 - 范围内:
   - 提升 `decisions.md` 为核心条件必需制品（Architect 产出，当架构包含显著决策时必需）
@@ -25,7 +25,7 @@
   - 不改变 `task-status.md` 结构
 - 预期写入边界: 约 15-18 个文件
 
-## 2. 入口点
+## 2. Entry Point
 
 - 主要入口类或文件:
   - `spec/protocol/artifact-schema.md` (L73-117) -- 制品定义的权威源，需新增 `decisions.md` 和 `codebase-map.md` 条目
@@ -44,7 +44,7 @@
   - `install-harness.sh` 不直接管理单个模板拷贝（它拷贝整个 `spec/`），但 `start-task.sh` 负责将模板拷贝到 `.harness/`
 - 这些入口为什么相关: 它们构成制品从定义 -> 模板 -> 验证 -> 分发 -> skill 引用的完整生命周期链
 
-## 3. 调用链
+## 3. Call Chain
 
 ```text
 artifact-schema.md                          # 1. 制品定义权威源
@@ -74,7 +74,7 @@ spec/extensions/java-backend-strict/
   runtime-evaluator.md                      # 12. 标注三层结构已提升
 ```
 
-## 4. 数据流
+## 4. Data Flow
 
 - Source: Java 扩展中的制品定义和模板 (`spec/extensions/java-backend-strict/`)
 - Transforms:
@@ -88,7 +88,7 @@ spec/extensions/java-backend-strict/
   - `codebase-map.md` 的 "条件必需" 触发条件: Explorer 执行 repo-wide 模式
   - `evaluation.md` 模板增加三层结构 section（不改变条件必需逻辑，它已经是条件必需）
 
-## 5. 现有行为
+## 5. Existing Behavior
 
 - 当前可观察行为:
   - `decisions.md` 仅在 Java 扩展的 `artifact-overlay.md` 中定义，核心协议不识别
@@ -108,7 +108,7 @@ spec/extensions/java-backend-strict/
   - `start-task.sh` 中 `artifact_templates` 数组决定哪些模板在新任务时被拷贝
   - 条件必需制品（如 `evaluation.md`, `generator-feedback.md`）不在 `start-task.sh` 的常规分发中，它们的模板仍被拷贝但由 hook 在需要时验证
 
-## 6. 现有测试
+## 6. Existing Tests
 
 - 直接相关的测试:
   - `/Users/hex1n/IdeaProjects/baton/tests/test-validate-artifact.sh` -- 验证 validate-artifact.sh 对各制品类型的 section 检查，需新增 `decisions` 和 `codebase-map` 测试用例
@@ -121,7 +121,7 @@ spec/extensions/java-backend-strict/
   - `test-start-task.sh` 确认新模板被正确分发（如果加入 `artifact_templates` 数组）
   - 一致性检查 (`check-consistency.sh` 自身就是测试)
 
-## 7. 变更历史
+## 7. Change History
 
 - 近期受影响区域的变更 (git log):
   - `cc00a5a` fix: scope evaluator diff to write surface files from architecture.md
@@ -135,7 +135,7 @@ spec/extensions/java-backend-strict/
   - `spec/bootstrap/commands/check-consistency.sh` -- 最近 5 次提交中有 3 次修改
 - 活跃贡献者: 单一贡献者
 
-## 8. 依赖 / 风险扫描
+## 8. Dependency / Risk Scan
 
 - 这次改动是否可能触及集成层或基础设施? 否 -- 纯协议层变更
 - 这次改动是否可能触及迁移或 schema? 否 -- 但 `artifact-schema.md` 本身就是 schema
@@ -149,7 +149,7 @@ spec/extensions/java-backend-strict/
 5. **Java 扩展标注后的一致性** -- `artifact-overlay.md` 需要标注哪些制品已提升到核心，同时保持扩展文档自身的可读性和正确性。
 6. **Skill 同步** -- skills/ 目录下修改后，必须通过 `link-skills.sh` 同步到 `.claude/skills/` 和 `.agents/`，否则 invariant 4 会失败。
 
-## 9. 变更形态
+## 9. Change Shape
 
 - 这看起来像: 分层协议提升（类似 `generator-feedback.md` 的提升先例，但涉及 3 个制品维度的变更）
 - 预计文件数: 约 15-18 个文件（新建 4 + 修改 11-14）
@@ -157,14 +157,14 @@ spec/extensions/java-backend-strict/
   - 修改: `artifact-schema.md`, `validate-artifact.sh`, `check-consistency.sh`, `start-task.sh` (可选), `baton-orchestrator/SKILL.md`, `baton-architect/SKILL.md`, `baton-explorer/SKILL.md`, `baton-evaluator/SKILL.md`, `evaluation.template.md` (en+zh), `artifact-overlay.md`, `runtime-evaluator.md`, `test-validate-artifact.sh`
 - 推荐实现深度: 中等 -- 每个变更点的逻辑清晰，但需仔细对齐跨文件一致性
 
-## 10. 未决问题
+## 10. Open Questions
 
 - 三层评估结构合并方案: 核心 evaluator 的 Layer 2 (Diff Review) 与 Java 扩展的 Layer 2 (Runtime Signals) 如何统一？选项: (A) 扩展为 4 层; (B) 将运行时信号作为 Layer 1 的可选子项; (C) 保持核心 3 层不变，将运行时信号作为 Extension 提示加入 evaluator skill 但不改模板
 - `decisions.md` 的条件触发: 什么条件下 "条件必需"？是所有 Medium/High risk，还是只在 architecture 包含多于 1 个被拒方案时？
 - `codebase-map.md` 的条件触发: 是 repo-wide 探索时必需，还是所有 High risk 任务必需？
 - 是否需要在 `start-task.sh` 的 `artifact_templates` 中加入新模板: `evaluation.md` 和 `generator-feedback.md` 目前都在数组中会被拷贝，但 `decisions.md` 和 `codebase-map.md` 不是每次任务都需要
 
-## 11. 建议
+## 11. Recommendation
 
 - 是否继续? 是 -- 变更边界清晰，有 `generator-feedback.md` 提升作为直接先例可参照
 - 建议下一步:

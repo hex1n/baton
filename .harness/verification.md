@@ -1,9 +1,9 @@
-# 验证路径：promote-java-artifacts
+# Verification Path: promote-java-artifacts
 
 **Owner**: `verification-explorer`  
 **Status**: `approved`
 
-## 1. 计划检查项
+## 1. Intended Checks
 
 | 需求 | 验证内容 | 验证类型 |
 |------|---------|---------|
@@ -21,7 +21,7 @@
 | R12 | 新测试用例通过 | unit |
 | R13 | `link-skills.sh` 同步后 invariant 4 通过 | e2e |
 
-## 2. 精确命令
+## 2. Commands
 
 按执行顺序排列。命令间无冲突，但 Unit 2 依赖 Unit 1 的文件存在。
 
@@ -212,7 +212,7 @@ bash spec/bootstrap/link-skills.sh --repo-root .
 # 注意: .claude/agents/ 同步可能因 relative_link_target bug 产生错误输出，属于预存在问题
 ```
 
-## 3. 前置条件
+## 3. Dependencies / Prerequisites
 
 ### 工具和版本
 
@@ -263,7 +263,7 @@ jq --version
 - Fallback policy: N/A
 - Fallback reason: N/A
 
-## 5. Dry-Run 结果
+## 5. Dry-Run Results
 
 ### test-validate-artifact.sh (基线)
 
@@ -330,7 +330,7 @@ OK: invariant-8 through invariant-16
 
 - draft 状态 `decisions.md`: exit 0 -- 通过（第 33-35 行 draft 跳过逻辑）
 
-## 6. 阻塞项
+## 6. Blockers
 
 ### 预存在问题（不阻塞）
 
@@ -343,7 +343,7 @@ OK: invariant-8 through invariant-16
 - 4 个新模板的目标目录存在
 - 2 个待删除的 Java 扩展模板文件存在
 
-## 7. 回退方案
+## 7. Fallback
 
 ### 主路径失败时的回退
 

@@ -1,9 +1,9 @@
-# 架构：promote-java-artifacts
+# Architecture: promote-java-artifacts
 
 **Owner**: `architect`  
-**状态**: `proposed`
+**Status**: `proposed`
 
-## 1. 问题
+## 1. Problem Framing
 
 需要将 Java 扩展中的 3 类制品提升到核心协议：
 1. `decisions.md` 和 `codebase-map.md` 作为条件必需制品
@@ -11,7 +11,7 @@
 
 核心挑战：在保持核心协议的通用性和向后兼容的前提下，将扩展中验证过的高价值结构提升为核心能力。已有 `generator-feedback.md` 提升的直接先例（commit `2c6f6ee`）可作为实现模板。
 
-## 2. 第一性原理拆解
+## 2. First Principles
 
 ### 2.1 子问题分解
 
@@ -45,7 +45,7 @@
 - **为什么 A 胜出**: 每个制品的验证逻辑独立，invariant 14 已建立的模式是每种制品一个 invariant，保持一致性；独立 invariant 在失败时提供更精确的错误定位
 - **为什么拒绝 B**: 合并 invariant 内部分支较多，调试时不如独立 invariant 直观；与 invariant 14 的先例不一致
 
-## 3. 推荐架构
+## 3. Recommended Approach
 
 ### 3.1 `decisions.md` 制品定义
 
@@ -295,7 +295,7 @@ artifact_templates=(
 
 **runtime-evaluator.md**: 添加说明三层结构已提升到核心，Java 扩展通过替换 Layer 2（用 Runtime Signals 替换 Diff Review）来适配
 
-## 4. 影响面扫描
+## 4. Surface Scan
 
 | 文件 | 层级 | 处理方式 | 原因 |
 |------|------|---------|------|
@@ -328,7 +328,7 @@ artifact_templates=(
 - `.claude/skills/` 和 `.agents/` 目录下的 symlink — 通过 `link-skills.sh` 同步
 - 任何现有 `.harness/evaluation.md` — 向后兼容（旧格式继续通过验证）
 
-## 5. 可逆性分析
+## 5. Reversibility Analysis
 
 | 决策 | 可逆? | 代价 | 回退方式 |
 |------|-------|------|---------|
@@ -342,7 +342,7 @@ artifact_templates=(
 
 所有变更均可逆，且回退成本低。
 
-## 6. 验证策略
+## 6. Verification Strategy
 
 | 需求 | 验证方式 | 类型 |
 |------|---------|------|
@@ -358,7 +358,7 @@ artifact_templates=(
 | R12 | `test-validate-artifact.sh` + `test-start-task.sh` | unit |
 | R13 | `check-consistency.sh` invariant 4 | e2e |
 
-## 7. 交付顺序
+## 7. Delivery Sequence
 
 ```
 Unit 1: 制品定义 + 模板 (R1, R2)
@@ -388,13 +388,13 @@ Unit 4: Skill、协议与扩展同步 (R6, R7, R8, R11, R13) — depends on Unit
   └── 可独立验证：check-consistency.sh 全量通过
 ```
 
-## 8. 风险
+## 8. Risk
 
 1. **Section 匹配模式遗漏** — `validate-artifact.sh` 的正则可能无法匹配所有合法的中英文标题变体。缓解：测试用例覆盖中英文双语。
 2. **Java 扩展删除旧模板后一致性断裂** — `artifact-overlay.md` 引用了旧模板的相对路径。缓解：更新引用并验证 invariant 17/18 的旧模板不存在检查。
 3. **评估模板三层化后的 evaluator 行为** — evaluator 可能在旧对话中使用旧模板结构填写。缓解：旧格式仍通过验证，不阻塞工作流。
 
-## 9. 自我质疑
+## 9. Self-Challenge
 
 1. **这是最优方案类别，还是只是第一个可行方案？**
    invariant 14 (generator-feedback) 的先例已验证了这个模式。独立 invariant 的方案清晰、可调试，是成熟选择。

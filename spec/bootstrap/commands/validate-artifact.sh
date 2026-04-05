@@ -70,29 +70,29 @@ run_checks() {
   case "$artifact_type" in
     exploration)
       check_sections "$file_path" \
-        "Scope|范围" "Entry|入口" "Call.Chain|调用链" "Existing.Behavior|现有行为" \
-        "Existing.Tests|现有测试" "Risk|Dependency|风险" "Change.Shape|变更形态" \
-        "Recommendation|Suggested.Next|建议" || rc=$?
+        "Scope" "Entry" "Call.Chain" "Existing.Behavior" \
+        "Existing.Tests" "Risk|Dependency" "Change.Shape" \
+        "Recommendation|Suggested.Next" || rc=$?
       check_optional_overlay_recommendation "$file_path" || rc=$((rc + 1))
       ;;
     requirements)
       check_sections "$file_path" \
-        "Problem|问题" "Assumptions|假设" "Scope|范围" "Functional.Requirements|功能需求" "Non.Goals|非目标" \
-        "Acceptance.Criteria|验收标准" "Constraints|约束" "Validation.Intent|验证意图" || rc=$?
+        "Problem" "Assumptions" "Scope" "Functional.Requirements" "Non.Goals" \
+        "Acceptance.Criteria" "Constraints" "Validation.Intent" || rc=$?
       ;;
     architecture)
       check_sections "$file_path" \
-        "Problem.Framing|问题" "First.Principles|第一性原理" "Recommended.Approach|推荐架构" \
-        "Surface.Scan|影响面扫描" "Verification.Strategy|验证策略" "Risk|风险" "Self.Challenge|自我质疑" || rc=$?
+        "Problem.Framing" "First.Principles" "Recommended.Approach" \
+        "Surface.Scan" "Verification.Strategy" "Risk" "Self.Challenge" || rc=$?
       ;;
     verification)
       check_sections "$file_path" \
-        "Intended.Checks|计划检查项" "Commands|精确命令" "Dependencies|Prerequisites|前置条件" "Execution.Provenance|Isolation" \
-        "Dry.Run" "Blockers|阻塞项" "Fallback|回退方案" || rc=$?
+        "Intended.Checks" "Commands" "Dependencies|Prerequisites" "Execution.Provenance|Isolation" \
+        "Dry.Run" "Blockers" "Fallback" || rc=$?
       ;;
     evaluation)
       check_sections "$file_path" \
-        "Inputs|输入" "Execution.Provenance|Isolation.Provenance" "Findings|发现" \
+        "Inputs" "Execution.Provenance|Isolation.Provenance" "Findings" \
         "Verification.Results" "Verdict" "Residual.Risks" || rc=$?
       ;;
     task-status)
@@ -104,13 +104,13 @@ run_checks() {
       ;;
     escalation)
       check_sections "$file_path" \
-        "Original.Assumption|原始假设" "Actual.Finding|实际发现" \
-        "Impact|影响" "Recommended.Next.Owner|建议下一步负责方" || rc=$?
+        "Original.Assumption" "Actual.Finding" \
+        "Impact" "Recommended.Next.Owner" || rc=$?
       ;;
     decisions)
       check_sections "$file_path" \
         "D[0-9]+:" || rc=$?
-      local decisions_fields=("Choice|选择" "Rejected.Alternatives|被拒方案" "Why|为什么" "Why.Not|为什么不" "Impact|影响")
+      local decisions_fields=("Choice" "Rejected.Alternatives" "Why" "Why.Not" "Impact")
       for field_pattern in "${decisions_fields[@]}"; do
         if ! grep -qiE "^-[[:space:]]*(${field_pattern}):" "$file_path"; then
           printf 'ERROR: validate-artifact: decisions.md missing required field matching "%s" in %s\n' "$field_pattern" "$file_path" >&2
@@ -120,9 +120,9 @@ run_checks() {
       ;;
     codebase-map)
       check_sections "$file_path" \
-        "Project.Structure|项目结构" "Module.Dependencies|模块依赖" \
-        "Data.Model|数据模型" "Code.Style|代码风格" \
-        "High.Risk|高风险" || rc=$?
+        "Project.Structure" "Module.Dependencies" \
+        "Data.Model" "Code.Style" \
+        "High.Risk" || rc=$?
       ;;
     *)
       return 0

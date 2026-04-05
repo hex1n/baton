@@ -136,25 +136,7 @@ content
 EOF
 assert_exit "evaluation complete -> exit 0" 0 bash "$VALIDATE" "evaluation" "$tmp/evaluation.md"
 
-# -- chinese evaluation headings also pass --
-cat > "$tmp/evaluation-zh.md" <<'EOF'
-# Evaluation: test-task
-## 1. 输入
-content
-## 2. Execution Provenance
-content
-## 3. 发现
-content
-## 4. Verification Results
-content
-## 5. Verdict
-content
-## 6. Residual Risks
-content
-EOF
-assert_exit "evaluation zh headings -> exit 0" 0 bash "$VALIDATE" "evaluation" "$tmp/evaluation-zh.md"
-
-# -- escalation: complete passes in English --
+# -- escalation: complete passes --
 cat > "$tmp/escalation.md" <<'EOF'
 # Escalation: test-task
 ## 1. Original Assumption
@@ -168,20 +150,6 @@ content
 EOF
 assert_exit "escalation complete -> exit 0" 0 bash "$VALIDATE" "escalation" "$tmp/escalation.md"
 
-# -- escalation: complete passes in Chinese --
-cat > "$tmp/escalation-zh.md" <<'EOF'
-# Escalation: test-task
-## 1. 原始假设
-content
-## 2. 实际发现
-content
-## 3. 影响
-content
-## 4. 建议下一步负责方
-content
-EOF
-assert_exit "escalation zh headings -> exit 0" 0 bash "$VALIDATE" "escalation" "$tmp/escalation-zh.md"
-
 # -- escalation: missing section fails --
 cat > "$tmp/escalation-bad.md" <<'EOF'
 # Escalation: test-task
@@ -192,27 +160,7 @@ content
 EOF
 assert_exit "escalation missing sections -> exit 1" 1 bash "$VALIDATE" "escalation" "$tmp/escalation-bad.md"
 
-# -- chinese verification headings also pass --
-cat > "$tmp/verification-zh.md" <<'EOF'
-# Verification Path: test-task
-## 1. 计划检查项
-content
-## 2. 精确命令
-content
-## 3. 前置条件
-content
-## 4. Execution Provenance
-content
-## 5. Dry-Run 结果
-content
-## 6. 阻塞项
-content
-## 7. 回退方案
-content
-EOF
-assert_exit "verification zh headings -> exit 0" 0 bash "$VALIDATE" "verification" "$tmp/verification-zh.md"
-
-# -- decisions: complete passes in English --
+# -- decisions: complete passes --
 cat > "$tmp/decisions.md" <<'EOF'
 # Technical Decisions
 
@@ -228,23 +176,6 @@ cat > "$tmp/decisions.md" <<'EOF'
 - Impact: Moderate
 EOF
 assert_exit "decisions complete -> exit 0" 0 bash "$VALIDATE" "decisions" "$tmp/decisions.md"
-
-# -- decisions: complete passes in Chinese --
-cat > "$tmp/decisions-zh.md" <<'EOF'
-# 技术决策
-
-**Owner**: `architect`
-**状态**: `approved`
-
-## D1: 测试决策
-
-- 选择: 方案 A
-- 被拒方案: 方案 B
-- 为什么: 性能更好
-- 为什么不: 更复杂
-- 影响: 中等
-EOF
-assert_exit "decisions zh headings -> exit 0" 0 bash "$VALIDATE" "decisions" "$tmp/decisions-zh.md"
 
 # -- decisions: missing D<N> heading fails --
 cat > "$tmp/decisions-bad.md" <<'EOF'
@@ -281,7 +212,7 @@ cat > "$tmp/decisions-draft.md" <<'EOF'
 EOF
 assert_exit "decisions draft -> exit 0 (skip)" 0 bash "$VALIDATE" "decisions" "$tmp/decisions-draft.md"
 
-# -- codebase-map: complete passes in English --
+# -- codebase-map: complete passes --
 cat > "$tmp/codebase-map.md" <<'EOF'
 # Codebase Map
 
@@ -304,30 +235,6 @@ content
 content
 EOF
 assert_exit "codebase-map complete -> exit 0" 0 bash "$VALIDATE" "codebase-map" "$tmp/codebase-map.md"
-
-# -- codebase-map: complete passes in Chinese --
-cat > "$tmp/codebase-map-zh.md" <<'EOF'
-# 代码地图
-
-**Owner**: `explorer`
-**状态**: `approved`
-
-## 项目结构
-content
-
-## 模块依赖
-content
-
-## 数据模型
-content
-
-## 代码风格与约定
-content
-
-## 高风险区域
-content
-EOF
-assert_exit "codebase-map zh headings -> exit 0" 0 bash "$VALIDATE" "codebase-map" "$tmp/codebase-map-zh.md"
 
 # -- codebase-map: missing section fails --
 cat > "$tmp/codebase-map-bad.md" <<'EOF'

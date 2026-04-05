@@ -1,9 +1,9 @@
-# 需求：promote-java-artifacts
+# Requirements: promote-java-artifacts
 
 **Owner**: `specifier`  
-**状态**: `approved`
+**Status**: `approved`
 
-## 1. 问题
+## 1. Problem
 
 Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codebase-map.md`、三层评估结构），但这些制品的价值并不限于 Java 后端场景——任何涉及显著架构决策或大型存量仓库的任务都能受益。当前核心协议不识别这些制品，导致：
 
@@ -13,7 +13,13 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 
 本任务采用分层提升策略（方案 C）：将通用价值的制品和结构提升到核心，同时保留技术栈特定内容在扩展中。核心三层评估的 Layer 2 定义为 "Diff Review"（通用代码审查），扩展可替换或扩展 Layer 2 以适配特定场景（如 Java 扩展的 "Runtime Signals"）。这是有意的设计选择，不是合并所有扩展内容。
 
-## 2. 范围
+## 2. Assumptions
+
+- `generator-feedback.md` 提升先例（commit `2c6f6ee`）的模式可直接复用
+- 条件必需制品的触发条件是语义判断，不适合在 shell 脚本中自动检测
+- 核心三层评估的 Layer 2 固定为 "Diff Review"，扩展通过替换 Layer 2 适配
+
+## 3. Scope
 
 - **范围内**:
   - `decisions.md` 提升为核心条件必需制品
@@ -29,7 +35,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
   - 不改变状态机或门禁逻辑
   - 不改变 `task-status.md` 结构
 
-## 3. 功能需求
+## 4. Functional Requirements
 
 - R1. [P0] **artifact-schema.md 新增条件必需制品定义** — 在 `## Conditionally Required Artifacts` 下新增 `decisions.md` 和 `codebase-map.md` 的定义，包括触发条件、writer、readers、purpose、required sections。
   - `decisions.md` 触发条件: `architecture.md` 包含至少一个被拒方案（即存在显著架构决策需要记录 Why / Why Not）
@@ -69,7 +75,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 
 - R13. [P2] **skill 同步验证** — 完成所有 skill 修改后，运行 `link-skills.sh` 确保 `.claude/skills/` 和 `.agents/` 同步，通过 `check-consistency.sh` invariant 4。(depends-on: R5, R6, R7, R8)
 
-## 4. 非目标
+## 5. Non-Goals
 
 1. 不提升 `api-contract.yaml` 到核心 — API 契约验证是技术栈特定的（OpenAPI/Swagger），不属于通用协议
 2. 不提升 `runtime-signals/` 到核心 — 运行时信号采集依赖特定运行环境（JVM、容器等），核心不应强制
@@ -78,7 +84,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 5. 不删除 `repo-map.md` — `repo-map.md` 保留在 Optional Artifacts 中用于向后兼容，但 Explorer repo-wide 模式不再主动产出它，改为产出 `codebase-map.md`
 6. 不为 `decisions.md` 和 `codebase-map.md` 新增 hook — 验证时机由现有 post-artifact hook 和 validate-artifact.sh 覆盖
 
-## 5. 验收标准
+## 6. Acceptance Criteria
 
 - [ ] [unit] 运行 `bash spec/bootstrap/commands/validate-artifact.sh decisions .harness/decisions.md`，对包含完整 section 的 decisions.md 返回成功
 - [ ] [unit] 运行 `bash spec/bootstrap/commands/validate-artifact.sh codebase-map .harness/codebase-map.md`，对包含完整 section 的 codebase-map.md 返回成功
@@ -96,7 +102,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 - [ ] [manual] Java 扩展 `artifact-overlay.md` 和 `runtime-evaluator.md` 标注已提升制品，保持扩展文档自洽
 - [ ] [e2e] 运行 `bash spec/bootstrap/commands/check-consistency.sh .` 全量通过
 
-## 6. 约束
+## 7. Constraints
 
 1. **先例遵循**: 实现模式必须遵循 `generator-feedback.md` 提升的先例（commit `2c6f6ee`），包括：核心新增定义 → 核心新增模板 → 验证脚本新增类型 → 一致性检查新增 invariant → 扩展标注
 2. **双语模板**: 所有新模板必须提供 `spec/templates/` (en) 和 `spec/templates/zh/` 两个版本
@@ -104,7 +110,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 4. **Section 匹配模式**: `validate-artifact.sh` 中的正则必须同时匹配中英文 section 标题
 5. **Invariant 编号**: 新增 invariant 不能与现有 16 个 invariant 编号冲突
 
-## 7. 验证意图
+## 8. Validation Intent
 
 - **R1-R3**: 通过 `validate-artifact.sh` 对测试制品文件的 pass/fail 结果验证
 - **R4-R5**: 通过人工检查模板结构和 skill 文档一致性验证
@@ -114,7 +120,7 @@ Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codeba
 - **R12**: 通过运行 `test-validate-artifact.sh` 验证
 - **R13**: 通过 `check-consistency.sh` invariant 4 验证
 
-## 未决设计问题（架构阶段确认）
+## Open Design Questions (to be confirmed in architecture phase)
 
 以下问题已在需求层明确意图，具体实现方案留给架构阶段:
 
