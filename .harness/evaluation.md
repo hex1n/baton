@@ -1,88 +1,131 @@
-# Evaluation: promote-java-artifacts
+# Evaluation: remove-spec-extensions
 
-**Owner**: `evaluator`  
-**Status**: `approved`
+**Owner**: `evaluator`
+**Status**: `complete`
 
 ## 1. Inputs
 
-- Requirements: `.harness/requirements.md` -- 13 requirements (R1-R13), P0/P1/P2 priorities
-- Architecture: `.harness/architecture.md` -- 4 delivery units, 21 files in write surface
-- Verification path: `.harness/verification-path.md` -- 11 verification commands
-- Diff / changed files: uncommitted working tree changes from base commit `cc00a5a` -- 4 new files, 14 modified files, 2 deleted files
+- Requirements: `.harness/requirements.md` (7 acceptance criteria, R1-R7)
+- Architecture: `.harness/architecture.md` (Category A bundle, 5 units U1-U5)
+- Verification path: `.harness/verification.md` (7 AC commands + artifact validation)
+- Diff / changed files: `git diff -- spec/extensions/ spec/README.md spec/bootstrap/commands/check-consistency.sh skills/baton-evaluator/SKILL.md` (unstaged working tree changes scoped to write surface)
 
 ## 2. Execution Provenance
 
 - Role: evaluator
 - Isolation mode: strict
 - Execution context: isolated_subagent
-- Agent ID: baton-evaluator (Agent tool dispatch with subagent_type isolation)
-- Evidence: Cold-read `.harness/requirements.md`, `.harness/architecture.md`, `.harness/verification-path.md`, `.harness/scoped-map.md`, `.harness/task-status.md`; loaded implementation diff via `git diff HEAD`; read all 4 new template files; read modified source files directly; ran all 11 verification commands from verification-path.md
-- Fallback policy: N/A
-- Fallback reason: N/A
+- Agent ID: (recorded by orchestrator at dispatch time)
+- Evidence: cold-read of `.harness/requirements.md`, `.harness/architecture.md`, `.harness/verification.md`, `.harness/exploration.md`, `.harness/task-status.md`; scoped `git diff` of write surface files; executed all 7 AC verification commands independently; read `spec/README.md` (lines 10-19, 108-149, 173-192), `spec/bootstrap/commands/check-consistency.sh` (lines 14-28, 460-490, 630-660, 678-736), `skills/baton-evaluator/SKILL.md` (lines 205-214)
+- Fallback policy: strict mode -- no sequential fallback permitted
+- Fallback reason: N/A (strict mode; no fallback taken)
+- Verdict: PASS WITH WARNINGS
+
+**WARNING**: `base_commit` is missing from `task-status.md` State Notes. Diff was obtained via `git diff -- <write surface>` against unstaged working tree changes, which is valid because the implementation exists as uncommitted modifications.
 
 ## 3. Findings
 
 ### Layer 1: Deterministic Checks
 
-- Command 1 (validate-artifact decisions -- complete file): exit 0 -- PASS
-- Command 2 (validate-artifact decisions -- missing heading): exit 1 -- PASS
-- Command 3 (validate-artifact codebase-map -- complete file): exit 0 -- PASS
-- Command 4 (validate-artifact codebase-map -- missing sections): exit 1 -- PASS
-- Command 5 (validate-artifact evaluation -- old format): exit 0 -- PASS
-- Command 6 (validate-artifact evaluation -- new format with layers): exit 0 -- PASS
-- Command 7 (validate-artifact decisions -- draft skip): exit 0 -- PASS
-- Command 8 (test-validate-artifact.sh): 20 passed, 0 failed of 20 total -- PASS
-- Command 9 (test-start-task.sh): 8 passed, 0 failed of 8 total -- PASS
-- Command 10 (check-consistency.sh): invariants 1-6, 8-18 all OK; 3 invariant-7 errors are pre-existing (`link-skills.sh` `relative_link_target` bug) -- PASS (pre-existing errors not introduced by this task)
-- Command 11 (link-skills.sh): completed successfully; `.claude/agents/` errors are pre-existing -- PASS
-- Hard failures: none
+All verification commands from `verification.md` Section 2 were executed. Results:
+
+| AC | Command | Result | Status |
+|----|---------|--------|--------|
+| AC-1 | `ls spec/extensions 2>&1` | "No such file or directory", exit 2 | PASS |
+| AC-2 | `grep -E "extensions\|java-backend-strict" spec/README.md` | zero lines, exit 1 | PASS |
+| AC-3a | `grep -E "legacy_(escalation\|decisions\|codebase_map)_template" ...check-consistency.sh` | zero lines, exit 1 | PASS |
+| AC-3b | `grep -F "spec/extensions/java-backend-strict" ...check-consistency.sh` | zero lines, exit 1 | PASS |
+| AC-4 | `grep -F "extensions may replace this layer" skills/baton-evaluator/SKILL.md` | zero lines, exit 1 | PASS |
+| AC-5 | `bash spec/bootstrap/commands/check-consistency.sh` | OK: invariant-14, OK: invariant-18, OK: invariant-19; 7 pre-existing errors (inv-4 x2, inv-16 x4, inv-17 x1); no new errors | PASS (per recommended interpretation in verification.md) |
+| AC-6 | `grep -rE "spec/extensions\|java-backend-strict" . --exclude-dir=...` | 4 lines, all from invariant-19 block in check-consistency.sh (the regression guard itself) | PASS |
+| AC-7 | `grep -F "spec/extensions" ...check-consistency.sh` | 4 lines, all from invariant-19 assertion block | PASS |
+
+Hard failures: none.
 
 ### Layer 2: Diff Review
 
-- Scope validation: 20 file changes (4 new, 14 modified, 2 deleted) within approved write surface. One file in the architecture plan (`skills/baton-orchestrator/SKILL.md`) was NOT modified -- corresponds to unimplemented R8. No files changed outside the approved surface.
-- Architecture conformance: Implementation follows the architecture closely. The `has_section()` grouping fix (adding parentheses around pattern) is a necessary correctness fix that improves all existing validations. The three-layer evaluation structure is embedded in `## 3. Findings` only (architecture proposed both sections 3 and 4); see Warning below.
-- Unexpected changes: The `has_section()` fix (`.*${pattern}` to `.*(${pattern})`) is not explicitly called out in the architecture but is a correctness fix. Without it, patterns like `Risk|Dependency|风险` would not be properly scoped to `##` headings for the middle alternatives. All 20 existing tests continue to pass, confirming backward compatibility.
-- Bug patterns: No null handling, off-by-one, or resource leak issues found. Shell scripting follows existing conventions. The `decisions` field validation correctly anchors patterns to line-start with `^-[[:space:]]*`.
-- Security: No injection risks, no secrets exposed. All patterns use fixed regex, no user-controlled input in regex.
-- Test quality: 8 new test cases in test-validate-artifact.sh (English pass, Chinese pass, missing-heading fail, missing-fields fail, draft skip, English codebase-map pass, Chinese codebase-map pass, missing-sections fail). 2 new test cases in test-start-task.sh. Tests are meaningful -- they test both positive and negative paths, and cover bilingual variants. The "decisions missing fields" test verifies that having some but not all required fields still fails validation.
+**Scope validation**: The diff touches exactly the 4 files (3 modified + 7 deleted) listed in architecture.md Section 4 Surface Scan as L1 targets. No files outside the approved write surface were modified. Scope matches perfectly.
+
+**Architecture conformance**: All 5 units match the architecture:
+- U1: 7 files deleted under `spec/extensions/java-backend-strict/` -- matches
+- U2: 3 regions removed from `spec/README.md` (line 17 bullet, lines 136-149 tree block, lines 198-201 link bullet) -- matches
+- U3: 3 legacy variable definitions and 3 if-block guards removed from `check-consistency.sh` -- matches. Each if-block was 4 lines (if/printf/increment/fi), consistent with verification.md line-number verification note.
+- U4: Parenthetical "(extensions may replace this layer)" removed from `skills/baton-evaluator/SKILL.md:210` -- matches
+- U5: invariant-19 block added (12 lines) at the end of `check-consistency.sh` before the Summary section -- matches
+
+**Unexpected changes**: None. All changes are within the approved write surface.
+
+**Bug patterns**: None found. The invariant-19 block follows the exact same pattern as invariants 14/17/18 (error counter, conditional check, printf, OK message, error accumulation).
+
+**Security**: No security concerns. This is a pure file deletion and dead-code removal task.
+
+**Pattern consistency**: The new invariant-19 block follows the existing codebase convention for check-consistency.sh invariants (comment banner, error counter, conditional, printf, OK line, error aggregation).
+
+**Test quality**: No new tests were required (per A4 and NG-2). The end-to-end `check-consistency.sh` invocation serves as the functional gate.
+
+**Dependency audit**: No new dependencies added.
+
+**Risk area coverage** (cross-reference with exploration.md Section 8):
+- Risk 1 (regression guard gap): addressed by U5/invariant-19
+- Risk 2 (docs drift): accepted per NG-1, out of scope
+- Risk 3 (skill semantic shift): addressed by U4, sentence remains grammatical
+
+**Cosmetic observations**:
+- Double blank lines at check-consistency.sh lines 469-470 and 639-640 where if-blocks were removed. The existing style uses single blank lines between blocks. Non-blocking.
+- `spec/README.md` line 141 still says "add the matching extension overlay" (singular "extension") -- a generic concept reference that does not match the AC-2 pattern but refers to a concept whose concrete implementation was just removed. This is informational only; the requirements targeted "extensions" (plural) and "java-backend-strict" specifically.
 
 ### Layer 3: Requirements Verification
 
-- Blockers: R8 (P1) is not implemented -- orchestrator skill Risk-Adaptive Matrix was not updated
-- Warnings:
-  1. R4 architecture specified three-layer sub-structure for both `## 3. Findings` AND `## 4. Verification Results`, but implementation only adds layers to section 3. Section 4 was simplified to "Acceptance criteria status" without Layer sub-structure. The literal R4 text says "将 ## 3. Findings 和 ## 4. Verification Results 细化为三层子结构". This is a minor architectural deviation but does not break any automated validation.
-  2. The `generator-feedback.md` template link in `artifact-overlay.md` (line 90) still points to `./templates/generator-feedback.template.md` but this file was promoted to core in a previous task. This is a pre-existing issue, not introduced by this task.
+**Blockers**: none
+
+**Warnings**:
+1. (Minor) Double blank lines at two points in `check-consistency.sh` where dead code was removed. Cosmetic only.
+2. (Informational) `spec/README.md` line 141 still references "extension overlay" as a generic concept. The specific directory and path references are all gone per AC-2, but a reader might be confused by the mention of "extension overlay" when no such thing exists in the repo. Not a blocker because it is outside the requirements scope (R2 targeted `extensions` plural and `java-backend-strict`).
+
+**No findings**: All acceptance criteria are met.
 
 ## 4. Verification Results
 
-- [x] [unit] R3: validate-artifact.sh decisions -- complete file returns exit 0 (Command 1)
-- [x] [unit] R3: validate-artifact.sh codebase-map -- complete file returns exit 0 (Command 3)
-- [x] [unit] R3: validate-artifact.sh decisions/codebase-map -- missing sections returns exit 1 (Commands 2, 4)
-- [x] [integration] R1+R3: artifact-schema.md `decisions.md` required sections (decision blocks with choice/rejected/why/why not/impact) match validate-artifact.sh section patterns -- verified by Commands 1-2 and direct file inspection
-- [x] [integration] R1+R3: artifact-schema.md `codebase-map.md` required sections (project structure, module dependencies, data model, code style, high-risk) match validate-artifact.sh patterns -- verified by Commands 3-4 and direct file inspection
-- [x] [integration] R10: start-task.sh distributes decisions.md and codebase-map.md templates to .harness/ (Command 9 test-start-task.sh: 8/8 pass)
-- [x] [unit] Draft decisions.md and codebase-map.md do not cause validation failure (Command 7)
-- [x] [integration] R9: check-consistency.sh invariants 17+18 pass (Command 10)
-- [x] [unit] R4: Old format evaluation.md passes validation (Command 5 -- backward compatible)
-- [x] [unit] R4: New format evaluation.md with three-layer sub-structure passes validation (Command 6)
-- [x] [manual] R4: evaluation.template.md (en+zh) contains Layer 1/2/3 sub-structure in section 3, top-level 6 section numbering unchanged -- verified by direct inspection
-- [x] [manual] R5: baton-evaluator/SKILL.md section descriptions align with three-layer sub-structure, extension injection point documented ("extensions may replace this layer") -- verified at line 211
-- [x] [manual] R6: baton-architect/SKILL.md now says "When the architecture contains at least one rejected alternative, also write a separate decisions.md" -- verified at lines 324-328
-- [x] [manual] R7: baton-explorer/SKILL.md Mode 1 artifact changed from `repo-map.md` (optional) to include `codebase-map.md` (conditionally required) with coexistence rule -- verified at lines 53-59
-- [ ] [manual] R8: baton-orchestrator/SKILL.md Risk-Adaptive Matrix NOT updated -- orchestrator skill was not modified
-- [x] [manual] R11: Java extension artifact-overlay.md annotates promoted artifacts with "(promoted to core)", removes old template links, adds promotion note. runtime-evaluator.md adds core three-layer reference and "replaces core Diff Review" annotation -- verified by direct inspection
-- [x] [e2e] R9+R13: check-consistency.sh full run -- invariants 1-6, 8-18 pass; invariant 7 has 3 pre-existing errors (not introduced by this task)
-- [x] [unit] R12: test-validate-artifact.sh 20/20 pass including 8 new cases; test-start-task.sh 8/8 pass including 2 new cases
+### Layer 1: Deterministic Results
+
+All 7 AC commands executed successfully. See Layer 1 table above for details. `check-consistency.sh` reports 7 pre-existing errors (all unrelated to this task), with OK lines for invariant-14, invariant-18, and invariant-19. invariant-17 has a pre-existing failure (`Why\|` pattern missing from validate-artifact.sh) documented in verification.md as outside this task's scope.
+
+### Layer 2: Review Results
+
+- Scope match: exact match between diff and approved write surface
+- Architecture conformance: all 5 units implemented as designed
+- Issues found: 2 cosmetic observations (double blank lines, singular "extension" reference) -- neither affects correctness
+
+### Layer 3: Acceptance Criteria
+
+- [x] AC-1 Directory deleted -- `ls spec/extensions` returns exit 2, "No such file or directory". Covers R1.
+- [x] AC-2 README clean -- `grep -E "extensions|java-backend-strict" spec/README.md` returns exit 1, zero lines. Covers R2.
+- [x] AC-3 Consistency checker dead code removed -- both grep commands return exit 1, zero lines. Covers R3.
+- [x] AC-4 Skill stale doc cleaned -- `grep -F "extensions may replace this layer" skills/baton-evaluator/SKILL.md` returns exit 1, zero lines. Covers R5.
+- [x] AC-5 End-to-end consistency passes -- `check-consistency.sh` reports OK for invariant-14, invariant-18, invariant-19; 7 pre-existing errors unchanged; no new errors introduced. Covers R4, R6.
+- [x] AC-6 Full-repo live-reference sweep clean -- only matches are from the invariant-19 regression guard itself (expected). Covers completeness of R1/R2/R3/R5.
+- [x] AC-7 Regression guard -- `grep -F "spec/extensions" check-consistency.sh` returns exactly the invariant-19 assertion lines. Covers R7.
 
 ## 5. Verdict
 
-- Verdict: **PASS**
-- Acceptance criteria status: all met
+**Verdict: PASS WITH WARNINGS**
 
-All P0 requirements (R1-R5) met with evidence. All P1 requirements (R6-R12) met — R8 (orchestrator skill) fixed post-evaluation. P2 requirement R13 met. Evaluation template §4 three-layer sub-structure fixed post-evaluation. All 11 verification commands pass. All 28 automated tests pass. New invariants 17 and 18 pass.
+All 7 acceptance criteria are met with concrete evidence. Two minor warnings documented:
+1. Cosmetic double blank lines in `check-consistency.sh` at removal points
+2. Singular "extension overlay" concept reference remains in `spec/README.md` line 141 (outside requirements scope)
+
+Neither warning threatens correctness. The implementation is complete and safe.
 
 ## 6. Residual Risks
 
-1. **Pre-existing invariant-7 errors**: 3 `.claude/agents/` symlink errors from `link-skills.sh` `relative_link_target` bug remain. Not introduced by this task.
+- **R-R3 (accepted)**: `docs/*.md` (5 files) still reference the overlay -- accepted per user scope decision (NG-1). Flagged for retrospective.
+- **R-R4 (mitigated)**: Future re-creation of `spec/extensions/` is now guarded by invariant-19.
+- **Singular "extension" concept**: `spec/README.md` lines 26 and 141 use "extension" (singular) as a generic concept. If the extension mechanism is fully deprecated at the protocol level in the future, these references should be cleaned up. Not a risk for this task.
 
-2. **Pre-existing generator-feedback template link in artifact-overlay.md**: Line 90 of `artifact-overlay.md` references `./templates/generator-feedback.template.md` which was promoted to core in a previous task. The linked file may not exist in the extension templates directory. Not introduced by this task.
+## 7. Human Judgment Notes
+
+> Populated during Gate 5 review. Not machine-editable.
+> Space for the reviewer's tacit signals -- intuitions, pattern recalls,
+> or concerns that resist full articulation.
+
+- <human annotation, if any>

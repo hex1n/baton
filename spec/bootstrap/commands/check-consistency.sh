@@ -17,11 +17,8 @@ template_file="$spec_root/templates/task-status.template.md"
 verification_template="$spec_root/templates/verification.template.md"
 evaluation_template="$spec_root/templates/evaluation.template.md"
 escalation_template="$spec_root/templates/escalation.template.md"
-legacy_escalation_template="$repo_root/spec/extensions/java-backend-strict/templates/escalation.template.md"
 decisions_template="$spec_root/templates/decisions.template.md"
 codebase_map_template="$spec_root/templates/codebase-map.template.md"
-legacy_decisions_template="$repo_root/spec/extensions/java-backend-strict/templates/decisions.template.md"
-legacy_codebase_map_template="$repo_root/spec/extensions/java-backend-strict/templates/codebase-map.template.md"
 profile_template="$spec_root/templates/profile.local.template.yaml"
 start_task_sh="$script_dir/start-task.sh"
 validate_artifact_sh="$script_dir/validate-artifact.sh"
@@ -470,11 +467,6 @@ if [[ -f "$escalation_template" ]]; then
   done
 fi
 
-if [[ -e "$legacy_escalation_template" ]]; then
-  printf 'ERROR: invariant-14: legacy escalation template still exists: %s\n' "$legacy_escalation_template"
-  inv14_errors=$((inv14_errors + 1))
-fi
-
 if [[ -f "$repo_root/skills/baton-generator/SKILL.md" ]]; then
   for needle in '.harness/escalation.md' '[design_blocker]'; do
     if ! grep -Fq "$needle" "$repo_root/skills/baton-generator/SKILL.md"; then
@@ -644,11 +636,6 @@ if [[ -f "$decisions_template" ]]; then
   fi
 fi
 
-if [[ -e "$legacy_decisions_template" ]]; then
-  printf 'ERROR: invariant-17: legacy decisions template still exists: %s\n' "$legacy_decisions_template"
-  inv17_errors=$((inv17_errors + 1))
-fi
-
 for field_kw in "Choice" "Rejected.Alternatives" 'Why\|' "Why.Not" "Impact"; do
   if ! grep -qE "$field_kw" "$validate_artifact_sh"; then
     printf 'ERROR: invariant-17: validate-artifact.sh decisions case missing field check for %s\n' "$field_kw"
@@ -697,10 +684,6 @@ if [[ -f "$codebase_map_template" ]]; then
   fi
 fi
 
-if [[ -e "$legacy_codebase_map_template" ]]; then
-  printf 'ERROR: invariant-18: legacy codebase-map template still exists: %s\n' "$legacy_codebase_map_template"
-  inv18_errors=$((inv18_errors + 1))
-fi
 
 for section_kw in "Project.Structure" "Module.Dependencies" "Data.Model" "Code.Style" "High.Risk"; do
   if ! grep -qE "$section_kw" "$validate_artifact_sh"; then
@@ -723,6 +706,21 @@ if [[ $inv18_errors -eq 0 ]]; then
   printf 'OK: invariant-18: codebase-map.md contract stays synchronized across schema, validator, templates, and skills\n'
 fi
 errors=$((errors + inv18_errors))
+
+# ---------------------------------------------------------------------------
+# invariant-19: spec/extensions/ must not exist (promoted into core templates)
+# ---------------------------------------------------------------------------
+inv19_errors=0
+
+if [[ -d "$repo_root/spec/extensions" ]]; then
+  printf 'ERROR: invariant-19: spec/extensions/ directory must not exist (overlays promoted into core templates)\n'
+  inv19_errors=$((inv19_errors + 1))
+fi
+
+if [[ $inv19_errors -eq 0 ]]; then
+  printf 'OK: invariant-19: spec/extensions/ absent — overlays fully promoted into core templates\n'
+fi
+errors=$((errors + inv19_errors))
 
 # ---------------------------------------------------------------------------
 # Summary

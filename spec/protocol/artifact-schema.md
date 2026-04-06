@@ -147,19 +147,32 @@ Required bullet fields:
 - `repo-map.md`
 - `review-notes.md`
 - `handoff.md`
-- `lesson-index.md`
 
-### `lesson-index.md`
+## External Artifacts
 
+These live **outside** `.harness/` but are part of the protocol surface.
+
+### `knowledge/lessons.md`
+
+- Location: `<repo-root>/knowledge/lessons.md` (gitignored; local-only
+  by Gate 2 decision D-1, 2026-04-05 — allows capturing company or
+  sensitive context without leaking to the shared repo)
 - Purpose: accumulated subsidiary knowledge from past task retrospectives
-- Writer: `start-task.sh` (auto-extracted during task archival)
-- Readers: non-isolated roles only (explorer, specifier, architect, generator)
-- **Not consumed by**: verification-explorer, evaluator — these roles require
-  independent judgment and must not inherit historical reasoning bias
-- Growth policy: LRU — retain lessons from the most recent 10 tasks;
+- Writer: `start-task.sh` (auto-extracted during task archival from the
+  outgoing `retrospective.md` § Repo-Specific Lessons and § Harness Lessons)
+- Readers: non-isolated roles only — Scoped Explorer (MUST read, record
+  findings in `exploration.md` §11), Architect (subsidiary context in
+  risk assessment)
+- **Not consumed by**: Verification Explorer, Evaluator — these roles
+  require independent judgment and must not inherit historical reasoning
+  bias. See `role-contracts.md` Context Isolation Note.
+- Growth policy: LRU — retain lessons from the most recent 30 tasks;
   older entries are pruned on each archival cycle
-- Content: repo-specific lessons and harness lessons extracted from
-  `retrospective.md` § Repo-Specific Lessons and § Harness Lessons
+- Heading format in `retrospective.md`: level-2 with optional numeric
+  prefix, e.g. `## 4. Repo-Specific Lessons`, `## Harness Lessons`
+- Backward compat: repositories that still carry a legacy
+  `.harness/lesson-index.md` should migrate to the new path manually; no
+  automatic migration shipped
 
 ## Formatting Rules
 

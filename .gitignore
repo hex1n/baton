@@ -11,3 +11,9 @@
 CLAUDE.local.md
 autoresearch-results.tsv
 autoresearch-quality-results.tsv
+
+# Local cross-task lesson index (Gate 2 D-1, 2026-04-05):
+# populated by start-task.sh, consumed by baton-explorer / baton-architect.
+# Kept out of the repo to allow capturing company-specific or sensitive
+# context. Users are responsible for local backup.
+knowledge/

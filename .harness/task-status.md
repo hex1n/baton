@@ -18,26 +18,15 @@
 | runtime-enforcement-hardening | — | complete | 1 | 2026-03-29T23:24:00+0800 | human confirmed close; isolated verification/evaluation passed; retrospective recorded; advisory human_ack residual risk accepted |
 | bootstrap-structure-rationalization | — | complete | 0 | 2026-03-29T22:56:52+0800 | human confirmed close; best-practice guardrails implemented; strict isolated verifier/evaluator passed with Agent IDs; retrospective recorded; Windows live smoke-test residual risk accepted |
 | promote-java-artifacts | — | complete | 2 | 2026-04-04T15:30:00+0800 | human confirmed close; all warnings fixed; 28 tests pass; invariant 17+18 pass; 3 pre-existing invariant-7 errors accepted |
+| knowledge-compound-mvp | — | complete | 0 | 2026-04-05T22:00:00+0800 | human confirmed close; lesson-index silent bug fixed and E2E validated; Gate 2 defaults accepted; retrospective recorded |
+| skill-retrospective-review | — | complete | 0 | 2026-04-05T22:05:00+0800 | human confirmed close; keep skill name, keep skill; drift finding spun off as skill-retrospective-alignment follow-up task; retrospective recorded |
+| skill-retrospective-alignment | — | complete | 0 | 2026-04-05T22:30:00+0800 | human confirmed close; 6 change points implemented (skill rewrite, validator retrospective case, consistency Check 7); 7/7 AC passed; retrospective recorded |
+| remove-spec-extensions | — | complete | 1 | 2026-04-06T01:30:00+0800 | human confirmed close; all 7 AC met; cosmetic warnings fixed; retrospective recorded |
 
 ## State Notes
 
-- risk_level: Medium
-- artifact_language: en
-- codex_available: true
-- codex_skill: codex:rescue
-- human_ack: true
-- base_commit: cc00a5a
-- current_blockers: none
-- next_decision: task complete
-
-## Transition Log
-
-| From | To | Timestamp |
-|------|----|-----------|
-| exploring | specifying | 2026-04-04T11:30:00+0800 |
-| specifying | architecting | 2026-04-04T12:15:00+0800 |
-| architecting | verification_check | 2026-04-04T13:00:00+0800 |
-| verification_check | generating | 2026-04-04T13:30:00+0800 |
-| generating | reviewing | 2026-04-04T14:20:00+0800 |
-| reviewing | ready_for_human_close | 2026-04-04T15:00:00+0800 |
-| ready_for_human_close | complete | 2026-04-04T15:30:00+0800 |
+- Risk level: Medium
+- Current artifacts: exploration.md, requirements.md, architecture.md, verification.md, plan-first-principles.md, decisions.md
+- Current blockers: none
+- Current residual risks: R-R1 (README tree diagram symmetry, Low/Low), R-R3 (docs drift, accepted), R-R4 (re-creation, mitigated by invariant-19)
+- Current next decision: human close gate (review evaluation.md findings and accept or challenge)

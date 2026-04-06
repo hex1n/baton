@@ -62,7 +62,8 @@ dependencies, data model, code style, high-risk areas). If a free-form
 
 - **Inputs**: user request, repo map or local repo context,
   `clarification-brief.md` (if exists),
-  `lesson-index.md` (if exists; subsidiary context, not constraints)
+  `knowledge/lessons.md` at repo root (MUST read, subsidiary context
+  only — see Scoped Mode Step 1b and §11 of the required artifact)
 - **Outputs**: task-local call chain, data flow, direct change surfaces,
   test landing points, risk notes
 - **Artifact**: required `exploration.md`
@@ -112,7 +113,7 @@ Use the template at `spec/templates/exploration.template.md` as the
 starting point. Sections:
 
 1. **Scope** — boundaries of exploration (in/out of scope, write boundary)
-2. **Entry Points** — files/functions where execution enters
+2. **Entry Point** — files/functions where execution enters
 3. **Call Chain** — how control flows from entry to effect
 4. **Data Flow** — how data propagates through the affected area
    (source → transform → sink); include data format changes and
@@ -126,9 +127,15 @@ starting point. Sections:
 8. **Dependency / Risk Scan** — areas of fragility, coupling, missing
    coverage, and cross-domain dependencies
 9. **Change Shape** — estimated file count, change type, implementation depth
-10. **Recommendation** — proceed? suggested next step for the Specifier
-11. **Historical Lessons** — relevant prior lessons from `lesson-index.md`
-    (subsidiary context only; omit if no lesson-index exists)
+10. **Open Questions** — what remains uncertain, to be resolved by later phases
+11. **Recommendation** — proceed? suggested next step for the Specifier
+12. **Historical Lessons** — **required, explicit-empty allowed**. Either
+    cite relevant prior lessons from `knowledge/lessons.md` (subsidiary
+    context only — do not treat as constraints) or write one of:
+    - `no lessons file found at knowledge/lessons.md` — if the file is missing
+    - `no relevant lessons in index` — if file exists but nothing applies
+    Do not omit the section; empty must be explicit (this is how the
+    validator proves the read step actually ran).
 
 ## Execution Guide
 
@@ -160,10 +167,16 @@ starting point. Sections:
    If `clarification-brief.md` exists, read it to understand confirmed
    boundaries, non-goals, and success criteria. Use these to constrain
    exploration scope — do not explore areas marked as non-goals.
-1b. If `.harness/lesson-index.md` exists, scan it for entries related to
-   the current task's write surface. Treat as background awareness — do
-   not quote lessons as requirements. Note relevant lessons in §12 of
-   `exploration.md`.
+1b. **Always** read `<repo-root>/knowledge/lessons.md` (MUST, not "if
+   exists"). Scan for entries related to the current task's write surface.
+   Treat as background awareness — do not quote lessons as requirements.
+   Record findings in §12 **Historical Lessons** of `exploration.md`:
+   - cite relevant entries with the source anchor, OR
+   - write `no lessons file found at knowledge/lessons.md` if the file does not exist, OR
+   - write `no relevant lessons in index` if the file exists but nothing applies.
+   Empty must be explicit — omission is a validator failure. This step
+   exists to make the read-path visible; silent skips were how the
+   previous iteration of this feature failed for months.
 2. Find entry points: search for the feature name, handler, command, or
    interface that the request targets.
 3. Trace the call chain: follow from entry point through the layers of
