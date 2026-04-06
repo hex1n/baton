@@ -78,9 +78,14 @@ entry -> layer -> dependency -> output
 
 ## 12. Historical Lessons
 
-> Auto-populated by start-task. Explorer should review and keep only
-> lessons relevant to current task scope. Treat as subsidiary awareness
-> — do not quote lessons as requirements or constraints.
+> **Required — explicit-empty allowed.** Explorer MUST read
+> `<repo-root>/knowledge/lessons.md` and record findings here. If the
+> file is missing or nothing applies, say so explicitly. Omission is a
+> validator failure — previous silent skips were how cross-task
+> compounding failed to work for months. Treat lessons as subsidiary
+> awareness; do not quote them as requirements or constraints.
 
 - Relevant prior lessons:
 - Lessons explicitly not applicable:
+- (if nothing applies) `no relevant lessons in index`
+- (if file missing) `no lessons file found at knowledge/lessons.md`

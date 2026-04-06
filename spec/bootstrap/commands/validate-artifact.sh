@@ -65,6 +65,31 @@ check_optional_overlay_recommendation() {
   fi
 }
 
+# Ensure exploration §12 Historical Lessons has at least one substantive
+# line (bullet, prose, or explicit-empty marker). Silent omission is the
+# failure mode this check exists to prevent — see
+# spec/protocol/role-contracts.md Context Isolation Note and
+# skills/baton-explorer/SKILL.md Step 1b.
+check_exploration_historical_lessons_populated() {
+  local file="$1"
+  awk '
+    /^##[[:space:]]+(12\.[[:space:]]+)?Historical Lessons/ { in_section = 1; next }
+    in_section && /^##[[:space:]]/ { in_section = 0 }
+    in_section {
+      # strip leading whitespace and blockquote markers
+      line = $0
+      sub(/^[[:space:]]*>?[[:space:]]*/, "", line)
+      if (length(line) > 0 && line !~ /^<!--/) {
+        found = 1
+      }
+    }
+    END { exit found ? 0 : 1 }
+  ' "$file" && return 0
+
+  printf 'ERROR: validate-artifact: exploration §12 Historical Lessons is empty in %s — populate with at least one lesson reference or the explicit-empty marker "no relevant lessons in index" / "no lessons file found at knowledge/lessons.md"\n' "$file" >&2
+  return 1
+}
+
 run_checks() {
   local rc=0
   case "$artifact_type" in
@@ -72,8 +97,9 @@ run_checks() {
       check_sections "$file_path" \
         "Scope" "Entry" "Call.Chain" "Existing.Behavior" \
         "Existing.Tests" "Risk|Dependency" "Change.Shape" \
-        "Recommendation|Suggested.Next" || rc=$?
+        "Recommendation|Suggested.Next" "Historical.Lessons" || rc=$?
       check_optional_overlay_recommendation "$file_path" || rc=$((rc + 1))
+      check_exploration_historical_lessons_populated "$file_path" || rc=$((rc + 1))
       ;;
     requirements)
       check_sections "$file_path" \
@@ -106,6 +132,15 @@ run_checks() {
       check_sections "$file_path" \
         "Original.Assumption" "Actual.Finding" \
         "Impact" "Recommended.Next.Owner" || rc=$?
+      ;;
+    retrospective)
+      # retrospective.md is load-bearing for knowledge/lessons.md — the
+      # extractor in start-task.sh parses §4 and §5 by exact heading. Any
+      # rename silently breaks the cross-task lesson compounding chain.
+      # Required sections must match spec/templates/retrospective.template.md.
+      check_sections "$file_path" \
+        "Outcome" "What.Worked" "What.Failed" \
+        "Repo.Specific Lessons" "Harness Lessons" "Standardization Candidates" || rc=$?
       ;;
     decisions)
       check_sections "$file_path" \

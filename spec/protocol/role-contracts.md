@@ -22,7 +22,10 @@
 - Inputs:
   - user request
   - repo map or local repo context
-  - `lesson-index.md` (if exists; read as subsidiary context, not constraints)
+  - `knowledge/lessons.md` at repo root (MUST read; record findings in
+    `exploration.md` §11, including explicit "none found" when the file
+    is missing or no entry is relevant). Gitignored local store — see
+    `spec/protocol/artifact-schema.md`.
 - Outputs:
   - task-local call chain
   - direct change surfaces
@@ -55,7 +58,9 @@
 - Inputs:
   - `exploration.md`
   - `requirements.md`
-  - `lesson-index.md` (if exists; read as subsidiary context for risk assessment)
+  - `knowledge/lessons.md` at repo root (read as subsidiary context for
+    risk assessment; cite anchors in `architecture.md` when relevant,
+    explicit "none relevant" when not)
 - Outputs:
   - recommended implementation category
   - confirmed decisions that affect requirements truth
@@ -130,9 +135,12 @@
 
 ## Context Isolation Note
 
-- `Verification Explorer` and `Evaluator` do NOT read `lesson-index.md`.
+- `Verification Explorer` and `Evaluator` do NOT read `knowledge/lessons.md`
+  (the cross-task lesson store, previously called `lesson-index.md`).
   These roles require independent judgment; historical lessons could
-  introduce reasoning bias that compromises isolation.
+  introduce reasoning bias that compromises isolation. This prohibition
+  is load-bearing — do not add a "read lessons" step to those skills for
+  the sake of consistency with explorer/architect.
 - `Verification Explorer` and `Evaluator` are the mandatory artifact-isolated
   judgment roles in `strict` mode.
 - Repos may opt into `compat` mode, but only if the produced artifacts make the

@@ -1,129 +1,234 @@
-# Requirements: promote-java-artifacts
+# Requirements: remove-spec-extensions
 
-**Owner**: `specifier`  
-**Status**: `approved`
+**Topic**: delete `spec/extensions/` and all live references
+**Status**: `final`
+**Sizing**: `Small`
 
 ## 1. Problem
 
-Java 后端严格扩展定义了若干高价值制品（`decisions.md`、`codebase-map.md`、三层评估结构），但这些制品的价值并不限于 Java 后端场景——任何涉及显著架构决策或大型存量仓库的任务都能受益。当前核心协议不识别这些制品，导致：
+**Original request**: "我想删除 spec/extensions 目录及其下面所有文件" (delete
+`spec/extensions/` and all its files).
 
-1. 非 Java 项目无法获得结构化的决策记录和代码地图
-2. 核心评估模板（6 section 平铺）缺少分层评估结构，评估产出不够结构化
-3. 跨技术栈的制品复用需要依赖扩展机制，增加了采纳摩擦
+**Reframed problem**: After `promote-java-artifacts` (2026-04-04) moved
+the "java-backend-strict" overlay's templates into `spec/templates/`
+core, the `spec/extensions/` directory and its migration guardrails
+have become dead weight. Four surfaces still mention them:
 
-本任务采用分层提升策略（方案 C）：将通用价值的制品和结构提升到核心，同时保留技术栈特定内容在扩展中。核心三层评估的 Layer 2 定义为 "Diff Review"（通用代码审查），扩展可替换或扩展 Layer 2 以适配特定场景（如 Java 扩展的 "Runtime Signals"）。这是有意的设计选择，不是合并所有扩展内容。
+1. `spec/extensions/java-backend-strict/` — 7 stale files kept alive
+   only by inertia.
+2. `spec/README.md` — 3 places advertise the directory to readers.
+3. `spec/bootstrap/commands/check-consistency.sh` — invariants
+   14/17/18 assert the legacy paths are absent (a guard that has been
+   dead — permanently-false `[[ -e ... ]]` — since the promotion
+   commit).
+4. `skills/baton-evaluator/SKILL.md:210` — parenthetical "(extensions
+   may replace this layer)" is a stale hook-point reference.
+
+The undesirable state: readers (human and LLM) are told the overlay
+exists as a governance concept, and the consistency checker carries
+permanently-dead code. Solved state: every live reference to
+`spec/extensions/` and `java-backend-strict` is removed (except the
+intentionally preserved historical snapshots in `docs/*.md` and
+`.harness/history/**`), and `check-consistency.sh` still passes
+end-to-end with no weakened coverage of the core templates.
 
 ## 2. Assumptions
 
-- `generator-feedback.md` 提升先例（commit `2c6f6ee`）的模式可直接复用
-- 条件必需制品的触发条件是语义判断，不适合在 shell 脚本中自动检测
-- 核心三层评估的 Layer 2 固定为 "Diff Review"，扩展通过替换 Layer 2 适配
+| # | Assumption | Type | Confidence | If wrong... |
+|---|-----------|------|------------|-------------|
+| A1 | The three core templates (`spec/templates/{codebase-map,decisions,escalation}.template.md`) are sufficient — no runtime/validator path still expects the legacy overlay copies | Testable | High — verified via exploration §6; positive halves of invariants 14/17/18 cover them | Removing the negative-half guards would silently drop coverage |
+| A2 | No test or script outside the ones found in exploration.md references `spec/extensions/` or `java-backend-strict` | Testable | High — repo-wide grep returned zero test hits | A latent reference exists; Phase 5 Verify re-grep will catch it |
+| A3 | The 5 `docs/*.md` snapshots are historical artifacts the user genuinely wants left untouched | User intent | High — user confirmed scope at Gate 0 via structured question | Docs drift becomes a long-term readability problem; flagged for retrospective |
+| A4 | `check-consistency.sh` end-to-end (exit 0) is a sufficient functional test — no unit test needed | Convention | Medium — no `test-check-consistency*.sh` exists; the tool has always been tested only via end-to-end invocation | A regression in an unrelated invariant slips through; accepted because this task touches only dead guards |
+| A5 | The semantic shift in `baton-evaluator` SKILL.md (removing the "extensions may replace Layer 2" hint) matches `baton-positioning`'s protocol-first stance | Convention | High — baton-positioning explicitly folded stack-specific overlays into core | The change would need a broader role-contracts revision; defer to retrospective if challenged |
 
 ## 3. Scope
 
-- **范围内**:
-  - `decisions.md` 提升为核心条件必需制品
-  - `codebase-map.md` 提升为核心条件必需制品
-  - 三层评估结构合并进核心 `evaluation.md` 模板和 evaluator skill
-  - 新建核心模板（中英文各两个：decisions + codebase-map）
-  - 更新验证脚本、一致性检查、分发脚本、相关 skill
-  - 在 Java 扩展中标注已提升制品
-- **范围外**:
-  - `api-contract.yaml` 不提升（技术栈特定）
-  - `runtime-signals/` 不提升（技术栈特定）
-  - `evaluation-report.md` 不提升（Java 扩展独有格式）
-  - 不改变状态机或门禁逻辑
-  - 不改变 `task-status.md` 结构
+### 3.1 In Scope
+
+- Delete `spec/extensions/` directory (`rm -rf`) — 7 files under
+  `java-backend-strict/`.
+- Remove 3 references in `spec/README.md` (lines 17, 136–137, 201).
+- Remove dead code in `spec/bootstrap/commands/check-consistency.sh`:
+  - 3 `legacy_*_template` variable definitions (lines 20, 23, 24)
+  - 3 invariant guard `if [[ -e ... ]]` blocks for invariants 14/17/18
+    (lines 473–474, 647–648, 700–701)
+- Remove parenthetical "(extensions may replace this layer)" in
+  `skills/baton-evaluator/SKILL.md:210`.
+- Pending architect decision (Q1): optional `[[ ! -d spec/extensions ]]`
+  regression guard added to `check-consistency.sh` as a new invariant
+  line (see R7).
+
+### 3.2 Out of Scope
+
+- `docs/*.md` historical analysis snapshots (5 files) — user accepted
+  drift; flagged for retrospective.
+- `.harness/history/**` — archived task artifacts, immutable.
+- `.tmp/deep-research-workspace/**` — scratch workspace.
+- `skills/deep-research/SKILL.md:343` — false positive ("columnar
+  extensions" in SQLite example).
+- Role-contracts revision to fully remove the "extensions" concept
+  from protocol docs — deferred; this task only removes the
+  skill-level hint.
+- Writing a dedicated `tests/test-check-consistency*.sh` unit test
+  — separate standardization candidate.
 
 ## 4. Functional Requirements
 
-- R1. [P0] **artifact-schema.md 新增条件必需制品定义** — 在 `## Conditionally Required Artifacts` 下新增 `decisions.md` 和 `codebase-map.md` 的定义，包括触发条件、writer、readers、purpose、required sections。
-  - `decisions.md` 触发条件: `architecture.md` 包含至少一个被拒方案（即存在显著架构决策需要记录 Why / Why Not）
-  - `codebase-map.md` 触发条件: Explorer 执行 repo-wide 模式（首次在大型存量仓库中采用 harness）
+### FR-1 Directory deletion
 
-- R2. [P0] **新建核心模板** — 创建通用化的 `decisions.template.md` 和 `codebase-map.template.md`，分别提供中英文版本（共 4 个文件）。
-  - `decisions.template.md`: 保持 Java 扩展的 D1/D2 结构（Choice / Rejected Alternatives / Why / Why Not / Impact）
-  - `codebase-map.template.md`: 从 Java 扩展模板泛化。必需顶层 section: Project Structure、Module Dependencies、Data Model、Code Style And Conventions、High-Risk Areas。移除 Spring 特定 section（如 "Spring Runtime Notes"），替换为通用可选 section（如 "Framework/Runtime Notes"、"Existing API Surfaces"）。精确措辞留给架构阶段。
+- **R1. [P0]** `spec/extensions/` must not exist after the task.
+  All 7 files under `java-backend-strict/` removed.
 
-- R3. [P0] **validate-artifact.sh 新增验证类型** — 在 `run_checks()` 的 case 分支中新增 `decisions` 和 `codebase-map` 类型，定义中英文 section 标题匹配模式。(depends-on: R1, R2)
+### FR-2 Governance reference cleanup
 
-- R4. [P0] **三层评估结构合并进核心 evaluation.md** — 修改 `evaluation.template.md`（中英文），在现有 6 section 结构中将 `## 3. Findings` 和 `## 4. Verification Results` 细化为三层子结构：
-  - Layer 1: 确定性检查（编译、测试、已有验证命令）
-  - Layer 2: Diff Review（范围验证、架构一致性、安全审查、模式一致性）
-  - Layer 3: 需求验证（逐项 AC 检查）
-  - 设计要点: 核心 Layer 2 固定为 "Diff Review"。扩展可**替换或扩展** Layer 2 以适配特定场景（如 Java 扩展用 "Runtime Signals" 替换 "Diff Review"）。核心保持 3 层，扩展不改变层数，只改变 Layer 2 的内容。三层结构作为 Findings/Results 的内部组织方式嵌入模板，不改变顶层 6 section 编号。
+- **R2. [P0]** `spec/README.md` must contain zero mentions of
+  `extensions` or `java-backend-strict`. The 3 current references
+  (lines 17, 136–137, 201) deleted; surrounding structure (the
+  directory tree diagram) remains coherent.
 
-- R5. [P0] **evaluator skill 更新** — 更新 `skills/baton-evaluator/SKILL.md` 中的执行指南，使其与新模板的三层子结构对齐。增加说明：扩展可替换或扩展 Layer 2 以适配特定场景（如 Java 扩展用 "Runtime Signals" 替换 "Diff Review"），但核心保持 3 层不变。(depends-on: R4)
+### FR-3 Dead-code cleanup in consistency checker
 
-- R6. [P1] **architect skill 更新** — 更新 `skills/baton-architect/SKILL.md` 的 "Decision Records" 小节，从 "inline in architecture.md; strict overlay uses separate decisions.md" 改为 "when architecture includes rejected alternatives, produce standalone decisions.md; otherwise record inline"。(depends-on: R1)
+- **R3. [P0]** `spec/bootstrap/commands/check-consistency.sh` must
+  contain zero definitions or references to `legacy_escalation_template`,
+  `legacy_decisions_template`, `legacy_codebase_map_template`, or
+  `spec/extensions/java-backend-strict`. The 3 variable lines (20,
+  23, 24) and 3 if-block guards for invariants 14/17/18 (lines
+  473–474, 647–648, 700–701) removed. (depends-on: R1)
+- **R4. [P0]** The surviving positive halves of invariants 14/17/18
+  (the `[[ -e spec/templates/*.template.md ]]` checks and downstream
+  schema/skill checks) remain functional. (depends-on: R3)
 
-- R7. [P1] **explorer skill 更新** — 更新 `skills/baton-explorer/SKILL.md` 的 Mode 1 (Repo-wide) 产出说明，将 `repo-map.md`（optional）改为 `codebase-map.md`（conditionally required when repo-wide mode triggers）。共存规则: `codebase-map.md` 是 `repo-map.md` 的结构化替代；当 repo-wide 模式触发时，Explorer 产出 `codebase-map.md` 而非 `repo-map.md`；`repo-map.md` 保留在 Optional Artifacts 中仅用于向后兼容，不再由 Explorer 主动产出。(depends-on: R1)
+### FR-4 Stale skill documentation cleanup
 
-- R8. [P1] **orchestrator 风险自适应矩阵更新** — 更新 `skills/baton-orchestrator/SKILL.md` 中的 Risk-Adaptive Matrix，在 Phase 2 (Explore) 和 Phase 4 (Architect) 行中反映 `codebase-map.md` 和 `decisions.md` 的条件产出。(depends-on: R6, R7)
+- **R5. [P0]** `skills/baton-evaluator/SKILL.md:210` must not contain
+  the parenthetical "(extensions may replace this layer)". Surrounding
+  sentence remains grammatical.
 
-- R9. [P1] **check-consistency.sh 新增不变量** — 新增一致性不变量覆盖已提升制品：
-  - 核心模板存在性检查（`decisions.template.md` 和 `codebase-map.template.md` 的 en+zh 四个文件）
-  - `artifact-schema.md` 与 `validate-artifact.sh` 的类型覆盖一致性
-  - Java 扩展旧模板不存在检查（如果从扩展删除已提升模板）
-  (depends-on: R1, R2, R3)
+### FR-5 End-to-end consistency still holds
 
-- R10. [P1] **start-task.sh 分发新模板** — 将 `decisions.template.md` 和 `codebase-map.template.md` 加入 `artifact_templates` 数组，使新任务启动时自动分发空模板到 `.harness/`。遵循 `evaluation.md` 和 `generator-feedback.md` 的先例——条件必需制品也分发模板，验证时机由 hook 控制。未触发路径: 分发的空模板保持 `draft` 状态（模板默认包含 `**Status**: \`draft\``），`validate-artifact.sh` 对 draft 状态制品跳过验证，因此未使用的模板不会导致验证失败。(depends-on: R2)
+- **R6. [P0]** `bash spec/bootstrap/commands/check-consistency.sh`
+  must exit 0 after all edits. All remaining invariants (1–18 minus
+  the removed legacy halves) must still pass. (depends-on: R1, R2,
+  R3, R4, R5)
 
-- R11. [P1] **Java 扩展标注已提升** — 更新 `spec/extensions/java-backend-strict/artifact-overlay.md`，标注 `decisions.md` 和 `codebase-map.md` 已提升到核心。更新 `runtime-evaluator.md`，标注三层评估结构已提升到核心，Java 扩展通过**替换** Layer 2 内容（用 "Runtime Signals" 替换 "Diff Review"）来适配，层数和结构不变。(depends-on: R1, R4)
+### FR-6 Regression guard (pending architect decision Q1)
 
-- R12. [P1] **测试覆盖** — 在 `tests/test-validate-artifact.sh` 中新增 `decisions` 和 `codebase-map` 类型的 section 验证测试用例。在 `tests/test-start-task.sh` 中新增验证新模板被正确分发的测试用例。(depends-on: R3, R10)
-
-- R13. [P2] **skill 同步验证** — 完成所有 skill 修改后，运行 `link-skills.sh` 确保 `.claude/skills/` 和 `.agents/` 同步，通过 `check-consistency.sh` invariant 4。(depends-on: R5, R6, R7, R8)
+- **R7. [P1]** (conditional — adopted iff architect resolves Q1 to
+  "bundle") A new invariant in `check-consistency.sh` asserts
+  `[[ ! -d spec/extensions ]]`, catching any future re-creation.
+  If architect resolves Q1 to "split", this becomes a follow-up task
+  and R7 is dropped from this requirements doc before Phase 5.
 
 ## 5. Non-Goals
 
-1. 不提升 `api-contract.yaml` 到核心 — API 契约验证是技术栈特定的（OpenAPI/Swagger），不属于通用协议
-2. 不提升 `runtime-signals/` 到核心 — 运行时信号采集依赖特定运行环境（JVM、容器等），核心不应强制
-3. 不提升 `evaluation-report.md` — 核心已有 `evaluation.md`，Java 扩展的 `evaluation-report.md` 是冗余的独有格式
-4. 不修改状态机或门禁 — 本任务是制品层变更，不涉及流程控制层
-5. 不删除 `repo-map.md` — `repo-map.md` 保留在 Optional Artifacts 中用于向后兼容，但 Explorer repo-wide 模式不再主动产出它，改为产出 `codebase-map.md`
-6. 不为 `decisions.md` 和 `codebase-map.md` 新增 hook — 验证时机由现有 post-artifact hook 和 validate-artifact.sh 覆盖
+- **NG-1** Modifying `docs/*.md` historical snapshots — user scope
+  excludes them.
+- **NG-2** Adding a unit test file `tests/test-check-consistency.sh`
+  — the end-to-end invocation is sufficient for this scope.
+- **NG-3** Revising `spec/protocol/role-contracts.md` or other
+  protocol docs to fully excise the "extensions" concept — the
+  skill-level hint cleanup (R5) is the only prose change.
+- **NG-4** Touching `.harness/history/**` references — archived,
+  immutable.
+- **NG-5** Re-opening or amending `promote-java-artifacts`
+  retrospective — already closed.
 
 ## 6. Acceptance Criteria
 
-- [ ] [unit] 运行 `bash spec/bootstrap/commands/validate-artifact.sh decisions .harness/decisions.md`，对包含完整 section 的 decisions.md 返回成功
-- [ ] [unit] 运行 `bash spec/bootstrap/commands/validate-artifact.sh codebase-map .harness/codebase-map.md`，对包含完整 section 的 codebase-map.md 返回成功
-- [ ] [unit] `validate-artifact.sh` 对缺少必需 section 的 decisions.md / codebase-map.md 返回失败
-- [ ] [integration] `artifact-schema.md` 中 `decisions.md` 和 `codebase-map.md` 的 required sections 列表与 `validate-artifact.sh` 中的 section 匹配模式完全一致
-- [ ] [integration] `start-task.sh` 执行后，`.harness/` 中包含 `decisions.md` 和 `codebase-map.md` 空模板（draft 状态）
-- [ ] [unit] 未触发条件时，draft 状态的 `decisions.md` 和 `codebase-map.md` 不会导致 `validate-artifact.sh` 或 `check-consistency.sh` 失败
-- [ ] [integration] `check-consistency.sh` 所有 invariant 通过（包括新增的制品提升 invariant）
-- [ ] [unit] 使用旧格式（无三层子结构）的 evaluation.md 仍然通过 `validate-artifact.sh evaluation` 验证（向后兼容）
-- [ ] [unit] 使用新格式（含三层子结构）的 evaluation.md 通过 `validate-artifact.sh evaluation` 验证
-- [ ] [manual] `evaluation.template.md`（中英文）包含 Layer 1/2/3 子结构，顶层仍保持 6 section 编号不变
-- [ ] [manual] `baton-evaluator/SKILL.md` 执行指南与新模板的三层子结构对齐，明确说明扩展注入点
-- [ ] [manual] `baton-architect/SKILL.md` 明确在架构包含被拒方案时产出独立 `decisions.md`
-- [ ] [manual] `baton-explorer/SKILL.md` Mode 1 产出从 `repo-map.md` (optional) 改为 `codebase-map.md` (conditionally required)
-- [ ] [manual] Java 扩展 `artifact-overlay.md` 和 `runtime-evaluator.md` 标注已提升制品，保持扩展文档自洽
-- [ ] [e2e] 运行 `bash spec/bootstrap/commands/check-consistency.sh .` 全量通过
+### AC-1 Directory deleted
+
+- [ ] [manual] `ls spec/extensions` returns "No such file or
+      directory" (or equivalent non-existence signal). Covers R1.
+
+### AC-2 README clean
+
+- [ ] [unit] `grep -E "extensions|java-backend-strict" spec/README.md`
+      returns zero lines. Covers R2.
+
+### AC-3 Consistency checker dead code removed
+
+- [ ] [unit] `grep -E "legacy_(escalation|decisions|codebase_map)_template"
+      spec/bootstrap/commands/check-consistency.sh` returns zero lines.
+      Covers R3.
+- [ ] [unit] `grep -F "spec/extensions/java-backend-strict"
+      spec/bootstrap/commands/check-consistency.sh` returns zero lines.
+      Covers R3.
+
+### AC-4 Skill stale doc cleaned
+
+- [ ] [unit] `grep -F "extensions may replace this layer"
+      skills/baton-evaluator/SKILL.md` returns zero lines. Covers R5.
+
+### AC-5 End-to-end consistency passes
+
+- [ ] [integration] `bash spec/bootstrap/commands/check-consistency.sh`
+      exits 0, and stdout contains `OK: invariant-14`, `OK: invariant-17`,
+      `OK: invariant-18` among the reported OK lines. Covers R4, R6.
+
+### AC-6 Full-repo live-reference sweep clean
+
+- [ ] [integration] `grep -rE "spec/extensions|java-backend-strict" .
+      --exclude-dir=.harness --exclude-dir=docs --exclude-dir=.tmp
+      --exclude-dir=.git --exclude-dir=node_modules` returns zero
+      lines. Any match is a latent reference the task missed.
+      Covers completeness of R1/R2/R3/R5.
+
+### AC-7 Regression guard (conditional on R7)
+
+- [ ] [unit] (only applies if architect adopts R7) `grep -F
+      "spec/extensions" spec/bootstrap/commands/check-consistency.sh`
+      returns exactly the one line asserting `[[ ! -d spec/extensions ]]`
+      — no other mentions. Covers R7.
 
 ## 7. Constraints
 
-1. **先例遵循**: 实现模式必须遵循 `generator-feedback.md` 提升的先例（commit `2c6f6ee`），包括：核心新增定义 → 核心新增模板 → 验证脚本新增类型 → 一致性检查新增 invariant → 扩展标注
-2. **双语模板**: 所有新模板必须提供 `spec/templates/` (en) 和 `spec/templates/zh/` 两个版本
-3. **向后兼容**: 现有 `.harness/evaluation.md` 的验证逻辑不能被新的三层子结构破坏（旧格式仍然通过验证）
-4. **Section 匹配模式**: `validate-artifact.sh` 中的正则必须同时匹配中英文 section 标题
-5. **Invariant 编号**: 新增 invariant 不能与现有 16 个 invariant 编号冲突
+- **C1 (true)**: `check-consistency.sh` must keep exit 0 at all times
+  on master — any invariant break blocks downstream tasks.
+- **C2 (true)**: Edits to `check-consistency.sh` must use unique
+  per-hunk context (no sed-based sweeps, no `replace_all` on
+  `legacy_` or bare invariant numbers). Inherited from
+  `knowledge/lessons.md` — "Python str.replace substring-matches
+  across markdown heading levels"; the same substring-matching risk
+  applies to `legacy_` bash prefixes, which appear many times in
+  this file.
+- **C3 (true)**: Phase 5 Verify and Phase 7 Review MUST run in strict
+  isolation (baton-verifier / baton-evaluator via Agent dispatch) —
+  non-negotiable per `knowledge/lessons.md` — "'Low-risk' is not a
+  license to skip strict isolation in a repo that dogfoods strict".
+  The inline-explorer exception taken in Phase 2 does not extend to
+  verification or evaluation phases.
 
 ## 8. Validation Intent
 
-- **R1-R3**: 通过 `validate-artifact.sh` 对测试制品文件的 pass/fail 结果验证
-- **R4-R5**: 通过人工检查模板结构和 skill 文档一致性验证
-- **R9**: 通过 `check-consistency.sh` 全量运行验证
-- **R10**: 通过 `start-task.sh` 实际运行后检查 `.harness/` 目录内容验证
-- **R11**: 通过人工检查 Java 扩展文档的标注和自洽性验证
-- **R12**: 通过运行 `test-validate-artifact.sh` 验证
-- **R13**: 通过 `check-consistency.sh` invariant 4 验证
+- **Primary**: `bash spec/bootstrap/commands/check-consistency.sh`
+  end-to-end exit 0. This is the one command that proves the
+  migration guardrails still cover what matters (positive halves of
+  invariants 14/17/18) and no unrelated invariant broke.
+- **Secondary**: targeted grep sweeps for each AC (AC-1 through
+  AC-6) to prove each live reference is gone.
+- **Tertiary**: `bash spec/bootstrap/commands/validate-artifact.sh`
+  for all `.harness/*.md` artifacts to confirm the task's own
+  artifacts stay schema-clean.
+- Phase 5 Verify will codify exact commands in `verification.md`;
+  Phase 7 Evaluator will execute them in strict isolation per C3.
 
-## Open Design Questions (to be confirmed in architecture phase)
+## 9. Traceability
 
-以下问题已在需求层明确意图，具体实现方案留给架构阶段:
+No `clarification-brief.md` exists (Phase 0 triage established the
+request was Clear-to-Partial and went directly to Phase 2 Explore).
+Traceability between `exploration.md` and this document:
 
-1. **evaluation.md 三层子结构的精确嵌入方式**: R4 规定了三层嵌入 Findings/Results 的意图，但不规定具体的 markdown heading 层级（## vs ###）和子 section 命名
-2. **codebase-map.md 可选 section 和精确措辞**: R2 已定义必需顶层 section（Project Structure、Module Dependencies、Data Model、Code Style And Conventions、High-Risk Areas），但可选 section 的最终列表和精确措辞留给架构阶段
-3. **check-consistency.sh 新 invariant 的编号和分组**: R9 规定需要新增 invariant，但不指定编号分配
+| Exploration §9 Unit | Requirement | Acceptance Criterion |
+|---------------------|-------------|---------------------|
+| U1: `rm -rf spec/extensions/` | R1 | AC-1 |
+| U2: `spec/README.md` refs | R2 | AC-2 |
+| U3: `check-consistency.sh` dead code | R3, R4 | AC-3, AC-5 |
+| U4: `baton-evaluator` SKILL.md:210 | R5 | AC-4 |
+| (end-to-end sweep) | R6 | AC-5, AC-6 |
+| (architect-gated Q1) | R7 | AC-7 (conditional) |
+
+Exploration §8 risk 1 (regression guard gap) → R7/AC-7 as
+architect-gated option. Exploration §8 risk 2 (docs drift) →
+NG-1 with retrospective flag. Exploration §8 risk 3 (skill
+semantic shift) → R5 + assumption A5.

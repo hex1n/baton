@@ -17,7 +17,9 @@ user-invocable: true
 ## Role Contract
 
 - **Inputs**: `exploration.md`, `requirements.md`,
-  `lesson-index.md` (if exists; subsidiary context for risk assessment)
+  `knowledge/lessons.md` at repo root (subsidiary context for risk
+  assessment — cite specific entries in the Risk section when they
+  apply, or note "no relevant lessons" explicitly)
 - **Outputs**: implementation category, file-level impact, validation strategy,
   tradeoffs and residual risks
 - **Required artifact**: `architecture.md`
@@ -84,10 +86,17 @@ Sections (all required):
 ### 1. Read Inputs
 
 - Read `exploration.md` for entry points, call chain, write surface, risks.
+  Note whether §11 Historical Lessons cites anything — if the explorer
+  found relevant lessons, verify them against the architectural decisions
+  you are about to make.
 - Read `requirements.md` for requirements and acceptance criteria.
-- If `.harness/lesson-index.md` exists, read entries tagged with repo-specific
-  or harness lessons. Use as subsidiary cues when assessing risks and
-  tradeoffs — do not copy-paste into architecture.
+- Read `<repo-root>/knowledge/lessons.md` directly. Use as subsidiary
+  cues when assessing risks and tradeoffs — do not copy-paste lessons
+  into architecture. If no entries apply, note "no relevant lessons"
+  explicitly in the Risks section so the read step is visible.
+- **Do not** relay lessons into `verification.md` / `evaluation.md`
+  inputs: Verification Explorer and Evaluator operate in isolation and
+  must not inherit historical bias.
 - Identify any tensions between what the code does and what is required.
 
 ### 2. First-Principles Decomposition

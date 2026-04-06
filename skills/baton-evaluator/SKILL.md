@@ -207,7 +207,7 @@ Sections (all required):
 3. **Findings** — three-layer sub-structure:
    - Layer 1: Deterministic Checks — commands executed, results, hard failures
    - Layer 2: Diff Review — scope validation, architecture conformance,
-     bug patterns, security, test quality (extensions may replace this layer)
+     bug patterns, security, test quality
    - Layer 3: Requirements Verification — blockers, warnings, or no-findings
 4. **Verification Results** — acceptance criteria status with evidence
 5. **Verdict** — final go / no-go conclusion

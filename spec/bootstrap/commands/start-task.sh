@@ -234,15 +234,22 @@ if [[ "${#archive_files[@]}" -gt 0 ]]; then
 fi
 
 # -- lesson-index extraction from outgoing retrospective --
-lesson_index_path="$harness_dir/lesson-index.md"
+# Extracts level-2 "Repo-Specific Lessons" / "Harness Lessons" sections
+# (with optional "N. " numeric prefix) from the completed retrospective.md
+# and appends to $resolved_repo_root/knowledge/lessons.md.
+# Physical location decision: Gate 2 / D-1 (2026-04-05) — Category B,
+# knowledge/ at repo root, gitignored.
+lesson_index_path="$resolved_repo_root/knowledge/lessons.md"
 retro_path="$harness_dir/retrospective.md"
-max_lesson_tasks=10
+max_lesson_tasks=30
 
 if [[ "${#archive_files[@]}" -gt 0 && -f "$retro_path" ]]; then
-  # Extract Repo-Specific Lessons and Harness Lessons sections
+  # Extract Repo-Specific Lessons and Harness Lessons sections.
+  # Match level-2 headings with optional numeric prefix: "## Repo-Specific Lessons"
+  # or "## 4. Repo-Specific Lessons". Terminator is the next level-2 heading.
   extracted=""
   for section_pattern in 'Repo.Specific Lessons' 'Harness Lessons'; do
-    block="$(sed -n "/^###.*${section_pattern}/,/^###/{ /^###.*${section_pattern}/d; /^###/d; p; }" "$retro_path" 2>/dev/null || true)"
+    block="$(sed -n "/^## \([0-9][0-9]*\. \)\{0,1\}${section_pattern}/,/^## /{ /^## \([0-9][0-9]*\. \)\{0,1\}${section_pattern}/d; /^## /d; p; }" "$retro_path" 2>/dev/null || true)"
     if [[ -n "$block" ]]; then
       extracted="${extracted}${block}"$'\n'
     fi
@@ -255,7 +262,9 @@ if [[ "${#archive_files[@]}" -gt 0 && -f "$retro_path" ]]; then
     if [[ "$dry_run" == "true" ]]; then
       printf 'plan  %s (append lesson)\n' "$lesson_index_path"
     else
-      # Ensure lesson-index.md exists with the template header
+      # Ensure knowledge/ directory exists (gitignored, local-only)
+      mkdir -p "$(dirname "$lesson_index_path")"
+      # Ensure lessons.md exists with the template header
       if [[ ! -f "$lesson_index_path" ]]; then
         cp "$(human_template_path "lesson-index.template.md")" "$lesson_index_path"
       fi

@@ -14,7 +14,6 @@ It is intentionally split into:
 - `templates/`: repo-local artifacts
 - `adapters/`: CLI capability contract
 - `profiles/`: repo-type examples
-- `extensions/`: stack-specific stricter overlays
 - `bootstrap/`: adoption checklist for a new repo
 
 ## Design Principles
@@ -24,7 +23,7 @@ It is intentionally split into:
 3. Multi-agent execution is preferred, not required. Sequential fallback must remain valid.
 4. Verification is a first-class gate, not a post-implementation afterthought.
 5. `task-status.md` is the minimum control plane.
-6. Heavier stack-specific behavior should be added as an extension, not pushed into the portable core by default.
+6. Heavier stack-specific behavior should live in a profile, not pushed into the portable core by default.
 
 ## Minimum Closed Loop
 
@@ -133,27 +132,13 @@ spec/
     java-maven.yaml
     node-monorepo.yaml
     python-service.yaml
-  extensions/
-    java-backend-strict/
-      README.md
-      artifact-overlay.md
-      runtime-evaluator.md
-      state-overlay.md
-      v1-to-11-roadmap.md
-      templates/
-        codebase-map.template.md
-        decisions.template.md
-        api-contract.template.yaml
-        evaluation-report.template.md
-        escalation.template.md
-        runtime-signals.README.md
 ```
 
 ## How To Use
 
 1. Pick a repo profile closest to the target repository.
 2. Pick the adapter mapping closest to the target agent environment.
-3. If your stack needs a stricter execution model, add the matching extension overlay.
+3. If your stack needs a stricter execution model, add a profile overlay.
 4. Follow `bootstrap/init-harness.md`.
 5. Copy the templates into the target repo's `.harness/`, then materialize root
    governance entrypoints.
@@ -195,10 +180,6 @@ The recommended external-repo adoption model is:
 
 This replaces manual copy as the primary recommendation while keeping a
 copy-based fallback available.
-
-For Java/Spring business systems that need the heavier `11.md` style loop, start from:
-
-- [java-backend-strict/README.md](./extensions/java-backend-strict/README.md)
 
 ## Non-Goals
 

@@ -1,9 +1,11 @@
 ---
 name: baton-retrospective
 description: >
-  Fill the retrospective document after task completion. Trigger when the user
-  says "write retrospective", "task complete", "close task", or "post-mortem".
-  Reads all task artifacts and produces retrospective.md.
+  Close the task: write `retrospective.md` AND feed `knowledge/lessons.md`.
+  Reads all task artifacts, records non-obvious lessons in §4/§5 that the
+  next `start-task.sh` run will extract into the cross-task lesson index.
+  Trigger when the user says "write retrospective", "task complete",
+  "close task", or "post-mortem".
 user-invocable: true
 ---
 
@@ -13,6 +15,10 @@ user-invocable: true
 
 - **Inputs**: all `.harness/` artifacts from the completed task
 - **Outputs**: `.harness/retrospective.md`, updated `task-status.md`
+- **Downstream consumer**: `spec/bootstrap/commands/start-task.sh` extracts
+  `## 4. Repo-Specific Lessons` and `## 5. Harness Lessons` into
+  `<repo-root>/knowledge/lessons.md` when the next task starts. The heading
+  format is a machine-parseable contract — do not rename or re-number.
 
 ## Artifact Language Policy
 
@@ -23,138 +29,80 @@ Do not localize `task-status.md`.
 
 1. Read all artifacts: `exploration.md`, `requirements.md`, `architecture.md`,
    `verification.md`, `evaluation.md`, `task-status.md`,
-   `clarification-brief.md` (if exists), and `escalation.md`
-   (if exists).
+   `clarification-brief.md` (if exists), and `escalation.md` (if exists).
 
-2. Extract metrics from the artifacts (see Metrics section below).
+2. Write `.harness/retrospective.md` covering exactly these 6 sections, in
+   this order (matches `spec/templates/retrospective.template.md`):
 
-3. Write `.harness/retrospective.md` covering these dimensions:
-
-   ### 1. Metrics
-   Quantitative data extracted from the task run. These accumulate across
-   tasks to reveal systemic patterns.
+   ### 1. Outcome
+   How the task closed: completed / blocked / deferred. Name the main
+   blocker (if any) and the human decision that resolved it.
 
    ### 2. What Worked
    Which gates, artifacts, or process steps actually prevented a problem?
    Be specific — "Gate 3 caught a missing test fixture before Generator began"
    is useful; "the process worked well" is not.
 
-   ### 3. What Failed or Was Skipped
+   ### 3. What Failed
    Which steps were bypassed, produced low-quality output, or caused rework?
    Include repair loop rounds and what drove them. If the evaluator's repair
    loop memory classified findings, reference the classifications (FIXED,
    RECURRING, REGRESSED, NEW).
 
-   ### 4. What Should Be Standardized
-   Findings worth writing into `profile.local.yaml` or the adapter doc for
-   this repo — patterns that are repo-specific but should be default going
-   forward.
+   ### 4. Repo-Specific Lessons
+   Record only **non-obvious** lessons: something the task actually got
+   burned on + likely to re-bite a future similar task + not generic process
+   advice. Leave empty if nothing non-obvious occurred. `start-task.sh`
+   extracts this section into `knowledge/lessons.md` on next task start —
+   low-signal bullets will pollute future explorer runs.
 
-   ### 5. Repo-Specific Lessons
-   Discoveries that only apply to this repository (toolchain quirks,
-   undocumented constraints, risky files).
+   ### 5. Harness Lessons
+   Same non-obvious bar as §4, but scoped to the baton harness itself
+   (skill contracts, gates, state machine, templates). Empty is acceptable.
 
-   ### 6. Skill Patches
-   Concrete, actionable improvements to specific skills. Each patch must
-   reference the target skill and section:
+   ### 6. Standardization Candidates
+   Findings worth promoting into the protocol or profile: patterns that
+   should be default going forward, validator gaps worth filling, or
+   standardization candidates for adapter docs. One bullet per candidate.
 
-   ```markdown
-   - **Target**: baton-generator, Section "Checkpoint Validation"
-     **Finding**: Generator did not lint per batch; evaluator Round 1
-     spent entirely on lint fixes
-     **Suggested Rule**: Add lint to checkpoint validation commands
-   ```
-
-   Only suggest patches for issues that actually caused problems in this
-   task — not hypothetical improvements.
-
-   ### 7. Profile Patches
-   Configuration changes that can be directly applied to
-   `profile.local.yaml` based on this task's experience. Use only
-   keys from the standard schema — the generator and evaluator
-   skills read these on startup:
-
-   **Generator keys**: `generator.checkpoint_includes_lint`,
-   `generator.checkpoint_includes_typecheck`, `generator.max_batch_size`
-
-   **Evaluator keys**: `evaluator.layer1_includes`,
-   `evaluator.layer2_skip_patterns`
-
-   ```markdown
-   - `generator.checkpoint_includes_lint: true`
-   - `evaluator.layer1_includes: [build, test, lint, typecheck]`
-   ```
-
-   ### 8. Follow-up Tasks
-   Concrete next steps that emerged from this task but are out of scope:
-   - Tech debt to address
-   - Tests to add for uncovered edge cases
-   - Documentation to update
-   - Monitoring or alerting to add
-
-4. Update `task-status.md` → state `complete`.
-
-## Metrics
-
-Extract these metrics from the task artifacts:
-
-| Metric | Source | Purpose |
-|--------|--------|---------|
-| Clarification questions asked | `clarification-brief.md` interview log | Measures requirement ambiguity |
-| Risk level assessed | `task-status.md` | Calibrates risk assessment accuracy |
-| Exploration depth used | `exploration.md` | Validates risk-adaptive depth |
-| Requirements count (P0/P1/P2) | `requirements.md` | Tracks scope creep |
-| Architecture approaches considered | `architecture.md` | Measures design rigor |
-| Verification commands count | `verification.md` | Measures test coverage planning |
-| Eval rounds | `task-status.md` / `evaluation.md` | Measures implementation quality |
-| Repair finding classification | `evaluation.md` | FIXED/RECURRING/REGRESSED/NEW ratio |
-| Blocked count | `task-status.md` | Measures flow interruptions |
-| Phases skipped | `task-status.md` | Tracks process shortcuts |
-| Actual vs predicted write surface | `architecture.md` vs `git diff --stat` | Measures architecture accuracy |
-| Self-review failures caught | Generator notes | Measures pre-handoff quality |
+3. Update `task-status.md` → state `complete`.
 
 ## Output Template
 
 ```markdown
-# Retrospective — [Task ID]
+# Retrospective: [Task ID]
 
-**Completed**: [date]
-**Risk level**: [Low/Medium/High]
-**Eval rounds**: [N]
+## 1. Outcome
 
-## Metrics
+- Closed as: [completed / blocked / deferred]
+- Main blocker: [if any]
+- Human decision: [date — decision summary]
 
-| Metric | Value |
-|--------|-------|
-| Clarification questions | N |
-| Requirements (P0/P1/P2) | N/N/N |
-| Architecture approaches | N |
-| Verification commands | N |
-| Eval rounds | N |
-| Repair findings | N FIXED, N RECURRING, N REGRESSED, N NEW |
-| Blocked count | N |
-| Write surface accuracy | N predicted / N actual files |
+## 2. What Worked
 
-## What Worked
--
+- [specific gate/artifact/step that prevented a concrete problem]
 
-## What Failed or Was Skipped
--
+## 3. What Failed
 
-## What Should Be Standardized
--
+- [specific step that was bypassed, produced low quality, or caused rework]
 
-## Repo-Specific Lessons
--
+## 4. Repo-Specific Lessons
 
-## Skill Patches
-- **Target**: [skill], Section "[section]"
-  **Finding**: [what went wrong]
-  **Suggested Rule**: [concrete improvement]
+> Record only **non-obvious** lessons: something the task actually got
+> burned on + likely to re-bite a future similar task + not generic process
+> advice. Leave empty if nothing non-obvious occurred. `start-task.sh`
+> extracts this section into `knowledge/lessons.md` on next task start.
 
-## Profile Patches
-- `[config.key]: [value]`
+- [lesson]
 
-## Follow-up Tasks
-- [ ] [concrete next step]
+## 5. Harness Lessons
+
+> Same non-obvious bar as §4, but scoped to the baton harness itself.
+> Empty is acceptable — don't pad.
+
+- [lesson]
+
+## 6. Standardization Candidates
+
+- [candidate for protocol / profile / adapter doc]
 ```
