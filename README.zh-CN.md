@@ -24,7 +24,10 @@ v2/
 │   ├── dispatch/SKILL.md              入口 — 状态检测与路由
 │   ├── planner/SKILL.md               代码理解、需求澄清、方案设计
 │   ├── builder/SKILL.md               实现（分批编译策略）
-│   └── verifier/SKILL.md              独立验证（预检 + 构建后验证）
+│   └── verifier/
+│       ├── SKILL.md                   核心验证（预检 + Tier 1/2/3a）
+│       ├── module-crossmodel.md       跨模型审查（codex-plugin-cc）
+│       └── module-adversarial.md      对抗测试（安全/边界）
 ├── templates/
 │   ├── project-profile.template.md    项目级持久知识模板
 │   └── brief.template.md             任务级活文档模板
@@ -57,7 +60,7 @@ flowchart TD
 
     Verdict{结果}
     Verdict -->|"通过"| HumanNext
-    Verdict -->|"代码 bug<br/>(最多 3 次)"| Builder
+    Verdict -->|"代码 bug"| Builder
     Verdict -->|"设计问题"| Planner
     Verdict -->|"需求缺口"| HumanNext
 
@@ -115,7 +118,7 @@ flowchart LR
         H1 -->|已澄清| Any
     end
 
-    Inner -.->|"3 次未解决<br/>自动升级"| Middle
+    Inner -.->|"未解决<br/>自动升级"| Middle
     Middle -.->|"未解决<br/>自动升级"| Outer
 
     style Inner fill:#E8F4FD,stroke:#4A90D9
@@ -123,7 +126,7 @@ flowchart LR
     style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-同一问题经过 3 次 Builder-Verifier 循环仍未解决，自动升级到上一层。
+未解决的问题自动升级到上一层（阈值见 protocol.md § Rules）。
 
 ## Verifier 模式
 

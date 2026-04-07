@@ -9,7 +9,7 @@
 | Started | {YYYY-MM-DD} |
 | Round | {N} |
 | Verifier Mode | {A / B / C / C+} |
-| Execution Mode | {strict / compact} |
+| Execution Mode | {compact / standard / full} |
 
 ## Context
 
