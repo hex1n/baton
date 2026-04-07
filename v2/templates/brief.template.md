@@ -18,6 +18,13 @@
 - `{path/to/file}` L{N}-{M}: {what was found and why it matters}
 - `{path/to/other-file}` L{N}: {relevant pattern or code}
 
+### Exploration Boundary
+
+| Explored | Not explored | Reason |
+|----------|-------------|--------|
+| `{package/module}` | | |
+| | `{package/module}` | {not relevant / out of scope / ⚠️ GAP: might be affected} |
+
 ## Feature Decomposition
 
 > Break the full task into independent feature blocks. Assess clarity.
