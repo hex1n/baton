@@ -116,14 +116,22 @@ The protocol places human checkpoints at decision points (`protocol.md:153-161`)
 - **High-value use case:** Tasks where requirements are clear but implementation is tricky (complex algorithms, intricate integrations, performance-sensitive code)
 - **Risky use case:** Tasks where requirements need discovery and the human can't articulate them precisely upfront
 
-### Improvement Vectors
+### Improvements Implemented
 
-These are observations, not prescriptions.
+Based on this analysis, the following changes were made to the protocol and skills:
+
+| # | Risk Layer | Change | File |
+|---|-----------|--------|------|
+| 1 | L0 | Planner must declare exploration boundary (explored vs. skipped modules, with GAP flags) | `planner/SKILL.md` + `brief.template.md` |
+| 2 | L1 | Human approval gate explicitly directs attention to AC correctness | `dispatch/SKILL.md` |
+| 3 | L1 | Verifier pre-flight adds 4th challenge dimension: AC semantic cross-check against codebase behavior | `verifier/SKILL.md` |
+| 4 | L1 | Structural confidence triggers that fire mechanically (GAP markers, challenge counts, unconfirmed assumptions) | `protocol.md` |
+| 5 | L3 | Reclassification heuristic: if "code bug" fix touches >3 files, promote to design issue early | `verifier/SKILL.md` |
+| 6 | Adversarial | Input boundary + auth checks on any round with security-surface ACs, not just final round | `verifier/SKILL.md` |
+
+### Remaining Improvement Vectors
 
 | Area | Current state | Potential direction |
 |------|--------------|-------------------|
 | Clarification ceiling | Hard limit of 3 questions | Scale with task complexity (e.g., 3 + 1 per feature block) |
-| Same-model blind spot | Confidence Signals (self-reported) | Structured pre-flight checklist that forces specific checks rather than relying on model judgment |
-| AC correctness | Human approval (single gate) | Require human to map each AC back to their original requirement before approval |
-| Mode C independence | Honest disclosure | Define specific L3 checks that are more structured than "read the code and judge" |
-| Adversarial timing | Final round only | Lightweight security checklist per round for security-sensitive tasks |
+| Mode C independence | Honest disclosure + mandatory human checkpoint | Define specific L3 checks that are more structured than "read the code and judge" |

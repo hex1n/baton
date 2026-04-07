@@ -84,6 +84,16 @@ Based on task description:
 
 Record what you read in brief.md § Context. **Cite specific files and line numbers.** If you didn't read a file, don't make claims about it.
 
+```
+6. Declare exploration boundary in brief.md § Context:
+   - List the modules/packages you explored
+   - List adjacent modules you chose NOT to explore, with reason
+   - If the task touches cross-cutting concerns (auth, logging, config, DB schema),
+     confirm you checked the central implementation of each
+   - Flag as `⚠️ EXPLORATION GAP: {module} not examined — {reason}` if you
+     skipped an area that might be affected
+```
+
 **Step 3: Clarify requirements**
 
 Identify load-bearing questions — questions where different answers lead to different implementations.

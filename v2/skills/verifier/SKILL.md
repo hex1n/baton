@@ -110,6 +110,17 @@ built-in CRUD — no custom implementation needed.
 This reduces the implementation to 2 files."
 ```
 
+**d) AC semantic correctness**
+```
+"Cross-check each AC's expected outcome against observed codebase behavior:
+- Does the 'Then' clause match what similar operations return in this codebase?
+  (e.g., AC says 'return 201' but existing POST endpoints return 200)
+- Does the 'Given' precondition reflect actual system states?
+  (e.g., AC assumes a state the data model doesn't support)
+- Flag: 'AC-{N}.{X} outcome conflicts with {file}:L{N} —
+  existing behavior is {X}, AC says {Y}. Confirm intended.'"
+```
+
 **Challenge rules:**
 - Be specific. Cite file paths and line numbers.
 - Propose alternatives, don't just criticize.
@@ -136,7 +147,8 @@ Tier 2: {full / partial / unavailable}
 ### Plan Challenges
 1. [Consistency] {existing pattern in codebase conflicts with proposed approach, cite file + line}
 2. [Completeness] {missing scenario not covered by ACs}
-3. No other significant issues.
+3. [Correctness] {AC expected outcome conflicts with observed codebase behavior, cite file + line}
+4. No other significant issues.
 
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
@@ -250,9 +262,13 @@ If the project's test framework supports it, perform a targeted mutation spot-ch
 
 This is not full mutation testing — it is a quick sanity check on the most critical paths. Skip if the project has no easy way to make targeted changes (e.g., compiled binaries without source access).
 
-### Step 4: Tier 3b — Adversarial Testing (Final Round Only)
+### Step 4: Tier 3b — Adversarial Testing
 
-Only run on the last round of the task (when human is likely to say "done" next).
+**When to run:**
+- **Final round:** always run full suite (a + b + c + d)
+- **Any round where ACs touch auth, input parsing, or data mutation AND Mode A available:**
+  run (a) input boundaries + (b) auth attacks only
+- Verifier determines applicability from AC content, not a manual tag
 
 ```
 a) Input boundary attacks:
@@ -363,6 +379,12 @@ Requirement gap (→ Human):
   - Examples: missing pagination policy, unclear priority between features
 ```
 
+**Reclassification heuristic (2nd+ iteration):**
+If Builder's fix for a "code bug" touches >3 files or changes the approach,
+reclassify as "design issue" before burning the 3rd attempt.
+If the same finding appears in two consecutive evals with different wording,
+treat as same issue for escalation counting.
+
 ## Lightweight Pre-flight (Small Tasks)
 
 For tasks with ≤5 ACs and a single batch, full pre-flight format is overhead. Use lightweight mode:
@@ -387,7 +409,7 @@ Recommendation: Ready for implementation.
 2. **Pre-flight CAN read source code.** Pre-flight is plan review, not code review.
 3. **Baseline before building.** Always run tests on unmodified code first.
 4. **Degrade gracefully.** If Mode A isn't available, do Mode B/C. Don't fail — adapt.
-5. **Adversarial only on final round.** Don't waste time on security testing for intermediate rounds.
+5. **Adversarial: full suite on final round; input + auth subset on any round with security-surface ACs (Mode A only).** Skip full adversarial on intermediate rounds.
 6. **Be specific in findings.** "Data might be wrong" is useless. "threshold=0 passes validation but AC-1.1 says threshold > 0" is actionable.
 7. **Credit what works.** Don't only flag problems. The human needs to know what's solid too.
 8. **Max 5 pre-flight challenges.** Focus on highest impact. If the plan is good, say so.

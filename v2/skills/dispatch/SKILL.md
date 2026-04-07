@@ -41,8 +41,19 @@ project-profile.md  → exists? (project configured?)
 1. Read project-profile.md
 2. Invoke Planner → brief.md Round 1
 3. Invoke Verifier pre-flight
-4. Present brief.md + pre-flight summary to human:
-   → AskUserQuestion: "approve / revise / reject"
+4. Present brief.md + pre-flight summary to human. Frame around correctness:
+   → AskUserQuestion:
+     "Plan ready for review.
+
+     Pre-flight confirms ACs are testable and approach is consistent.
+     **But only you can confirm the ACs are correct:**
+     - Do the ACs match what you actually want built?
+     - Are there scenarios the ACs don't cover?
+     - Any AC where the expected outcome is wrong?
+
+     [See brief.md § Round N → Acceptance Criteria]
+
+     approve / revise / reject"
 5. Route based on answer:
    a. "approve" → invoke Builder
    b. "revise" → invoke Planner in Revision mode → re-run Verifier pre-flight → back to step 4

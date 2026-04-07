@@ -241,6 +241,12 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 - If both Planner and Verifier independently flag the same assumption as low-confidence → mandatory human review before proceeding
 - Dispatch detects low-confidence markers and adds them to AskUserQuestion options
 
+**Structural triggers (fire automatically, no AI judgment needed):**
+- Planner's § Exploration Boundary has any `⚠️ GAP` entry → Dispatch adds to AskUserQuestion
+- Verifier pre-flight found ≥2 [Correctness] or [Completeness] challenges → Dispatch flags to human
+- Any AC marked `[assumed — verify]` not yet confirmed → Dispatch blocks Builder start
+- Mode C verification → Dispatch enforces mandatory human code review checkpoint (not just advisory)
+
 ## Failure Recovery
 
 | Scenario | Response |
