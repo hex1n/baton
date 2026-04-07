@@ -118,13 +118,27 @@ Error format: {describe structure}
 
 > Optional. If configured, Mode C upgrades to C+ — production code review is delegated to
 > an external AI tool with different blind spots, elevating evidence from L3 to L2.5.
+>
+> Recommended: [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) — runs OpenAI Codex
+> inside Claude Code, providing `/codex:review` and `/codex:adversarial-review` commands.
 
 | Key | Value |
 |-----|-------|
-| Tool | {e.g., `claude-code-plugin codex`, `codex-cli`, or other external reviewer} |
-| Invocation | `{command to run external review, e.g., "codex review --files {changed_files}"}` |
-| Review scope | {what to ask it to check: correctness, style, security, architecture, or all} |
+| Plugin | `codex@openai-codex` (via `/plugin install codex@openai-codex`) |
+| Standard review | `/codex:review` — read-only review of uncommitted changes or branch diff |
+| Adversarial review | `/codex:adversarial-review` — challenges design choices and assumptions |
+| Rescue (optional) | `/codex:rescue` — delegate investigation and fixes to Codex |
 | Availability | ✅ / ❌ |
+
+**Setup:**
+```
+/plugin marketplace add openai/codex-plugin-cc
+/plugin install codex@openai-codex
+/reload-plugins
+/codex:setup
+```
+
+**Requirements:** Node.js ≥18.18, ChatGPT subscription or OpenAI API key.
 
 If not configured or unavailable, Verifier stays in Mode C (same-model L3 review).
 

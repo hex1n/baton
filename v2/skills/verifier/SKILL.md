@@ -266,25 +266,40 @@ This is not full mutation testing — it is a quick sanity check on the most cri
 
 **Skip if Mode A, B, or C (no external reviewer configured).**
 
-If project-profile.md § External Reviewer is configured and available:
+If project-profile.md § External Reviewer shows codex-plugin-cc is installed and available:
 
 ```
-1. Identify files changed by Builder (from git diff against round start)
-2. Run the external reviewer command from project-profile.md:
-   → Pass changed files + brief.md ACs as context
-   → Ask it to check: correctness, hidden side effects, AC alignment
-3. Record findings in eval.md:
-   → Source: "cross-model review (L2.5)" — not same-model judgment
+1. Run /codex:review --base {round-start-commit}
+   → Codex reviews all changes since the round started
+   → This is a read-only review — Codex does not modify code
+
+2. If this is the final round, also run:
+   /codex:adversarial-review --base {round-start-commit}
+   → Codex challenges design choices and assumptions
+   → Pass brief.md ACs as focus context for targeted pressure-testing
+
+3. Retrieve results:
+   → /codex:status to check completion
+   → /codex:result to get findings
+
+4. Record findings in eval.md:
+   → Source: "cross-model review via codex-plugin-cc (L2.5)"
    → Categorize findings same as Tier 3a (code bugs / design issues / requirement gaps)
-4. If external reviewer is unavailable (timeout, error):
+
+5. If Codex is unavailable (not installed, auth error, timeout):
    → Fall back to Mode C (same-model review)
    → Note in eval.md: "Cross-model review unavailable, fell back to L3"
 ```
 
 **Why this matters:** In Mode C, Verifier reads Builder's code — but both are the same model.
-Cross-model review introduces a structurally different reviewer with different blind spots,
-upgrading evidence from L3 (non-independent) to L2.5 (cross-model). Not as strong as L1
-(deterministic tests), but meaningfully more independent than self-review.
+Cross-model review introduces a structurally different reviewer (OpenAI Codex) with different
+training and blind spots, upgrading evidence from L3 (non-independent) to L2.5 (cross-model).
+Not as strong as L1 (deterministic tests), but meaningfully more independent than self-review.
+
+**Optional: `/codex:rescue`** — if Codex identifies a fixable issue, Verifier MAY use
+`/codex:rescue` to let Codex attempt the fix directly (runs in background). This is a
+cross-model alternative to routing back to Builder. Use only for small, isolated code bugs
+where Builder has already failed once on the same issue.
 
 ### Step 4: Tier 3b — Adversarial Testing
 
