@@ -54,21 +54,33 @@ project-profile.md  → exists? (project configured?)
      [See brief.md § Round N → Acceptance Criteria]
 
      approve / revise / reject"
-5. Route based on answer:
-   a. "approve" → invoke Builder
+5. Before routing, check structural triggers (see protocol.md § Confidence Signals):
+   - brief.md § Exploration Boundary has `⚠️ GAP` → append to AskUserQuestion:
+     "⚠️ Planner flagged exploration gaps: {list}. Proceed anyway?"
+   - eval.md has ≥2 [Correctness] or [Completeness] challenges → append:
+     "⚠️ Pre-flight raised {N} correctness/completeness concerns. Review before approving."
+   - Any AC marked `[assumed — verify]` → append:
+     "⚠️ Unconfirmed assumptions: {list}. Confirm or revise?"
+   - If any trigger fires and human still approves, proceed. Triggers inform, not block
+     (except: `[assumed — verify]` blocks Builder until human explicitly confirms or Planner removes the tag)
+6. Route based on answer:
+   a. "approve" (and no blocking triggers) → invoke Builder
    b. "revise" → invoke Planner in Revision mode → re-run Verifier pre-flight → back to step 4
    c. "reject" → AskUserQuestion: "Describe a different direction, or abort?"
       → new direction: invoke Planner with new input → back to step 3
       → abort: archive .harness/*, task ends
-6. After Builder (on approval path) → invoke Verifier verification
-7. Handle Verifier result:
-   - All pass → go to step 8
+7. After Builder (on approval path) → invoke Verifier verification
+8. Handle Verifier result:
+   - All pass → go to step 9
    - Code bugs → route back to Builder (up to 3x per Rule 5)
-   - Design issues → route to Planner revision, then back to step 5a
-   - Requirement gaps → go to step 8 with flag
-8. Present eval.md summary to human:
+   - Design issues → route to Planner revision, then back to step 6a
+   - Requirement gaps → go to step 9 with flag
+9. If eval.md states Mode C was used, enforce human code review checkpoint:
+   → AskUserQuestion: "Verifier ran in Mode C (no runtime). Please review the
+     code changes before proceeding. continue / add requirement / done"
+   Otherwise, present eval.md summary to human:
    → AskUserQuestion: "continue / add requirement / done"
-9. Route based on answer:
+10. Route based on answer:
    a. "continue":
       → Archive current eval: cp .harness/eval.md → .harness/eval-round-{N}.md
       → Planner compresses completed round in brief.md

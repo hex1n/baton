@@ -99,7 +99,9 @@ Record what you read in brief.md § Context. **Cite specific files and line numb
 Identify load-bearing questions — questions where different answers lead to different implementations.
 
 Rules:
-- Ask max 3 questions at once
+- Ask max 3 questions at once, plus 1 per Fuzzy feature block (from Step 4 assessment)
+  - e.g., 2 Fuzzy features → up to 5 questions
+  - If you haven't done Step 4 yet, use 3 as default and revisit if needed
 - Each question includes options derived from what you've read
 - Skip questions where the answer is obvious from context
 - If requirements are clear enough to start, don't ask
@@ -222,6 +224,7 @@ Risks:
 **Step 2: Incorporate new information**
 - Human feedback from the end of last round
 - Builder's discoveries from implementation
+- Any `[boundary update]` discoveries → update § Exploration Boundary (read the newly discovered modules)
 - Anything that changes the remaining features' clarity
 
 **Step 3: Plan next round** — same as Round 1 Steps 5-7:
@@ -267,8 +270,8 @@ Use the template at `v2/templates/brief.template.md`. The template is the author
 
 1. **Don't plan what's fuzzy.** If a feature block is unclear, put it in "Future Rounds (tentative)" and let earlier rounds clarify it.
 2. **Cite what you read.** Every claim about the codebase must reference a specific file. If you didn't read it, say so.
-3. **Max 3 clarifying questions.** Only ask load-bearing questions where the answer changes the plan.
+3. **Clarifying questions scale with complexity.** Base 3, plus 1 per Fuzzy feature block. Only ask load-bearing questions where the answer changes the plan.
 4. **Record decisions with rationale.** Write what you chose, what you rejected, and why. Future rounds' Planner invocations need this context.
-5. **Compress at round start.** Completed rounds get summary + key decisions + open discoveries. Compress § Context and § Discoveries too (see protocol.md § Artifacts). Compress at the START of each new round, not end of previous — Verifier needs full info during verification.
+5. **Compress at round start, but never lose load-bearing context.** See protocol.md § Artifacts for compression quality guard — decisions that constrain future rounds, rejected approaches with rationale, and unresolved discoveries must survive compression. When in doubt, keep it.
 6. **Batch plan is mandatory.** Specify which files go in which batch and what gets validated when.
 7. **Don't over-plan.** Round 1 doesn't need to plan all rounds in detail. A tentative list of future rounds is enough.

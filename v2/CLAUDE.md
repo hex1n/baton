@@ -45,3 +45,4 @@ Skills live in `v2/skills/{name}/SKILL.md`.
 3. Human approval required before Builder starts each round
 4. Max 3 Builder-Verifier iterations per round before escalation
 5. Each role starts with fresh context; files carry state, not conversation
+6. Round scope lock: after approval, ACs are frozen; new requirements go to next round

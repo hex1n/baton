@@ -108,6 +108,12 @@ Independently verifies implementation quality. Challenges plan quality before bu
   - § Context: only keep entries relevant to current/future rounds
   - § Feature Decomposition: completed features marked ✅, descriptions collapsed
   - § Discoveries: items absorbed into design marked [absorbed], only open items remain
+- **Compression quality guard — never compress away:**
+  - Decisions that constrain future rounds (e.g., "chose sync over async" limits Round 3 options)
+  - Unresolved discoveries (even if they seem minor — future rounds may re-evaluate)
+  - Exploration boundary GAP entries (they carry forward until explicitly addressed)
+  - The reason an approach was rejected (not just which was chosen)
+  - If unsure whether to keep or compress an item, keep it
 
 ### .harness/eval.md — round level, archived per round
 
@@ -271,3 +277,4 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 9. In strict mode, each role starts with a fresh context; files carry state, not conversation. In compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
 10. If an assumption encoded by a harness component is invalidated, remove the component
 11. Dispatch determines execution mode (strict/compact) at task start; human can override
+12. Round scope lock: after human approves a round's plan, its ACs are frozen. New requirements go to the next round (see Dispatch § Add Requirement Flow). Builder and Verifier work against the approved ACs, not a moving target

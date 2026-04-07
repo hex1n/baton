@@ -135,6 +135,15 @@ Examples:
 
 Just note it in brief.md § Discoveries and keep going. Planner will read it in future rounds.
 
+**When you discover a module that should have been in the exploration boundary:**
+
+If you encounter a module that affects the current task but isn't listed in brief.md § Exploration Boundary,
+add it to § Discoveries with the tag `[boundary update]`:
+```
+Found: `{module}` — affects {what}. Was not in Planner's exploration boundary.
+[boundary update] Planner should add to § Exploration Boundary in next round.
+```
+
 ## Handling Verifier Feedback
 
 When invoked with Verifier feedback:
