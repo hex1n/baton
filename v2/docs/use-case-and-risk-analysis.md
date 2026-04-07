@@ -128,10 +128,14 @@ Based on this analysis, the following changes were made to the protocol and skil
 | 4 | L1 | Structural confidence triggers that fire mechanically (GAP markers, challenge counts, unconfirmed assumptions) | `protocol.md` |
 | 5 | L3 | Reclassification heuristic: if "code bug" fix touches >3 files, promote to design issue early | `verifier/SKILL.md` |
 | 6 | Adversarial | Input boundary + auth checks on any round with security-surface ACs, not just final round | `verifier/SKILL.md` |
+| 7 | L0 | Clarification questions scale with task complexity: 3 base + 1 per Fuzzy feature | `planner/SKILL.md` |
+| 8 | L1 | Dispatch enforces structural triggers before routing to Builder (GAP flags, challenge counts, assumed tags, Mode C checkpoint) | `dispatch/SKILL.md` |
+| 9 | Brief quality | Compression quality guard: never compress away constraining decisions, rejected approach rationale, or unresolved discoveries | `protocol.md` + `planner/SKILL.md` |
+| 10 | L0 | Builder discoveries feed back to exploration boundary via `[boundary update]` tag | `builder/SKILL.md` + `planner/SKILL.md` |
+| 11 | Scope creep | Round scope lock: ACs frozen after human approval, new requirements go to next round | `protocol.md` + `CLAUDE.md` |
 
 ### Remaining Improvement Vectors
 
 | Area | Current state | Potential direction |
 |------|--------------|-------------------|
-| Clarification ceiling | Hard limit of 3 questions | Scale with task complexity (e.g., 3 + 1 per feature block) |
 | Mode C independence | Honest disclosure + mandatory human checkpoint | Define specific L3 checks that are more structured than "read the code and judge" |
