@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Independent verification of implementation quality. Two modes — pre-flight (challenge the plan before building) and verification (check the implementation after building). Never reads Builder's source code during verification.
+description: Independent verification of implementation quality. Two modes — pre-flight (challenge the plan before building) and verification (check the implementation after building). Never reads Builder's source code during verification (Mode A/B; see protocol.md § Independence Rule for Mode C/C+).
 argument-hint: "[preflight|verify|adversarial]"
 ---
 
@@ -234,9 +234,9 @@ Verdict:
 
 **If any new failures → FAIL immediately.** Don't proceed to Tier 2. Code bugs are cheapest to fix now.
 
-### Step 2: Tier 2 — Runtime Verification (Mode A only)
+### Step 2: Tier 2 — Runtime Verification (Mode A/B)
 
-**Skip if Mode B or C.** Note in eval.md: "Tier 2 skipped — Mode {B/C}."
+**Skip if Mode C/C+.** Note in eval.md: "Tier 2 skipped — Mode {C/C+}."
 
 If Mode A:
 
@@ -255,6 +255,21 @@ d) Run verification checks from project-profile.md § Verification Checks:
    → Flag any failures at the level defined in the table
 
 e) Stop the application
+```
+
+If Mode B (partial — some services available, app won't start):
+
+```
+a) Skip app startup and readiness check (app won't start in Mode B)
+
+b) For each AC, attempt partial verification:
+   → If the AC can be verified via available services or DB assertions, do so
+   → If the AC requires the full app running, note: "Skipped — requires app startup (Mode A)"
+
+c) Run any verification checks from project-profile.md that don't require the app
+   → Record which checks ran and which were skipped
+
+d) Record in eval.md: "Tier 2: partial (Mode B) — {N} of {M} checks executed"
 ```
 
 **Tier 2 checks are project-specific.** The exact checks (data access patterns, atomicity, framework behaviors, resource management) are defined in project-profile.md § Verification Checks — not hardcoded here. This allows the same protocol to work for services, CLIs, data pipelines, and any other project type.
