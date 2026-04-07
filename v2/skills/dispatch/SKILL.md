@@ -61,6 +61,8 @@ project-profile.md  → exists? (project configured?)
      "⚠️ Pre-flight raised {N} correctness/completeness concerns. Review before approving."
    - Any AC marked `[assumed — verify]` → append:
      "⚠️ Unconfirmed assumptions: {list}. Confirm or revise?"
+   - eval.md has [cross-model] findings from codex-plugin-cc → append:
+     "⚠️ Cross-model review (Codex) raised additional concerns: {summary}."
    - If any trigger fires and human still approves, proceed. Triggers inform, not block
      (except: `[assumed — verify]` blocks Builder until human explicitly confirms or Planner removes the tag)
 6. Route based on answer:
