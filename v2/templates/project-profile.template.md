@@ -112,7 +112,21 @@ Error format: {describe structure}
 | Tests | ✅ / ❌ | |
 | App startup | ✅ / ❌ | {reason if no} |
 | DB / services at runtime | ✅ / ❌ | {details or reason if no} |
-| **Verifier Mode** | **A / B / C** | {set after first pre-flight} |
+| **Verifier Mode** | **A / B / C / C+** | {set after first pre-flight} |
+
+## External Reviewer (Mode C+ only)
+
+> Optional. If configured, Mode C upgrades to C+ — production code review is delegated to
+> an external AI tool with different blind spots, elevating evidence from L3 to L2.5.
+
+| Key | Value |
+|-----|-------|
+| Tool | {e.g., `claude-code-plugin codex`, `codex-cli`, or other external reviewer} |
+| Invocation | `{command to run external review, e.g., "codex review --files {changed_files}"}` |
+| Review scope | {what to ask it to check: correctness, style, security, architecture, or all} |
+| Availability | ✅ / ❌ |
+
+If not configured or unavailable, Verifier stays in Mode C (same-model L3 review).
 
 ## External Dependencies
 

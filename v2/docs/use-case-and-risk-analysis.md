@@ -134,8 +134,8 @@ Based on this analysis, the following changes were made to the protocol and skil
 | 10 | L0 | Builder discoveries feed back to exploration boundary via `[boundary update]` tag | `builder/SKILL.md` + `planner/SKILL.md` |
 | 11 | Scope creep | Round scope lock: ACs frozen after human approval, new requirements go to next round | `protocol.md` + `CLAUDE.md` |
 
+| 12 | Mode C independence | Mode C+ with cross-model code review: external AI reviewer (Codex, Claude Code plugin) elevates evidence from L3 to L2.5, breaking "same model evaluates same model" | `protocol.md` + `verifier/SKILL.md` + `project-profile.template.md` |
+
 ### Remaining Improvement Vectors
 
-| Area | Current state | Potential direction |
-|------|--------------|-------------------|
-| Mode C independence | Honest disclosure + mandatory human checkpoint | Define specific L3 checks that are more structured than "read the code and judge" |
+All identified risk layers now have protocol-level defenses. No remaining improvement vectors at this time.

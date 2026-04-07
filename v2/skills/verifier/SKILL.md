@@ -262,6 +262,30 @@ If the project's test framework supports it, perform a targeted mutation spot-ch
 
 This is not full mutation testing — it is a quick sanity check on the most critical paths. Skip if the project has no easy way to make targeted changes (e.g., compiled binaries without source access).
 
+### Step 3.5: Cross-model Code Review (Mode C+ only)
+
+**Skip if Mode A, B, or C (no external reviewer configured).**
+
+If project-profile.md § External Reviewer is configured and available:
+
+```
+1. Identify files changed by Builder (from git diff against round start)
+2. Run the external reviewer command from project-profile.md:
+   → Pass changed files + brief.md ACs as context
+   → Ask it to check: correctness, hidden side effects, AC alignment
+3. Record findings in eval.md:
+   → Source: "cross-model review (L2.5)" — not same-model judgment
+   → Categorize findings same as Tier 3a (code bugs / design issues / requirement gaps)
+4. If external reviewer is unavailable (timeout, error):
+   → Fall back to Mode C (same-model review)
+   → Note in eval.md: "Cross-model review unavailable, fell back to L3"
+```
+
+**Why this matters:** In Mode C, Verifier reads Builder's code — but both are the same model.
+Cross-model review introduces a structurally different reviewer with different blind spots,
+upgrading evidence from L3 (non-independent) to L2.5 (cross-model). Not as strong as L1
+(deterministic tests), but meaningfully more independent than self-review.
+
 ### Step 4: Tier 3b — Adversarial Testing
 
 **When to run:**
@@ -328,6 +352,12 @@ d) Resource exhaustion:
 |----|------|--------|--------|-------------|
 | AC-{N}.1 | {test identifier} | ✅ | ✅ | ✅ |
 | AC-{N}.2 | {test identifier} | ✅ | ✅ | ⚠️ weak assertion |
+
+### Cross-model Review (Mode C+ only)
+- Reviewer: {tool name}
+- Evidence level: L2.5 (cross-model)
+- Findings: {count}
+  {or "N/A — Mode A/B" or "Unavailable, fell back to L3"}
 
 ### Tier 3b: Adversarial (if final round)
 - P1: {critical security / data integrity issues}
@@ -405,7 +435,7 @@ Recommendation: Ready for implementation.
 
 ## Rules
 
-1. **Prioritize independent evidence (L1 > L2 > L3).** In Mode A/B: do not read production code — use test results and runtime behavior. In Mode C: production code review is permitted but eval.md must declare "⚠️ Independence: degraded." Read tests (L2) to check quality in all modes.
+1. **Prioritize independent evidence (L1 > L2 > L2.5 > L3).** In Mode A/B: do not read production code — use test results and runtime behavior. In Mode C+: delegate code review to external reviewer (L2.5). In Mode C: same-model code review is permitted but eval.md must declare "⚠️ Independence: degraded." Read tests (L2) to check quality in all modes.
 2. **Pre-flight CAN read source code.** Pre-flight is plan review, not code review.
 3. **Baseline before building.** Always run tests on unmodified code first.
 4. **Degrade gracefully.** If Mode A isn't available, do Mode B/C. Don't fail — adapt.
