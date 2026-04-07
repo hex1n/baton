@@ -127,6 +127,33 @@ This reduces the implementation to 2 files."
 - Max 5 challenges per pre-flight. Focus on the most impactful.
 - If the plan is solid, say so: "No significant issues found. Plan is ready for implementation."
 
+### Step 5.5: Cross-model Plan Challenge (Mode C+, strict mode only)
+
+**Skip if compact mode, Mode A/B, or codex-plugin-cc not installed.**
+
+For complex tasks in strict mode, the same-model blind spot applies to pre-flight too —
+Planner and Verifier are the same model. Cross-model challenge breaks this symmetry.
+
+```
+1. Run /codex:adversarial-review on brief.md
+   → Focus: "Challenge the acceptance criteria and approach.
+     Are there hidden assumptions? Missing edge cases?
+     Does the approach conflict with the codebase's actual patterns?"
+
+2. Retrieve results via /codex:result
+
+3. Merge Codex's challenges with Verifier's own (Step 5) challenges:
+   → Tag Codex findings as [cross-model] in eval.md
+   → Codex findings do NOT count toward the 5-challenge limit
+     (they come from a different perspective)
+   → Deduplicate: if Codex raises the same issue as Verifier,
+     keep Verifier's version (it has file:line citations)
+```
+
+**Why pre-flight, not just verification:** If the brief is wrong, everything downstream
+is wrong. Catching a flawed AC before Builder starts saves an entire round of wasted work.
+This is the highest-leverage point for cross-model review.
+
 ### Step 6: Output Pre-flight Section in eval.md
 
 ```markdown
@@ -149,6 +176,11 @@ Tier 2: {full / partial / unavailable}
 2. [Completeness] {missing scenario not covered by ACs}
 3. [Correctness] {AC expected outcome conflicts with observed codebase behavior, cite file + line}
 4. No other significant issues.
+
+### Cross-model Plan Challenge (Mode C+ only)
+- Source: codex-plugin-cc `/codex:adversarial-review` (L2.5)
+- [cross-model] {finding from Codex that Verifier did not independently identify}
+- {or "N/A — Mode A/B" or "Not available" or "No additional findings beyond Verifier's own"}
 
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
