@@ -32,7 +32,8 @@ v2/
 │   ├── project-profile.template.md    Project-level persistent knowledge
 │   └── brief.template.md             Per-task living document
 └── tools/
-    └── archive-round.sh              Archive completed rounds
+    ├── archive-round.sh              Archive completed rounds
+    └── check-consistency.sh          Verify protocol-to-downstream sync
 ```
 
 ## Roles

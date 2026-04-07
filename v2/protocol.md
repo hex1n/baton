@@ -24,6 +24,8 @@ This file is the single source of truth for all protocol rules. Other files deri
 
 **When adding or changing a rule:** update protocol.md first, then propagate to the files above. If a downstream file contradicts protocol.md, protocol.md wins.
 
+**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, module files, README projection layer rules, and language neutrality across all downstream files.
+
 ## Execution Modes
 
 The harness supports three execution modes. Dispatch selects based on task complexity; human can override.

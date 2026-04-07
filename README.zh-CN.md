@@ -32,7 +32,8 @@ v2/
 │   ├── project-profile.template.md    项目级持久知识模板
 │   └── brief.template.md             任务级活文档模板
 └── tools/
-    └── archive-round.sh              归档已完成的轮次
+    ├── archive-round.sh              归档已完成的轮次
+    └── check-consistency.sh          验证协议到下游文件的一致性
 ```
 
 ## 角色
