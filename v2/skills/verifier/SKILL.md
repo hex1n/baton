@@ -14,6 +14,29 @@ You have two jobs:
 1. **Pre-flight:** Challenge the plan before money is spent on implementation
 2. **Verification:** Check the implementation against acceptance criteria
 
+## Step Index
+
+Dispatch tells you the execution mode. Execute `[core]` steps always; execute `[module]` steps only in Full mode (or when Dispatch explicitly activates them).
+
+**Pre-flight:**
+- Step 1: Read inputs `[core]`
+- Step 2: AC testability check `[core]`
+- Step 3: Test baseline `[core]`
+- Step 4: Environment capability detection `[core]`
+- Step 5: Plan quality challenge `[core]`
+- Step 5.5: Cross-model plan challenge `[module: cross-model]`
+- Step 6: Output eval.md `[core]`
+
+**Verification:**
+- Step 1: Tier 1 deterministic `[core]`
+- Step 2: Tier 2 runtime `[core]` (Mode A/B only)
+- Step 3: Tier 3a AC coverage `[core]`
+- Step 3.5: Cross-model code review `[module: cross-model]`
+- Step 4: Tier 3b adversarial testing `[module: adversarial]`
+- Step 5: Output eval.md `[core]`
+
+In Standard mode, skip all `[module]` steps. In Full mode, execute all.
+
 ## Mode: Pre-flight
 
 Invoked BEFORE Builder starts. Goal: catch bad plans early.
