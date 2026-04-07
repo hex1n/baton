@@ -142,13 +142,28 @@ Planner and Verifier are the same model. Cross-model challenge breaks this symme
 
 2. Retrieve results via /codex:result
 
-3. Merge Codex's challenges with Verifier's own (Step 5) challenges:
-   → Tag Codex findings as [cross-model] in eval.md
-   → Codex findings do NOT count toward the 5-challenge limit
-     (they come from a different perspective)
+3. Cross-examine each Codex finding (Verifier evaluates Codex's output):
+   For each finding Codex raised:
+   a. Can you verify it? Read the relevant source files, check if Codex's
+      claim is factually accurate against the actual codebase.
+   b. Classify:
+      → ✅ Confirmed: Codex is right, Verifier missed this. Add to challenges
+        with file:line evidence. Tag [cross-model, confirmed].
+      → ⚠️ Plausible: Codex may be right but Verifier can't verify
+        (e.g., domain knowledge gap). Surface to human. Tag [cross-model, unverified].
+      → ❌ Rejected: Codex is wrong (e.g., cites behavior that doesn't match code).
+        Note rejection reason briefly. Do NOT include in challenges.
+
+4. Merge confirmed/plausible findings with Verifier's own (Step 5) challenges:
+   → Cross-model findings do NOT count toward the 5-challenge limit
    → Deduplicate: if Codex raises the same issue as Verifier,
      keep Verifier's version (it has file:line citations)
 ```
+
+**The cross-examination is the key step.** Without it, Codex findings are just another
+model's opinion. With it, each finding is either grounded in code evidence (confirmed),
+flagged for human judgment (plausible), or eliminated (rejected). This produces higher-quality
+signal than either model alone.
 
 **Why pre-flight, not just verification:** If the brief is wrong, everything downstream
 is wrong. Catching a flawed AC before Builder starts saves an entire round of wasted work.
@@ -179,8 +194,10 @@ Tier 2: {full / partial / unavailable}
 
 ### Cross-model Plan Challenge (Mode C+ only)
 - Source: codex-plugin-cc `/codex:adversarial-review` (L2.5)
-- [cross-model] {finding from Codex that Verifier did not independently identify}
-- {or "N/A — Mode A/B" or "Not available" or "No additional findings beyond Verifier's own"}
+- Codex raised: {N} findings → Verifier cross-examined → {confirmed} ✅ / {plausible} ⚠️ / {rejected} ❌
+- [cross-model, confirmed] {finding with Verifier's file:line evidence}
+- [cross-model, unverified] {finding Verifier couldn't verify — needs human judgment}
+- {or "N/A — Mode A/B" or "Not available" or "No additional findings"}
 
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
@@ -314,9 +331,18 @@ If project-profile.md § External Reviewer shows codex-plugin-cc is installed an
    → /codex:status to check completion
    → /codex:result to get findings
 
-4. Record findings in eval.md:
-   → Source: "cross-model review via codex-plugin-cc (L2.5)"
-   → Categorize findings same as Tier 3a (code bugs / design issues / requirement gaps)
+4. Cross-examine each Codex finding (same process as Step 5.5):
+   For each finding:
+   a. Verify against test results (Tier 1) and AC coverage (Tier 3a) —
+      does the finding align with what you've already observed?
+   b. Classify:
+      → ✅ Confirmed: Codex found something real that Verifier's own checks missed.
+        Tag [cross-model, confirmed]. Add to § Findings with evidence.
+      → ⚠️ Plausible: can't verify without reading production code (which Verifier
+        avoids in Mode A/B). Surface to human in § Recommend you review.
+        Tag [cross-model, unverified].
+      → ❌ Rejected: contradicts Tier 1 evidence (e.g., Codex says test fails but
+        it actually passes). Note briefly. Do NOT include in findings.
 
 5. If Codex is unavailable (not installed, auth error, timeout):
    → Fall back to Mode C (same-model review)
@@ -401,9 +427,11 @@ d) Resource exhaustion:
 | AC-{N}.2 | {test identifier} | ✅ | ✅ | ⚠️ weak assertion |
 
 ### Cross-model Review (Mode C+ only)
-- Reviewer: {tool name}
-- Evidence level: L2.5 (cross-model)
-- Findings: {count}
+- Reviewer: codex-plugin-cc
+- Evidence level: L2.5 (cross-model, cross-examined by Verifier)
+- Codex raised: {N} findings → Verifier cross-examined → {confirmed} ✅ / {plausible} ⚠️ / {rejected} ❌
+- [cross-model, confirmed] {finding with Verifier's corroborating evidence}
+- [cross-model, unverified] {finding needing human review}
   {or "N/A — Mode A/B" or "Unavailable, fell back to L3"}
 
 ### Tier 3b: Adversarial (if final round)
