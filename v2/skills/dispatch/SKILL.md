@@ -147,13 +147,21 @@ Always:
 How "invoke" works depends on execution mode:
 
 ```
-Standard / Full mode:
-  "Invoke Planner" → spawn Agent tool with Planner's SKILL.md as instructions
-  "Invoke Builder" → spawn Agent tool with Builder's SKILL.md as instructions
-  "Invoke Verifier" → spawn Agent tool with Verifier's SKILL.md as instructions
-    → Pass "execution mode: standard" or "execution mode: full" in arguments
-    → Verifier uses the Step Index to decide which [core]/[module] steps to run
+Standard mode:
+  "Invoke Planner" → spawn Agent with Planner's SKILL.md
+  "Invoke Builder" → spawn Agent with Builder's SKILL.md
+  "Invoke Verifier" → spawn Agent with Verifier's SKILL.md ONLY
+    → Tell Verifier: "execution mode: standard"
+    → Verifier reads ~250 lines (core only), no module files
   Each agent starts fresh — pass task context via arguments
+
+Full mode:
+  Same as Standard, but Verifier also reads module files:
+  "Invoke Verifier" → spawn Agent with:
+    → v2/skills/verifier/SKILL.md (core)
+    → v2/skills/verifier/module-crossmodel.md (if Mode C+ / codex-plugin-cc available)
+    → v2/skills/verifier/module-adversarial.md (if final round or security-surface ACs)
+    → Tell Verifier: "execution mode: full, modules: [crossmodel, adversarial]"
 
 Compact mode:
   Planner + Builder are merged into one inline execution:
