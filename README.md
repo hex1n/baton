@@ -1,140 +1,141 @@
-# Baton Harness
+# Baton
 
-A portable AI coding agent collaboration protocol with a Claude Code reference implementation.
+A lightweight harness for AI-assisted software development. Three roles, three artifacts, round-based progressive elaboration.
 
-Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps).
+Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Generator-Evaluator GAN pattern).
+
+## Why
+
+AI coding agents face three core problems:
+
+1. **Self-evaluation leniency** — AI cannot honestly evaluate its own work
+2. **Context loss over long tasks** — conversation history degrades over time
+3. **Requirements emerge through building** — upfront specs are always incomplete
+
+Baton addresses each with a specific mechanism: independent verification, file-based communication, and round-based progressive elaboration.
 
 ## Structure
 
 ```
-spec/              Portable harness protocol (tool-agnostic)
-.claude/skills/    Claude Code role skills (reference implementation)
-CLAUDE.md          Root governance entrypoint for Claude Code style hosts
-AGENTS.md          Root governance entrypoint for Codex / Cursor style hosts
+v2/
+├── protocol.md                        Full protocol spec
+├── CLAUDE.md                          Quick reference
+├── skills/
+│   ├── dispatch/SKILL.md              Entry point — state detection & routing
+│   ├── planner/SKILL.md               Codebase understanding, requirements, design
+│   ├── builder/SKILL.md               Implementation with batch compile strategy
+│   └── verifier/SKILL.md              Independent verification (pre-flight + post-build)
+├── templates/
+│   ├── project-profile.template.md    Project-level persistent knowledge
+│   └── brief.template.md             Per-task living document
+└── tools/
+    └── archive-round.sh              Archive completed rounds
 ```
 
-## Protocol
+## Roles
 
-The protocol defines a closed loop for AI-assisted coding tasks:
+| Role | Reads | Writes | Key rule |
+|------|-------|--------|----------|
+| **Planner** | project-profile.md, brief.md, source code | brief.md (ACs, approach, batch plan) | Max 3 clarifying questions |
+| **Builder** | project-profile.md, brief.md (current round) | Source code, tests, brief.md § Discoveries | Every AC gets a test |
+| **Verifier** | project-profile.md, brief.md (ACs), test results | eval.md | Never reads Builder's source code |
 
-Happy path:
+**Dispatch** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
-**Explorer** → **Specifier** → **Architect** → human approval → **Verifier** → **Generator** → **Evaluator** → human close
+## Round Lifecycle
 
-Repair loops:
+```mermaid
+flowchart TD
+    Start([New Task / New Round]) --> Planner
+    Planner["<b>Planner</b><br/>Understand codebase<br/>Write ACs + approach"] -->|brief.md| PreFlight
+    PreFlight["<b>Verifier</b> pre-flight<br/>Testability check<br/>Plan challenge"] -->|eval.md| HumanApprove
+    HumanApprove{Human<br/>approves?}
+    HumanApprove -->|revise| Planner
+    HumanApprove -->|approve| Builder
+    Builder["<b>Builder</b><br/>Implement in batches<br/>Write tests for each AC"] -->|code + tests| Verify
+    Verify["<b>Verifier</b> verification<br/>Tier 1: tests<br/>Tier 2: runtime<br/>Tier 3: coverage"] -->|eval.md| Verdict
 
-- `Verifier BLOCKED` → back to `Architect` / `Specifier`
-- `Generator BLOCKED` → back to `Architect` / `Specifier` / `Human`
-- `Evaluator BLOCKED` → back to `Generator`, then re-run `Evaluator`
+    Verdict{Verdict}
+    Verdict -->|"pass"| HumanNext
+    Verdict -->|"code bug<br/>(max 3x)"| Builder
+    Verdict -->|"design issue"| Planner
+    Verdict -->|"requirement gap"| HumanNext
 
-Each role produces file-based artifacts in `.harness/`. State is tracked in `task-status.md`.
+    HumanNext{Human<br/>decision}
+    HumanNext -->|continue| Start
+    HumanNext -->|add requirement| Start
+    HumanNext -->|done| Archive([Archive & Done])
 
-Two operating rules matter in practice:
+    style Planner fill:#4A90D9,color:#fff
+    style Builder fill:#7B68EE,color:#fff
+    style PreFlight fill:#E8833A,color:#fff
+    style Verify fill:#E8833A,color:#fff
+    style HumanApprove fill:#2ECC71,color:#fff
+    style HumanNext fill:#2ECC71,color:#fff
+```
 
-- After architecture approval, sync `requirements.md` to any approved
-  architecture decisions that change requirements-level truth before
-  verification begins.
-- Run `spec/bootstrap/check-consistency.sh` as the protocol preflight before
-  or during `verification_check`.
+## Artifacts
 
-> **Display name → runtime token mapping** (used in `start-task.sh --owner`):
-> Explorer = `repo-explorer` / `scoped-explorer` | Specifier = `specifier` | Architect = `architect` |
-> Verifier = `verification-explorer` | Generator = `generator` | Reviewer = `reviewer` |
-> Evaluator = `evaluator` | Human = `human`
-
-See [spec/README.md](spec/README.md) for the full portable protocol.
+| Artifact | Location | Lifecycle |
+|----------|----------|-----------|
+| `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
+| `.harness/brief.md` | `.harness/` | Per task — ACs, approach, discoveries. Archived on completion |
+| `.harness/eval.md` | `.harness/` | Per round — verification findings, human review guidance |
 
 ## Quick Start
 
-### Adopt in a new repo
-
-```bash
-# Install vendored harness payload into the target repo
-spec/bootstrap/install-harness.sh --repo-root /path/to/repo
-
-# Then bootstrap from the vendored spec inside the target repo
-/path/to/repo/.vendor/baton-harness/spec/bootstrap/init-harness.sh --repo-root /path/to/repo --profile auto --adapter claude-code
-
-# Start a task
-/path/to/repo/.vendor/baton-harness/spec/bootstrap/start-task.sh --repo-root /path/to/repo --task-id my-task
+```
+/dispatch          → detects state, routes to the right role
+/dispatch <task>   → starts a new task
 ```
 
-`init-harness` also materializes shared root governance into `CLAUDE.md` and
-`AGENTS.md`, so Claude Code, Codex, and Cursor can see the same repo-level
-rules.
+First time on a project? Dispatch will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
 
-If you run the harness in Codex, launch `Verifier` and `Evaluator` as isolated
-sub-agents with `fork_context: false`. Copy-paste examples for `spawn_agent`
-and `wait_agent` live in [spec/adapters/codex.md](spec/adapters/codex.md).
+## Feedback Loops
 
-### Install / Update In Target Repo
+Three nested loops at different speeds:
 
-Recommended external-repo flow:
+```mermaid
+flowchart LR
+    subgraph Inner["Inner Loop — Minutes"]
+        direction LR
+        V1[Verifier] -->|code bug| B1[Builder]
+        B1 -->|fixed| V1
+    end
 
-```bash
-# First install
-spec/bootstrap/install-harness.sh --repo-root /path/to/repo
+    subgraph Middle["Middle Loop — Hours"]
+        direction LR
+        V2[Verifier] -->|design issue| P1[Planner]
+        P1 -->|revised plan| V2
+    end
 
-# Later update the same repo to the current baton checkout
-spec/bootstrap/update-harness.sh --repo-root /path/to/repo
+    subgraph Outer["Outer Loop — Async"]
+        direction LR
+        Any[Any role] -->|requirement gap| H1[Human]
+        H1 -->|clarified| Any
+    end
+
+    Inner -.->|"2x unresolved<br/>escalate"| Middle
+    Middle -.->|"unresolved<br/>escalate"| Outer
+
+    style Inner fill:#E8F4FD,stroke:#4A90D9
+    style Middle fill:#FFF3E0,stroke:#E8833A
+    style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-On Windows, use the same `.sh` entrypoints from Git Bash, or invoke them from
-PowerShell with `bash spec/bootstrap/<command>.sh ...`. Baton does not keep a
-separate `spec/bootstrap/*.ps1` business-entrypoint layer.
+If the same issue survives 2 Builder-Verifier cycles, it auto-escalates one level up.
 
-This creates:
+## Verifier Modes
 
-- `.vendor/baton-harness/` as the vendored upstream payload
-- `.harness/harness.lock.yaml` as the version truth
-- `.harness/overrides/skills/` and `.harness/overrides/templates/` for local customization
-- `.claude/skills/` and `.agents/` as runtime skill entrypoints materialized from vendor + overrides
-- root `CLAUDE.md` and `AGENTS.md`, materialized by `init-harness` from the shared governance template
+Detected during pre-flight. Adapts to what the environment supports:
 
-### Link skills for development (baton repo only)
+| Mode | Capabilities | Confidence |
+|------|-------------|------------|
+| **A** | Full: compile + test + app startup + DB | High |
+| **B** | Partial: compile + test + DB assertions | Medium |
+| **C** | Static: compile + test + code review | Lower |
 
-After cloning, skill files are regular copies. Run `link-skills.sh` to upgrade them to
-symlinks so edits in `skills/` propagate automatically:
-
-```bash
-# Rebuild .claude/skills/ and .agents/ from canonical skills/
-spec/bootstrap/link-skills.sh
-```
-
-This applies to `.claude/skills/` and `.agents/` directories. Run after any
-change to `skills/` if you are in copy mode. When symlinks are used, their
-targets are written as repo-relative paths so the checkout stays portable.
-`sync-skills.sh` inspects the
-actual workspace file state; it does not trust `.link-mode` alone.
-
-### Manual Copy Fallback
-
-```bash
-cp .claude/skills/baton-*.md /path/to/repo/.claude/skills/
-```
-
-Prefer `install-harness` / `update-harness` for normal adoption. Manual copy is
-only the low-friction fallback.
-
-For baton maintainers, update root governance in
-`spec/templates/root-governance.template.md`, then run:
-
-```bash
-bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force
-```
-
-## Role Skills
-
-| Skill | Role | Gate |
-|-------|------|------|
-| `baton-explorer` | Code exploration (repo + scoped) | Scoped Exploration Complete |
-| `baton-specifier` | Requirements specification | — |
-| `baton-architect` | Technical architecture | Architecture Approved (human) |
-| `baton-verifier` | Verification path check | Verification Path Check |
-| `baton-generator` | Code implementation | — |
-| `baton-evaluator` | Independent evaluation | Independent Review |
-
-## Capability Skills
+## Utility Skills
 
 | Skill | Purpose |
 |-------|---------|

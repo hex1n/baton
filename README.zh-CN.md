@@ -1,130 +1,143 @@
-# Baton Harness
+# Baton
 
-一个可移植的 AI 编码代理协作协议，当前仓库提供 Claude Code 参考实现。
+一个轻量级的 AI 辅助软件开发 harness。三个角色，三个制品，基于轮次的渐进式需求细化。
 
-设计来源参考 [Anthropic 关于 long-running apps 的 harness 设计](https://www.anthropic.com/engineering/harness-design-long-running-apps)。
+设计参考 [Anthropic 关于长时间运行应用的 harness 设计](https://www.anthropic.com/engineering/harness-design-long-running-apps)（Generator-Evaluator GAN 模式）。
+
+## 为什么
+
+AI 编码代理面临三个核心问题：
+
+1. **自我评估偏差** — AI 无法诚实评估自己的产出
+2. **长任务中的上下文丢失** — 对话历史随时间退化
+3. **需求在构建中浮现** — 前期规格说明永远不完整
+
+Baton 用三个对应机制解决：独立验证、文件通信、轮次渐进。
 
 ## 结构
 
-```text
-spec/              可移植的 harness 协议定义（与具体工具无关）
-.claude/skills/    Claude Code 角色技能（参考实现）
-CLAUDE.md          给 Claude Code 风格宿主使用的根级治理入口
-AGENTS.md          给 Codex / Cursor 风格宿主使用的根级治理入口
+```
+v2/
+├── protocol.md                        完整协议规范
+├── CLAUDE.md                          快速参考
+├── skills/
+│   ├── dispatch/SKILL.md              入口 — 状态检测与路由
+│   ├── planner/SKILL.md               代码理解、需求澄清、方案设计
+│   ├── builder/SKILL.md               实现（分批编译策略）
+│   └── verifier/SKILL.md              独立验证（预检 + 构建后验证）
+├── templates/
+│   ├── project-profile.template.md    项目级持久知识模板
+│   └── brief.template.md             任务级活文档模板
+└── tools/
+    └── archive-round.sh              归档已完成的轮次
 ```
 
-## 协议
+## 角色
 
-这个协议定义了一条 AI 辅助编码任务的闭环流程。
+| 角色 | 读取 | 写入 | 核心规则 |
+|------|------|------|----------|
+| **Planner** | project-profile.md, brief.md, 源代码 | brief.md（AC、方案、批次计划） | 最多 3 个澄清问题 |
+| **Builder** | project-profile.md, brief.md（当前轮次） | 源代码、测试、brief.md § Discoveries | 每个 AC 必须有测试 |
+| **Verifier** | project-profile.md, brief.md（AC）、测试结果 | eval.md | 验证时不读 Builder 的源代码 |
 
-主路径：
+**Dispatch** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
-**Explorer** → **Specifier** → **Architect** → 人工批准 → **Verifier** → **Generator** → **Evaluator** → 人工关闭
+## 轮次生命周期
 
-修复回路：
+```mermaid
+flowchart TD
+    Start([新任务 / 新轮次]) --> Planner
+    Planner["<b>Planner</b><br/>理解代码库<br/>编写 AC + 方案"] -->|brief.md| PreFlight
+    PreFlight["<b>Verifier</b> 预检<br/>可测性检查<br/>方案挑战"] -->|eval.md| HumanApprove
+    HumanApprove{Human<br/>批准?}
+    HumanApprove -->|修订| Planner
+    HumanApprove -->|批准| Builder
+    Builder["<b>Builder</b><br/>分批实现<br/>每个 AC 写测试"] -->|代码 + 测试| Verify
+    Verify["<b>Verifier</b> 验证<br/>Tier 1: 测试<br/>Tier 2: 运行时<br/>Tier 3: 覆盖率"] -->|eval.md| Verdict
 
-- `Verifier BLOCKED` → 回到 `Architect` / `Specifier`
-- `Generator BLOCKED` → 回到 `Architect` / `Specifier` / `Human`
-- `Evaluator BLOCKED` → 回到 `Generator` 修复，然后重新运行 `Evaluator`
+    Verdict{结果}
+    Verdict -->|"通过"| HumanNext
+    Verdict -->|"代码 bug<br/>(最多 3 次)"| Builder
+    Verdict -->|"设计问题"| Planner
+    Verdict -->|"需求缺口"| HumanNext
 
-每个角色都会在 `.harness/` 中产出文件型制品，状态通过 `task-status.md` 跟踪。
+    HumanNext{Human<br/>决定}
+    HumanNext -->|继续| Start
+    HumanNext -->|追加需求| Start
+    HumanNext -->|完成| Archive([归档 & 结束])
 
-实践中有两条规则最重要：
+    style Planner fill:#4A90D9,color:#fff
+    style Builder fill:#7B68EE,color:#fff
+    style PreFlight fill:#E8833A,color:#fff
+    style Verify fill:#E8833A,color:#fff
+    style HumanApprove fill:#2ECC71,color:#fff
+    style HumanNext fill:#2ECC71,color:#fff
+```
 
-- architecture 通过后，如果有已批准的架构决策改变了 requirements 层面的事实，必须先把 `requirements.md` 同步完，再进入 verification
-- 在 `verification_check` 前或过程中，先跑 `spec/bootstrap/check-consistency.sh`
+## 制品
 
-> **显示名称 → 运行时 token 映射**（给 `start-task.sh --owner` 用）：
-> Explorer = `repo-explorer` / `scoped-explorer` | Specifier = `specifier` | Architect = `architect` |
-> Verifier = `verification-explorer` | Generator = `generator` | Reviewer = `reviewer` |
-> Evaluator = `evaluator` | Human = `human`
-
-完整的可移植协议见 [spec/README.md](spec/README.md)。
+| 制品 | 位置 | 生命周期 |
+|------|------|----------|
+| `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
+| `.harness/brief.md` | `.harness/` | 每任务 — AC、方案、发现。完成后归档 |
+| `.harness/eval.md` | `.harness/` | 每轮次 — 验证发现、人工审查指引 |
 
 ## 快速开始
 
-### 在新仓库里接入
-
-```bash
-# 先把 vendored harness payload 安装到目标仓库
-spec/bootstrap/install-harness.sh --repo-root /path/to/repo
-
-# 再从目标仓库内部的 vendored spec 执行 bootstrap
-/path/to/repo/.vendor/baton-harness/spec/bootstrap/init-harness.sh --repo-root /path/to/repo --profile auto --adapter claude-code
-
-# 开始一个任务
-/path/to/repo/.vendor/baton-harness/spec/bootstrap/start-task.sh --repo-root /path/to/repo --task-id my-task
+```
+/dispatch          → 检测状态，路由到正确角色
+/dispatch <任务>   → 启动新任务
 ```
 
-`init-harness` 还会把共享治理摘要物化成根目录的 `CLAUDE.md` 和 `AGENTS.md`，
-这样 Claude Code、Codex、Cursor 都能看到同一套仓库级规则。
+首次使用？Dispatch 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
 
-如果你在 Codex 里运行 harness，建议把 `Verifier` 和 `Evaluator` 作为隔离 sub-agent 启动，并使用 `fork_context: false`。可以直接参考 [spec/adapters/codex.md](spec/adapters/codex.md) 里的 `spawn_agent` / `wait_agent` 示例。
+## 反馈回路
 
-### 在目标仓库里安装 / 升级
+三层嵌套循环，速度各异：
 
-推荐的外部仓库接入流程：
+```mermaid
+flowchart LR
+    subgraph Inner["内层循环 — 分钟级"]
+        direction LR
+        V1[Verifier] -->|代码 bug| B1[Builder]
+        B1 -->|已修复| V1
+    end
 
-```bash
-# 首次安装
-spec/bootstrap/install-harness.sh --repo-root /path/to/repo
+    subgraph Middle["中层循环 — 小时级"]
+        direction LR
+        V2[Verifier] -->|设计问题| P1[Planner]
+        P1 -->|修订方案| V2
+    end
 
-# 后续从当前 baton checkout 升级同一个目标仓库
-spec/bootstrap/update-harness.sh --repo-root /path/to/repo
+    subgraph Outer["外层循环 — 异步"]
+        direction LR
+        Any[任何角色] -->|需求缺口| H1[Human]
+        H1 -->|已澄清| Any
+    end
+
+    Inner -.->|"2 次未解决<br/>自动升级"| Middle
+    Middle -.->|"未解决<br/>自动升级"| Outer
+
+    style Inner fill:#E8F4FD,stroke:#4A90D9
+    style Middle fill:#FFF3E0,stroke:#E8833A
+    style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-Windows 下请直接复用同一套 `.sh` 入口：可以在 Git Bash 里执行，也可以在
-PowerShell 里通过 `bash spec/bootstrap/<command>.sh ...` 调用。Baton
-不再维护单独的 `spec/bootstrap/*.ps1` 业务入口层。
+同一问题经过 2 次 Builder-Verifier 循环仍未解决，自动升级到上一层。
 
-安装后会出现：
+## Verifier 模式
 
-- `.vendor/baton-harness/`：vendored 上游 payload
-- `.harness/harness.lock.yaml`：当前安装版本的真源
-- `.harness/overrides/skills/` 和 `.harness/overrides/templates/`：本地定制入口
-- `.claude/skills/` 和 `.agents/`：根据 vendor + overrides 物化出来的运行时 skill 入口
-- 根目录 `CLAUDE.md` 和 `AGENTS.md`：由 `init-harness` 基于共享治理模板物化
+预检时自动检测。根据环境能力自适应降级：
 
-### baton 自己内部开发时的链接模式
+| 模式 | 能力 | 置信度 |
+|------|------|--------|
+| **A** | 完整：编译 + 测试 + 应用启动 + 数据库 | 高 |
+| **B** | 部分：编译 + 测试 + 数据库断言 | 中 |
+| **C** | 静态：编译 + 测试 + 代码审查 | 较低 |
 
-对 baton 仓库自身，`skills/` 最好保持 canonical source，再把 `.claude/skills/` 和 `.agents/` 重建成链接：
+## 工具技能
 
-```bash
-# 用 canonical skills/ 重建 .claude/skills/ 和 .agents/
-spec/bootstrap/link-skills.sh
-```
-
-这只适用于 baton 仓库自己的开发态。使用 symlink 时，link target 会写成仓库内相对路径，避免把本机绝对路径固化进仓库。`sync-skills.sh` 会根据工作区真实文件类型判断是否需要同步，而不会只相信 `.link-mode`。
-
-### 手工复制 fallback
-
-```bash
-cp .claude/skills/baton-*.md /path/to/repo/.claude/skills/
-```
-
-正常接入请优先使用 `install-harness` / `update-harness`。手工复制只保留为低成本 fallback。
-
-对 baton 维护者来说，根级治理规则要改 `spec/templates/root-governance.template.md`，
-然后执行：
-
-```bash
-bash spec/bootstrap/sync-entrypoints.sh --repo-root . --force
-```
-
-## 角色技能
-
-| Skill | Role | Gate |
-|-------|------|------|
-| `baton-explorer` | 代码探索（repo + scoped） | Scoped Exploration Complete |
-| `baton-specifier` | 需求定义 | — |
-| `baton-architect` | 技术架构 | Architecture Approved（人工） |
-| `baton-verifier` | 验证路径检查 | Verification Path Check |
-| `baton-generator` | 代码实现 | — |
-| `baton-evaluator` | 独立评估 | Independent Review |
-
-## 能力技能
-
-| Skill | 用途 |
-|-------|------|
+| 技能 | 用途 |
+|------|------|
 | `deep-research` | 系统化调查代码、API、文档 |
 | `first-principles-planner` | 基于第一性原理的策略规划 |
