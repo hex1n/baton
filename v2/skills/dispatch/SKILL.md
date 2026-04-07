@@ -35,9 +35,11 @@ project-profile.md  → exists? (project configured?)
 
 ```
 0. Determine execution mode:
-   → Complex task (multi-round, code changes, large codebase)? → Strict mode (subagents)
-   → Simple task (≤5 ACs AND single batch)? → Compact mode (inline)
-   → AskUserQuestion if unclear: "strict (independent subagents) / compact (single conversation)"
+   → ≤5 ACs AND single batch? → Compact (inline, self-check)
+   → >5 ACs OR multi-batch, standard project? → Standard (subagents, core Verifier only)
+   → Security-sensitive, Mode C/C+, multi-round, or human requests it? → Full (subagents, all Verifier modules)
+   → AskUserQuestion if unclear: "compact / standard / full"
+   When invoking Verifier, pass the mode: "execution mode: {compact/standard/full}"
 1. Read project-profile.md
 2. Invoke Planner → brief.md Round 1
 3. Invoke Verifier pre-flight
@@ -145,10 +147,12 @@ Always:
 How "invoke" works depends on execution mode:
 
 ```
-Strict mode:
+Standard / Full mode:
   "Invoke Planner" → spawn Agent tool with Planner's SKILL.md as instructions
   "Invoke Builder" → spawn Agent tool with Builder's SKILL.md as instructions
   "Invoke Verifier" → spawn Agent tool with Verifier's SKILL.md as instructions
+    → Pass "execution mode: standard" or "execution mode: full" in arguments
+    → Verifier uses the Step Index to decide which [core]/[module] steps to run
   Each agent starts fresh — pass task context via arguments
 
 Compact mode:

@@ -26,30 +26,15 @@ This file is the single source of truth for all protocol rules. Other files deri
 
 ## Execution Modes
 
-The harness supports two execution modes. Choose based on task complexity and available tooling.
+The harness supports three execution modes. Dispatch selects based on task complexity; human can override.
 
-### Strict Mode (recommended for complex tasks)
-
-Each role runs as an independent subagent via `Agent` tool:
-- **Full context isolation** — each role starts fresh, reads only from artifacts
-- **Verifier independence guaranteed** — cannot see Builder's process, only results
-- **Higher token cost** — each subagent rebuilds context from files
-
-```
-Dispatch (main conversation)
-  → spawn Agent: Planner → writes brief.md
-  → spawn Agent: Verifier pre-flight → writes eval.md
-  → human approves
-  → spawn Agent: Builder → writes code + tests
-  → spawn Agent: Verifier verification → writes eval.md
-```
-
-### Compact Mode (acceptable for simple tasks)
+### Compact Mode (simple tasks: ≤5 ACs, single batch)
 
 Planner and Builder merge into one execution. Verifier role is replaced by a self-check checklist + human review.
 - **No context isolation** — planning and building happen in the same conversation
 - **No independent Verifier** — Builder self-verifies against a checklist; human provides the independent review
 - **Lower cost** — no subagent overhead, no separate Verifier invocations
+- **Verifier modules:** none (self-check only)
 
 ```
 Compact mode flow:
@@ -65,9 +50,40 @@ Compact mode flow:
 
 **Why no fake Verifier:** Assumption ① says AI can't self-evaluate. In compact mode, the Verifier shares Builder's context — making it structurally non-independent. Rather than pretend, compact mode is honest: Builder self-checks, human provides the real independent review.
 
-**When to use compact mode:** ≤5 ACs AND single batch. Dispatch recommends; human can override to strict.
+### Standard Mode (medium tasks: >5 ACs OR multi-batch, typical choice)
 
-**Dispatch decides the mode** based on project-profile.md and task complexity. Human can override.
+Each role runs as an independent subagent. Verifier runs **core steps only** — deterministic verification + AC coverage. No cross-model review, no adversarial testing, no structural triggers.
+- **Full context isolation** — each role starts fresh, reads only from artifacts
+- **Verifier independence guaranteed** — cannot see Builder's process, only results
+- **Moderate cost** — subagent overhead, but Verifier reads ~50% less than Full mode
+- **Verifier modules:** `[core]` only
+
+```
+Dispatch (main conversation)
+  → spawn Agent: Planner → writes brief.md
+  → spawn Agent: Verifier pre-flight (core) → writes eval.md
+  → human approves
+  → spawn Agent: Builder → writes code + tests
+  → spawn Agent: Verifier verification (core) → writes eval.md
+```
+
+### Full Mode (complex/security-sensitive tasks)
+
+Same as Standard, but Verifier runs **all modules** — cross-model review, adversarial testing, structural triggers. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
+- **Full context isolation** — same as Standard
+- **Verifier runs all modules** — maximum verification depth
+- **Higher cost** — Verifier reads full SKILL.md, may invoke external reviewer
+- **Verifier modules:** `[core]` + all `[module]` steps
+
+**When to use which mode:**
+
+| Signal | Mode |
+|--------|------|
+| ≤5 ACs AND single batch | Compact |
+| >5 ACs OR multi-batch, standard project | Standard |
+| Security-sensitive, Mode C/C+, multi-round, or human requests it | Full |
+
+**Dispatch selects the mode** based on project-profile.md and task complexity. Human can override.
 
 ## Roles
 
@@ -289,15 +305,20 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 
 ## Rules
 
+### Core Rules (all modes)
+
 1. brief.md is the single source of truth for what's being built
 2. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
 3. Human approval required before Builder starts each round
-4. Migration scripts require separate human approval
-5. Max 3 Builder ⇄ Verifier iterations per round before escalation
-6. Git tag after each successful round
-7. Planner compresses brief.md at the start of each new round (summary + key decisions + open discoveries per section)
-8. All work on feature branches
-9. In strict mode, each role starts with a fresh context; files carry state, not conversation. In compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
-10. If an assumption encoded by a harness component is invalidated, remove the component
-11. Dispatch determines execution mode (strict/compact) at task start; human can override
+4. Max 3 Builder ⇄ Verifier iterations per round before escalation
+5. In Standard/Full mode, each role starts with a fresh context; files carry state, not conversation. In Compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
+6. Dispatch determines execution mode (Compact/Standard/Full) at task start; human can override
+7. If an assumption encoded by a harness component is invalidated, remove the component
+
+### Module Rules (Standard/Full mode)
+
+8. Planner compresses brief.md at the start of each new round (summary + key decisions + open discoveries per section)
+9. All work on feature branches
+10. Git tag after each successful round
+11. Migration scripts require separate human approval
 12. Round scope lock: after human approves a round's plan, its ACs are frozen. New requirements go to the next round (see Dispatch § Add Requirement Flow). Builder and Verifier work against the approved ACs, not a moving target
