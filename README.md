@@ -24,7 +24,10 @@ v2/
 │   ├── dispatch/SKILL.md              Entry point — state detection & routing
 │   ├── planner/SKILL.md               Codebase understanding, requirements, design
 │   ├── builder/SKILL.md               Implementation with batch compile strategy
-│   └── verifier/SKILL.md              Independent verification (pre-flight + post-build)
+│   └── verifier/
+│       ├── SKILL.md                   Core verification (pre-flight + Tier 1/2/3a)
+│       ├── module-crossmodel.md       Cross-model review via codex-plugin-cc
+│       └── module-adversarial.md      Adversarial testing (security/boundary)
 ├── templates/
 │   ├── project-profile.template.md    Project-level persistent knowledge
 │   └── brief.template.md             Per-task living document
@@ -57,7 +60,7 @@ flowchart TD
 
     Verdict{Verdict}
     Verdict -->|"pass"| HumanNext
-    Verdict -->|"code bug<br/>(max 3x)"| Builder
+    Verdict -->|"code bug"| Builder
     Verdict -->|"design issue"| Planner
     Verdict -->|"requirement gap"| HumanNext
 
@@ -115,7 +118,7 @@ flowchart LR
         H1 -->|clarified| Any
     end
 
-    Inner -.->|"3x unresolved<br/>escalate"| Middle
+    Inner -.->|"unresolved<br/>escalate"| Middle
     Middle -.->|"unresolved<br/>escalate"| Outer
 
     style Inner fill:#E8F4FD,stroke:#4A90D9
@@ -123,7 +126,7 @@ flowchart LR
     style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-If the same issue survives 3 Builder-Verifier cycles, it auto-escalates one level up.
+Unresolved issues auto-escalate up one level (see protocol.md § Rules for thresholds).
 
 ## Verifier Modes
 

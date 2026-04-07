@@ -12,7 +12,7 @@ Read `v2/protocol.md` for the full protocol: roles, artifacts, round lifecycle, 
 |-------|---------|
 | `/dispatch` | Entry point. Detects state, routes to the right role. |
 | `/planner` | Understands codebase, clarifies requirements, designs approach → `brief.md` |
-| `/builder` | Implements code + tests in batches → source code, JUnit tests |
+| `/builder` | Implements code + tests in batches → source code, tests |
 | `/verifier` | Pre-flight (challenge plan) + Verification (check implementation) → `eval.md` |
 
 Skills live in `v2/skills/{name}/SKILL.md`.
