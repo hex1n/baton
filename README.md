@@ -36,9 +36,9 @@ v2/
 
 | Role | Reads | Writes | Key rule |
 |------|-------|--------|----------|
-| **Planner** | project-profile.md, brief.md, source code | brief.md (ACs, approach, batch plan) | Max 3 clarifying questions |
+| **Planner** | project-profile.md, brief.md, source code | brief.md (ACs, approach, batch plan) | Clarifying questions scale with complexity |
 | **Builder** | project-profile.md, brief.md (current round) | Source code, tests, brief.md § Discoveries | Every AC gets a test |
-| **Verifier** | project-profile.md, brief.md (ACs), test results | eval.md | Never reads Builder's source code |
+| **Verifier** | project-profile.md, brief.md (ACs), test results | eval.md | Never reads Builder's source code (Mode A/B) |
 
 **Dispatch** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
@@ -115,7 +115,7 @@ flowchart LR
         H1 -->|clarified| Any
     end
 
-    Inner -.->|"2x unresolved<br/>escalate"| Middle
+    Inner -.->|"3x unresolved<br/>escalate"| Middle
     Middle -.->|"unresolved<br/>escalate"| Outer
 
     style Inner fill:#E8F4FD,stroke:#4A90D9
@@ -123,7 +123,7 @@ flowchart LR
     style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-If the same issue survives 2 Builder-Verifier cycles, it auto-escalates one level up.
+If the same issue survives 3 Builder-Verifier cycles, it auto-escalates one level up.
 
 ## Verifier Modes
 
@@ -134,6 +134,7 @@ Detected during pre-flight. Adapts to what the environment supports:
 | **A** | Full: compile + test + app startup + DB | High |
 | **B** | Partial: compile + test + DB assertions | Medium |
 | **C** | Static: compile + test + code review | Lower |
+| **C+** | Static + external AI reviewer | Medium |
 
 ## Utility Skills
 

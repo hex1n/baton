@@ -10,6 +10,20 @@ This harness encodes exactly three assumptions about what AI cannot do reliably:
 
 Everything else, the model handles on its own. If a component doesn't map to one of these assumptions, it shouldn't exist.
 
+## Document Hierarchy
+
+This file is the single source of truth for all protocol rules. Other files derive from it:
+
+| File | Role | Rule: when protocol.md changes… |
+|------|------|--------------------------------|
+| `v2/protocol.md` | **Source of truth** | — |
+| `v2/skills/*.md` | Execution instructions | Sync any referenced rules, modes, thresholds |
+| `v2/templates/*.md` | Artifact structure | Sync field values (modes, formats) |
+| `README.md` / `README.zh-CN.md` | Projection layer (mental model) | Sync simplified descriptions; never restate exact thresholds — reference protocol.md |
+| `v2/CLAUDE.md` | Entry index | Sync summary rules; reference protocol.md for details |
+
+**When adding or changing a rule:** update protocol.md first, then propagate to the files above. If a downstream file contradicts protocol.md, protocol.md wins.
+
 ## Execution Modes
 
 The harness supports two execution modes. Choose based on task complexity and available tooling.
@@ -276,7 +290,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 ## Rules
 
 1. brief.md is the single source of truth for what's being built
-2. Verifier verification never reads Builder's source code
+2. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
 3. Human approval required before Builder starts each round
 4. Migration scripts require separate human approval
 5. Max 3 Builder ⇄ Verifier iterations per round before escalation

@@ -8,7 +8,7 @@ argument-hint: "[task description or empty to resume]"
 
 # Dispatch
 
-Thin router. Detects where we are, invokes the right role, handles transitions. Does not think — routes.
+Orchestration router. Detects state from artifacts, invokes the right role, handles transitions, enforces structural triggers and blocking rules. Makes no technical decisions — all routing is artifact-driven.
 
 ## State Detection
 

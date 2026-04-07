@@ -41,7 +41,8 @@ Skills live in `v2/skills/{name}/SKILL.md`.
 ## Core Rules
 
 1. `brief.md` is the single source of truth for what's being built
-2. Verifier never reads Builder's source code during verification
+2. Verifier never reads Builder's source code during verification (Mode A/B; see protocol.md § Independence Rule)
 3. Human approval required before Builder starts each round
 4. Max 3 Builder-Verifier iterations per round before escalation
 5. Each role starts with fresh context; files carry state, not conversation
+6. Round scope lock: after approval, ACs are frozen; new requirements go to next round

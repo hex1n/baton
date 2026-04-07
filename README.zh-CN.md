@@ -36,9 +36,9 @@ v2/
 
 | 角色 | 读取 | 写入 | 核心规则 |
 |------|------|------|----------|
-| **Planner** | project-profile.md, brief.md, 源代码 | brief.md（AC、方案、批次计划） | 最多 3 个澄清问题 |
+| **Planner** | project-profile.md, brief.md, 源代码 | brief.md（AC、方案、批次计划） | 澄清问题数量随复杂度缩放 |
 | **Builder** | project-profile.md, brief.md（当前轮次） | 源代码、测试、brief.md § Discoveries | 每个 AC 必须有测试 |
-| **Verifier** | project-profile.md, brief.md（AC）、测试结果 | eval.md | 验证时不读 Builder 的源代码 |
+| **Verifier** | project-profile.md, brief.md（AC）、测试结果 | eval.md | 验证时不读 Builder 的源代码（Mode A/B） |
 
 **Dispatch** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
@@ -115,7 +115,7 @@ flowchart LR
         H1 -->|已澄清| Any
     end
 
-    Inner -.->|"2 次未解决<br/>自动升级"| Middle
+    Inner -.->|"3 次未解决<br/>自动升级"| Middle
     Middle -.->|"未解决<br/>自动升级"| Outer
 
     style Inner fill:#E8F4FD,stroke:#4A90D9
@@ -123,7 +123,7 @@ flowchart LR
     style Outer fill:#E8F5E9,stroke:#2ECC71
 ```
 
-同一问题经过 2 次 Builder-Verifier 循环仍未解决，自动升级到上一层。
+同一问题经过 3 次 Builder-Verifier 循环仍未解决，自动升级到上一层。
 
 ## Verifier 模式
 
@@ -134,6 +134,7 @@ flowchart LR
 | **A** | 完整：编译 + 测试 + 应用启动 + 数据库 | 高 |
 | **B** | 部分：编译 + 测试 + 数据库断言 | 中 |
 | **C** | 静态：编译 + 测试 + 代码审查 | 较低 |
+| **C+** | 静态 + 外部 AI 审查 | 中 |
 
 ## 工具技能
 
