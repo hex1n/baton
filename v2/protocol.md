@@ -183,6 +183,8 @@ Verifier evidence is classified by independence from Builder:
 
 L2.5 exists because cross-model review has different blind spots from Builder — it is structurally more independent than L3, but still AI judgment (not deterministic like L1). It is only available when project-profile.md configures an external reviewer.
 
+**Cross-examination rule:** L2.5 findings are never accepted blindly. Verifier must cross-examine each finding against codebase evidence and classify as confirmed (✅ with file:line proof), plausible (⚠️ needs human), or rejected (❌ with reason). This produces higher-quality signal than either model alone — Codex catches what Claude misses, Claude grounds or filters what Codex claims.
+
 ### Mode Table
 
 | Mode | What works | Tier 1 (L1) | Tier 2 (L1) | Tier 3 (L2+L3) |
