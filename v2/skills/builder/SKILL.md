@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Implement code and write tests according to plan.md. Works in batches, validates incrementally, commits at checkpoints. Can signal Planner if discoveries change the plan.
+description: Implement code and write tests according to plan.md. Works in batches, validates incrementally, commits at checkpoints, and may optionally use internal worker delegation without changing Baton's public role boundary.
 argument-hint: "[round number or 'fix' for Verifier feedback]"
 ---
 
@@ -10,6 +10,14 @@ argument-hint: "[round number or 'fix' for Verifier feedback]"
 
 Write code. Write tests. Validate often. Commit at checkpoints. If you discover something that changes the plan, say so immediately — don't implement a plan you know is wrong.
 
+## Companion Files
+
+| File | When to read | Owns |
+|------|--------------|------|
+| `v2/skills/builder/packets.md` | When preparing an internal worker handoff for one batch or fix slice | Batch-packet scope, required fields, context hygiene |
+| `v2/skills/builder/workers.md` | When using an internal worker | Worker contract, allowed actions, status handling, scratch handoff |
+| `v2/skills/builder/isolation.md` | When deciding whether to stay inline or delegate | `inline / advisory / isolated` delegation modes |
+
 ## Startup
 
 ```
@@ -18,6 +26,32 @@ Write code. Write tests. Validate often. Commit at checkpoints. If you discover 
 3. If fixing Verifier feedback: also read .harness/review.md → specific issues to fix
 4. Read relevant source files referenced in plan.md § Context
 ```
+
+## Optional Internal Delegation
+
+In Standard/Full mode, you may delegate one approved batch or fix slice to an internal worker if that reduces context load. This does **not** create a new Baton role. You still own the implementation.
+
+```
+Delegation boundary:
+  1. Delegate only one batch or fix slice at a time
+  2. Worker must stay within the approved ACs and batch scope
+  3. Worker outputs belong in scratch artifacts under .context/baton/active/
+  4. Worker must NOT update .harness/plan.md or .harness/review.md
+  5. Worker must NOT ask the human directly or invoke external review
+  6. You review any worker output, apply final changes, run project commands,
+     and update canonical artifacts yourself
+```
+
+If you delegate:
+
+```
+1. Read packets.md → construct the batch packet from approved ACs and batch scope
+2. Read isolation.md → choose inline / advisory / isolated mode
+3. Read workers.md → enforce worker status handling and scratch-only outputs
+4. Re-run the normal Builder validation flow yourself before handing off to Verifier
+```
+
+**Compact mode:** do not delegate. Compact mode is a single-context self-check path.
 
 ## Implementation: Batch Strategy
 
@@ -242,3 +276,4 @@ When all batches are done and tests pass:
 7. **Don't fix design issues.** If Verifier or your own discovery reveals a design problem, that's Planner's job.
 8. **Schema changes require human approval.** Never auto-apply to shared environments.
 9. **All commands come from project-profile.md.** Don't assume any specific build tool, test framework, or language.
+10. **Internal workers stay behind Builder.** If you delegate, keep worker state in `.context/baton/active/`, preserve the approved scope, and keep all canonical writes and escalations in Builder.

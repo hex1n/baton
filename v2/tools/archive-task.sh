@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Archive task state during closeout: copy plan.md + review.md to .harness/archive/{date}-{slug}/
+# and preserve any active Builder/Verifier scratch state under archive scratch/.
 # Usage: bash v2/tools/archive-task.sh [--repo-root <path>] [--dry-run] [--keep-originals]
 
 # --- Parse args ---

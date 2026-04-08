@@ -21,7 +21,7 @@ Read `CONTRIBUTING.md` before changing core behavior.
 |-------|---------|
 | `/dispatch` | Entry point. Detects state, routes to the right role. |
 | `/planner` | Understands codebase, clarifies requirements, designs approach → `plan.md` |
-| `/builder` | Implements code + tests in batches → source code, tests |
+| `/builder` | Implements code + tests in batches → source code, tests; optional internal worker delegation stays behind Builder |
 | `/verifier` | Pre-flight (challenge plan) + Verification (check implementation) → `review.md` |
 
 Skills live in `v2/skills/{name}/SKILL.md`.
@@ -35,6 +35,7 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It keeps `/
 | `project-profile.md` | project root | Human (Planner generates draft) | Persistent across tasks |
 | `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries `§ Open Decisions` for Dispatcher |
 | `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals` for Dispatcher |
+| `.context/baton/active/` | `.context/` | Builder / Verifier scratch helpers | Non-canonical scratch only; includes findings sidecars and optional batch delegation state |
 
 ## Quick Start
 
@@ -49,6 +50,9 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It keeps `/
 - `v2/templates/project-profile.template.md` — structure for project profile
 - `v2/templates/plan.template.md` — structure for the task plan
 - `v2/templates/review.template.md` — structure for per-round review output
+- `v2/templates/batch-packet.template.md` — structure for one delegated Builder slice
+- `v2/templates/worker-report.template.md` — human-readable worker report
+- `v2/templates/worker-report.template.json` — machine-readable worker report
 
 ## Core Rules
 

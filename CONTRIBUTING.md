@@ -40,6 +40,7 @@ For behavior-shaping changes:
    - which validators / contract tests were run
    - any remaining risk or manual follow-up
 4. Keep the change scoped to one problem whenever possible.
+5. If the change touches Builder delegation, preserve the public-role boundary: Builder remains the only canonical mutator and `.harness/*` remains canonical.
 
 ## What Does Not Belong in Core
 
@@ -47,7 +48,17 @@ For behavior-shaping changes:
 - Vendor installation instructions in core protocol rules
 - Domain workflows that Baton core does not require
 - Companion skills becoming mandatory parts of the Dispatcher → Planner → Builder → Verifier loop
+- Internal Builder workers exposed as a fifth public role
 - "Cleanup" rewrites of role instructions without a concrete behavior reason
+
+## Builder Delegation Boundary
+
+Builder may gain internal helper workflows over time, but the boundary is fixed:
+
+- Internal workers are part of Builder, not public Baton roles
+- Internal workers may not write `.harness/plan.md` or `.harness/review.md`
+- Internal workers may not ask humans directly or invoke external review
+- Scratch artifacts under `.context/baton/` may support Builder, but canonical routing still comes only from `plan.md` and `review.md`
 
 ## Validation Checklist
 

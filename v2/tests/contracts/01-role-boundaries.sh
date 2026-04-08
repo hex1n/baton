@@ -43,7 +43,7 @@ forbid_pattern() {
 
 echo "  Role boundaries"
 
-require_pattern "$REPO_ROOT/v2/protocol.md" "Builder is the only role that modifies source code or tests" \
+require_pattern "$REPO_ROOT/v2/protocol.md" "Builder is the only public role that modifies source code or tests" \
   "protocol assigns mutation to Builder only" "missing Builder-only mutation rule"
 require_pattern "$REPO_ROOT/v2/protocol.md" "\\*\\*Writes:\\*\\* review\\.md only" \
   "protocol keeps Verifier output read-only" "Verifier output contract drifted"

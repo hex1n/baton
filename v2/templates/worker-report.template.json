@@ -1,0 +1,30 @@
+{
+  "round": 0,
+  "batch": 0,
+  "status": "complete|complete_with_concerns|needs_context|blocked",
+  "delegation_mode": "advisory|isolated",
+  "summary": "Short summary of what the worker attempted",
+  "files_touched": [
+    "path/to/file",
+    "path/to/other-file"
+  ],
+  "tests_run": [
+    {
+      "command": "compile or check command",
+      "result": "pass|fail|not-run",
+      "notes": "Optional detail"
+    },
+    {
+      "command": "test command",
+      "result": "pass|fail|not-run",
+      "notes": "Optional detail"
+    }
+  ],
+  "concerns": [
+    "Specific concern or caveat"
+  ],
+  "open_questions": [
+    "Missing context, ambiguity, or blocker"
+  ],
+  "patch_path": ".context/baton/active/batches/round-{N}/batch-{M}/patch.diff or null"
+}

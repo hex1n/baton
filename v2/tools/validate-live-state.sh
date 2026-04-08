@@ -53,6 +53,7 @@ if [[ -f "$PROJECT_PROFILE" ]]; then
   require_heading "$PROJECT_PROFILE" '^## Conventions$' "project-profile conventions" "missing '## Conventions'"
   require_heading "$PROJECT_PROFILE" '^## Traps$' "project-profile traps" "missing '## Traps'"
   require_heading "$PROJECT_PROFILE" '^## Verifier Capability$' "project-profile verifier capability" "missing '## Verifier Capability'"
+  require_heading "$PROJECT_PROFILE" '^## Builder Delegation$' "project-profile builder delegation" "missing '## Builder Delegation'"
   require_heading "$PROJECT_PROFILE" '^## Notes$' "project-profile notes" "missing '## Notes'"
 
   if grep -qE '^\| Modules \|.*`spec/`|^\| Modules \|.*`tests/`|^  ├── spec/|^  ├── tests/|baton-tasks/' "$PROJECT_PROFILE" 2>/dev/null; then

@@ -96,6 +96,24 @@ else
   check "review-findings.template.json exists" "fail" "missing review findings sidecar template"
 fi
 
+if [[ -f "$REPO_ROOT/v2/templates/batch-packet.template.md" ]]; then
+  check "batch-packet.template.md exists" "pass"
+else
+  check "batch-packet.template.md exists" "fail" "missing builder batch packet template"
+fi
+
+if [[ -f "$REPO_ROOT/v2/templates/worker-report.template.md" ]]; then
+  check "worker-report.template.md exists" "pass"
+else
+  check "worker-report.template.md exists" "fail" "missing human-readable worker report template"
+fi
+
+if [[ -f "$REPO_ROOT/v2/templates/worker-report.template.json" ]]; then
+  check "worker-report.template.json exists" "pass"
+else
+  check "worker-report.template.json exists" "fail" "missing machine-readable worker report template"
+fi
+
 if grep -q "^## Routing Signals$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
   check "review.template.md routing signals" "pass"
 else
@@ -147,6 +165,68 @@ if [[ -f "$REPO_ROOT/v2/skills/planner/SKILL.md" ]]; then
   check "planner/SKILL.md exists" "pass"
 else
   check "planner/SKILL.md exists" "fail" "planner entrypoint missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/builder/SKILL.md" ]]; then
+  check "builder/SKILL.md exists" "pass"
+else
+  check "builder/SKILL.md exists" "fail" "builder entrypoint missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/builder/packets.md" ]]; then
+  check "builder/packets.md exists" "pass"
+else
+  check "builder/packets.md exists" "fail" "builder packet guide missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/builder/workers.md" ]]; then
+  check "builder/workers.md exists" "pass"
+else
+  check "builder/workers.md exists" "fail" "builder worker guide missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/builder/isolation.md" ]]; then
+  check "builder/isolation.md exists" "pass"
+else
+  check "builder/isolation.md exists" "fail" "builder isolation guide missing"
+fi
+
+if grep -q "packets.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
+  check "builder references packets.md" "pass"
+else
+  check "builder references packets.md" "fail" "builder entrypoint doesn't reference packet guide"
+fi
+
+if grep -q "workers.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
+  check "builder references workers.md" "pass"
+else
+  check "builder references workers.md" "fail" "builder entrypoint doesn't reference worker guide"
+fi
+
+if grep -q "isolation.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
+  check "builder references isolation.md" "pass"
+else
+  check "builder references isolation.md" "fail" "builder entrypoint doesn't reference isolation guide"
+fi
+
+if grep -q "batch-packet.template.md" "$REPO_ROOT/v2/skills/builder/packets.md" 2>/dev/null; then
+  check "builder packet guide references batch-packet.template.md" "pass"
+else
+  check "builder packet guide references batch-packet.template.md" "fail" "packet guide doesn't point to the packet template"
+fi
+
+if grep -q "worker-report.template.json" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null && \
+   grep -q "worker-report.template.md" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null; then
+  check "builder worker guide references worker-report templates" "pass"
+else
+  check "builder worker guide references worker-report templates" "fail" "worker guide doesn't point to the worker report templates"
+fi
+
+if grep -q "builder-worker.sh" "$REPO_ROOT/v2/skills/builder/packets.md" 2>/dev/null && \
+   grep -q "builder-worker.sh" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null; then
+  check "builder guides reference builder-worker.sh" "pass"
+else
+  check "builder guides reference builder-worker.sh" "fail" "builder guides don't point to the runtime helper"
 fi
 
 if [[ -f "$REPO_ROOT/v2/skills/planner/profile.md" ]]; then
@@ -215,6 +295,12 @@ else
   check "tools/external-review.sh exists" "fail" "external review adapter missing"
 fi
 
+if [[ -f "$REPO_ROOT/v2/tools/builder-worker.sh" ]]; then
+  check "tools/builder-worker.sh exists" "pass"
+else
+  check "tools/builder-worker.sh exists" "fail" "builder delegation helper missing"
+fi
+
 if [[ -f "$REPO_ROOT/v2/skills/verifier/adversarial.md" ]]; then
   check "verifier/adversarial.md exists" "pass"
 else
@@ -276,11 +362,11 @@ for readme in "$REPO_ROOT/README.md" "$REPO_ROOT/README.zh-CN.md"; do
     check "$name: no old mode names" "pass"
   fi
 
-  # Check verifier companion files in structure tree
-  if grep -Eq 'cross-model|adversarial' "$readme" 2>/dev/null; then
+  # Check role companion files in structure tree
+  if grep -Eq 'packets|workers|isolation' "$readme" 2>/dev/null && grep -Eq 'cross-model|adversarial' "$readme" 2>/dev/null; then
     check "$name: structure tree has companion files" "pass"
   else
-    check "$name: structure tree has companion files" "warn" "verifier companion files not shown in structure tree"
+    check "$name: structure tree has companion files" "warn" "builder/verifier companion files not shown in structure tree"
   fi
 done
 

@@ -1,6 +1,6 @@
 # Baton
 
-A lightweight harness for AI-assisted software development. Three roles, three artifacts, round-based progressive elaboration.
+A lightweight harness for AI-assisted software development. Three public roles, three artifacts, round-based progressive elaboration.
 
 Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Generator-Evaluator GAN pattern).
 
@@ -32,7 +32,11 @@ v2/
 │   │   ├── profile.md                 Project-profile generation
 │   │   ├── planning.md                Round 1 / Round N planning
 │   │   └── revision.md                Verifier-driven design revision
-│   ├── builder/SKILL.md               Implementation with batch compile strategy
+│   ├── builder/
+│   │   ├── SKILL.md                   Public entrypoint — implementation contract
+│   │   ├── packets.md                 Batch-packet scope and context hygiene
+│   │   ├── workers.md                 Internal worker contract and status handling
+│   │   └── isolation.md               `inline / advisory / isolated` delegation modes
 │   └── verifier/
 │       ├── SKILL.md                   Public entrypoint — verification contract
 │       ├── preflight.md               Pre-flight plan challenge
@@ -41,10 +45,14 @@ v2/
 │       └── adversarial.md             Adversarial testing (security/boundary)
 ├── templates/
 │   ├── project-profile.template.md    Project-level persistent knowledge
-│   ├── plan.template.md              Per-task living document
-│   └── review.template.md            Per-round review output
+│   ├── plan.template.md               Per-task living document
+│   ├── review.template.md             Per-round review output
+│   ├── batch-packet.template.md       Builder delegation packet template
+│   ├── worker-report.template.md      Human-readable worker report template
+│   └── worker-report.template.json    Machine-readable worker report template
 └── tools/
     ├── archive-task.sh                Archive task state during closeout
+    ├── builder-worker.sh              Host-neutral Builder delegation helper
     ├── check-consistency.sh           Verify protocol-to-downstream sync
     ├── external-review.sh             Provider-neutral C+ review adapter
     ├── validate-live-state.sh         Validate current project-profile / plan / review shape
@@ -53,7 +61,7 @@ v2/
 .context/
 └── baton/
     ├── README.md                      Scratch-state contract
-    └── active/                        Ignored runtime state (external-review jobs, findings sidecars, exploration notes)
+    └── active/                        Ignored runtime state (external-review jobs, findings sidecars, exploration notes, batch packets, worker reports)
 ```
 
 ## Repository Layers
@@ -71,10 +79,12 @@ If a behavior only helps one host, tool, team, or domain, it should not go into 
 | Role | Reads | Writes | Key rule |
 |------|-------|--------|----------|
 | **Planner** | project-profile.md, plan.md, source code | plan.md (ACs, approach, batch plan) | Clarifying questions scale with complexity |
-| **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Every AC gets a test |
+| **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Only canonical mutator; optional internal workers stay behind Builder |
 | **Verifier** | project-profile.md, plan.md (ACs), test results | review.md | Never reads Builder's source code (Mode A/B) |
 
 **Dispatcher** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
+
+Builder may optionally delegate one batch or fix slice to an internal worker in Standard/Full mode. That worker is not a Baton role, cannot update `plan.md` or `review.md`, and cannot talk to the human directly.
 
 ## Round Lifecycle
 
@@ -115,7 +125,7 @@ flowchart TD
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
 | `.harness/plan.md` | `.harness/` | Per task — ACs, approach, `Open Decisions`, discoveries. Archived on completion |
 | `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, optional findings-sidecar pointer |
-| `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes |
+| `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder batch packets, worker reports |
 
 ## Quick Start
 
@@ -188,4 +198,5 @@ These are companion skills. Baton core must keep working without them.
 - Treat protocol, role files, templates, validators, and projection docs as behavior-shaping code.
 - Update `v2/protocol.md` first when a rule changes.
 - Keep host-specific details out of the protocol core and public role entrypoints.
+- Keep Builder delegation behind Builder. Internal workers must not become public roles or gain control-plane authority.
 - Run `bash v2/tools/check-consistency.sh` after core changes.

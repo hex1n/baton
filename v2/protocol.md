@@ -113,7 +113,7 @@ Same as Standard, but Verifier runs **all add-on files** — cross-model review,
 
 ## Roles
 
-Three roles. No more.
+Three public roles. No more.
 
 ### Planner
 
@@ -132,6 +132,7 @@ Implements code and writes tests. The only role that modifies source code.
 - **Writes:** source code, tests, plan.md § AC → Test Mapping, § Commit Checkpoints, § Discoveries
 - **Runs:** once per round; may re-run after Verifier code-fix feedback
 - **Context:** fresh subagent per round; reads plan.md + relevant source for context
+- **Optional internal delegation:** in Standard/Full mode, Builder may delegate one approved batch or fix slice to an internal worker, but Builder remains responsible for every canonical write and handoff
 
 ### Verifier
 
@@ -143,6 +144,17 @@ Independently verifies implementation quality. Challenges plan quality before bu
 - **Runs:** twice per round (pre-flight before build, verification after build)
 - **Context:** isolated subagent; plan.md + observed behavior only
 - **Boundary:** never modifies source code, tests, or the working tree as part of verification
+
+## Builder Delegation
+
+Builder may optionally use internal workers in Standard/Full mode. This is an implementation detail inside Builder, not a fifth Baton role.
+
+- **Compact mode:** no delegation. Compact mode is a single-context self-check path.
+- **Scope unit:** one approved batch or one fix slice at a time. Internal workers may not widen scope, reinterpret ACs, or invent new work.
+- **Canonical ownership:** only Builder writes source code/tests in the shared workspace and only Builder updates `.harness/plan.md`.
+- **Scratch only:** worker packets, reports, and temporary patches belong under `.context/baton/active/`. Dispatcher and recovery flows never route from them directly.
+- **No control-plane authority:** internal workers may not ask the human directly, update `.harness/review.md`, invoke external review, or change execution mode.
+- **Escalation stays normal:** if a worker reports missing context, scope confusion, or a design blocker, Builder routes back through Planner or Human using the normal Baton artifact flow.
 
 ## Artifacts
 
@@ -186,7 +198,7 @@ Independently verifies implementation quality. Challenges plan quality before bu
 
 - **Location:** `.context/baton/active/`
 - **Maintained by:** tools and role add-on files
-- **Contains:** raw external-review outputs, temporary exploration notes, normalized findings sidecars
+- **Contains:** raw external-review outputs, temporary exploration notes, normalized findings sidecars, Builder batch packets, worker reports, and optional temporary patches
 - **Read by:** humans and optional tooling; Dispatcher never routes from scratch files
 - **Lifecycle:** ephemeral for the active task. Closeout may copy it into the archive as scratch history, but Baton control flow never depends on it.
 - **Rule:** if information matters for routing, approval, or recovery, it must also be summarized in `.harness/plan.md` or `.harness/review.md`
@@ -377,7 +389,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 ### Core Rules (all modes)
 
 1. plan.md is the single source of truth for what's being built
-2. Builder is the only role that modifies source code or tests. Planner, Dispatcher, Verifier, and Verifier add-on files are read-only with respect to the codebase.
+2. Builder is the only public role that modifies source code or tests. Planner, Dispatcher, Verifier, and Verifier add-on files are read-only with respect to the codebase. Internal Builder workers may assist only under Builder control and never own canonical writes.
 3. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
 4. Human approval required before Builder starts each round
 5. Max 3 Builder ⇄ Verifier iterations per round before escalation
@@ -401,3 +413,4 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 17. Host/provider-specific integrations live in adapters, add-on files, or external plugins. `protocol.md` and the public role entrypoints stay host-neutral.
 18. Changes to protocol, public role files, templates, validators, or projection-layer docs are behavior-shaping changes. They require an eval note and must update affected projections/tests in the same change.
 19. `.harness/` stores canonical control-plane artifacts. `.context/baton/` stores scratch state only. Dispatcher and recovery flows must never depend on scratch-only data.
+20. Builder delegation must remain internal to Builder. It cannot create a new public role, bypass `.harness/*`, or grant scratch artifacts control-plane authority.
