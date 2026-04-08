@@ -106,36 +106,17 @@ Rules:
 - Skip questions where the answer is obvious from context
 - If requirements are clear enough to start, skip to Step 4
 
-**Before asking questions, persist exploration to `.harness/exploration.md`** (see Rule 8). This ensures that if the Agent session breaks during Q&A, the next Agent doesn't re-explore from scratch.
+**Before asking questions, always persist exploration to `.harness/exploration.md`** (see Rule 8). Content is free-form (whatever helps a new Agent continue your work), with one structural requirement: questions must be in a `## Questions` section so Dispatch can find them for relay.
 
 ```
-exploration.md structure:
-  ## Files Explored
-  - `{path}` L{N}-{M}: {key finding}
-  
-  ## Key Findings
-  - {finding with file references}
-  
-  ## Open Questions (for human)
-  - Q1: {question} → Option A: {…} / Option B: {…}
-  - Q2: {question} → …
-  
-  ## Human Answers
-  (filled by Dispatch after AskUserQuestion; empty on first write)
+1. Write .harness/exploration.md with your findings + a ## Questions section
+2. Try AskUserQuestion with your questions
+   → Success: receive answer, continue to Step 4
+   → Not available / session breaks: Dispatch relays via exploration.md
+     (see Dispatch SKILL.md § Planner Q&A Relay)
 ```
 
-**Two paths depending on tool availability:**
-
-Path A — AskUserQuestion is available (preferred):
-  → Use AskUserQuestion directly, receive answer, continue to Step 4
-
-Path B — AskUserQuestion is not available (subagent limitation):
-  → Write questions to `.harness/exploration.md` § Open Questions
-  → Return to Dispatch (Agent session ends here)
-  → Dispatch handles Q&A relay (see Dispatch SKILL.md § Planner Q&A Relay)
-  → New Planner Agent reads exploration.md (with answers filled in) and continues from Step 4
-
-Example question format (for either path):
+Example question format:
 ```
 "Before I plan, a few questions:
 
@@ -315,6 +296,6 @@ Use the template at `v2/templates/brief.template.md`. The template is the author
 5. **Compress at round start, but never lose load-bearing context.** See protocol.md § Artifacts for compression quality guard — decisions that constrain future rounds, rejected approaches with rationale, and unresolved discoveries must survive compression. When in doubt, keep it.
 6. **Batch plan is mandatory.** Specify which files go in which batch and what gets validated when.
 7. **Don't over-plan.** Round 1 doesn't need to plan all rounds in detail. A tentative list of future rounds is enough.
-8. **Persist intermediate work to files.** Agent sessions can break at any time — context is lost on return (Axiom 2). Before asking the human a clarifying question, write your exploration findings to `.harness/exploration.md` (files explored, key findings, open questions). If your Agent session breaks, a new Agent reads `exploration.md` instead of re-exploring from scratch. When your work is complete, delete `exploration.md` (brief.md is now the source of truth).
+8. **Persist intermediate work to files.** Agent sessions can break at any time — context is lost on return (Axiom 2). Before asking the human a clarifying question, write your exploration findings to `.harness/exploration.md`. Content is free-form; the only structural requirement is a `## Questions` section (so Dispatch can relay if the session breaks) and a `## Answers` section (so Dispatch can write back human responses). When brief.md is complete, delete `exploration.md`.
 9. **Verify numeric claims with commands.** When an AC or Context section includes a precise number (line count, dependency count, method count), you must include the verification command and its output (e.g., `wc -l`, `grep @Resource | wc -l`). Do not estimate by eye.
 10. **Respect human choices.** If a human selected an approach and you believe a different approach is better after deeper exploration, you must: (a) annotate the Decisions table with the `[diverges from human choice]` protocol tag (see protocol.md § Protocol Tags), (b) explain why in the "Why" column, and (c) never silently substitute. The human decides whether to accept the divergence.

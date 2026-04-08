@@ -159,10 +159,10 @@ How "invoke" works depends on execution mode:
 ```
 Standard mode:
   "Invoke Planner" → spawn Agent with Planner's SKILL.md
-    → If .harness/exploration.md exists with § Human Answers filled:
+    → If .harness/exploration.md exists with § Answers filled:
       tell Planner: "Read .harness/exploration.md — exploration and answers are
       already there. Continue from Step 4 (do not re-explore)."
-    → If .harness/exploration.md exists with § Human Answers empty:
+    → If .harness/exploration.md exists with § Answers empty:
       this is a broken session — run Q&A Relay first, then re-invoke.
   "Invoke Builder" → spawn Agent with Builder's SKILL.md
   "Invoke Verifier" → spawn Agent with Verifier's SKILL.md ONLY
@@ -192,17 +192,16 @@ Compact mode:
 When Planner returns without brief.md but leaves `.harness/exploration.md` with unanswered questions, Dispatch acts as a relay:
 
 ```
-1. Read .harness/exploration.md § Open Questions
-2. Present questions to human via AskUserQuestion (preserve Planner's question format)
-3. Write human's answers to .harness/exploration.md § Human Answers
+1. Read .harness/exploration.md § Questions
+2. Present questions to human via AskUserQuestion (preserve Planner's format)
+3. Write human's answers to .harness/exploration.md § Answers
 4. Re-invoke Planner:
-   → "Read .harness/exploration.md — exploration findings and human answers are in the file.
+   → "Read .harness/exploration.md — exploration and answers are in the file.
       Continue from Step 4 (Feature Decomposition). Do not re-explore."
-5. Planner reads exploration.md, uses answers, outputs brief.md
-6. On success, Planner deletes exploration.md (brief.md is now the source of truth)
+5. Planner reads exploration.md, uses answers, outputs brief.md, deletes exploration.md
 ```
 
-This handles the case where a Planner subagent cannot use AskUserQuestion directly. Dispatch adds no judgment — it only relays questions and writes back answers.
+Dispatch adds no judgment — it only relays questions and writes back answers.
 
 ## Micro-fix Fast Path
 
