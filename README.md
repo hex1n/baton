@@ -4,6 +4,8 @@ A lightweight harness for AI-assisted software development. Three roles, three a
 
 Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Generator-Evaluator GAN pattern).
 
+Read [CONTRIBUTING.md](/Users/hex1n/IdeaProjects/baton/CONTRIBUTING.md) before changing Baton core behavior.
+
 ## Why
 
 AI coding agents face three core problems:
@@ -35,7 +37,7 @@ v2/
 │       ├── SKILL.md                   Public entrypoint — verification contract
 │       ├── preflight.md               Pre-flight plan challenge
 │       ├── verification.md            Tier 1 / 2 / 3a verification
-│       ├── cross-model.md             Cross-model review via codex-plugin-cc
+│       ├── cross-model.md             Cross-model review add-on
 │       └── adversarial.md             Adversarial testing (security/boundary)
 ├── templates/
 │   ├── project-profile.template.md    Project-level persistent knowledge
@@ -44,9 +46,25 @@ v2/
 └── tools/
     ├── archive-task.sh                Archive task state during closeout
     ├── check-consistency.sh           Verify protocol-to-downstream sync
+    ├── external-review.sh             Provider-neutral C+ review adapter
     ├── validate-live-state.sh         Validate current project-profile / plan / review shape
     └── validate-round-sync.sh         Validate plan/review round alignment
+
+.context/
+└── baton/
+    ├── README.md                      Scratch-state contract
+    └── active/                        Ignored runtime state (external-review jobs, findings sidecars, exploration notes)
 ```
+
+## Repository Layers
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| **Core** | `v2/` | General-purpose Baton protocol, public role entrypoints, templates, validators |
+| **Companion** | `skills/` | Optional supporting skills outside the core Baton loop |
+| **External adapters / plugins** | wrappers in `v2/tools/` or separate repos/plugins | Host/provider-specific integrations kept out of core protocol |
+
+If a behavior only helps one host, tool, team, or domain, it should not go into Baton core.
 
 ## Roles
 
@@ -96,7 +114,8 @@ flowchart TD
 |----------|----------|-----------|
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
 | `.harness/plan.md` | `.harness/` | Per task — ACs, approach, `Open Decisions`, discoveries. Archived on completion |
-| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals` |
+| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, optional findings-sidecar pointer |
+| `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes |
 
 ## Quick Start
 
@@ -152,11 +171,21 @@ Detected during pre-flight. Adapts to what the environment supports:
 | **A** | Full: compile + test + app startup + DB | High |
 | **B** | Partial: compile + test + DB assertions | Medium |
 | **C** | Static: compile + test + code review | Lower |
-| **C+** | Static + external AI reviewer | Medium |
+| **C+** | Static + external reviewer via adapter | Medium |
 
-## Utility Skills
+## Companion Skills
 
 | Skill | Purpose |
 |-------|---------|
+| `using-baton` | Thin bootstrap for Baton-enabled repos: enter via `/dispatch`, prefer canonical artifacts, run validators before closing core changes |
 | `deep-research` | Systematic investigation of code, APIs, docs |
 | `first-principles-planner` | Strategic planning from first principles |
+
+These are companion skills. Baton core must keep working without them.
+
+## Contribution Guardrails
+
+- Treat protocol, role files, templates, validators, and projection docs as behavior-shaping code.
+- Update `v2/protocol.md` first when a rule changes.
+- Keep host-specific details out of the protocol core and public role entrypoints.
+- Run `bash v2/tools/check-consistency.sh` after core changes.

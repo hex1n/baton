@@ -1,0 +1,28 @@
+{
+  "round": 0,
+  "mode": "A|B|C|C+",
+  "source": "verifier|external-review",
+  "summary": {
+    "code_bugs": 0,
+    "design_issues": 0,
+    "requirement_gaps": 0,
+    "cross_model_confirmed": 0,
+    "cross_model_unverified": 0
+  },
+  "findings": [
+    {
+      "id": "F-1",
+      "category": "code-bug|design-issue|requirement-gap|cross-model-confirmed|cross-model-unverified",
+      "severity": "blocker|important|warning|info",
+      "ac": "AC-{N}.1",
+      "summary": "Short human-readable finding summary",
+      "evidence": [
+        {
+          "type": "test|runtime|file|cross-model",
+          "ref": "path/to/file:123 or command output reference"
+        }
+      ],
+      "needs_human_judgment": false
+    }
+  ]
+}

@@ -116,6 +116,9 @@ if [[ -f "$REVIEW" ]]; then
   require_heading "$REVIEW" '^## Pre-flight' "review pre-flight section" "missing '## Pre-flight'"
   require_heading "$REVIEW" '^## Verification$' "review verification section" "missing '## Verification'"
   require_heading "$REVIEW" '^## Findings$' "review findings section" "missing '## Findings'"
+  require_heading "$REVIEW" '^### Findings Sidecar$' "review findings sidecar" "missing '### Findings Sidecar'"
+  require_heading "$REVIEW" '^- Path: ' "review findings sidecar path" "missing findings sidecar path line"
+  require_heading "$REVIEW" '^- Status: ' "review findings sidecar status" "missing findings sidecar status line"
   require_heading "$REVIEW" '^## Human Judgment$' "review human judgment" "missing '## Human Judgment'"
   require_heading "$REVIEW" '^## Routing Signals$' "review routing signals" "missing '## Routing Signals'"
   require_heading "$REVIEW" '^\| Next Route \|' "review next route row" "missing Next Route row"
@@ -127,6 +130,26 @@ if [[ -f "$REVIEW" ]]; then
     check "review single routing signals section" "pass"
   else
     check "review single routing signals section" "fail" "expected exactly 1 '## Routing Signals' section, found $review_routing_signals_count"
+  fi
+
+  sidecar_line=$(grep -m1 '^- Path: ' "$REVIEW" 2>/dev/null || true)
+  sidecar_path="${sidecar_line#- Path: }"
+  sidecar_path="${sidecar_path#\`}"
+  sidecar_path="${sidecar_path%\`}"
+  if [[ -z "$sidecar_path" || "$sidecar_path" == "N/A" ]]; then
+    check "review findings sidecar optional path" "pass"
+  else
+    sidecar_abs="$REPO_ROOT/$sidecar_path"
+    if [[ -f "$sidecar_abs" ]]; then
+      check "review findings sidecar file exists" "pass"
+      if grep -q '"round"' "$sidecar_abs" 2>/dev/null && grep -q '"findings"' "$sidecar_abs" 2>/dev/null; then
+        check "review findings sidecar shape" "pass"
+      else
+        check "review findings sidecar shape" "fail" "sidecar exists but does not look like review findings JSON"
+      fi
+    else
+      check "review findings sidecar file exists" "fail" "declared sidecar path not found: $sidecar_path"
+    fi
   fi
 else
   check "review.md present" "warn" "no current review found"

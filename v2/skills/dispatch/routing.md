@@ -11,6 +11,8 @@ plan.md § Open Decisions   → explicit human questions + blocking status
 review.md § Routing Signals   → next route + human-review requirement + blocking reason
 ```
 
+Scratch files under `.context/baton/active/` are optional tooling aids. Dispatcher never routes from them.
+
 Read these files to determine current state:
 
 ```

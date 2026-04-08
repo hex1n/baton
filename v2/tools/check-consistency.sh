@@ -90,10 +90,22 @@ else
   check "review.template.md exists" "fail" "missing review template"
 fi
 
+if [[ -f "$REPO_ROOT/v2/templates/review-findings.template.json" ]]; then
+  check "review-findings.template.json exists" "pass"
+else
+  check "review-findings.template.json exists" "fail" "missing review findings sidecar template"
+fi
+
 if grep -q "^## Routing Signals$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
   check "review.template.md routing signals" "pass"
 else
   check "review.template.md routing signals" "fail" "missing structured Routing Signals section"
+fi
+
+if grep -q "^### Findings Sidecar$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md findings sidecar" "pass"
+else
+  check "review.template.md findings sidecar" "fail" "missing findings sidecar section"
 fi
 
 echo ""
@@ -197,6 +209,12 @@ else
   check "verifier/cross-model.md exists" "fail" "cross-model file missing"
 fi
 
+if [[ -f "$REPO_ROOT/v2/tools/external-review.sh" ]]; then
+  check "tools/external-review.sh exists" "pass"
+else
+  check "tools/external-review.sh exists" "fail" "external review adapter missing"
+fi
+
 if [[ -f "$REPO_ROOT/v2/skills/verifier/adversarial.md" ]]; then
   check "verifier/adversarial.md exists" "pass"
 else
@@ -220,6 +238,12 @@ if grep -q "cross-model.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null
   check "verifier references cross-model.md" "pass"
 else
   check "verifier references cross-model.md" "fail" "verifier entrypoint doesn't reference cross-model file"
+fi
+
+if grep -q "external-review.sh" "$REPO_ROOT/v2/skills/verifier/cross-model.md" 2>/dev/null; then
+  check "cross-model.md references external-review.sh" "pass"
+else
+  check "cross-model.md references external-review.sh" "fail" "cross-model guide bypasses the adapter"
 fi
 
 if grep -q "adversarial.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
@@ -293,6 +317,60 @@ else
   check "protocol.md has Core/Module rule split" "warn" "rules not split into core/module"
 fi
 
+if [[ -f "$REPO_ROOT/CONTRIBUTING.md" ]]; then
+  check "CONTRIBUTING.md exists" "pass"
+else
+  check "CONTRIBUTING.md exists" "fail" "missing contribution guide"
+fi
+
+if [[ -f "$REPO_ROOT/.context/baton/README.md" ]]; then
+  check ".context/baton/README.md exists" "pass"
+else
+  check ".context/baton/README.md exists" "fail" "missing scratch-state contract"
+fi
+
+if [[ -f "$REPO_ROOT/skills/using-baton/SKILL.md" ]]; then
+  check "skills/using-baton/SKILL.md exists" "pass"
+else
+  check "skills/using-baton/SKILL.md exists" "fail" "missing thin bootstrap companion skill"
+fi
+
+if grep -q "Repository Layers" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md has Repository Layers" "pass"
+else
+  check "protocol.md has Repository Layers" "fail" "missing core / companion / adapter boundary section"
+fi
+
+if grep -q "Change Governance" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md has Change Governance" "pass"
+else
+  check "protocol.md has Change Governance" "fail" "missing behavior-change governance section"
+fi
+
+if grep -q "plan.md" "$REPO_ROOT/CLAUDE.md" 2>/dev/null && grep -q "review.md" "$REPO_ROOT/CLAUDE.md" 2>/dev/null; then
+  check "CLAUDE.md projects plan/review" "pass"
+else
+  check "CLAUDE.md projects plan/review" "fail" "root CLAUDE projection is stale"
+fi
+
+if grep -qE 'brief.md|eval.md|brief.template.md' "$REPO_ROOT/CLAUDE.md" 2>/dev/null; then
+  check "CLAUDE.md avoids legacy brief/eval names" "fail" "root CLAUDE still references legacy artifact names"
+else
+  check "CLAUDE.md avoids legacy brief/eval names" "pass"
+fi
+
+if grep -q "CONTRIBUTING.md" "$REPO_ROOT/v2/CLAUDE.md" 2>/dev/null; then
+  check "v2/CLAUDE.md references CONTRIBUTING" "pass"
+else
+  check "v2/CLAUDE.md references CONTRIBUTING" "fail" "v2 quick reference missing change-policy link"
+fi
+
+if grep -q "using-baton" "$REPO_ROOT/README.md" 2>/dev/null && grep -q "using-baton" "$REPO_ROOT/README.zh-CN.md" 2>/dev/null; then
+  check "README projects using-baton companion" "pass"
+else
+  check "README projects using-baton companion" "fail" "companion-skill table missing using-baton"
+fi
+
 echo ""
 
 # --- 7. Skill complexity ---
@@ -333,8 +411,20 @@ fi
 
 echo ""
 
+# --- Contract tests ---
+echo "9. Contract Tests"
+
+if bash "$REPO_ROOT/v2/tests/run.sh" --repo-root "$REPO_ROOT" >/tmp/baton-contract-tests.log 2>&1; then
+  check "v2/tests/run.sh" "pass"
+else
+  detail=$(sed -n '1,6p' /tmp/baton-contract-tests.log | tr '\n' ' ')
+  check "v2/tests/run.sh" "fail" "${detail:-contract tests failed}"
+fi
+
+echo ""
+
 # --- Summary ---
-echo "9. Live State Validation"
+echo "10. Live State Validation"
 
 if [[ -f "$REPO_ROOT/project-profile.md" || -f "$REPO_ROOT/.harness/plan.md" || -f "$REPO_ROOT/.harness/review.md" ]]; then
   if bash "$REPO_ROOT/v2/tools/validate-live-state.sh" --repo-root "$REPO_ROOT" >/tmp/baton-live-state.log 2>&1; then

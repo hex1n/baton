@@ -132,6 +132,11 @@ For 1-2 high-risk ACs:
 ### Requirement gaps
 {None or specific gaps.}
 
+### Findings Sidecar
+- Path: {.context/baton/active/findings/review-round-{N}.json or N/A}
+- Status: {written / not needed}
+- Summary: {normalized findings for tooling, or "N/A"}
+
 ## Human Judgment
 
 ### Already verified
@@ -143,6 +148,9 @@ For 1-2 high-risk ACs:
 ### Risk note
 Verifier ran in Mode {A/B/C}. Confidence: {high/medium/low}.
 
+### Independence note
+⚠️ Verification independence: degraded — human review weight is higher.
+
 ## Routing Signals
 | Key | Value |
 |-----|-------|
@@ -150,6 +158,15 @@ Verifier ran in Mode {A/B/C}. Confidence: {high/medium/low}.
 | Human Review Needed | {yes / no} |
 | Blocking | {none / code-bug / design-issue / requirement-gap / environment} |
 ```
+
+If you produced non-trivial findings, also write a normalized JSON sidecar at:
+
+```text
+.context/baton/active/findings/review-round-{N}.json
+```
+
+Use `v2/templates/review-findings.template.json` as the shape. `review.md` remains the canonical
+human-facing artifact; the JSON sidecar is scratch state for tooling and later aggregation.
 
 ## Escalation Criteria
 

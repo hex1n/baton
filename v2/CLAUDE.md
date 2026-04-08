@@ -5,6 +5,15 @@ This project uses the baton v2 harness for AI-assisted development tasks.
 ## Protocol
 
 Read `v2/protocol.md` for the full protocol: roles, artifacts, round lifecycle, feedback paths, and rules.
+Read `CONTRIBUTING.md` before changing core behavior.
+
+## Repository Layers
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| Core | `v2/` | Baton protocol, public role entrypoints, templates, validators |
+| Companion | `skills/` | Optional supporting skills outside the core Baton loop |
+| External adapters / plugins | wrappers in `v2/tools/` or separate repos/plugins | Host/provider-specific integrations |
 
 ## Skills
 
@@ -17,6 +26,7 @@ Read `v2/protocol.md` for the full protocol: roles, artifacts, round lifecycle, 
 
 Skills live in `v2/skills/{name}/SKILL.md`.
 Public skill entrypoints are thin; detailed procedures live in sibling role files under each role directory.
+Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It keeps `/dispatch` as the default entry point and preserves the artifact-first control plane.
 
 ## Artifacts
 
@@ -48,3 +58,4 @@ Public skill entrypoints are thin; detailed procedures live in sibling role file
 4. Max 3 Builder-Verifier iterations per round before escalation
 5. Each role starts with fresh context; files carry state, not conversation
 6. Round scope lock: after approval, ACs are frozen; new requirements go to next round
+7. Companion skills remain optional; Baton core cannot require them

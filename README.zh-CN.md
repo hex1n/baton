@@ -4,6 +4,8 @@
 
 设计参考 [Anthropic 关于长时间运行应用的 harness 设计](https://www.anthropic.com/engineering/harness-design-long-running-apps)（Generator-Evaluator GAN 模式）。
 
+修改 Baton 核心行为前，先阅读 [CONTRIBUTING.md](/Users/hex1n/IdeaProjects/baton/CONTRIBUTING.md)。
+
 ## 为什么
 
 AI 编码代理面临三个核心问题：
@@ -35,7 +37,7 @@ v2/
 │       ├── SKILL.md                   公共入口 — 验证契约
 │       ├── preflight.md               预检与方案挑战
 │       ├── verification.md            Tier 1 / 2 / 3a 验证
-│       ├── cross-model.md             跨模型审查（codex-plugin-cc）
+│       ├── cross-model.md             跨模型审查附加层
 │       └── adversarial.md             对抗测试（安全/边界）
 ├── templates/
 │   ├── project-profile.template.md    项目级持久知识模板
@@ -44,9 +46,25 @@ v2/
 └── tools/
     ├── archive-task.sh                在收口阶段归档任务状态
     ├── check-consistency.sh           验证协议到下游文件的一致性
+    ├── external-review.sh             provider-neutral 的 C+ 审查适配层
     ├── validate-live-state.sh         验证当前 project-profile / plan / review 结构
     └── validate-round-sync.sh         验证 plan/review 轮次对齐
+
+.context/
+└── baton/
+    ├── README.md                      scratch-state 契约说明
+    └── active/                        被 git 忽略的运行时状态（external-review 任务、findings sidecar、探索笔记）
 ```
+
+## 仓库分层
+
+| 层 | 位置 | 作用 |
+|----|------|------|
+| **Core** | `v2/` | 通用 Baton 协议、公共角色入口、模板、验证器 |
+| **Companion** | `skills/` | 不属于 Baton 核心循环的可选辅助技能 |
+| **External adapters / plugins** | `v2/tools/` 包装器或独立仓库 / 插件 | 宿主或供应商特定集成，避免进入协议核心 |
+
+如果某个行为只对单一宿主、工具、团队或领域有价值，就不应进入 Baton core。
 
 ## 角色
 
@@ -96,7 +114,8 @@ flowchart TD
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
 | `.harness/plan.md` | `.harness/` | 每任务 — AC、方案、`Open Decisions`、发现。完成后归档 |
-| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals` |
+| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`，以及可选的 findings-sidecar 指针 |
+| `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记 |
 
 ## 快速开始
 
@@ -152,11 +171,21 @@ flowchart LR
 | **A** | 完整：编译 + 测试 + 应用启动 + 数据库 | 高 |
 | **B** | 部分：编译 + 测试 + 数据库断言 | 中 |
 | **C** | 静态：编译 + 测试 + 代码审查 | 较低 |
-| **C+** | 静态 + 外部 AI 审查 | 中 |
+| **C+** | 静态 + 通过适配层接入的外部审查 | 中 |
 
-## 工具技能
+## Companion Skills
 
 | 技能 | 用途 |
 |------|------|
+| `using-baton` | Baton 仓库的薄启动守门：从 `/dispatch` 进入、优先读 canonical artifacts、收口前跑 validator |
 | `deep-research` | 系统化调查代码、API、文档 |
 | `first-principles-planner` | 基于第一性原理的策略规划 |
+
+这些都属于 companion skills；Baton core 不应依赖它们才能运转。
+
+## 贡献护栏
+
+- protocol、角色文件、模板、验证器和投影文档都应视为“塑造行为的代码”。
+- 规则变化先改 `v2/protocol.md`，再同步下游投影。
+- 宿主特定细节不要写进协议核心和公共角色入口。
+- 改 core 后运行 `bash v2/tools/check-consistency.sh`。

@@ -117,28 +117,34 @@ Error format: {describe structure}
 ## External Reviewer (Mode C+ only)
 
 > Optional. If configured, Mode C upgrades to C+ — production code review is delegated to
-> an external AI tool with different blind spots, elevating evidence from L3 to L2.5.
+> an external reviewer with different blind spots, elevating evidence from L3 to L2.5.
 >
-> Recommended: [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) — runs OpenAI Codex
-> inside Claude Code, providing `/codex:review` and `/codex:adversarial-review` commands.
+> Keep provider / host details here, not in `v2/protocol.md`. Baton reads this section
+> through `bash v2/tools/external-review.sh`.
 
 | Key | Value |
 |-----|-------|
-| Plugin | `codex@openai-codex` (via `/plugin install codex@openai-codex`) |
-| Standard review | `/codex:review` — read-only review of uncommitted changes or branch diff |
-| Adversarial review | `/codex:adversarial-review` — challenges design choices and assumptions |
-| Rescue (optional) | `/codex:rescue` — delegate investigation and fixes to Codex |
+| Provider | `{provider name or none}` |
+| Adapter | `bash v2/tools/external-review.sh` |
 | Availability | ✅ / ❌ |
+| Start review command | `{command template or N/A}` |
+| Start challenge command | `{command template or N/A}` |
+| Status command | `{command template or N/A}` |
+| Result command | `{command template or N/A}` |
+| Cancel command | `{command template or N/A}` |
+| Notes | `{auth, limits, or "wrap complex shell in a local helper script"}` |
 
-**Setup:**
+**Command placeholders:**
 ```
-/plugin marketplace add openai/codex-plugin-cc
-/plugin install codex@openai-codex
-/reload-plugins
-/codex:setup
+{job_id}    → Baton job id created by the adapter
+{input}     → plan.md or review.md path passed to the adapter
+{base}      → optional git base ref
+{focus}     → focus prompt text passed by Verifier
+{state_dir} → adapter state directory for this job
+{repo_root} → repository root
 ```
 
-**Requirements:** Node.js ≥18.18, ChatGPT subscription or OpenAI API key.
+If your provider command needs pipes, shell functions, or more than one step, wrap it in a local helper script and point the command row at that script.
 
 If not configured or unavailable, Verifier stays in Mode C (same-model L3 review).
 

@@ -55,6 +55,11 @@ None.
 ### Requirement gaps
 None.
 
+### Findings Sidecar
+- Path: `N/A`
+- Status: `not needed`
+- Summary: `N/A`
+
 ## Human Judgment
 
 ### Already verified

@@ -21,6 +21,7 @@ HARNESS_DIR="${REPO_ROOT}/.harness"
 PLAN="${HARNESS_DIR}/plan.md"
 REVIEW="${HARNESS_DIR}/review.md"
 ARCHIVE_BASE="${HARNESS_DIR}/archive"
+SCRATCH_ACTIVE="${REPO_ROOT}/.context/baton/active"
 
 # --- Validate plan.md exists ---
 if [[ ! -f "$PLAN" ]]; then
@@ -61,12 +62,13 @@ fi
 # --- Dry run: show what the closeout archive step would do, then exit ---
 if $DRY_RUN; then
   echo "[dry-run] Would archive to: ${target_dir}"
-  echo "[dry-run] Files: plan.md$([ -f "$REVIEW" ] && echo ", review.md")"
+echo "[dry-run] Files: plan.md$([ -f "$REVIEW" ] && echo ", review.md")"
   review_count=0
   for review_round in "${HARNESS_DIR}"/review-round-*.md; do
     [[ -f "$review_round" ]] && review_count=$((review_count + 1))
   done
   [[ $review_count -gt 0 ]] && echo "[dry-run] + ${review_count} review-round-*.md files"
+  [[ -d "$SCRATCH_ACTIVE" ]] && echo "[dry-run] + scratch state from .context/baton/active/"
   exit 0
 fi
 
@@ -88,6 +90,14 @@ for review_round in "${HARNESS_DIR}"/review-round-*.md; do
   review_count=$((review_count + 1))
 done
 
+# Copy scratch state when present. It is non-canonical, but useful local history.
+scratch_copied=false
+if [[ -d "$SCRATCH_ACTIVE" ]]; then
+  mkdir -p "${target_dir}/scratch"
+  cp -R "$SCRATCH_ACTIVE"/. "${target_dir}/scratch/"
+  scratch_copied=true
+fi
+
 # --- Integrity check ---
 if ! diff -q "$PLAN" "${target_dir}/plan.md" >/dev/null 2>&1; then
   echo "Error: plan.md copy verification failed." >&2
@@ -107,6 +117,7 @@ if ! $KEEP_ORIGINALS; then
   done
   # Clean up transient checkpoint (not archived — content is in plan.md)
   [[ -f "${HARNESS_DIR}/exploration.md" ]] && rm "${HARNESS_DIR}/exploration.md"
+  [[ -d "$SCRATCH_ACTIVE" ]] && rm -rf "$SCRATCH_ACTIVE"
 fi
 
 # --- Summary ---
@@ -119,5 +130,8 @@ else
 fi
 if [[ $review_count -gt 0 ]]; then
   echo "  - ${review_count} review-round-*.md files ✅"
+fi
+if $scratch_copied; then
+  echo "  - scratch/ ✅"
 fi
 if $KEEP_ORIGINALS; then echo "  - originals kept (--keep-originals)"; fi

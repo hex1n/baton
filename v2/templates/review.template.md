@@ -43,6 +43,11 @@
 ### Requirement gaps
 {None or actionable list}
 
+### Findings Sidecar
+- Path: `{.context/baton/active/findings/review-round-{N}.json or N/A}`
+- Status: `{written / not needed}`
+- Summary: `{machine-readable normalized findings for tooling, or "N/A"}`
+
 ## Human Judgment
 
 ### Already verified
@@ -53,6 +58,9 @@
 
 ### Risk note
 Verifier ran in Mode {A / B / C / C+}. Confidence: {high / medium / low}.
+
+### Independence note
+{Normal independence maintained. / ⚠️ Verification independence: degraded — human review weight is higher.}
 
 ## Routing Signals
 

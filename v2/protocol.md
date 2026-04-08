@@ -21,10 +21,34 @@ This file is the single source of truth for all protocol rules. Other files deri
 | `v2/templates/*.md` | Artifact structure | Sync field values (modes, formats) |
 | `README.md` / `README.zh-CN.md` | Projection layer (mental model) | Sync simplified descriptions; never restate exact thresholds — reference protocol.md |
 | `v2/CLAUDE.md` | Entry index | Sync summary rules; reference protocol.md for details |
+| `CONTRIBUTING.md` | Change policy | Sync repository-layer boundaries and validation expectations for core changes |
 
 **When adding or changing a rule:** update protocol.md first, then propagate to the files above. If a downstream file contradicts protocol.md, protocol.md wins.
 
-**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, companion files, README projection layer rules, and language neutrality across all downstream files.
+**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, companion files, projection-layer rules, language neutrality, and Baton's contract tests.
+
+## Repository Layers
+
+Keep Baton split into three layers:
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| **Core** | `v2/` | General-purpose Baton protocol, public roles, templates, and validators |
+| **Companion** | root `skills/` | Optional supporting skills that may help research or planning, but are not part of the Baton core loop |
+| **External adapters / plugins** | `v2/tools/` wrappers or separate repos/plugins | Host-specific or provider-specific integrations kept outside the protocol core |
+
+If a change is project-specific, domain-specific, or primarily about one host/provider, it belongs in a companion skill, adapter, or separate plugin — not in Baton core.
+
+## Change Governance
+
+Protocol files, public role files, templates, validators, and projection-layer docs are behavior-shaping files. Changing them is equivalent to changing code that controls agent behavior.
+
+For behavior-shaping changes:
+
+1. Update `v2/protocol.md` first if the rule itself changed
+2. Sync all affected downstream files in the same change
+3. Record an eval note in the task / commit / PR describing the problem, changed behavior, validation commands, and residual risk
+4. Prefer one behavior problem per change instead of bundled rewrites
 
 ## Execution Modes
 
@@ -153,10 +177,19 @@ Independently verifies implementation quality. Challenges plan quality before bu
 
 - **Location:** .harness/
 - **Maintained by:** Verifier (writes), Dispatcher (archives)
-- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals`
+- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals`, and an optional findings-sidecar pointer
 - **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatcher copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
 - **Round tag:** review.md header must include `# Review: Round {N}` so Dispatcher can compare against plan.md's current round
 - **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`) and whether human review is required.
+
+### .context/baton/ — scratch state, non-canonical
+
+- **Location:** `.context/baton/active/`
+- **Maintained by:** tools and role add-on files
+- **Contains:** raw external-review outputs, temporary exploration notes, normalized findings sidecars
+- **Read by:** humans and optional tooling; Dispatcher never routes from scratch files
+- **Lifecycle:** ephemeral for the active task. Closeout may copy it into the archive as scratch history, but Baton control flow never depends on it.
+- **Rule:** if information matters for routing, approval, or recovery, it must also be summarized in `.harness/plan.md` or `.harness/review.md`
 
 ## Round Lifecycle
 
@@ -228,7 +261,7 @@ Verifier evidence is classified by independence from Builder:
 |-------|------------|---------|
 | **L1** Independent | Builder cannot influence the outcome | Test pass/fail, runtime behavior, compile results |
 | **L2** Auditable | Builder produced it, but Verifier can verify | Test code quality, AC→test mapping |
-| **L2.5** Cross-model | A different model reviews Builder's output | External AI reviewer configured in project-profile.md § External Reviewer |
+| **L2.5** Cross-model | A different model reviews Builder's output | External reviewer configured in project-profile.md § External Reviewer and invoked through `v2/tools/external-review.sh` |
 | **L3** Non-independent | Same model reviews same model's output | Production code review, AI judgment |
 
 L2.5 exists because cross-model review has different blind spots from Builder — it is structurally more independent than L3, but still AI judgment (not deterministic like L1). It is only available when project-profile.md configures an external reviewer.
@@ -246,7 +279,7 @@ L2.5 exists because cross-model review has different blind spots from Builder �
 
 **Mode C explicitly permits reading production code** — without runtime evidence, code review is the only deep verification available. This is an honest degradation, not a contradiction.
 
-**Mode C+ upgrades code review independence** by delegating production code review to an external AI reviewer (configured in project-profile.md § External Reviewer). The external model has different training and blind spots, breaking the "same model evaluates same model" problem. See `verifier/cross-model.md` for tool-specific setup and commands. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
+**Mode C+ upgrades code review independence** by delegating production code review to an external reviewer (configured in project-profile.md § External Reviewer and invoked through `v2/tools/external-review.sh`). The external model has different training and blind spots, breaking the "same model evaluates same model" problem. See `verifier/cross-model.md` for the adapter workflow. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
 
 **review.md must state which mode was used and the evidence level distribution.** Mode B/C must include: "⚠️ Verification independence: degraded — human review weight is higher."
 
@@ -283,7 +316,7 @@ Flaky tests are reality. The harness handles them.
 
 - **Mode A/B:** Verifier does NOT read Builder's production code. L1 evidence (test results, runtime behavior) is sufficient.
 - **Mode C:** Verifier MAY read production code (L3) because no runtime evidence exists. review.md must declare this degradation.
-- **Mode C+:** Verifier delegates production code review to an external AI tool (L2.5). Verifier still reads test files and coordinates, but the code judgment comes from a different model. review.md must state "Cross-model review (L2.5)" for those findings.
+- **Mode C+:** Verifier delegates production code review to an external reviewer through the adapter (L2.5). Verifier still reads test files and coordinates, but the code judgment comes from a different model. review.md must state "Cross-model review (L2.5)" for those findings.
 - **All modes:** Verifier MAY read test files (L2) to audit test quality, but must independently judge whether tests actually verify ACs — not just trust Builder's AC→test mapping.
 - **All verifier techniques must be read-only.** No mutation testing, temporary source edits, or rescue-style fixes during verification. If stronger proof requires code changes, route back to Builder with a concrete finding.
 
@@ -360,3 +393,11 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 12. Migration scripts require separate human approval
 13. Round scope lock: after human approves a round's plan, its ACs are frozen. New scope changes go to the next round (see Dispatcher § Scope Change Flow). Builder and Verifier work against the approved ACs, not a moving target
 14. Dispatcher routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatcher never auto-decides these
+
+### Governance Rules
+
+15. `v2/` stays general-purpose Baton core. Domain-, project-, and host-specific workflow rules do not belong there.
+16. Root `skills/` are companion capabilities. Baton core may reference them as optional help, but the Dispatcher → Planner → Builder → Verifier loop cannot depend on them.
+17. Host/provider-specific integrations live in adapters, add-on files, or external plugins. `protocol.md` and the public role entrypoints stay host-neutral.
+18. Changes to protocol, public role files, templates, validators, or projection-layer docs are behavior-shaping changes. They require an eval note and must update affected projections/tests in the same change.
+19. `.harness/` stores canonical control-plane artifacts. `.context/baton/` stores scratch state only. Dispatcher and recovery flows must never depend on scratch-only data.

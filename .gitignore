@@ -17,3 +17,6 @@ autoresearch-quality-results.tsv
 # Kept out of the repo to allow capturing company-specific or sensitive
 # context. Users are responsible for local backup.
 knowledge/
+
+# Baton scratch state (canonical control-plane files stay in .harness/)
+.context/baton/active/

@@ -15,7 +15,7 @@ CLI harness / protocol toolkit
 | Language | Bash / Markdown |
 | Framework | None (protocol + shell tooling) |
 | Build tool | None |
-| Modules | `v2/` (core protocol, skills, templates, tools), `skills/` (companion skills), `.harness/` (live artifacts) |
+| Modules | `v2/` (core protocol, skills, templates, tools), `skills/` (companion skills), `.harness/` (canonical live artifacts), `.context/baton/` (scratch state) |
 | Compile / check | `bash v2/tools/check-consistency.sh` |
 | Test | `bash v2/tools/check-consistency.sh` |
 | Run | `N/A` |
@@ -40,7 +40,8 @@ CLI harness / protocol toolkit
 baton/
   ├── v2/         — protocol source of truth, core skills, templates, tools
   ├── skills/     — companion skills (not part of core Baton loop)
-  └── .harness/   — live task artifacts consumed by Baton
+  ├── .harness/   — canonical live task artifacts consumed by Baton
+  └── .context/   — scratch state for external-review jobs and findings sidecars
 
 Inside `v2/skills/`, each role keeps a thin public `SKILL.md` entrypoint and pushes detailed procedures into sibling role files.
 ```
@@ -51,6 +52,7 @@ Protocol outputs are markdown artifacts:
 - project-level knowledge in `project-profile.md`
 - task state in `.harness/plan.md` (including `Open Decisions`)
 - verification results in `.harness/review.md` (including `Routing Signals`)
+- scratch outputs in `.context/baton/active/` (non-canonical)
 ```
 
 ### Error Handling
@@ -109,10 +111,25 @@ Error format: plain stderr + non-zero exit code
 | DB / services at runtime | ❌ | No runtime services |
 | **Verifier Mode** | **C** | Static verification only; independence is partially degraded |
 
+## External Reviewer (Mode C+ only)
+
+| Key | Value |
+|-----|-------|
+| Provider | `none` |
+| Adapter | `bash v2/tools/external-review.sh` |
+| Availability | ❌ |
+| Start review command | `N/A` |
+| Start challenge command | `N/A` |
+| Status command | `N/A` |
+| Result command | `N/A` |
+| Cancel command | `N/A` |
+| Notes | Not configured for this repository. If a second-model review path is added later, configure it here instead of hardcoding provider details into Baton core files. |
+
 ## Notes
 
 - Baton v2 is the active system; root `skills/` contains companion capabilities, not core protocol roles.
 - This repository is best validated through protocol drift checks and live artifact checks, not app startup.
 - The preferred repository-level verification entrypoint is `bash v2/tools/check-consistency.sh`; it now chains the live artifact validators internally.
+- `.harness/` is the canonical control plane. `.context/baton/active/` is scratch space only.
 - Historical `docs/*.md` analysis files were removed once they no longer matched the active `v2/` system; current guidance now lives in protocol, README, project-profile, and live `.harness` artifacts.
 - Shell scripts should stay portable across `bash`/`zsh` on macOS where practical.
