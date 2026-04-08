@@ -8,16 +8,16 @@ Internal workers are part of Builder. They are not Baton roles and do not own ca
 
 Worker inputs:
 
-- One batch packet from `.context/baton/active/batches/.../packet.md`
+- One slice packet from `.context/baton/active/slices/.../packet.md`
 - The source files or snippets named in the packet
 - The exact commands Builder chose from `project-profile.md`
 
-Worker outputs belong under the same batch scratch directory, for example:
+Worker outputs belong under the same slice scratch directory, for example:
 
 ```text
-.context/baton/active/batches/round-{N}/batch-{M}/report.md
-.context/baton/active/batches/round-{N}/batch-{M}/report.json
-.context/baton/active/batches/round-{N}/batch-{M}/patch.diff
+.context/baton/active/slices/round-{N}/slice-{M}/report.md
+.context/baton/active/slices/round-{N}/slice-{M}/report.json
+.context/baton/active/slices/round-{N}/slice-{M}/patch.diff
 ```
 
 Start reports from:
@@ -30,9 +30,9 @@ v2/templates/worker-report.template.md
 The normal helpers are:
 
 ```text
-bash v2/tools/builder-worker.sh run-worker --round {N} --batch {M} --worker-label {name}
-bash v2/tools/builder-worker.sh collect-report --round {N} --batch {M} --status {status} --summary "{summary}"
-bash v2/tools/builder-worker.sh show-status --round {N} --batch {M}
+bash v2/tools/builder-slice.sh run-worker --round {N} --slice {M} --worker-label {name}
+bash v2/tools/builder-slice.sh collect-report --round {N} --slice {M} --status {status} --summary "{summary}"
+bash v2/tools/builder-slice.sh show-status --round {N} --slice {M}
 ```
 
 ## Allowed Actions

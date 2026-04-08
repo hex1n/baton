@@ -1,13 +1,13 @@
-# Plan: Skill Boundary Hardening & Live Validators
+# Plan: Round Contract & Slice Terminology Refactor
 
 ## Metadata
 
 | Key | Value |
 |-----|-------|
-| Name | Skill Boundary Hardening & Live Validators |
-| Description | Repair role-boundary violations, modularize public skill entrypoints, structure the live control plane, remove stale historical docs, normalize lifecycle terms, clarify naming, migrate the task/round artifact contract from `brief/eval` to `plan/review`, tighten active section labels, and align the router role name on `Dispatcher` while keeping `/dispatch` stable |
+| Name | Round Contract & Slice Terminology Refactor |
+| Description | Add `Round Contract` to Baton's control plane, rename Builder-internal `batch` terminology to `slice`, and align live artifacts, docs, tools, and validators to the new task hierarchy (`task -> round -> round contract -> slice`) |
 | Started | 2026-04-08 |
-| Round | 10 |
+| Round | 11 |
 | Verifier Mode | C |
 | Execution Mode | standard |
 
@@ -102,91 +102,106 @@
 - Decisions: normalize the active contract around `Metadata`, `Scope Breakdown`, `Round History`, `Human Judgment`, and `Needs your judgment`
 - Open: the router role still used the older label in active prose even though the command stayed `/dispatch`
 
-## Round 10
+### Round 10: Dispatcher naming cleanup ✅
+- Decisions: align the router role name on `Dispatcher` in active prose while preserving `/dispatch`, `dispatch/`, and `name: dispatch`
+- Open: Builder-internal `batch` terminology still blurred control-plane and implementation-layer concepts
+
+## Round 11
 
 ### Acceptance Criteria
 
-**AC-10.1: Active prose uses `Dispatcher` as the router role name**
-- Given: Baton’s active role set should read as noun-role names
+**AC-11.1: Baton defines an explicit round contract**
+- Given: `round` is Baton's top-level delivery cycle
 - When: this round is complete
-- Then: active protocol/docs/skills/templates/tools use `Dispatcher` where they refer to the router role
+- Then: `plan.md`, protocol text, Planner guidance, and Verifier pre-flight all include `§ Round Contract`
 
-**AC-10.2: Command and file-system stability are preserved**
-- Given: the user wants a better role name, not a disruptive command rename
+**AC-11.2: Builder-internal work is described as slices, not the older internal term**
+- Given: Builder delegation is an implementation detail, not the control-plane unit
 - When: this round is complete
-- Then: `/dispatch`, `dispatch/`, and `name: dispatch` remain unchanged
+- Then: Builder skills, templates, helper tooling, and scratch paths use `slice` terminology end-to-end
 
-**AC-10.3: Live control-plane artifacts record the naming distinction cleanly**
+**AC-11.3: Live artifacts and validators understand the new hierarchy**
 - Given: `.harness/plan.md` and `.harness/review.md` are the active control plane
 - When: this round is complete
-- Then: the live artifacts explicitly distinguish role-name cleanup from command/path stability
+- Then: live artifacts carry `Round Contract` and `Implementation Slices`, and validators enforce the new schema
 
-**AC-10.4: Validation still passes after the role-name cleanup**
-- Given: protocol wording, skill docs, and live artifacts all reference the router role
+**AC-11.4: Baton keeps `Round` instead of renaming it to `Sprint`**
+- Given: Anthropic's `sprint` is semantically closer to Baton's full round than to a Builder slice
 - When: this round is complete
-- Then: `check-consistency.sh`, `validate-live-state.sh`, and `validate-round-sync.sh` still pass
+- Then: protocol/docs describe the hierarchy as `task -> round -> round contract -> slice`
+
+### Open Decisions
+
+| ID | Question | Options | Status | Blocking |
+|----|----------|---------|--------|----------|
+| OD-11.1 | None. The naming decision is to keep `Round` and rename Builder-internal `batch` to `slice`. | — | resolved | no |
+
+### Round Contract
+
+| Key | Value |
+|-----|-------|
+| Scope In | Add `§ Round Contract` to the control plane, rename Builder-internal terminology from `batch` to `slice`, and align docs/tools/live artifacts |
+| Scope Out | Renaming `Round` to `Sprint`, changing public role entrypoints, or introducing a new top-level lifecycle unit |
+| Done Criteria | Templates, protocol, Builder/Planner/Verifier guides, scratch helper, validators, and live artifacts all use the new hierarchy consistently |
+| Verification Plan | Run contract tests, consistency checks, live-state validation, and round-sync validation after the rename |
+| Exit Threshold | `check-consistency.sh`, `validate-live-state.sh`, and `validate-round-sync.sh` all pass without compatibility shims |
+| Deferred Items | Revisit deeper task-recovery / scope-change semantics only if the new hierarchy exposes gaps |
 
 ### Approach
 
-Treat this as a terminology alignment round. Replace only the role-name layer in active prose with `Dispatcher`, leave the command surface and file paths alone, and then update the live control plane to document that distinction explicitly. Do not retroactively rewrite archived snapshots.
+Treat `Round` as the Baton equivalent of Anthropic's higher-level `sprint`, and treat `slice` as the Builder-only implementation unit beneath it. Make `Round Contract` explicit in the task artifact and force Verifier pre-flight to agree or reject that contract before Builder starts. Rename the Builder delegation chain physically, not just in prose, so tooling and scratch state use the same vocabulary as the protocol.
 
-**This round:** align the router role name on `Dispatcher` in active prose while preserving `/dispatch`
-**Not this round:** rename commands, directories, or frontmatter identifiers
+**This round:** formalize `round -> round contract -> slice`
+**Not this round:** add compatibility aliases or a new public role
 
-### Batch Plan
+### Implementation Slices
 
 ```text
-Batch 1: update active docs, protocol, templates, and skill prose
-  Files: README.md, README.zh-CN.md, v2/CLAUDE.md, v2/protocol.md, v2/templates/plan.template.md, v2/skills/*
-  Check: rg -n '\bDispatch\b' README.md README.zh-CN.md project-profile.md v2/CLAUDE.md v2/protocol.md v2/skills v2/templates v2/tools
-  Commit: "round-10 batch 1: rename router role to Dispatcher"
+Slice 1: refactor the control plane
+  Files: v2/templates/plan.template.md, v2/templates/review.template.md, v2/protocol.md, v2/skills/planner/*, v2/skills/verifier/*
+  Check: rg -n 'Round Contract|Implementation Slices|Contract Status' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier
+  Commit: "round-11 slice 1: add round contract"
 
-Batch 2: align user-facing tool messaging and live state
-  Files: v2/tools/validate-round-sync.sh, .harness/plan.md, .harness/review.md, .harness/review-round-9.md
-  Check: bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh
-  Commit: "round-10 batch 2: record Dispatcher naming"
+Slice 2: rename Builder delegation to slice terminology
+  Files: v2/skills/builder/*, v2/templates/slice-packet.template.md, v2/templates/worker-report.template.*, v2/tools/builder-slice.sh, .context/baton/README.md
+  Check: rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md
+  Commit: "round-11 slice 2: rename builder delegation to slice"
 
-Batch 3: run full contract validation
-  Files: v2/tools/check-consistency.sh, .harness/plan.md, .harness/review.md
+Slice 3: align validators, live artifacts, and projections
+  Files: v2/tools/check-consistency.sh, v2/tools/validate-live-state.sh, v2/tests/contracts/*.sh, README.md, README.zh-CN.md, CLAUDE.md, v2/CLAUDE.md, project-profile.md, .harness/*
   Check: bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh
-  Commit: "round-10 batch 3: verify Dispatcher contract"
+  Commit: "round-11 slice 3: align live state to round contract"
 ```
 
 ### AC → Test Mapping
 
 | AC | Test identifier | Status |
 |----|----------------|--------|
-| AC-10.1 | `rg -n '\\bDispatch\\b' README.md README.zh-CN.md project-profile.md v2/CLAUDE.md v2/protocol.md v2/skills v2/templates v2/tools` | ✅ |
-| AC-10.2 | `rg -n '^name: dispatch$|/dispatch|v2/skills/dispatch/' v2/skills/dispatch/SKILL.md README.md README.zh-CN.md v2/CLAUDE.md v2/tools/check-consistency.sh` | ✅ |
-| AC-10.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ |
-| AC-10.4 | `bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ |
+| AC-11.1 | `rg -n 'Round Contract|Contract Status' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` | ✅ |
+| AC-11.2 | `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` | ✅ |
+| AC-11.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ |
+| AC-11.4 | `rg -n 'sprint|Sprint' v2 README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md project-profile.md .harness` | ✅ |
 
 ### Commit Checkpoints
 
-| Batch | Files | Suggested message | Compile | Tests |
+| Slice | Files | Suggested message | Compile | Tests |
 |-------|-------|-------------------|---------|-------|
-| 1 | `README.md`, `README.zh-CN.md`, `v2/CLAUDE.md`, `v2/protocol.md`, `v2/templates/plan.template.md`, `v2/skills/*` | round-10 batch 1: rename router role to Dispatcher | ✅ | ✅ |
-| 2 | `v2/tools/validate-round-sync.sh`, `.harness/plan.md`, `.harness/review.md`, `.harness/review-round-9.md` | round-10 batch 2: record Dispatcher naming | ✅ | ✅ |
-| 3 | `v2/tools/check-consistency.sh`, `.harness/plan.md`, `.harness/review.md` | round-10 batch 3: verify Dispatcher contract | ✅ | ✅ |
-
-### Open Decisions
-
-| ID | Question | Options | Status | Blocking |
-|----|----------|---------|--------|----------|
-| OD-10.1 | None. The naming decision is constrained to active prose while command/path stability stays fixed. | — | resolved | no |
+| 1 | `v2/templates/plan.template.md`, `v2/templates/review.template.md`, `v2/protocol.md`, `v2/skills/planner/*`, `v2/skills/verifier/*` | round-11 slice 1: add round contract | ✅ | ✅ |
+| 2 | `v2/skills/builder/*`, `v2/templates/slice-packet.template.md`, `v2/templates/worker-report.template.*`, `v2/tools/builder-slice.sh`, `.context/baton/README.md` | round-11 slice 2: rename builder delegation to slice | ✅ | ✅ |
+| 3 | `v2/tools/check-consistency.sh`, `v2/tools/validate-live-state.sh`, `v2/tests/contracts/*.sh`, `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `v2/CLAUDE.md`, `project-profile.md`, `.harness/*` | round-11 slice 3: align live state to round contract | ✅ | ✅ |
 
 ### Discoveries
 
-- `Dispatcher` is the cleanest noun-role name because it matches `Planner / Builder / Verifier` without overstating authority.
-- Keeping `/dispatch` stable preserves operator muscle memory while still cleaning up the conceptual model.
-- This distinction only works if the live artifacts state it explicitly; otherwise readers infer an incomplete rename.
+- Anthropic's `sprint` maps more closely to Baton's full `round` than to Builder's internal implementation cuts.
+- `Round Contract` is the missing Baton concept; without it, pre-flight can challenge a plan but not explicitly agree on what "done" means.
+- `slice` is a better Builder term than `batch` because it naturally covers both planned implementation cuts and verifier-driven fix slices.
 
 ### Risks
 
-- Future docs may regress to the older router label if authors copy older material instead of reading the current protocol.
-- Because file paths still contain `dispatch`, reviewers need to distinguish role naming from filesystem naming deliberately.
+- Renaming the Builder helper and scratch layout can leave drift in validators or docs if any active reference is missed.
+- Archived snapshots remain intentionally frozen, so terminology scans must focus on active control-plane files.
 
 ## Future Rounds (tentative)
 
-- Round 11: deepen task recovery / scope change / closeout semantics if more structure is needed
-- Round 12: revisit any remaining operator-facing labels only if new ambiguity appears in real use
+- Round 12: deepen task-recovery / scope-change / closeout semantics if the round-contract model exposes gaps
+- Round 13: consider whether review findings need a stronger contract beyond `Routing Signals`

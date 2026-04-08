@@ -8,6 +8,7 @@ Structured control-plane fields:
 
 ```text
 plan.md § Open Decisions   → explicit human questions + blocking status
+plan.md § Round Contract   → agreed in-scope work + done threshold for the round
 review.md § Routing Signals   → next route + human-review requirement + blocking reason
 ```
 
@@ -38,8 +39,8 @@ For a new task or a new round pending:
 
 ```
 0. Determine execution mode:
-   → ≤5 ACs AND single batch? → Compact (inline, self-check)
-   → >5 ACs OR multi-batch, standard project? → Standard (separate roles, core Verifier only)
+   → ≤5 ACs AND single slice? → Compact (inline, self-check)
+   → >5 ACs OR multi-slice, standard project? → Standard (separate roles, core Verifier only)
    → Security-sensitive, Mode C/C+, multi-round, or human requests it? → Full (add Verifier add-on files)
    → Ask the human if unclear: "compact / standard / full"
 
@@ -125,7 +126,7 @@ Guideline: usually a few files, a few lines each, no new logic or new files
 - Builder discovers new information → evaluate impact
 
 **To Builder:**
-- Human approves plan → start implementation
+- Human approves the round contract → start implementation
 - Verifier returns code-fix feedback → fix and hand back
 
 **To Verifier:**
@@ -134,7 +135,7 @@ Guideline: usually a few files, a few lines each, no new logic or new files
 
 **To Human:**
 - `plan.md § Open Decisions` has open rows → resolve them
-- Pre-flight complete → approve / revise / reject
+- Pre-flight complete → approve / revise / reject the round contract
 - `review.md § Routing Signals` requests human review → continue / change scope / close out
 - Migration generated → approve schema-change script
 - Repeated escalation or environment blocker → choose direction

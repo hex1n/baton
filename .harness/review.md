@@ -1,24 +1,29 @@
-# Review: Round 10
+# Review: Round 11
 
 ## Pre-flight
 
 ### AC Testability
-- AC-10.1: ✅ Testable
-- AC-10.2: ✅ Testable
-- AC-10.3: ✅ Testable
-- AC-10.4: ✅ Testable
+- AC-11.1: ✅ Testable
+- AC-11.2: ✅ Testable
+- AC-11.3: ✅ Testable
+- AC-11.4: ✅ Testable
 
 ### Test Baseline
-Remaining active old-router-label hits across docs / protocol / skills / templates / tools: 0
+Active Baton contract before implementation: `Round Contract` absent from live plan/template and Builder delegation still used `batch` as the implementation unit.
 
 ### Environment
 - Mode: C
 - Tier 2: unavailable
 
 ### Plan Challenges
-1. This round must stop at the role-name layer. Renaming commands or paths would create avoidable churn.
-2. Live artifacts need to say explicitly that `/dispatch` stays stable, or the naming cleanup looks incomplete.
-3. Archived `review-round-*` files should stay frozen; they are evidence, not active contract text.
+1. `Round Contract` must be explicit in `plan.md`; otherwise pre-flight still cannot say what it is accepting or rejecting.
+2. `slice` needs to stay inside Builder's implementation layer. It must not replace `round` in the control plane.
+3. Live validators and projections need to move in the same change, or the rename will strand Baton in a half-old schema.
+
+### Contract Status
+- Status: agreed
+- Blocking ambiguities: none
+- Verification readiness: ready
 
 ### Recommendation
 Ready for implementation.
@@ -26,12 +31,12 @@ Ready for implementation.
 ## Verification
 
 ### Tier 1: Deterministic
-- Compile / check: `bash v2/tools/check-consistency.sh` ✅ (45 pass, 0 fail, 0 warn)
+- Compile / check: `bash v2/tools/check-consistency.sh` ✅ (76 pass, 0 fail, 0 warn)
 - Tests:
-  - `rg -n '\bDispatch\b' README.md README.zh-CN.md project-profile.md v2/CLAUDE.md v2/protocol.md v2/skills v2/templates v2/tools` ✅ (`0 active hits`)
-  - `rg -n '^name: dispatch$|/dispatch|v2/skills/dispatch/' v2/skills/dispatch/SKILL.md README.md README.zh-CN.md v2/CLAUDE.md v2/tools/check-consistency.sh` ✅ (command/path stability preserved)
-  - `bash v2/tools/validate-live-state.sh` ✅ (41 pass, 0 fail, 0 warn)
-  - `bash v2/tools/validate-round-sync.sh` ✅ (plan/review aligned on Round 10)
+  - `rg -n 'Round Contract|Contract Status|Implementation Slices' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` ✅
+  - `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` ✅
+  - `bash v2/tools/validate-live-state.sh` ✅ (51 pass, 0 fail, 0 warn)
+  - `bash v2/tools/validate-round-sync.sh` ✅ (plan/review aligned on Round 11)
 
 ### Tier 2: Runtime
 Skipped — Mode C/C+.
@@ -39,10 +44,10 @@ Skipped — Mode C/C+.
 ### Tier 3a: AC Coverage
 | AC | Test | Exists | Passes | Verifies AC |
 |----|------|--------|--------|-------------|
-| AC-10.1 | `rg -n '\bDispatch\b' README.md README.zh-CN.md project-profile.md v2/CLAUDE.md v2/protocol.md v2/skills v2/templates v2/tools` | ✅ | ✅ | ✅ |
-| AC-10.2 | `rg -n '^name: dispatch$|/dispatch|v2/skills/dispatch/' v2/skills/dispatch/SKILL.md README.md README.zh-CN.md v2/CLAUDE.md v2/tools/check-consistency.sh` | ✅ | ✅ | ✅ |
-| AC-10.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ | ✅ | ✅ |
-| AC-10.4 | `bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ | ✅ | ✅ |
+| AC-11.1 | `rg -n 'Round Contract|Contract Status|Implementation Slices' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` | ✅ | ✅ | ✅ |
+| AC-11.2 | `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` | ✅ | ✅ | ✅ |
+| AC-11.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ | ✅ | ✅ |
+| AC-11.4 | `rg -n 'sprint|Sprint' v2 README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md project-profile.md .harness` | ✅ | ✅ | ✅ |
 
 ## Findings
 
@@ -63,11 +68,11 @@ None.
 ## Human Judgment
 
 ### Already verified
-- The rename target is explicitly constrained to the router role name in active prose.
-- `/dispatch` command stability is intentionally preserved as part of the design, not as leftover drift.
-- Round 9 is preserved separately in `.harness/review-round-9.md`.
-- Active docs, protocol, skills, templates, and tools now have `0` remaining old-router-label hits under the Round 10 query.
-- The live-state validator and round-sync validator both passed after the role-name cleanup.
+- `Round` remains the top-level Baton delivery loop; Builder-only work is now modeled as `slice`.
+- Pre-flight now has an explicit `Contract Status` section instead of only a prose recommendation.
+- Builder delegation vocabulary and scratch layout align on `slice`.
+- Round 10 is preserved separately in `.harness/review-round-10.md`.
+- Contract tests, consistency checks, live-state validation, and round-sync validation all passed after the refactor.
 
 ### Needs your judgment
 1. None.

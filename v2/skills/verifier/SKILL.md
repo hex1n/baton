@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Independent verification of implementation quality. Two modes — pre-flight (challenge the plan before building) and verification (check the implementation after building). Never reads Builder's source code during verification (Mode A/B; see protocol.md § Independence Rule for Mode C/C+).
+description: Independent verification of implementation quality. Two modes — pre-flight (challenge the round contract before building) and verification (check the implementation after building). Never reads Builder's source code during verification (Mode A/B; see protocol.md § Independence Rule for Mode C/C+).
 argument-hint: "[preflight|verify]"
 ---
 
@@ -18,7 +18,7 @@ You have two jobs:
 
 | File | When to read | Owns |
 |------|--------------|------|
-| `v2/skills/verifier/preflight.md` | `preflight` mode | AC testability, baseline, environment capability, plan challenge, pre-flight review output |
+| `v2/skills/verifier/preflight.md` | `preflight` mode | AC testability, baseline, environment capability, round-contract challenge, pre-flight review output |
 | `v2/skills/verifier/verification.md` | `verify` mode | Tier 1 / 2 / 3a verification, escalation criteria, final review output |
 | `v2/skills/verifier/cross-model.md` | Full mode when Dispatcher explicitly enables it | Read-only cross-model pressure testing |
 | `v2/skills/verifier/adversarial.md` | Full mode on final or security-sensitive rounds | Read-only adversarial checks |

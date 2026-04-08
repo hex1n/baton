@@ -34,12 +34,12 @@ v2/
 │   │   └── revision.md                Verifier-driven design revision
 │   ├── builder/
 │   │   ├── SKILL.md                   Public entrypoint — implementation contract
-│   │   ├── packets.md                 Batch-packet scope and context hygiene
+│   │   ├── slices.md                 Slice-packet scope and context hygiene
 │   │   ├── workers.md                 Internal worker contract and status handling
 │   │   └── isolation.md               `inline / advisory / isolated` delegation modes
 │   └── verifier/
 │       ├── SKILL.md                   Public entrypoint — verification contract
-│       ├── preflight.md               Pre-flight plan challenge
+│       ├── preflight.md               Pre-flight round-contract challenge
 │       ├── verification.md            Tier 1 / 2 / 3a verification
 │       ├── cross-model.md             Cross-model review add-on
 │       └── adversarial.md             Adversarial testing (security/boundary)
@@ -47,12 +47,12 @@ v2/
 │   ├── project-profile.template.md    Project-level persistent knowledge
 │   ├── plan.template.md               Per-task living document
 │   ├── review.template.md             Per-round review output
-│   ├── batch-packet.template.md       Builder delegation packet template
+│   ├── slice-packet.template.md       Builder delegation packet template
 │   ├── worker-report.template.md      Human-readable worker report template
 │   └── worker-report.template.json    Machine-readable worker report template
 └── tools/
     ├── archive-task.sh                Archive task state during closeout
-    ├── builder-worker.sh              Host-neutral Builder delegation helper
+    ├── builder-slice.sh              Host-neutral Builder delegation helper
     ├── check-consistency.sh           Verify protocol-to-downstream sync
     ├── external-review.sh             Provider-neutral C+ review adapter
     ├── validate-live-state.sh         Validate current project-profile / plan / review shape
@@ -61,7 +61,7 @@ v2/
 .context/
 └── baton/
     ├── README.md                      Scratch-state contract
-    └── active/                        Ignored runtime state (external-review jobs, findings sidecars, exploration notes, batch packets, worker reports)
+    └── active/                        Ignored runtime state (external-review jobs, findings sidecars, exploration notes, slice packets, worker reports)
 ```
 
 ## Repository Layers
@@ -78,13 +78,13 @@ If a behavior only helps one host, tool, team, or domain, it should not go into 
 
 | Role | Reads | Writes | Key rule |
 |------|-------|--------|----------|
-| **Planner** | project-profile.md, plan.md, source code | plan.md (ACs, approach, batch plan) | Clarifying questions scale with complexity |
+| **Planner** | project-profile.md, plan.md, source code | plan.md (ACs, round contract, implementation slices) | Clarifying questions scale with complexity |
 | **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Only canonical mutator; optional internal workers stay behind Builder |
 | **Verifier** | project-profile.md, plan.md (ACs), test results | review.md | Never reads Builder's source code (Mode A/B) |
 
 **Dispatcher** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
-Builder may optionally delegate one batch or fix slice to an internal worker in Standard/Full mode. That worker is not a Baton role, cannot update `plan.md` or `review.md`, and cannot talk to the human directly.
+Builder may optionally delegate one implementation slice or fix slice to an internal worker in Standard/Full mode. That worker is not a Baton role, cannot update `plan.md` or `review.md`, and cannot talk to the human directly.
 
 ## Round Lifecycle
 
@@ -96,7 +96,7 @@ flowchart TD
     HumanApprove{Human<br/>approves?}
     HumanApprove -->|revise| Planner
     HumanApprove -->|approve| Builder
-    Builder["<b>Builder</b><br/>Implement in batches<br/>Write tests for each AC"] -->|code + tests| Verify
+    Builder["<b>Builder</b><br/>Implement in slices<br/>Write tests for each AC"] -->|code + tests| Verify
     Verify["<b>Verifier</b> verification<br/>Tier 1: tests<br/>Tier 2: runtime<br/>Tier 3: coverage"] -->|review.md| Verdict
 
     Verdict{Verdict}
@@ -123,9 +123,9 @@ flowchart TD
 | Artifact | Location | Lifecycle |
 |----------|----------|-----------|
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
-| `.harness/plan.md` | `.harness/` | Per task — ACs, approach, `Open Decisions`, discoveries. Archived on completion |
+| `.harness/plan.md` | `.harness/` | Per task — ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
 | `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, optional findings-sidecar pointer |
-| `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder batch packets, worker reports |
+| `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder slice packets, worker reports |
 
 ## Quick Start
 

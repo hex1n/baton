@@ -1,6 +1,6 @@
 # Dispatcher Guide: Checkpoints & Lifecycle
 
-> Read this file whenever Dispatcher needs a human decision: plan approval, task recovery, scope change, task closeout, or a protocol-defined checkpoint.
+> Read this file whenever Dispatcher needs a human decision: round-contract approval, task recovery, scope change, task closeout, or a protocol-defined checkpoint.
 
 ## New Task Approval Checkpoint
 
@@ -11,9 +11,9 @@ After Planner completes and Verifier pre-flight finishes:
    → If any row has `Status = open`, present each question + options first.
    → After the human answers, route Planner to fold the answers into plan.md
      and mark the row resolved.
-   → If any row still has `Blocking = yes`, do NOT ask for plan approval yet.
+   → If any row still has `Blocking = yes`, do NOT ask for round-contract approval yet.
 
-2. Present plan.md + pre-flight summary to the human once blocking open decisions are resolved.
+2. Present plan.md § Round Contract + pre-flight summary to the human once blocking open decisions are resolved.
 
 3. Decision tag check:
    → Scan plan.md § Decisions for `[diverges from human choice]`
@@ -22,7 +22,7 @@ After Planner completes and Verifier pre-flight finishes:
       See plan.md § Decisions for rationale."
 
 4. Ask:
-   "Plan ready for review.
+   "Round contract ready for review.
 
    Pre-flight confirms ACs are testable and approach is consistent.
    But only you can confirm the ACs are correct:

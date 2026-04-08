@@ -70,7 +70,7 @@ If capability was already established in earlier rounds and nothing changed, tru
 
 ## Step 5: Plan Quality Challenge
 
-Read `plan.md § Approach` and challenge it on four dimensions:
+Read `plan.md § Approach` and `§ Round Contract`, then challenge the plan on five dimensions:
 
 **a) Consistency with existing code**
 
@@ -105,6 +105,18 @@ built-in capability instead. This reduces implementation to 2 files."
 - Flag: 'AC-{N}.{X} outcome conflicts with {file}:L{N} — existing behavior is {X}, AC says {Y}.'"
 ```
 
+**e) Round contract quality**
+
+```text
+"Round Contract says Scope In = X and Done Criteria = Y.
+Check whether:
+- Scope In matches the actual ACs
+- Scope Out really excludes adjacent risky work
+- Done Criteria are observable
+- Verification Plan is realistic for the configured mode
+- Exit Threshold is strict enough for the round"
+```
+
 Challenge rules:
 - be specific and cite file paths + line numbers
 - propose alternatives, not just criticism
@@ -134,6 +146,11 @@ Challenge rules:
 3. [Correctness] {AC expected outcome conflicts with observed behavior, cite file + line}
 4. No other significant issues.
 
+### Contract Status
+- Status: {agreed / revise / blocked}
+- Blocking ambiguities: {none / list}
+- Verification readiness: {ready / partial / blocked}
+
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
 
@@ -147,7 +164,7 @@ Challenge rules:
 
 ## Lightweight Pre-flight (Small Tasks)
 
-For tasks with `≤5` ACs and a single batch, full pre-flight is often unnecessary. Use:
+For tasks with `≤5` ACs and a single slice, full pre-flight is often unnecessary. Use:
 
 ```markdown
 ## Pre-flight
@@ -156,6 +173,7 @@ ACs: {N} total, all testable ✅
 Baseline: {test count or N/A}
 Mode: {A/B/C}
 Challenges: {none / 1-2 bullet points}
+Contract Status: {agreed / revise}
 Recommendation: Ready for implementation.
 ```
 

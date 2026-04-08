@@ -83,13 +83,13 @@
 - Confidence: {高/中/低} — {why}
 - Pros: {specific advantages}
 - Cons: {specific disadvantages}
-- Complexity: {batches, files, risk}
+- Complexity: {slices, files, risk}
 
 **Approach B: {name}**
 - Confidence: {高/中/低} — {why}
 - Pros: {specific advantages}
 - Cons: {specific disadvantages}
-- Complexity: {batches, files, risk}
+- Complexity: {slices, files, risk}
 
 **Recommendation:** {which and why}
 **Human choice:** {selected approach, or human's own direction}
@@ -108,29 +108,42 @@
 |----|----------|---------|--------|----------|
 | OD-{N}.1 | {question or "None."} | {option A / option B / —} | {open / resolved} | {yes / no} |
 
+### Round Contract
+
+> The explicit contract for this round. Verifier pre-flight must either agree with it or request revision.
+
+| Key | Value |
+|-----|-------|
+| Scope In | {what this round will deliver} |
+| Scope Out | {what is explicitly deferred} |
+| Done Criteria | {what must be true for the round to count as done} |
+| Verification Plan | {how Verifier should validate the round} |
+| Exit Threshold | {e.g., all ACs pass + no blocking findings} |
+| Deferred Items | {follow-up items, or `None.`} |
+
 ### Approach
 
 {Selected approach details.}
 
 {What we deliberately don't do this round and why.}
 
-### Batch Plan
+### Implementation Slices
 
 ```
-Batch 1: {Data layer — models, schemas, migrations}
+Slice 1: {Data layer — models, schemas, migrations}
   Files: {list}
   Check: {compile/check command from project-profile.md}
-  Commit: "round-{N} batch 1: data layer"
+  Commit: "round-{N} slice 1: data layer"
 
-Batch 2: {Logic layer — services, business logic + unit tests}
+Slice 2: {Logic layer — services, business logic + unit tests}
   Files: {list}
   Check: {compile + test commands from project-profile.md}
-  Commit: "round-{N} batch 2: logic layer"
+  Commit: "round-{N} slice 2: logic layer"
 
-Batch 3: {Interface layer — API/CLI/UI + integration tests}
+Slice 3: {Interface layer — API/CLI/UI + integration tests}
   Files: {list}
   Check: {full test suite}
-  Commit: "round-{N} batch 3: interface layer + tests"
+  Commit: "round-{N} slice 3: interface layer + tests"
 ```
 
 ### AC → Test Mapping
@@ -144,11 +157,11 @@ Batch 3: {Interface layer — API/CLI/UI + integration tests}
 
 ### Commit Checkpoints
 
-> Updated by Builder after each passing batch. Human commits at their discretion.
+> Updated by Builder after each passing slice. Human commits at their discretion.
 
-| Batch | Files | Suggested message | Compile | Tests |
+| Slice | Files | Suggested message | Compile | Tests |
 |-------|-------|-------------------|---------|-------|
-| {M} | {file list} | round-{N} batch {M}: {description} | ✅ | ✅ / [deferred — Mode C] |
+| {M} | {file list} | round-{N} slice {M}: {description} | ✅ | ✅ / [deferred — Mode C] |
 
 ### Discoveries
 

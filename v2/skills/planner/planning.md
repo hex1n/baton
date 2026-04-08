@@ -91,7 +91,7 @@ Confidence: {高/中/低} — {why}
 Description: {what it does}
 Pros: {specific advantages}
 Cons: {specific disadvantages}
-Complexity: {estimated batches, files, risk}
+Complexity: {estimated slices, files, risk}
 ```
 
 Confidence criteria:
@@ -121,7 +121,7 @@ OD-{N}.X | Which approach should this round take? |
 
 If only one viable approach exists, record `None.` as resolved in `§ Open Decisions`.
 
-### Step 7: Write ACs and batch plan
+### Step 7: Write ACs, round contract, and implementation slices
 
 For the chosen approach, write:
 
@@ -135,7 +135,14 @@ Acceptance Criteria:
 Approach:
   Module breakdown (if >1 module this round)
   Key technical decisions with rationale
-  Batch strategy (what gets built in what order)
+  Slice strategy (what gets built in what order)
+
+Round Contract:
+  Scope In / Scope Out
+  Done Criteria
+  Verification Plan
+  Exit Threshold
+  Deferred Items
 
 Risks:
   What could go wrong, what to watch for
@@ -160,7 +167,7 @@ Not this round: {what is explicitly deferred}
 
 ### Step 9: Write `plan.md`
 
-Use the plan template exactly, including `§ Open Decisions`.
+Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices`.
 
 ## Round N (Next Round)
 

@@ -1,11 +1,11 @@
-# Worker Report: Round {N} Batch {M}
+# Worker Report: Round {N} Slice {M}
 
 ## Metadata
 
 | Key | Value |
 |-----|-------|
 | Round | {N} |
-| Batch | {M} |
+| Slice | {M} |
 | Status | {complete / complete_with_concerns / needs_context / blocked} |
 | Delegation Mode | {advisory / isolated} |
 
@@ -33,5 +33,5 @@
 
 ## Patch
 
-- Path: `{.context/baton/active/batches/round-{N}/batch-{M}/patch.diff or N/A}`
+- Path: `{.context/baton/active/slices/round-{N}/slice-{M}/patch.diff or N/A}`
 - Notes: {what Builder should review before integrating}

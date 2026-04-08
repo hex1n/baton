@@ -1,12 +1,12 @@
-# Batch Packet: Round {N} Batch {M}
+# Slice Packet: Round {N} Slice {M}
 
 ## Metadata
 
 | Key | Value |
 |-----|-------|
 | Round | {N} |
-| Batch | {M} |
-| Trigger | {plan batch / verifier finding / fix slice} |
+| Slice | {M} |
+| Trigger | {plan slice / verifier finding / fix slice} |
 | Delegation Mode | {advisory / isolated} |
 | Start SHA | {git sha before delegation} |
 | Packet Owner | Builder |
@@ -50,6 +50,6 @@
 
 ## Expected Outputs
 
-- Report markdown: `.context/baton/active/batches/round-{N}/batch-{M}/report.md`
-- Report JSON: `.context/baton/active/batches/round-{N}/batch-{M}/report.json`
-- Patch: `.context/baton/active/batches/round-{N}/batch-{M}/patch.diff` (optional)
+- Report markdown: `.context/baton/active/slices/round-{N}/slice-{M}/report.md`
+- Report JSON: `.context/baton/active/slices/round-{N}/slice-{M}/report.json`
+- Patch: `.context/baton/active/slices/round-{N}/slice-{M}/patch.diff` (optional)

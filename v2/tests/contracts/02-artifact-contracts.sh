@@ -53,8 +53,14 @@ require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Open Decisions$
   "plan template includes Open Decisions section" "Open Decisions section missing from plan template"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| ID \\| Question \\| Options \\| Status \\| Blocking \\|" \
   "plan template includes Open Decisions table" "Open Decisions table header missing"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Round Contract$" \
+  "plan template includes Round Contract section" "Round Contract section missing from plan template"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Implementation Slices$" \
+  "plan template includes Implementation Slices section" "Implementation Slices section missing from plan template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^## Routing Signals$" \
   "review template includes Routing Signals section" "Routing Signals section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Contract Status$" \
+  "review template includes Contract Status section" "Contract Status section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Findings Sidecar$" \
   "review template includes findings sidecar section" "Findings Sidecar section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Next Route \\|" \

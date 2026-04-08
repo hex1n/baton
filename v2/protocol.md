@@ -54,7 +54,7 @@ For behavior-shaping changes:
 
 The harness supports three execution modes. Dispatcher selects based on task complexity; human can override.
 
-### Compact Mode (simple tasks: ≤5 ACs, single batch)
+### Compact Mode (simple tasks: ≤5 ACs, single slice)
 
 Planner and Builder merge into one execution. Verifier role is replaced by a self-check checklist + human review.
 - **No context isolation** — planning and building happen in the same conversation
@@ -76,7 +76,7 @@ Compact mode flow:
 
 **Why no fake Verifier:** Assumption ① says AI can't self-evaluate. In compact mode, the Verifier shares Builder's context — making it structurally non-independent. Rather than pretend, compact mode is honest: Builder self-checks, human provides the real independent review.
 
-### Standard Mode (medium tasks: >5 ACs OR multi-batch, typical choice)
+### Standard Mode (medium tasks: >5 ACs OR multi-slice, typical choice)
 
 Each role runs as an independent subagent. Verifier runs **core steps only** — deterministic verification + AC coverage. No cross-model review, no adversarial testing, no structural triggers.
 - **Full context isolation** — each role starts fresh, reads only from artifacts
@@ -105,8 +105,8 @@ Same as Standard, but Verifier runs **all add-on files** — cross-model review,
 
 | Signal | Mode |
 |--------|------|
-| ≤5 ACs AND single batch | Compact |
-| >5 ACs OR multi-batch, standard project | Standard |
+| ≤5 ACs AND single slice | Compact |
+| >5 ACs OR multi-slice, standard project | Standard |
 | Security-sensitive, Mode C/C+, multi-round, or human requests it | Full |
 
 **Dispatcher selects the mode** based on project-profile.md and task complexity. Human can override.
@@ -132,7 +132,7 @@ Implements code and writes tests. The only role that modifies source code.
 - **Writes:** source code, tests, plan.md § AC → Test Mapping, § Commit Checkpoints, § Discoveries
 - **Runs:** once per round; may re-run after Verifier code-fix feedback
 - **Context:** fresh subagent per round; reads plan.md + relevant source for context
-- **Optional internal delegation:** in Standard/Full mode, Builder may delegate one approved batch or fix slice to an internal worker, but Builder remains responsible for every canonical write and handoff
+- **Optional internal delegation:** in Standard/Full mode, Builder may delegate one approved implementation slice or fix slice to an internal worker, but Builder remains responsible for every canonical write and handoff
 
 ### Verifier
 
@@ -150,7 +150,7 @@ Independently verifies implementation quality. Challenges plan quality before bu
 Builder may optionally use internal workers in Standard/Full mode. This is an implementation detail inside Builder, not a fifth Baton role.
 
 - **Compact mode:** no delegation. Compact mode is a single-context self-check path.
-- **Scope unit:** one approved batch or one fix slice at a time. Internal workers may not widen scope, reinterpret ACs, or invent new work.
+- **Scope unit:** one approved implementation slice or one fix slice at a time. Internal workers may not widen scope, reinterpret ACs, or invent new work.
 - **Canonical ownership:** only Builder writes source code/tests in the shared workspace and only Builder updates `.harness/plan.md`.
 - **Scratch only:** worker packets, reports, and temporary patches belong under `.context/baton/active/`. Dispatcher and recovery flows never route from them directly.
 - **No control-plane authority:** internal workers may not ask the human directly, update `.harness/review.md`, invoke external review, or change execution mode.
@@ -170,9 +170,10 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** .harness/
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
-- **Contains:** round-by-round acceptance criteria, approach, decisions, `§ Open Decisions`, checkpoints, discoveries
+- **Contains:** round-by-round acceptance criteria, `§ Round Contract`, approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
 - **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatcher reads this section literally instead of inferring questions from narrative text.
+- **Structured round field:** `§ Round Contract` is the explicit agreement for what this round delivers, what stays out of scope, how Verifier should check it, and what threshold counts as done.
 - **Compression:** Planner compresses at the START of each new round (not end of previous), so Verifier has full info during verification. Compression rules per section:
   - § Round History: summary + key decisions + unresolved discoveries (not just one-line)
   - § Context: only keep entries relevant to current/future rounds
@@ -198,7 +199,7 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** `.context/baton/active/`
 - **Maintained by:** tools and role add-on files
-- **Contains:** raw external-review outputs, temporary exploration notes, normalized findings sidecars, Builder batch packets, worker reports, and optional temporary patches
+- **Contains:** raw external-review outputs, temporary exploration notes, normalized findings sidecars, Builder slice packets, worker reports, and optional temporary patches
 - **Read by:** humans and optional tooling; Dispatcher never routes from scratch files
 - **Lifecycle:** ephemeral for the active task. Closeout may copy it into the archive as scratch history, but Baton control flow never depends on it.
 - **Rule:** if information matters for routing, approval, or recovery, it must also be summarized in `.harness/plan.md` or `.harness/review.md`
@@ -211,10 +212,13 @@ Every task is a sequence of rounds. Simple tasks complete in one round. Complex 
 Round N:
   1. Planner    → writes/updates plan.md with this round's ACs
                     + `§ Open Decisions`
-  2. Verifier      → pre-flight (testability + baseline + plan challenge)
+                    + `§ Round Contract`
+                    + `§ Implementation Slices`
+  2. Verifier      → pre-flight (testability + baseline + round-contract challenge)
+                    + contract agreement / revision
                     + `§ Routing Signals`
-  3. Human      → resolves Open Decisions, then approves plan (or asks revision)
-  4. Builder    → implements code + tests in batches
+  3. Human      → resolves Open Decisions, then approves the round contract (or asks revision)
+  4. Builder    → implements code + tests in slices
   5. Verifier      → verification (Tier 1 → Tier 2 → Tier 3)
                     + `§ Routing Signals`
   6. Resolution → Dispatcher routes from review.md § Routing Signals
@@ -243,7 +247,7 @@ Only at decision points. Never for status updates. Planner and Verifier write st
 
 | When | What human sees | AskUserQuestion options |
 |------|----------------|------------------------|
-| After Planner + Verifier pre-flight | plan.md § Open Decisions + pre-flight challenges | resolve decisions, then approve / revise / reject |
+| After Planner + Verifier pre-flight | plan.md § Open Decisions + § Round Contract + pre-flight challenges | resolve decisions, then approve / revise / reject |
 | After Round completion | review.md § Human Judgment + § Routing Signals | continue / change scope / close out |
 | Migration generated | Migration / schema change script | approve / reject |
 | 3x Builder ⇄ Verifier without resolution | Failure history | change approach / change scope / abandon task |
@@ -308,11 +312,11 @@ Flaky tests are reality. The harness handles them.
 
 **AI must not run git commands that mutate the repository** (index, working tree, history, or remote state). All mutating operations (commit, push, add, reset, etc.) are human-operated. AI may only run read-only git commands that inspect state without changing anything.
 
-**Builder signals commit checkpoints** after each passing batch by recording them in plan.md. The human commits at their discretion.
+**Builder signals commit checkpoints** after each passing slice by recording them in plan.md. The human commits at their discretion.
 
 **Recommended workflow** (human-operated):
 - Create feature branch before Round 1
-- Commit after each batch checkpoint: `git commit -m "round-{N} batch {M}: {description}"`
+- Commit after each slice checkpoint: `git commit -m "round-{N} slice {M}: {description}"`
 - Tag after each successful round if you use tags: `git tag round-N-accepted`
 - Create PR during task closeout if needed
 
@@ -377,7 +381,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 
 | Scenario | Response |
 |----------|----------|
-| Compilation fails 3x on same batch | Builder reverts its own changes (re-read file, re-edit), regenerates batch. If human has committed a checkpoint, human may `git reset` to recover. |
+| Compilation fails 3x on same slice | Builder re-reads the original files, rewrites the slice from scratch, and only escalates if the regenerated slice still fails. If human has committed a checkpoint, human may `git reset` to recover. |
 | Verifier rejects Builder 3x on same issue | Escalate: code bug → design issue → Planner |
 | Planner revision doesn't resolve | Escalate to human with full history |
 | Session crash mid-round | Read plan.md progress + `git log` → recover from the last checkpoint |

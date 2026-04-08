@@ -58,6 +58,18 @@ else
   check "plan.template.md open decisions" "fail" "missing structured Open Decisions section"
 fi
 
+if grep -q "^### Round Contract$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md round contract" "pass"
+else
+  check "plan.template.md round contract" "fail" "missing structured Round Contract section"
+fi
+
+if grep -q "^### Implementation Slices$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md implementation slices" "pass"
+else
+  check "plan.template.md implementation slices" "fail" "missing Implementation Slices section"
+fi
+
 # Dispatcher entrypoint should reference all three
 if grep -q "compact.*standard.*full" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
   check "dispatch/SKILL.md mode references" "pass"
@@ -96,10 +108,10 @@ else
   check "review-findings.template.json exists" "fail" "missing review findings sidecar template"
 fi
 
-if [[ -f "$REPO_ROOT/v2/templates/batch-packet.template.md" ]]; then
-  check "batch-packet.template.md exists" "pass"
+if [[ -f "$REPO_ROOT/v2/templates/slice-packet.template.md" ]]; then
+  check "slice-packet.template.md exists" "pass"
 else
-  check "batch-packet.template.md exists" "fail" "missing builder batch packet template"
+  check "slice-packet.template.md exists" "fail" "missing builder slice packet template"
 fi
 
 if [[ -f "$REPO_ROOT/v2/templates/worker-report.template.md" ]]; then
@@ -118,6 +130,12 @@ if grep -q "^## Routing Signals$" "$REPO_ROOT/v2/templates/review.template.md" 2
   check "review.template.md routing signals" "pass"
 else
   check "review.template.md routing signals" "fail" "missing structured Routing Signals section"
+fi
+
+if grep -q "^### Contract Status$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md contract status" "pass"
+else
+  check "review.template.md contract status" "fail" "missing Contract Status section"
 fi
 
 if grep -q "^### Findings Sidecar$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
@@ -173,10 +191,10 @@ else
   check "builder/SKILL.md exists" "fail" "builder entrypoint missing"
 fi
 
-if [[ -f "$REPO_ROOT/v2/skills/builder/packets.md" ]]; then
-  check "builder/packets.md exists" "pass"
+if [[ -f "$REPO_ROOT/v2/skills/builder/slices.md" ]]; then
+  check "builder/slices.md exists" "pass"
 else
-  check "builder/packets.md exists" "fail" "builder packet guide missing"
+  check "builder/slices.md exists" "fail" "builder packet guide missing"
 fi
 
 if [[ -f "$REPO_ROOT/v2/skills/builder/workers.md" ]]; then
@@ -191,10 +209,10 @@ else
   check "builder/isolation.md exists" "fail" "builder isolation guide missing"
 fi
 
-if grep -q "packets.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
-  check "builder references packets.md" "pass"
+if grep -q "slices.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
+  check "builder references slices.md" "pass"
 else
-  check "builder references packets.md" "fail" "builder entrypoint doesn't reference packet guide"
+  check "builder references slices.md" "fail" "builder entrypoint doesn't reference packet guide"
 fi
 
 if grep -q "workers.md" "$REPO_ROOT/v2/skills/builder/SKILL.md" 2>/dev/null; then
@@ -209,10 +227,10 @@ else
   check "builder references isolation.md" "fail" "builder entrypoint doesn't reference isolation guide"
 fi
 
-if grep -q "batch-packet.template.md" "$REPO_ROOT/v2/skills/builder/packets.md" 2>/dev/null; then
-  check "builder packet guide references batch-packet.template.md" "pass"
+if grep -q "slice-packet.template.md" "$REPO_ROOT/v2/skills/builder/slices.md" 2>/dev/null; then
+  check "builder packet guide references slice-packet.template.md" "pass"
 else
-  check "builder packet guide references batch-packet.template.md" "fail" "packet guide doesn't point to the packet template"
+  check "builder packet guide references slice-packet.template.md" "fail" "packet guide doesn't point to the packet template"
 fi
 
 if grep -q "worker-report.template.json" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null && \
@@ -222,11 +240,11 @@ else
   check "builder worker guide references worker-report templates" "fail" "worker guide doesn't point to the worker report templates"
 fi
 
-if grep -q "builder-worker.sh" "$REPO_ROOT/v2/skills/builder/packets.md" 2>/dev/null && \
-   grep -q "builder-worker.sh" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null; then
-  check "builder guides reference builder-worker.sh" "pass"
+if grep -q "builder-slice.sh" "$REPO_ROOT/v2/skills/builder/slices.md" 2>/dev/null && \
+   grep -q "builder-slice.sh" "$REPO_ROOT/v2/skills/builder/workers.md" 2>/dev/null; then
+  check "builder guides reference builder-slice.sh" "pass"
 else
-  check "builder guides reference builder-worker.sh" "fail" "builder guides don't point to the runtime helper"
+  check "builder guides reference builder-slice.sh" "fail" "builder guides don't point to the runtime helper"
 fi
 
 if [[ -f "$REPO_ROOT/v2/skills/planner/profile.md" ]]; then
@@ -295,10 +313,10 @@ else
   check "tools/external-review.sh exists" "fail" "external review adapter missing"
 fi
 
-if [[ -f "$REPO_ROOT/v2/tools/builder-worker.sh" ]]; then
-  check "tools/builder-worker.sh exists" "pass"
+if [[ -f "$REPO_ROOT/v2/tools/builder-slice.sh" ]]; then
+  check "tools/builder-slice.sh exists" "pass"
 else
-  check "tools/builder-worker.sh exists" "fail" "builder delegation helper missing"
+  check "tools/builder-slice.sh exists" "fail" "builder delegation helper missing"
 fi
 
 if [[ -f "$REPO_ROOT/v2/skills/verifier/adversarial.md" ]]; then

@@ -54,10 +54,10 @@ require_pattern "$REPO_ROOT/v2/skills/builder/workers.md" "Ask the human directl
   "worker guide forbids direct human access" "worker guide no longer forbids direct human access"
 require_pattern "$REPO_ROOT/v2/skills/builder/workers.md" 'Invoke Verifier or `external-review\.sh`' \
   "worker guide forbids external verification escalation" "worker guide no longer forbids direct verification escalation"
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "show-status" \
-  "builder-worker helper exposes status inspection" "builder-worker helper missing show-status action"
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "STATE_BASE=.*\\.context/baton/active/batches" \
-  "builder-worker helper stays in scratch state" "builder-worker helper no longer writes under scratch batches"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "show-status" \
+  "builder-slice helper exposes status inspection" "builder-slice helper missing show-status action"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "STATE_BASE=.*\\.context/baton/active/slices" \
+  "builder-slice helper stays in scratch state" "builder-slice helper no longer writes under scratch slices"
 
 echo "  Results: $PASS pass, $FAIL fail"
 

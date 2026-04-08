@@ -15,6 +15,11 @@
 ### Plan Challenges
 1. {challenge or "No significant issues found."}
 
+### Contract Status
+- Status: {agreed / revise / blocked}
+- Blocking ambiguities: {none / list}
+- Verification readiness: {ready / partial / blocked}
+
 ### Recommendation
 {ready / revise / blocked}
 

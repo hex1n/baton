@@ -6,7 +6,7 @@
 
 CLI harness / protocol toolkit
 
-> Influences default batch pattern and verification strategy.
+> Influences default slice pattern and verification strategy.
 
 ## Build
 
@@ -41,7 +41,7 @@ baton/
   ├── v2/         — protocol source of truth, core skills, templates, tools
   ├── skills/     — companion skills (not part of core Baton loop)
   ├── .harness/   — canonical live task artifacts consumed by Baton
-  └── .context/   — scratch state for external-review jobs, findings sidecars, and Builder batch delegation
+  └── .context/   — scratch state for external-review jobs, findings sidecars, and Builder slice delegation
 
 Inside `v2/skills/`, each role keeps a thin public `SKILL.md` entrypoint and pushes detailed procedures into sibling role files.
 ```
@@ -50,9 +50,9 @@ Inside `v2/skills/`, each role keeps a thin public `SKILL.md` entrypoint and pus
 ```
 Protocol outputs are markdown artifacts:
 - project-level knowledge in `project-profile.md`
-- task state in `.harness/plan.md` (including `Open Decisions`)
+- task state in `.harness/plan.md` (including `Open Decisions`, `Round Contract`, and `Implementation Slices`)
 - verification results in `.harness/review.md` (including `Routing Signals`)
-- scratch outputs in `.context/baton/active/` (non-canonical), including Builder batch packets and worker reports
+- scratch outputs in `.context/baton/active/` (non-canonical), including Builder slice packets and worker reports
 ```
 
 ### Error Handling
@@ -117,9 +117,9 @@ Error format: plain stderr + non-zero exit code
 |-----|-------|
 | Delegation | `allowed` |
 | Default mode | `advisory` |
-| Scratch path | `.context/baton/active/batches/` |
-| Helper | `bash v2/tools/builder-worker.sh` |
-| Notes | Use only for one approved batch or fix slice at a time. Builder remains the only canonical mutator and must re-run validation before handing back to Verifier. |
+| Scratch path | `.context/baton/active/slices/` |
+| Helper | `bash v2/tools/builder-slice.sh` |
+| Notes | Use only for one approved implementation slice or fix slice at a time. Builder remains the only canonical mutator and must re-run validation before handing back to Verifier. |
 
 ## External Reviewer (Mode C+ only)
 
@@ -141,6 +141,6 @@ Error format: plain stderr + non-zero exit code
 - This repository is best validated through protocol drift checks and live artifact checks, not app startup.
 - The preferred repository-level verification entrypoint is `bash v2/tools/check-consistency.sh`; it now chains the live artifact validators internally.
 - `.harness/` is the canonical control plane. `.context/baton/active/` is scratch space only.
-- Builder delegation in this repository is allowed, but only in advisory mode by default. Internal worker state belongs under `.context/baton/active/batches/`.
+- Builder delegation in this repository is allowed, but only in advisory mode by default. Internal worker state belongs under `.context/baton/active/slices/`.
 - Historical `docs/*.md` analysis files were removed once they no longer matched the active `v2/` system; current guidance now lives in protocol, README, project-profile, and live `.harness` artifacts.
 - Shell scripts should stay portable across `bash`/`zsh` on macOS where practical.

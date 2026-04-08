@@ -59,7 +59,7 @@ Dispatcher does:
 - Read artifact state and read-only git status
 - Route to roles from the artifact-driven state machine
 - Compose Verifier invocations, including optional add-on files
-- Present structured checkpoints from `plan.md § Open Decisions` and `review.md § Routing Signals`
+- Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`
 
 Dispatcher does not:
 - Read production source code

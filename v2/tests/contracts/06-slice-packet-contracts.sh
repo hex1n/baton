@@ -32,36 +32,36 @@ require_pattern() {
   fi
 }
 
-echo "  Batch packet contracts"
+echo "  Slice packet contracts"
 
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^# Batch Packet: Round \\{N\\} Batch \\{M\\}$" \
-  "batch packet template title" "batch packet template title missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Metadata$" \
-  "batch packet template metadata section" "batch packet metadata missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^\\| Trigger \\|" \
-  "batch packet template trigger row" "batch packet trigger row missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^\\| Delegation Mode \\|" \
-  "batch packet template delegation-mode row" "batch packet mode row missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^\\| Start SHA \\|" \
-  "batch packet template start-sha row" "batch packet start sha row missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Objective$" \
-  "batch packet template objective section" "batch packet objective missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Scope Slice$" \
-  "batch packet template scope section" "batch packet scope section missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Allowed Files$" \
-  "batch packet template allowed-files section" "batch packet allowed-files section missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Forbidden Actions$" \
-  "batch packet template forbidden-actions section" "batch packet forbidden-actions section missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Acceptance Checks$" \
-  "batch packet template acceptance-checks section" "batch packet acceptance checks missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Test Commands$" \
-  "batch packet template test-commands section" "batch packet test commands missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Context Snippets$" \
-  "batch packet template context-snippets section" "batch packet context snippets missing"
-require_pattern "$REPO_ROOT/v2/templates/batch-packet.template.md" "^## Expected Outputs$" \
-  "batch packet template expected-outputs section" "batch packet expected outputs missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^# Slice Packet: Round \\{N\\} Slice \\{M\\}$" \
+  "slice packet template title" "slice packet template title missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Metadata$" \
+  "slice packet template metadata section" "slice packet metadata missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^\\| Trigger \\|" \
+  "slice packet template trigger row" "slice packet trigger row missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^\\| Delegation Mode \\|" \
+  "slice packet template delegation-mode row" "slice packet mode row missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^\\| Start SHA \\|" \
+  "slice packet template start-sha row" "slice packet start sha row missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Objective$" \
+  "slice packet template objective section" "slice packet objective missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Scope Slice$" \
+  "slice packet template scope section" "slice packet scope section missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Allowed Files$" \
+  "slice packet template allowed-files section" "slice packet allowed-files section missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Forbidden Actions$" \
+  "slice packet template forbidden-actions section" "slice packet forbidden-actions section missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Acceptance Checks$" \
+  "slice packet template acceptance-checks section" "slice packet acceptance checks missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Test Commands$" \
+  "slice packet template test-commands section" "slice packet test commands missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Context Snippets$" \
+  "slice packet template context-snippets section" "slice packet context snippets missing"
+require_pattern "$REPO_ROOT/v2/templates/slice-packet.template.md" "^## Expected Outputs$" \
+  "slice packet template expected-outputs section" "slice packet expected outputs missing"
 
-require_pattern "$REPO_ROOT/v2/templates/worker-report.template.md" "^# Worker Report: Round \\{N\\} Batch \\{M\\}$" \
+require_pattern "$REPO_ROOT/v2/templates/worker-report.template.md" "^# Worker Report: Round \\{N\\} Slice \\{M\\}$" \
   "worker report md title" "worker report markdown title missing"
 require_pattern "$REPO_ROOT/v2/templates/worker-report.template.md" "^\\| Status \\| \\{complete / complete_with_concerns / needs_context / blocked\\} \\|" \
   "worker report md status row" "worker report markdown status row missing"
@@ -93,14 +93,14 @@ require_pattern "$REPO_ROOT/v2/templates/worker-report.template.json" '"open_que
 require_pattern "$REPO_ROOT/v2/templates/worker-report.template.json" '"patch_path": ' \
   "worker report json patch path" "worker report json patch path missing"
 
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "init-batch" \
-  "builder-worker helper exposes init-batch" "builder-worker helper missing init-batch action"
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "run-worker" \
-  "builder-worker helper exposes run-worker" "builder-worker helper missing run-worker action"
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "collect-report" \
-  "builder-worker helper exposes collect-report" "builder-worker helper missing collect-report action"
-require_pattern "$REPO_ROOT/v2/tools/builder-worker.sh" "show-status" \
-  "builder-worker helper exposes show-status" "builder-worker helper missing show-status action"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "init-slice" \
+  "builder-slice helper exposes init-slice" "builder-slice helper missing init-slice action"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "run-worker" \
+  "builder-slice helper exposes run-worker" "builder-slice helper missing run-worker action"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "collect-report" \
+  "builder-slice helper exposes collect-report" "builder-slice helper missing collect-report action"
+require_pattern "$REPO_ROOT/v2/tools/builder-slice.sh" "show-status" \
+  "builder-slice helper exposes show-status" "builder-slice helper missing show-status action"
 
 echo "  Results: $PASS pass, $FAIL fail"
 

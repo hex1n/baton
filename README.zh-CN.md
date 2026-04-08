@@ -34,7 +34,7 @@ v2/
 │   │   └── revision.md                Verifier 触发的设计修订
 │   ├── builder/
 │   │   ├── SKILL.md                   公共入口 — 实现契约
-│   │   ├── packets.md                 batch packet 的范围约束与上下文卫生
+│   │   ├── slices.md                 slice packet 的范围约束与上下文卫生
 │   │   ├── workers.md                 内部 worker 契约与状态回传
 │   │   └── isolation.md               `inline / advisory / isolated` delegation mode
 │   └── verifier/
@@ -47,12 +47,12 @@ v2/
 │   ├── project-profile.template.md    项目级持久知识模板
 │   ├── plan.template.md               任务级活文档模板
 │   ├── review.template.md             每轮次审查输出模板
-│   ├── batch-packet.template.md       Builder delegation packet 模板
+│   ├── slice-packet.template.md       Builder delegation packet 模板
 │   ├── worker-report.template.md      供人读取的 worker report 模板
 │   └── worker-report.template.json    供工具读取的 worker report 模板
 └── tools/
     ├── archive-task.sh                在收口阶段归档任务状态
-    ├── builder-worker.sh              host-neutral 的 Builder delegation helper
+    ├── builder-slice.sh              host-neutral 的 Builder delegation helper
     ├── check-consistency.sh           验证协议到下游文件的一致性
     ├── external-review.sh             provider-neutral 的 C+ 审查适配层
     ├── validate-live-state.sh         验证当前 project-profile / plan / review 结构
@@ -61,7 +61,7 @@ v2/
 .context/
 └── baton/
     ├── README.md                      scratch-state 契约说明
-    └── active/                        被 git 忽略的运行时状态（external-review 任务、findings sidecar、探索笔记、batch packet、worker report）
+    └── active/                        被 git 忽略的运行时状态（external-review 任务、findings sidecar、探索笔记、slice packet、worker report）
 ```
 
 ## 仓库分层
@@ -78,13 +78,13 @@ v2/
 
 | 角色 | 读取 | 写入 | 核心规则 |
 |------|------|------|----------|
-| **Planner** | project-profile.md, plan.md, 源代码 | plan.md（AC、方案、批次计划） | 澄清问题数量随复杂度缩放 |
+| **Planner** | project-profile.md, plan.md, 源代码 | plan.md（AC、Round Contract、Implementation Slices） | 澄清问题数量随复杂度缩放 |
 | **Builder** | project-profile.md, plan.md（当前轮次） | 源代码、测试、plan.md § Discoveries | 唯一的 canonical mutator；可选内部 worker 仍受 Builder 边界约束 |
 | **Verifier** | project-profile.md, plan.md（AC）、测试结果 | review.md | 验证时不读 Builder 的源代码（Mode A/B） |
 
 **Dispatcher** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
-在 Standard / Full mode 下，Builder 可以把单个 batch 或 fix slice 委托给内部 worker，但这个 worker 不属于 Baton 角色，不能更新 `plan.md` / `review.md`，也不能直接向 human 提问。
+在 Standard / Full mode 下，Builder 可以把单个 slice 或 fix slice 委托给内部 worker，但这个 worker 不属于 Baton 角色，不能更新 `plan.md` / `review.md`，也不能直接向 human 提问。
 
 ## 轮次生命周期
 
@@ -96,7 +96,7 @@ flowchart TD
     HumanApprove{Human<br/>批准?}
     HumanApprove -->|修订| Planner
     HumanApprove -->|批准| Builder
-    Builder["<b>Builder</b><br/>分批实现<br/>每个 AC 写测试"] -->|代码 + 测试| Verify
+    Builder["<b>Builder</b><br/>按切片实现<br/>每个 AC 写测试"] -->|代码 + 测试| Verify
     Verify["<b>Verifier</b> 验证<br/>Tier 1: 测试<br/>Tier 2: 运行时<br/>Tier 3: 覆盖率"] -->|review.md| Verdict
 
     Verdict{结果}
@@ -123,9 +123,9 @@ flowchart TD
 | 制品 | 位置 | 生命周期 |
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
-| `.harness/plan.md` | `.harness/` | 每任务 — AC、方案、`Open Decisions`、发现。完成后归档 |
+| `.harness/plan.md` | `.harness/` | 每任务 — AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
 | `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`，以及可选的 findings-sidecar 指针 |
-| `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记、Builder batch packet、worker report |
+| `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记、Builder slice packet、worker report |
 
 ## 快速开始
 

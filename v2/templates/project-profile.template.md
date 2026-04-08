@@ -6,7 +6,7 @@
 
 {service/API | CLI | library | data pipeline | ML training | embedded | other}
 
-> Influences default batch pattern and verification strategy.
+> Influences default slice pattern and verification strategy.
 
 ## Build
 
@@ -116,16 +116,16 @@ Error format: {describe structure}
 
 ## Builder Delegation
 
-> Optional. Records whether Builder may use internal workers for one batch or fix slice at a time.
+> Optional. Records whether Builder may use internal workers for one implementation slice or fix slice at a time.
 > This does not add a public Baton role.
 
 | Key | Value |
 |-----|-------|
 | Delegation | `{allowed / discouraged / disabled}` |
 | Default mode | `{inline / advisory / isolated}` |
-| Scratch path | `.context/baton/active/batches/` |
-| Helper | `bash v2/tools/builder-worker.sh` |
-| Notes | `{batch sizing, isolation preference, or "N/A"}` |
+| Scratch path | `.context/baton/active/slices/` |
+| Helper | `bash v2/tools/builder-slice.sh` |
+| Notes | `{slice sizing, isolation preference, or "N/A"}` |
 
 ## External Reviewer (Mode C+ only)
 

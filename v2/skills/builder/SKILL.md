@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Implement code and write tests according to plan.md. Works in batches, validates incrementally, commits at checkpoints, and may optionally use internal worker delegation without changing Baton's public role boundary.
+description: Implement code and write tests according to plan.md. Works in slices, validates incrementally, commits at checkpoints, and may optionally use internal worker delegation without changing Baton's public role boundary.
 argument-hint: "[round number or 'fix' for Verifier feedback]"
 ---
 
@@ -14,7 +14,7 @@ Write code. Write tests. Validate often. Commit at checkpoints. If you discover 
 
 | File | When to read | Owns |
 |------|--------------|------|
-| `v2/skills/builder/packets.md` | When preparing an internal worker handoff for one batch or fix slice | Batch-packet scope, required fields, context hygiene |
+| `v2/skills/builder/slices.md` | When preparing an internal worker handoff for one implementation slice or fix slice | Slice-packet scope, required fields, context hygiene |
 | `v2/skills/builder/workers.md` | When using an internal worker | Worker contract, allowed actions, status handling, scratch handoff |
 | `v2/skills/builder/isolation.md` | When deciding whether to stay inline or delegate | `inline / advisory / isolated` delegation modes |
 
@@ -22,19 +22,19 @@ Write code. Write tests. Validate often. Commit at checkpoints. If you discover 
 
 ```
 1. Read project-profile.md → conventions, traps, build/test/run commands
-2. Read .harness/plan.md → current round's ACs + approach + batch plan
+2. Read .harness/plan.md → current round's ACs + `§ Round Contract` + implementation slices
 3. If fixing Verifier feedback: also read .harness/review.md → specific issues to fix
 4. Read relevant source files referenced in plan.md § Context
 ```
 
 ## Optional Internal Delegation
 
-In Standard/Full mode, you may delegate one approved batch or fix slice to an internal worker if that reduces context load. This does **not** create a new Baton role. You still own the implementation.
+In Standard/Full mode, you may delegate one approved implementation slice or fix slice to an internal worker if that reduces context load. This does **not** create a new Baton role. You still own the implementation.
 
 ```
 Delegation boundary:
-  1. Delegate only one batch or fix slice at a time
-  2. Worker must stay within the approved ACs and batch scope
+  1. Delegate only one implementation slice or fix slice at a time
+  2. Worker must stay within the approved ACs and approved slice scope
   3. Worker outputs belong in scratch artifacts under .context/baton/active/
   4. Worker must NOT update .harness/plan.md or .harness/review.md
   5. Worker must NOT ask the human directly or invoke external review
@@ -45,7 +45,7 @@ Delegation boundary:
 If you delegate:
 
 ```
-1. Read packets.md → construct the batch packet from approved ACs and batch scope
+1. Read slices.md → construct the slice packet from approved ACs and approved slice scope
 2. Read isolation.md → choose inline / advisory / isolated mode
 3. Read workers.md → enforce worker status handling and scratch-only outputs
 4. Re-run the normal Builder validation flow yourself before handing off to Verifier
@@ -53,32 +53,32 @@ If you delegate:
 
 **Compact mode:** do not delegate. Compact mode is a single-context self-check path.
 
-## Implementation: Batch Strategy
+## Implementation: Slice Strategy
 
-Follow the batch plan from plan.md. If no batch plan exists, use this default:
+Follow `plan.md § Implementation Slices`. If no implementation-slice plan exists, use this default:
 
 ```
-Batch 1: Data layer (models, schemas, migrations)
+Slice 1: Data layer (models, schemas, migrations)
   → Run compile/check command from project-profile.md
-  → Fix errors (max 3 attempts, then reset batch)
-  → Signal commit checkpoint: "round-{N} batch 1: data layer"
+  → Fix errors (max 3 attempts, then reset slice)
+  → Signal commit checkpoint: "round-{N} slice 1: data layer"
 
-Batch 2: Logic layer (services, business logic) + unit tests
+Slice 2: Logic layer (services, business logic) + unit tests
   → Run compile/check command
   → Write unit tests for logic
   → Run test command from project-profile.md
   → Fix failures
-  → Signal commit checkpoint: "round-{N} batch 2: logic layer"
+  → Signal commit checkpoint: "round-{N} slice 2: logic layer"
 
-Batch 3: Interface layer (API, CLI, UI) + integration tests
+Slice 3: Interface layer (API, CLI, UI) + integration tests
   → Run compile/check command
   → Write integration tests covering each AC
   → Run full test suite
   → Fix failures
-  → Signal commit checkpoint: "round-{N} batch 3: interface layer + tests"
+  → Signal commit checkpoint: "round-{N} slice 3: interface layer + tests"
 ```
 
-**Batch order principle:** Dependencies first. Lower layers before higher layers. Same-layer files have no interdependency — batch them together to minimize validation cycles. The exact layers depend on the project's architecture (read project-profile.md § Conventions).
+**Slice order principle:** Dependencies first. Lower layers before higher layers. Same-layer files with no interdependency may share one slice to minimize validation cycles. The exact layers depend on the project's architecture (read project-profile.md § Conventions).
 
 ## Test Writing Requirements
 
@@ -122,7 +122,7 @@ These tests serve as structural verification now and will be run-verified when r
 
 ## Validate-Fix Loop
 
-After writing each batch, run the project's validation commands (from project-profile.md):
+After writing each slice, run the project's validation commands (from project-profile.md):
 
 ```
 Compile/check command (if applicable):
@@ -131,12 +131,12 @@ Compile/check command (if applicable):
        Read error messages
        Fix the specific errors
        Run again
-       └─ 3 failures on same batch →
+       └─ 3 failures on same slice →
             Re-read the original files (before your changes)
-            Rewrite the batch from scratch
+            Rewrite the slice from scratch
             └─ Still failing →
                  Write to plan.md § Discoveries:
-                 "Batch {N} failure: {root cause}"
+                 "Slice {M} failure: {root cause}"
                  Signal Planner (may be a design issue)
 
 Test command:
@@ -227,12 +227,12 @@ Principle: AI may only OBSERVE the repository, never MUTATE it.
   ❌ Mutating: commands that change index, working tree, history, or remote
      (e.g., commit, push, add, reset, checkout --, stash, tag, rebase, merge, cherry-pick)
 
-After each passing batch, signal a commit checkpoint:
-  1. List the files changed in this batch
-  2. Suggest a commit message: "round-{N} batch {M}: {what was implemented}"
+After each passing slice, signal a commit checkpoint:
+  1. List the files changed in this slice
+  2. Suggest a commit message: "round-{N} slice {M}: {what was implemented}"
   3. Write to plan.md § Round N → Commit Checkpoints:
-     "Batch {M} ready to commit: {file list} — suggested message: {msg}"
-  4. Continue to next batch (do NOT wait for human to commit)
+     "Slice {M} ready to commit: {file list} — suggested message: {msg}"
+  4. Continue to next slice (do NOT wait for human to commit)
 ```
 
 ## Modification of Existing Code
@@ -252,7 +252,7 @@ When modifying existing files (the common case in large projects):
 
 ## Completion
 
-When all batches are done and tests pass:
+When all slices are done and tests pass:
 
 ```
 1. Run full test suite (command from project-profile.md)
@@ -267,12 +267,12 @@ When all batches are done and tests pass:
 
 ## Rules
 
-1. **Follow the batch plan.** Don't write everything at once. Validate after each batch.
+1. **Follow `§ Implementation Slices`.** Don't write everything at once. Validate after each slice.
 2. **Every AC gets a test.** No exceptions, including Mode C. In Mode C, tests must compile but run-verification is marked `[deferred — Mode C]`. If an AC is untestable, flag it to Planner. If the project has no test framework, write executable validation scripts.
 3. **Stop if the plan is wrong.** Don't implement what you know won't work. Signal Planner.
 4. **Minimal changes to existing code.** Don't refactor, don't "improve" what you weren't asked to change.
 5. **Match project style.** Read project-profile.md and existing code. Your code should look like the team wrote it.
-6. **Signal commit checkpoints.** After each passing batch, record a commit checkpoint in plan.md. Never run git commit/push — those are human-operated.
+6. **Signal commit checkpoints.** After each passing slice, record a commit checkpoint in plan.md. Never run git commit/push — those are human-operated.
 7. **Don't fix design issues.** If Verifier or your own discovery reveals a design problem, that's Planner's job.
 8. **Schema changes require human approval.** Never auto-apply to shared environments.
 9. **All commands come from project-profile.md.** Don't assume any specific build tool, test framework, or language.

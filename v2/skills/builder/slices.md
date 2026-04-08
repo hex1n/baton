@@ -1,27 +1,27 @@
-# Builder Guide: Batch Packets
+# Builder Guide: Slice Packets
 
-Use this file when Builder delegates one approved batch or fix slice to an internal worker.
+Use this file when Builder delegates one approved implementation slice or fix slice to an internal worker.
 
 ## Purpose
 
-A batch packet narrows the worker's scope so the worker does not need to infer intent from the whole round. The packet is scratch state, not canonical state.
+A slice packet narrows the worker's scope so the worker does not need to infer intent from the whole round. The packet is scratch state, not canonical state.
 
 Write packets under:
 
 ```text
-.context/baton/active/batches/round-{N}/batch-{M}/packet.md
+.context/baton/active/slices/round-{N}/slice-{M}/packet.md
 ```
 
 Start from:
 
 ```text
-v2/templates/batch-packet.template.md
+v2/templates/slice-packet.template.md
 ```
 
 The normal helper is:
 
 ```text
-bash v2/tools/builder-worker.sh init-batch --round {N} --batch {M} --mode {advisory|isolated}
+bash v2/tools/builder-slice.sh init-slice --round {N} --slice {M} --mode {advisory|isolated}
 ```
 
 ## When to Create a Packet
@@ -29,7 +29,7 @@ bash v2/tools/builder-worker.sh init-batch --round {N} --batch {M} --mode {advis
 Create a packet only when all of these are true:
 
 - The scope is already approved in `plan.md`
-- The work fits one batch or one fix slice
+- The work fits one implementation slice or one fix slice
 - The worker can stay inside a small, explicit file set
 - Delegation reduces context load more than it adds coordination overhead
 
@@ -61,7 +61,7 @@ Each packet should contain:
 3. **Declare file boundaries.** If Builder already knows the touched files, list them.
 4. **Keep context minimal.** Include only the snippets or notes needed for this slice.
 5. **Record the trigger.** If the packet is for Verifier feedback, say which finding(s) it addresses.
-6. **Use the template directly.** Fill `v2/templates/batch-packet.template.md` instead of inventing ad-hoc headings.
+6. **Use the template directly.** Fill `v2/templates/slice-packet.template.md` instead of inventing ad-hoc headings.
 
 ## Packet Rules
 

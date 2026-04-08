@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Host-neutral helper for Baton's optional Builder delegation flow.
-# It manages scratch artifacts for one delegated batch:
-#   init-batch     -> scaffold packet/report files from templates
+# It manages scratch artifacts for one delegated slice:
+#   init-slice     -> scaffold packet/report files from templates
 #   run-worker     -> record a worker handoff in scratch state
 #   collect-report -> write concrete worker reports
-#   show-status    -> inspect current batch delegation state
+#   show-status    -> inspect current slice delegation state
 
 REPO_ROOT="."
 ACTION="${1:-}"
@@ -15,8 +15,8 @@ if [[ $# -gt 0 ]]; then
 fi
 
 ROUND=""
-BATCH=""
-TRIGGER="plan batch"
+SLICE=""
+TRIGGER="plan slice"
 MODE="advisory"
 START_SHA=""
 WORKER_LABEL=""
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root) REPO_ROOT="$2"; shift 2 ;;
     --round) ROUND="$2"; shift 2 ;;
-    --batch) BATCH="$2"; shift 2 ;;
+    --slice) SLICE="$2"; shift 2 ;;
     --trigger) TRIGGER="$2"; shift 2 ;;
     --mode) MODE="$2"; shift 2 ;;
     --start-sha) START_SHA="$2"; shift 2 ;;
@@ -51,28 +51,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-STATE_BASE="${REPO_ROOT}/.context/baton/active/batches"
-TEMPLATE_PACKET="${REPO_ROOT}/v2/templates/batch-packet.template.md"
+STATE_BASE="${REPO_ROOT}/.context/baton/active/slices"
+TEMPLATE_PACKET="${REPO_ROOT}/v2/templates/slice-packet.template.md"
 TEMPLATE_REPORT_MD="${REPO_ROOT}/v2/templates/worker-report.template.md"
 TEMPLATE_REPORT_JSON="${REPO_ROOT}/v2/templates/worker-report.template.json"
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash v2/tools/builder-worker.sh init-batch \
-    --round <N> --batch <M> [--trigger <text>] [--mode advisory|isolated] [--start-sha <sha>] [--repo-root <path>] [--force]
+  bash v2/tools/builder-slice.sh init-slice \
+    --round <N> --slice <M> [--trigger <text>] [--mode advisory|isolated] [--start-sha <sha>] [--repo-root <path>] [--force]
 
-  bash v2/tools/builder-worker.sh run-worker \
-    --round <N> --batch <M> [--worker-label <label>] [--mode advisory|isolated] [--repo-root <path>]
+  bash v2/tools/builder-slice.sh run-worker \
+    --round <N> --slice <M> [--worker-label <label>] [--mode advisory|isolated] [--repo-root <path>]
 
-  bash v2/tools/builder-worker.sh collect-report \
-    --round <N> --batch <M> --status complete|complete_with_concerns|needs_context|blocked \
+  bash v2/tools/builder-slice.sh collect-report \
+    --round <N> --slice <M> --status complete|complete_with_concerns|needs_context|blocked \
     --summary <text> [--worker-label <label>] [--patch-path <path>] [--file <path>]... \
     [--concern <text>]... [--question <text>]... [--test-entry "<command>::<result>::<notes>"]... \
     [--repo-root <path>]
 
-  bash v2/tools/builder-worker.sh show-status \
-    [--round <N> [--batch <M>]] [--repo-root <path>]
+  bash v2/tools/builder-slice.sh show-status \
+    [--round <N> [--slice <M>]] [--repo-root <path>]
 EOF
 }
 
@@ -83,9 +83,9 @@ require_action() {
   fi
 }
 
-require_batch() {
-  if [[ -z "$ROUND" || -z "$BATCH" ]]; then
-    echo "Both --round and --batch are required." >&2
+require_slice() {
+  if [[ -z "$ROUND" || -z "$SLICE" ]]; then
+    echo "Both --round and --slice are required." >&2
     exit 1
   fi
 }
@@ -107,28 +107,28 @@ validate_status() {
   esac
 }
 
-batch_dir() {
-  printf '%s/round-%s/batch-%s' "$STATE_BASE" "$ROUND" "$BATCH"
+slice_dir() {
+  printf '%s/round-%s/slice-%s' "$STATE_BASE" "$ROUND" "$SLICE"
 }
 
 state_file() {
-  printf '%s/state.env' "$(batch_dir)"
+  printf '%s/state.env' "$(slice_dir)"
 }
 
 packet_path() {
-  printf '%s/packet.md' "$(batch_dir)"
+  printf '%s/packet.md' "$(slice_dir)"
 }
 
 report_md_path() {
-  printf '%s/report.md' "$(batch_dir)"
+  printf '%s/report.md' "$(slice_dir)"
 }
 
 report_json_path() {
-  printf '%s/report.json' "$(batch_dir)"
+  printf '%s/report.json' "$(slice_dir)"
 }
 
 worker_env_path() {
-  printf '%s/worker.env' "$(batch_dir)"
+  printf '%s/worker.env' "$(slice_dir)"
 }
 
 default_start_sha() {
@@ -170,14 +170,14 @@ parse_test_entry() {
 render_packet_template() {
   local out="$1"
   ROUND_VALUE="$ROUND" \
-  BATCH_VALUE="$BATCH" \
+  SLICE_VALUE="$SLICE" \
   TRIGGER_VALUE="$TRIGGER" \
   MODE_VALUE="$MODE" \
   START_SHA_VALUE="$START_SHA" \
   perl -0pe '
     s/\{N\}/$ENV{ROUND_VALUE}/g;
-    s/\{M\}/$ENV{BATCH_VALUE}/g;
-    s/\{plan batch \/ verifier finding \/ fix slice\}/$ENV{TRIGGER_VALUE}/g;
+    s/\{M\}/$ENV{SLICE_VALUE}/g;
+    s/\{plan slice \/ verifier finding \/ fix slice\}/$ENV{TRIGGER_VALUE}/g;
     s/\{advisory \/ isolated\}/$ENV{MODE_VALUE}/g;
     s/\{git sha before delegation\}/$ENV{START_SHA_VALUE}/g;
   ' "$TEMPLATE_PACKET" >"$out"
@@ -198,7 +198,7 @@ write_state() {
   updated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   cat >"$(state_file)" <<EOF
 ROUND=$ROUND
-BATCH=$BATCH
+SLICE=$SLICE
 MODE=$MODE
 TRIGGER=$TRIGGER
 PHASE=$phase
@@ -226,26 +226,26 @@ append_json_array() {
   done
 }
 
-require_batch_dir() {
+require_slice_dir() {
   local dir
-  dir="$(batch_dir)"
+  dir="$(slice_dir)"
   if [[ ! -d "$dir" ]]; then
-    echo "Batch directory not initialized: $dir" >&2
+    echo "Slice directory not initialized: $dir" >&2
     exit 1
   fi
 }
 
-handle_init_batch() {
-  require_batch
+handle_init_slice() {
+  require_slice
   validate_mode
   START_SHA="${START_SHA:-$(default_start_sha)}"
 
   local dir
-  dir="$(batch_dir)"
+  dir="$(slice_dir)"
   mkdir -p "$dir"
 
   if [[ -f "$(packet_path)" && "$FORCE" != true ]]; then
-    echo "Batch packet already exists: $(packet_path)" >&2
+    echo "Slice packet already exists: $(packet_path)" >&2
     echo "Use --force to overwrite the scaffolding files." >&2
     exit 1
   fi
@@ -256,7 +256,7 @@ handle_init_batch() {
   write_state "initialized" "pending"
 
   cat <<EOF
-Initialized batch scratch:
+Initialized slice scratch:
   packet: $(packet_path)
   report.md: $(report_md_path)
   report.json: $(report_json_path)
@@ -264,15 +264,15 @@ EOF
 }
 
 handle_run_worker() {
-  require_batch
+  require_slice
   validate_mode
-  require_batch_dir
+  require_slice_dir
 
   local dispatched_at
   dispatched_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   cat >"$(worker_env_path)" <<EOF
 ROUND=$ROUND
-BATCH=$BATCH
+SLICE=$SLICE
 MODE=$MODE
 WORKER_LABEL=${WORKER_LABEL:-internal-worker}
 DISPATCHED_AT=$dispatched_at
@@ -284,17 +284,17 @@ EOF
 
   cat <<EOF
 Registered worker handoff:
-  batch: round-$ROUND / batch-$BATCH
+  slice: round-$ROUND / slice-$SLICE
   worker: ${WORKER_LABEL:-internal-worker}
   packet: $(packet_path)
 EOF
 }
 
 handle_collect_report() {
-  require_batch
+  require_slice
   validate_mode
   validate_status
-  require_batch_dir
+  require_slice_dir
 
   if [[ -z "$SUMMARY" ]]; then
     echo "--summary is required for collect-report" >&2
@@ -315,14 +315,14 @@ handle_collect_report() {
 
   {
     cat <<EOF
-# Worker Report: Round $ROUND Batch $BATCH
+# Worker Report: Round $ROUND Slice $SLICE
 
 ## Metadata
 
 | Key | Value |
 |-----|-------|
 | Round | $ROUND |
-| Batch | $BATCH |
+| Slice | $SLICE |
 | Status | $STATUS |
 | Delegation Mode | $MODE |
 
@@ -397,7 +397,7 @@ EOF
   {
     printf '{\n'
     printf '  "round": %s,\n' "$ROUND"
-    printf '  "batch": %s,\n' "$BATCH"
+    printf '  "slice": %s,\n' "$SLICE"
     printf '  "status": "%s",\n' "$(escape_json "$STATUS")"
     printf '  "delegation_mode": "%s",\n' "$(escape_json "$MODE")"
     printf '  "summary": "%s",\n' "$(escape_json "$SUMMARY")"
@@ -463,11 +463,11 @@ EOF
 }
 
 handle_show_status() {
-  if [[ -n "$ROUND" && -n "$BATCH" ]]; then
-    require_batch_dir
+  if [[ -n "$ROUND" && -n "$SLICE" ]]; then
+    require_slice_dir
     local dir
-    dir="$(batch_dir)"
-    echo "Batch scratch: $dir"
+    dir="$(slice_dir)"
+    echo "Slice scratch: $dir"
     if [[ -f "$(state_file)" ]]; then
       cat "$(state_file)"
     else
@@ -483,18 +483,18 @@ handle_show_status() {
   fi
 
   if [[ ! -d "$STATE_BASE" ]]; then
-    echo "No active Builder batches found."
+    echo "No active Builder slices found."
     return 0
   fi
 
-  local round_dir batch_state batch_name
+  local round_dir slice_state slice_name
   for round_dir in "$STATE_BASE"/round-*; do
     [[ -d "$round_dir" ]] || continue
-    for batch_state in "$round_dir"/batch-*/state.env; do
-      [[ -f "$batch_state" ]] || continue
-      batch_name="$(dirname "$batch_state")"
-      echo "== ${batch_name#$REPO_ROOT/} =="
-      cat "$batch_state"
+    for slice_state in "$round_dir"/slice-*/state.env; do
+      [[ -f "$slice_state" ]] || continue
+      slice_name="$(dirname "$slice_state")"
+      echo "== ${slice_name#$REPO_ROOT/} =="
+      cat "$slice_state"
     done
   done
 }
@@ -502,7 +502,7 @@ handle_show_status() {
 require_action
 
 case "$ACTION" in
-  init-batch) handle_init_batch ;;
+  init-slice) handle_init_slice ;;
   run-worker) handle_run_worker ;;
   collect-report) handle_collect_report ;;
   show-status) handle_show_status ;;
