@@ -28,4 +28,4 @@ Decide whether the issue is:
 - Preserve round history; do not rewrite it
 ```
 
-If the design issue exposes a requirement gap instead of a design problem, surface it back to Dispatch for a human checkpoint instead of silently deciding it.
+If the design issue exposes a requirement gap instead of a design problem, surface it back to Dispatcher for a human checkpoint instead of silently deciding it.

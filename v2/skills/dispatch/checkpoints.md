@@ -1,6 +1,6 @@
-# Dispatch Guide: Checkpoints & Lifecycle
+# Dispatcher Guide: Checkpoints & Lifecycle
 
-> Read this file whenever Dispatch needs a human decision: plan approval, task recovery, scope change, task closeout, or a protocol-defined checkpoint.
+> Read this file whenever Dispatcher needs a human decision: plan approval, task recovery, scope change, task closeout, or a protocol-defined checkpoint.
 
 ## New Task Approval Checkpoint
 
@@ -153,7 +153,7 @@ Current round IN PROGRESS (Builder started):
   → Create a new round for the scope change
   → Builder finishes current round first
 
-Current round COMPLETE (eval exists, round complete):
+Current round COMPLETE (review exists, round complete):
   → Create a new round for the scope change
   → Planner compresses completed round, adds new round
 

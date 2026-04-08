@@ -58,7 +58,7 @@ else
   check "plan.template.md open decisions" "fail" "missing structured Open Decisions section"
 fi
 
-# Dispatch should reference all three
+# Dispatcher entrypoint should reference all three
 if grep -q "compact.*standard.*full" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
   check "dispatch/SKILL.md mode references" "pass"
 else

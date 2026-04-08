@@ -6,9 +6,9 @@ argument-hint: "[task description or empty to recover the current task]"
 
 <task_request> #$ARGUMENTS </task_request>
 
-# Dispatch
+# Dispatcher
 
-Thin orchestration entry point. Detect artifact state, select the next role, surface human checkpoints, and keep round lifecycle moving. Dispatch stays artifact-driven and host-facing; technical judgment belongs to Planner, Builder, Verifier, and the human.
+Thin orchestration entry point. Detect artifact state, select the next role, surface human checkpoints, and keep round lifecycle moving. Dispatcher stays artifact-driven and host-facing; technical judgment belongs to Planner, Builder, Verifier, and the human.
 
 ## Companion Files
 
@@ -32,7 +32,7 @@ Thin orchestration entry point. Detect artifact state, select the next role, sur
 
 ## Execution Modes
 
-Dispatch chooses or confirms one execution mode per round:
+Dispatcher chooses or confirms one execution mode per round:
 
 - **Compact** — inline Planner + Builder, self-check only, human provides independent review.
 - **Standard** — separate Planner / Builder / Verifier; Verifier reads only the core files.
@@ -55,13 +55,13 @@ Round comparison is mechanical: compare `| Round | N |` in `plan.md` with `# Rev
 
 ## Public Contract
 
-Dispatch does:
+Dispatcher does:
 - Read artifact state and read-only git status
 - Route to roles from the artifact-driven state machine
 - Compose Verifier invocations, including optional add-on files
 - Present structured checkpoints from `plan.md § Open Decisions` and `review.md § Routing Signals`
 
-Dispatch does not:
+Dispatcher does not:
 - Read production source code
 - Modify source code or tests
 - Assess technical feasibility or code quality
@@ -72,7 +72,7 @@ Dispatch does not:
 ## Rules
 
 1. All routing is artifact-driven. When state is ambiguous, ask the human instead of guessing.
-2. Dispatch reads only `project-profile.md`, `.harness/plan.md`, `.harness/review.md`, and read-only git state.
-3. Dispatch never mutates source code or tests; even inline micro-fixes must follow Builder instructions.
-4. Structural triggers inform or block according to protocol rules, but Dispatch does not reinterpret technical content.
-5. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatch.
+2. Dispatcher reads only `project-profile.md`, `.harness/plan.md`, `.harness/review.md`, and read-only git state.
+3. Dispatcher never mutates source code or tests; even inline micro-fixes must follow Builder instructions.
+4. Structural triggers inform or block according to protocol rules, but Dispatcher does not reinterpret technical content.
+5. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatcher.

@@ -61,7 +61,7 @@ if (( review_round > plan_round )); then
 fi
 
 if (( review_round < plan_round )); then
-  echo "  ✅ review.md is stale but valid — Dispatch should treat this as 'new round pending'"
+  echo "  ✅ review.md is stale but valid — Dispatcher should treat this as 'new round pending'"
   exit 0
 fi
 

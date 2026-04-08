@@ -99,9 +99,9 @@ Confidence criteria:
 - **中** — viable but involves trade-offs or unverified assumptions
 - **低** — technically possible but heavy unknowns or pattern mismatch
 
-### Step 6: Record approach decisions for Dispatch
+### Step 6: Record approach decisions for Dispatcher
 
-If multiple approaches exist, write the comparison in `§ Approach Evaluation` and add an open decision row for Dispatch:
+If multiple approaches exist, write the comparison in `§ Approach Evaluation` and add an open decision row for Dispatcher:
 
 ```markdown
 | # | Approach | Confidence | Key trade-off |

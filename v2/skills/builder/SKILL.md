@@ -134,7 +134,7 @@ Examples:
    Impact: {how this affects the current approach}
    Recommendation: {what Planner should evaluate}
    ```
-3. Signal Dispatch that Planner review is needed.
+3. Signal Dispatcher that Planner review is needed.
 
 **When you discover something useful but not plan-changing:**
 

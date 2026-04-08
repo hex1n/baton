@@ -1,7 +1,7 @@
 # Verifier Guide: Cross-model Review
 
 > Requires: [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) installed and configured in project-profile.md § External Reviewer.
-> Activated by: Dispatch in Full mode when Mode C+ is detected.
+> Activated by: Dispatcher in Full mode when Mode C+ is detected.
 > Evidence level: L2.5 (cross-model) — different model = different blind spots.
 
 ## Pre-flight: Cross-model Plan Challenge

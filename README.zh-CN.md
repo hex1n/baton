@@ -56,7 +56,7 @@ v2/
 | **Builder** | project-profile.md, plan.md（当前轮次） | 源代码、测试、plan.md § Discoveries | 每个 AC 必须有测试 |
 | **Verifier** | project-profile.md, plan.md（AC）、测试结果 | review.md | 验证时不读 Builder 的源代码（Mode A/B） |
 
-**Dispatch** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
+**Dispatcher** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
 ## 轮次生命周期
 
@@ -96,7 +96,7 @@ flowchart TD
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
 | `.harness/plan.md` | `.harness/` | 每任务 — AC、方案、`Open Decisions`、发现。完成后归档 |
-| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工审查指引、`Routing Signals` |
+| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals` |
 
 ## 快速开始
 
@@ -105,7 +105,7 @@ flowchart TD
 /dispatch <任务>   → 启动新任务
 ```
 
-首次使用？Dispatch 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
+首次使用？Dispatcher 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
 
 公共命令保持不变（`/dispatch`、`/planner`、`/builder`、`/verifier`），细节步骤下沉到各角色目录里的同级职责文件。
 

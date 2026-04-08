@@ -159,4 +159,4 @@ Challenges: {none / 1-2 bullet points}
 Recommendation: Ready for implementation.
 ```
 
-Lightweight mode still must write `review.md`, because Dispatch depends on the file for recovery and state detection.
+Lightweight mode still must write `review.md`, because Dispatcher depends on the file for recovery and state detection.

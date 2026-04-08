@@ -20,25 +20,25 @@ You have two jobs:
 |------|--------------|------|
 | `v2/skills/verifier/preflight.md` | `preflight` mode | AC testability, baseline, environment capability, plan challenge, pre-flight review output |
 | `v2/skills/verifier/verification.md` | `verify` mode | Tier 1 / 2 / 3a verification, escalation criteria, final review output |
-| `v2/skills/verifier/cross-model.md` | Full mode when Dispatch explicitly enables it | Read-only cross-model pressure testing |
+| `v2/skills/verifier/cross-model.md` | Full mode when Dispatcher explicitly enables it | Read-only cross-model pressure testing |
 | `v2/skills/verifier/adversarial.md` | Full mode on final or security-sensitive rounds | Read-only adversarial checks |
 
 ## Execution Order
 
-**Execution mode** is passed by Dispatch: `standard` or `full`.
+**Execution mode** is passed by Dispatcher: `standard` or `full`.
 
 ```
 If argument is "preflight":
   1. Read `preflight.md`
-  2. In full mode, also read any optional add-on files Dispatch named
+  2. In full mode, also read any optional add-on files Dispatcher named
   3. Write / refresh the pre-flight section in review.md
-  4. Write `§ Routing Signals` for Dispatch
+  4. Write `§ Routing Signals` for Dispatcher
 
 If argument is "verify":
   1. Read `verification.md`
-  2. In full mode, also read any optional add-on files Dispatch named
+  2. In full mode, also read any optional add-on files Dispatcher named
   3. Write / refresh review.md with verification findings
-  4. Write `§ Routing Signals` for Dispatch
+  4. Write `§ Routing Signals` for Dispatcher
 ```
 
 ## Evidence Model
@@ -57,4 +57,4 @@ If argument is "verify":
 4. Findings must be specific and actionable, with AC references and evidence.
 5. Credit what works. Human review guidance should separate verified areas from judgment calls.
 6. Optional add-on files stay read-only and additive. They can surface more evidence, never apply fixes.
-7. Every review.md must include `§ Routing Signals`. Dispatch routes from that section, not from prose inference.
+7. Every review.md must include `§ Routing Signals`. Dispatcher routes from that section, not from prose inference.

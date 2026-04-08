@@ -1,4 +1,4 @@
-# Dispatch Guide: Routing & State
+# Dispatcher Guide: Routing & State
 
 > Read this module first. It owns state detection, execution-mode selection, role invocation mechanics, verifier handoff, micro-fix routing, and project bootstrap.
 
@@ -23,7 +23,7 @@ project-profile.md  → exists? (project configured?)
 |----------------|----------|---------|-------|--------|
 | ❌ | — | — | First time | Offer to generate project-profile.md, then proceed |
 | ✅ | ❌ | — | New task | Invoke Planner (Round 1) |
-| ✅ | ✅ | ❌ | Mid-round (no eval yet) | Check git status, recover Builder state or invoke Verifier |
+| ✅ | ✅ | ❌ | Mid-round (no review yet) | Check git status, recover Builder state or invoke Verifier |
 | ✅ | ✅ (Round N) | ✅ (Round N, PASS) | Round complete | Hand off to `checkpoints.md` for continue / change scope / close out |
 | ✅ | ✅ (Round N) | ✅ (Round N, FAIL) | Needs fix | Route based on review.md finding category |
 | ✅ | ✅ (Round N) | ✅ (Round < N) | New round pending | review.md is stale — invoke Verifier pre-flight for Round N |
@@ -108,7 +108,7 @@ Guideline: usually a few files, a few lines each, no new logic or new files
   Examples: typo fix, rename, extracting a magic number, tiny assertion hardening
 
 → Execute as Compact mode: follow Builder's SKILL.md inline, then self-check
-→ Dispatch still does NOT read or modify source code directly
+→ Dispatcher still does NOT read or modify source code directly
 → Record in plan.md § Discoveries:
   "Micro-fix (Compact): {what changed}"
 → If in doubt whether it qualifies, spawn a full Builder Agent instead

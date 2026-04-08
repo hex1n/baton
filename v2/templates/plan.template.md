@@ -102,7 +102,7 @@
 
 ### Open Decisions
 
-> Planner records unresolved human choices here. Dispatch asks these questions; Planner does not ask directly.
+> Planner records unresolved human choices here. Dispatcher asks these questions; Planner does not ask directly.
 
 | ID | Question | Options | Status | Blocking |
 |----|----------|---------|--------|----------|

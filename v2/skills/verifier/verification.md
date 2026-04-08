@@ -182,4 +182,4 @@ Routing signal defaults:
 - Design issues → `Next Route = planner`, `Human Review Needed = no`, `Blocking = design-issue`
 - Requirement gaps → `Next Route = human`, `Human Review Needed = yes`, `Blocking = requirement-gap`
 - Verification blocked by environment or missing evidence → `Next Route = human`, `Human Review Needed = yes`, `Blocking = environment`
-- If Dispatch can terminate immediately without another human checkpoint, use `Next Route = closeout`
+- If Dispatcher can terminate immediately without another human checkpoint, use `Next Route = closeout`

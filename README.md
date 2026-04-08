@@ -56,7 +56,7 @@ v2/
 | **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Every AC gets a test |
 | **Verifier** | project-profile.md, plan.md (ACs), test results | review.md | Never reads Builder's source code (Mode A/B) |
 
-**Dispatch** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
+**Dispatcher** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
 ## Round Lifecycle
 
@@ -105,7 +105,7 @@ flowchart TD
 /dispatch <task>   → starts a new task
 ```
 
-First time on a project? Dispatch will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
+First time on a project? Dispatcher will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
 
 The public commands stay stable (`/dispatch`, `/planner`, `/builder`, `/verifier`). Detailed procedures live in sibling role files under each role directory.
 

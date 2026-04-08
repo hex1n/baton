@@ -1,6 +1,6 @@
 # Planner Guide: Profile Generation
 
-> Use this file when Dispatch invokes Planner with `profile` or when `project-profile.md` does not yet exist.
+> Use this file when Dispatcher invokes Planner with `profile` or when `project-profile.md` does not yet exist.
 
 ## Profile Generation
 

@@ -23,13 +23,13 @@ Public skill entrypoints are thin; detailed procedures live in sibling role file
 | Artifact | Location | Owner | Lifecycle |
 |----------|----------|-------|-----------|
 | `project-profile.md` | project root | Human (Planner generates draft) | Persistent across tasks |
-| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries `§ Open Decisions` for Dispatch |
-| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals` for Dispatch |
+| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries `§ Open Decisions` for Dispatcher |
+| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals` for Dispatcher |
 
 ## Quick Start
 
 1. `/dispatch` — starts a new task or recovers an existing one
-2. First time? Dispatch invokes Planner to generate `project-profile.md`
+2. First time? Dispatcher invokes Planner to generate `project-profile.md`
 3. Describe your task → Planner creates `plan.md` Round 1
 4. Verifier pre-flight → you approve → Builder implements → Verifier verifies
 5. Repeat rounds until closeout

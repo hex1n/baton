@@ -28,7 +28,7 @@ This file is the single source of truth for all protocol rules. Other files deri
 
 ## Execution Modes
 
-The harness supports three execution modes. Dispatch selects based on task complexity; human can override.
+The harness supports three execution modes. Dispatcher selects based on task complexity; human can override.
 
 ### Compact Mode (simple tasks: ≤5 ACs, single batch)
 
@@ -61,7 +61,7 @@ Each role runs as an independent subagent. Verifier runs **core steps only** —
 - **Verifier add-ons:** `[core]` only
 
 ```
-Dispatch (main conversation)
+Dispatcher (main conversation)
   → spawn Agent: Planner → writes plan.md
   → spawn Agent: Verifier pre-flight (core) → writes review.md
   → human approves
@@ -85,7 +85,7 @@ Same as Standard, but Verifier runs **all add-on files** — cross-model review,
 | >5 ACs OR multi-batch, standard project | Standard |
 | Security-sensitive, Mode C/C+, multi-round, or human requests it | Full |
 
-**Dispatch selects the mode** based on project-profile.md and task complexity. Human can override.
+**Dispatcher selects the mode** based on project-profile.md and task complexity. Human can override.
 
 ## Roles
 
@@ -93,7 +93,7 @@ Three roles. No more.
 
 ### Planner
 
-Understands the codebase, identifies load-bearing requirement questions, designs the technical approach, and records human decisions for Dispatch to ask.
+Understands the codebase, identifies load-bearing requirement questions, designs the technical approach, and records human decisions for Dispatcher to ask.
 
 - **Reads:** project-profile.md, plan.md (all rounds), relevant source code
 - **Writes:** plan.md (creates Round 1 or appends Round N)
@@ -136,7 +136,7 @@ Independently verifies implementation quality. Challenges plan quality before bu
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
 - **Contains:** round-by-round acceptance criteria, approach, decisions, `§ Open Decisions`, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
-- **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatch reads this section literally instead of inferring questions from narrative text.
+- **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatcher reads this section literally instead of inferring questions from narrative text.
 - **Compression:** Planner compresses at the START of each new round (not end of previous), so Verifier has full info during verification. Compression rules per section:
   - § Round History: summary + key decisions + unresolved discoveries (not just one-line)
   - § Context: only keep entries relevant to current/future rounds
@@ -152,11 +152,11 @@ Independently verifies implementation quality. Challenges plan quality before bu
 ### .harness/review.md — round level, archived per round
 
 - **Location:** .harness/
-- **Maintained by:** Verifier (writes), Dispatch (archives)
+- **Maintained by:** Verifier (writes), Dispatcher (archives)
 - **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals`
-- **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatch copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
-- **Round tag:** review.md header must include `# Review: Round {N}` so Dispatch can compare against plan.md's current round
-- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatch what should happen next (`builder / planner / human / closeout`) and whether human review is required.
+- **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatcher copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
+- **Round tag:** review.md header must include `# Review: Round {N}` so Dispatcher can compare against plan.md's current round
+- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`) and whether human review is required.
 
 ## Round Lifecycle
 
@@ -172,7 +172,7 @@ Round N:
   4. Builder    → implements code + tests in batches
   5. Verifier      → verification (Tier 1 → Tier 2 → Tier 3)
                     + `§ Routing Signals`
-  6. Resolution → Dispatch routes from review.md § Routing Signals
+  6. Resolution → Dispatcher routes from review.md § Routing Signals
   7. Completion → optional human tag / checkpoint after the round is accepted
   8. Human      → continue / change scope / close out
 ```
@@ -194,7 +194,7 @@ Four paths, three speeds:
 
 ## Human Checkpoints
 
-Only at decision points. Never for status updates. Planner and Verifier write structured decision / routing fields into artifacts; Dispatch is the only role that asks the human. All human interactions use `AskUserQuestion` with explicit options.
+Only at decision points. Never for status updates. Planner and Verifier write structured decision / routing fields into artifacts; Dispatcher is the only role that asks the human. All human interactions use `AskUserQuestion` with explicit options.
 
 | When | What human sees | AskUserQuestion options |
 |------|----------------|------------------------|
@@ -293,14 +293,14 @@ This prevents the "self-evaluation leniency" problem while being honest about wh
 
 ## Protocol Tags
 
-Tags are exact strings used across artifacts for mechanical detection by Dispatch. Roles must use these exact tags — Dispatch scans for them literally, not semantically.
+Tags are exact strings used across artifacts for mechanical detection by Dispatcher. Roles must use these exact tags — Dispatcher scans for them literally, not semantically.
 
 | Tag | Where | Set by | Detected by | Meaning |
 |-----|-------|--------|-------------|---------|
-| `⚠️ LOW CONFIDENCE: {what}` | plan.md, review.md | Any role | Dispatch | Uncertain assumption, needs human verification |
-| `⚠️ GAP` | plan.md § Exploration Boundary | Planner | Dispatch | Unexplored area that might be affected |
-| `[assumed — verify]` | plan.md § ACs | Planner | Dispatch | AC depends on unconfirmed assumption, blocks Builder |
-| `[diverges from human choice]` | plan.md § Decisions | Planner | Dispatch | Planner overrode a human's explicit selection |
+| `⚠️ LOW CONFIDENCE: {what}` | plan.md, review.md | Any role | Dispatcher | Uncertain assumption, needs human verification |
+| `⚠️ GAP` | plan.md § Exploration Boundary | Planner | Dispatcher | Unexplored area that might be affected |
+| `[assumed — verify]` | plan.md § ACs | Planner | Dispatcher | AC depends on unconfirmed assumption, blocks Builder |
+| `[diverges from human choice]` | plan.md § Decisions | Planner | Dispatcher | Planner overrode a human's explicit selection |
 | `[deferred — Mode C]` | plan.md § AC → Test Mapping | Builder | Verifier | Test compiles but run-verification skipped (no runtime) |
 | `[boundary update]` | plan.md § Discoveries | Builder | Planner | New module found that wasn't in exploration boundary |
 
@@ -320,13 +320,13 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 
 **Protocol-level trigger:**
 - If both Planner and Verifier independently flag the same assumption as low-confidence → mandatory human review before proceeding
-- Dispatch detects low-confidence markers and adds them to AskUserQuestion options
+- Dispatcher detects low-confidence markers and adds them to AskUserQuestion options
 
 **Structural triggers (fire automatically, no AI judgment needed):**
-- Planner's § Exploration Boundary has any `⚠️ GAP` entry → Dispatch adds to AskUserQuestion
-- Verifier pre-flight found ≥2 [Correctness] or [Completeness] challenges → Dispatch flags to human
-- Any AC marked `[assumed — verify]` not yet confirmed → Dispatch blocks Builder start
-- Mode C verification → Dispatch enforces mandatory human code review checkpoint (not just advisory)
+- Planner's § Exploration Boundary has any `⚠️ GAP` entry → Dispatcher adds to AskUserQuestion
+- Verifier pre-flight found ≥2 [Correctness] or [Completeness] challenges → Dispatcher flags to human
+- Any AC marked `[assumed — verify]` not yet confirmed → Dispatcher blocks Builder start
+- Mode C verification → Dispatcher enforces mandatory human code review checkpoint (not just advisory)
 
 ## Failure Recovery
 
@@ -344,12 +344,12 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 ### Core Rules (all modes)
 
 1. plan.md is the single source of truth for what's being built
-2. Builder is the only role that modifies source code or tests. Planner, Dispatch, Verifier, and Verifier add-on files are read-only with respect to the codebase.
+2. Builder is the only role that modifies source code or tests. Planner, Dispatcher, Verifier, and Verifier add-on files are read-only with respect to the codebase.
 3. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
 4. Human approval required before Builder starts each round
 5. Max 3 Builder ⇄ Verifier iterations per round before escalation
 6. In Standard/Full mode, each role starts with a fresh context; files carry state, not conversation. In Compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
-7. Dispatch determines execution mode (Compact/Standard/Full) at task start; human can override
+7. Dispatcher determines execution mode (Compact/Standard/Full) at task start; human can override
 8. If an assumption encoded by a harness component is invalidated, remove the component
 
 ### Module Rules (Standard/Full mode)
@@ -358,5 +358,5 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 10. All work on feature branches
 11. Git tag after each successful round
 12. Migration scripts require separate human approval
-13. Round scope lock: after human approves a round's plan, its ACs are frozen. New scope changes go to the next round (see Dispatch § Scope Change Flow). Builder and Verifier work against the approved ACs, not a moving target
-14. Dispatch routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatch never auto-decides these
+13. Round scope lock: after human approves a round's plan, its ACs are frozen. New scope changes go to the next round (see Dispatcher § Scope Change Flow). Builder and Verifier work against the approved ACs, not a moving target
+14. Dispatcher routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatcher never auto-decides these

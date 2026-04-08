@@ -59,4 +59,4 @@ Use `v2/templates/plan.template.md` exactly. Always fill:
 6. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
 7. Verify numeric claims with commands. Never estimate counts or sizes by eye.
 8. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
-9. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatch owns the actual question flow.
+9. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.
