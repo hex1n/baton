@@ -27,21 +27,21 @@ Follow the batch plan from brief.md. If no batch plan exists, use this default:
 Batch 1: Data layer (models, schemas, migrations)
   → Run compile/check command from project-profile.md
   → Fix errors (max 3 attempts, then reset batch)
-  → git commit "round-{N} batch 1: data layer"
+  → Signal commit checkpoint: "round-{N} batch 1: data layer"
 
 Batch 2: Logic layer (services, business logic) + unit tests
   → Run compile/check command
   → Write unit tests for logic
   → Run test command from project-profile.md
   → Fix failures
-  → git commit "round-{N} batch 2: logic layer"
+  → Signal commit checkpoint: "round-{N} batch 2: logic layer"
 
 Batch 3: Interface layer (API, CLI, UI) + integration tests
   → Run compile/check command
   → Write integration tests covering each AC
   → Run full test suite
   → Fix failures
-  → git commit "round-{N} batch 3: interface layer + tests"
+  → Signal commit checkpoint: "round-{N} batch 3: interface layer + tests"
 ```
 
 **Batch order principle:** Dependencies first. Lower layers before higher layers. Same-layer files have no interdependency — batch them together to minimize validation cycles. The exact layers depend on the project's architecture (read project-profile.md § Conventions).
@@ -78,6 +78,12 @@ AC mapping:
 - Mock strategy
 - Assertion library
 
+**Mode C (no runtime):** Tests are still mandatory. Write tests that compile/type-check successfully. Mark run-verification as deferred:
+```
+AC-{N}.1 → {TestFile}#{testName} [deferred — Mode C: compiles ✅, run not verified]
+```
+These tests serve as structural verification now and will be run-verified when runtime becomes available.
+
 **If unsure about test conventions:** Read 2-3 existing test files in the same area. Match their style.
 
 ## Validate-Fix Loop
@@ -92,8 +98,7 @@ Compile/check command (if applicable):
        Fix the specific errors
        Run again
        └─ 3 failures on same batch →
-            git stash (save work)
-            git stash drop (discard this attempt)
+            Re-read the original files (before your changes)
             Rewrite the batch from scratch
             └─ Still failing →
                  Write to brief.md § Discoveries:
@@ -156,7 +161,7 @@ When invoked with Verifier feedback:
    c. Fix it
    d. Update/add tests if the bug reveals a missing test case
 3. Run test command → ensure fix doesn't break other things
-4. git commit "round-{N} fix: {brief description}"
+4. Signal commit checkpoint: "round-{N} fix: {brief description}"
 5. Hand back to Verifier for re-verification
 ```
 
@@ -179,16 +184,21 @@ If this round requires database or schema changes:
 
 ## Git Discipline
 
-```
-Commit after each passing batch:
-  git add {specific files from this batch}
-  git commit -m "round-{N} batch {M}: {what was implemented}"
+**AI must NOT run git commands that modify the working tree, index, history, or remote state.** These are human-operated actions.
 
-Do NOT:
-  - git add -A (might include unintended files)
-  - Commit failing code
-  - Amend previous round's commits
-  - Force push
+```
+Principle: AI may only OBSERVE the repository, never MUTATE it.
+  ✅ Read-only: commands that inspect state without changing anything
+     (e.g., status, log, diff, show, branch --list, blame)
+  ❌ Mutating: commands that change index, working tree, history, or remote
+     (e.g., commit, push, add, reset, checkout --, stash, tag, rebase, merge, cherry-pick)
+
+After each passing batch, signal a commit checkpoint:
+  1. List the files changed in this batch
+  2. Suggest a commit message: "round-{N} batch {M}: {what was implemented}"
+  3. Write to brief.md § Round N → Commit Checkpoints:
+     "Batch {M} ready to commit: {file list} — suggested message: {msg}"
+  4. Continue to next batch (do NOT wait for human to commit)
 ```
 
 ## Modification of Existing Code
@@ -224,11 +234,11 @@ When all batches are done and tests pass:
 ## Rules
 
 1. **Follow the batch plan.** Don't write everything at once. Validate after each batch.
-2. **Every AC gets a test.** No exceptions. If an AC is untestable, flag it to Planner. If the project has no test framework, write executable validation scripts.
+2. **Every AC gets a test.** No exceptions, including Mode C. In Mode C, tests must compile but run-verification is marked `[deferred — Mode C]`. If an AC is untestable, flag it to Planner. If the project has no test framework, write executable validation scripts.
 3. **Stop if the plan is wrong.** Don't implement what you know won't work. Signal Planner.
 4. **Minimal changes to existing code.** Don't refactor, don't "improve" what you weren't asked to change.
 5. **Match project style.** Read project-profile.md and existing code. Your code should look like the team wrote it.
-6. **Commit often.** Each passing batch is a checkpoint. Enables rollback.
+6. **Signal commit checkpoints.** After each passing batch, record a commit checkpoint in brief.md. Never run git commit/push — those are human-operated.
 7. **Don't fix design issues.** If Verifier or your own discovery reveals a design problem, that's Planner's job.
 8. **Schema changes require human approval.** Never auto-apply to shared environments.
 9. **All commands come from project-profile.md.** Don't assume any specific build tool, test framework, or language.

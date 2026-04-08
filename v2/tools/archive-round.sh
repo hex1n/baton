@@ -118,4 +118,4 @@ fi
 if [[ $eval_count -gt 0 ]]; then
   echo "  - ${eval_count} eval-round-*.md files ✅"
 fi
-$KEEP_ORIGINALS && echo "  - originals kept (--keep-originals)"
+if $KEEP_ORIGINALS; then echo "  - originals kept (--keep-originals)"; fi

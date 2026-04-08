@@ -25,6 +25,15 @@
 | `{package/module}` | | |
 | | `{package/module}` | {not relevant / out of scope / ⚠️ GAP: might be affected} |
 
+### Metrics Baseline
+
+> Required when ACs reference numeric targets (line counts, dependency counts, method counts, etc.). Each metric must include the verification command and its output.
+
+| Metric | Value | Verification command |
+|--------|-------|---------------------|
+| {e.g., Orchestrator @Resource count} | {14} | `grep -c '@Resource' path/to/File.java` |
+| {e.g., OrchestratorTest line count} | {2570} | `wc -l path/to/FileTest.java` |
+
 ## Feature Decomposition
 
 > Break the full task into independent feature blocks. Assess clarity.
@@ -124,6 +133,14 @@ Batch 3: {Interface layer — API/CLI/UI + integration tests}
 |----|----------------|--------|
 | AC-{N}.1 | {test file / function / method} | |
 | AC-{N}.2 | {test file / function / method} | |
+
+### Commit Checkpoints
+
+> Updated by Builder after each passing batch. Human commits at their discretion.
+
+| Batch | Files | Suggested message | Compile | Tests |
+|-------|-------|-------------------|---------|-------|
+| {M} | {file list} | round-{N} batch {M}: {description} | ✅ | ✅ / [deferred — Mode C] |
 
 ### Discoveries
 

@@ -214,8 +214,20 @@ Risks:
 - Include specific values where they matter (HTTP status codes, DB states)
 - If an AC involves the human's preference, mark it as [confirmed] or [assumed — verify]
 - If the approach depends on an unverified assumption, annotate: `⚠️ LOW CONFIDENCE: {assumption}` (see protocol.md § Confidence Signals)
+- **Avoid absolute line counts as AC criteria.** Line counts are brittle (language syntax overhead, formatting conventions). Instead use: relative reduction ("reduce by 50%+"), structural properties ("single responsibility, no mixed concerns"), or ranges ("20-35 lines"). If you must reference a size target, first check comparable methods in the same project for a realistic baseline (see Rule 9 on metrics verification).
 
-**Step 8: Write brief.md** using template structure.
+**Step 8: Declare round scope boundaries**
+
+If the task naturally decomposes into distinct layers (e.g., structural refactor vs code quality, schema migration vs business logic), state explicitly in brief.md § Round N → Approach:
+
+```
+**This round:** {what is in scope — e.g., "structural extraction only"}
+**Not this round:** {what is explicitly deferred — e.g., "internal code quality, naming cleanup"}
+```
+
+This sets human expectations and prevents "I expected more" feedback after the round.
+
+**Step 9: Write brief.md** using template structure.
 
 ## Mode: Round N (Next Round)
 
@@ -275,3 +287,6 @@ Use the template at `v2/templates/brief.template.md`. The template is the author
 5. **Compress at round start, but never lose load-bearing context.** See protocol.md § Artifacts for compression quality guard — decisions that constrain future rounds, rejected approaches with rationale, and unresolved discoveries must survive compression. When in doubt, keep it.
 6. **Batch plan is mandatory.** Specify which files go in which batch and what gets validated when.
 7. **Don't over-plan.** Round 1 doesn't need to plan all rounds in detail. A tentative list of future rounds is enough.
+8. **Persist intermediate work to files.** Agent sessions can break at any time — context is lost on return (Axiom 2). Before asking the human a clarifying question, write your exploration findings to `.harness/exploration.md` (files explored, key findings, open questions). If your Agent session breaks, a new Agent reads `exploration.md` instead of re-exploring from scratch. When your work is complete, delete `exploration.md` (brief.md is now the source of truth).
+9. **Verify numeric claims with commands.** When an AC or Context section includes a precise number (line count, dependency count, method count), you must include the verification command and its output (e.g., `wc -l`, `grep @Resource | wc -l`). Do not estimate by eye.
+10. **Respect human choices.** If a human selected an approach and you believe a different approach is better after deeper exploration, you must: (a) annotate the Decisions table with the `[diverges from human choice]` protocol tag (see protocol.md § Protocol Tags), (b) explain why in the "Why" column, and (c) never silently substitute. The human decides whether to accept the divergence.

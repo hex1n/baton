@@ -243,21 +243,21 @@ Flaky tests are reality. The harness handles them.
 
 ## Git Strategy
 
-**Mandatory** (all tasks):
+**AI must not run git commands that mutate the repository** (index, working tree, history, or remote state). All mutating operations (commit, push, add, reset, etc.) are human-operated. AI may only run read-only git commands that inspect state without changing anything.
+
+**Builder signals commit checkpoints** after each passing batch by recording them in brief.md. The human commits at their discretion.
+
+**Recommended workflow** (human-operated):
+- Create feature branch before Round 1
+- Commit after each batch checkpoint: `git commit -m "round-{N} batch {M}: {description}"`
+- Tag after each successful round: `git tag round-N-done`
+- Create PR after task completion
+
+**Rules:**
 - Never force push
 - Never commit directly to main/master for code changes
 - `git add` specific files, not `git add -A`
 - Never commit failing code
-
-**Recommended** (code implementation tasks):
-- Create feature branch before Round 1
-- Commit after each passing batch: `git commit -m "round-{N} batch {M}: {description}"`
-- Tag after each successful round: `git tag round-N-done`
-- Create PR after task completion
-
-**Optional** (infrastructure/cleanup/docs tasks):
-- Feature branch and round tags may be skipped when changes are easily reversible
-- Dispatch may ask human: `AskUserQuestion: "Create feature branch? (recommended for code tasks)"`
 
 ## Independence Rule
 
@@ -271,6 +271,21 @@ Flaky tests are reality. The harness handles them.
 **Pre-flight CAN always read source code** — pre-flight is a planning review (challenging the approach), not a code review (evaluating the implementation).
 
 This prevents the "self-evaluation leniency" problem while being honest about what's possible in degraded environments.
+
+## Protocol Tags
+
+Tags are exact strings used across artifacts for mechanical detection by Dispatch. Roles must use these exact tags — Dispatch scans for them literally, not semantically.
+
+| Tag | Where | Set by | Detected by | Meaning |
+|-----|-------|--------|-------------|---------|
+| `⚠️ LOW CONFIDENCE: {what}` | brief.md, eval.md | Any role | Dispatch | Uncertain assumption, needs human verification |
+| `⚠️ GAP` | brief.md § Exploration Boundary | Planner | Dispatch | Unexplored area that might be affected |
+| `[assumed — verify]` | brief.md § ACs | Planner | Dispatch | AC depends on unconfirmed assumption, blocks Builder |
+| `[diverges from human choice]` | brief.md § Decisions | Planner | Dispatch | Planner overrode a human's explicit selection |
+| `[deferred — Mode C]` | brief.md § AC → Test Mapping | Builder | Verifier | Test compiles but run-verification skipped (no runtime) |
+| `[boundary update]` | brief.md § Discoveries | Builder | Planner | New module found that wasn't in exploration boundary |
+
+**When adding a new protocol tag:** define it in this table first, then reference it from SKILL.md files. Tags are protocol-level contracts, not role-level conventions.
 
 ## Confidence Signals
 
@@ -298,7 +313,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 
 | Scenario | Response |
 |----------|----------|
-| Compilation fails 3x on same batch | Git reset to last commit, Builder regenerates batch |
+| Compilation fails 3x on same batch | Builder reverts its own changes (re-read file, re-edit), regenerates batch. If human has committed a checkpoint, human may `git reset` to recover. |
 | Verifier rejects Builder 3x on same issue | Escalate: code bug → design issue → Planner |
 | Planner revision doesn't resolve | Escalate to human with full history |
 | Session crash mid-round | Read brief.md progress + `git log` → resume from last checkpoint |

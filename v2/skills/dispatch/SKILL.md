@@ -43,7 +43,10 @@ project-profile.md  → exists? (project configured?)
 1. Read project-profile.md
 2. Invoke Planner → brief.md Round 1
 3. Invoke Verifier pre-flight
-4. Present brief.md + pre-flight summary to human. Frame around correctness:
+4. Present brief.md + pre-flight summary to human. Before presenting:
+   → **Decision tag check:** scan brief.md § Decisions for the `[diverges from human choice]` protocol tag
+     (see protocol.md § Protocol Tags). If found, prepend to AskUserQuestion:
+     "⚠️ Planner diverged from your choice on: {decision list}. See brief.md § Decisions for rationale."
    → AskUserQuestion:
      "Plan ready for review.
 
@@ -73,7 +76,11 @@ project-profile.md  → exists? (project configured?)
    c. "reject" → AskUserQuestion: "Describe a different direction, or abort?"
       → new direction: invoke Planner with new input → back to step 3
       → abort: archive .harness/*, task ends
-7. After Builder (on approval path) → invoke Verifier verification
+7. After Builder completes, before invoking Verifier:
+   → Check brief.md § AC → Test Mapping — if Status column is empty, append
+     Builder's output to fill it. If Builder didn't provide mappings, note
+     "⚠️ AC→Test Mapping not updated by Builder" in the Verifier invocation context.
+   → Invoke Verifier verification
 8. Handle Verifier result:
    - All pass → go to step 9
    - Code bugs → route back to Builder (up to 3x per Rule 5)
@@ -149,6 +156,9 @@ How "invoke" works depends on execution mode:
 ```
 Standard mode:
   "Invoke Planner" → spawn Agent with Planner's SKILL.md
+    → If .harness/exploration.md exists (from a previous broken Planner session),
+      tell the new Planner: "Read .harness/exploration.md — it contains findings
+      from a prior exploration. Do not re-read files already covered there."
   "Invoke Builder" → spawn Agent with Builder's SKILL.md
   "Invoke Verifier" → spawn Agent with Verifier's SKILL.md ONLY
     → Tell Verifier: "execution mode: standard"
@@ -170,6 +180,22 @@ Compact mode:
     → Run self-check checklist (see protocol.md § Compact Mode)
     → Write eval.md marked as "self-check"
   No separate Verifier — human provides independent review
+```
+
+## Micro-fix Fast Path
+
+When a Verifier finding or human request requires a trivial fix — a change so small that spawning a full Builder Agent costs more than the fix itself:
+
+```
+Guideline (not hard thresholds): typically a few files, a few lines each,
+no new logic or new files — e.g., extracting a magic number, fixing a typo,
+renaming a variable per Verifier's finding.
+
+→ Execute as Compact mode: read Builder SKILL.md inline, apply fix, self-check
+→ Dispatch does NOT read or modify source code itself — it follows Builder's
+  SKILL.md steps inline (same as Compact mode Planner+Builder merge)
+→ Record in brief.md § Discoveries: "Micro-fix (Compact): {what was changed}"
+→ If in doubt whether the fix qualifies as micro, spawn a full Builder Agent
 ```
 
 ## Routing Rules
