@@ -70,6 +70,25 @@ else
   check "plan.template.md implementation slices" "fail" "missing Implementation Slices section"
 fi
 
+if grep -q "Scope Class" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md scope class metadata" "pass"
+else
+  check "plan.template.md scope class metadata" "fail" "missing Scope Class row"
+fi
+
+if grep -q "Risk Class" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md risk class metadata" "pass"
+else
+  check "plan.template.md risk class metadata" "fail" "missing Risk Class row"
+fi
+
+if grep -q "Expected Rounds" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null && \
+   grep -q "Expected Slices This Round" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md forecast metadata" "pass"
+else
+  check "plan.template.md forecast metadata" "fail" "missing Expected Rounds or Expected Slices This Round row"
+fi
+
 # Dispatcher entrypoint should reference all three
 if grep -q "compact.*standard.*full" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
   check "dispatch/SKILL.md mode references" "pass"
@@ -451,6 +470,12 @@ else
   check "protocol.md has Change Governance" "fail" "missing behavior-change governance section"
 fi
 
+if grep -q "Task Classification" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md has Task Classification" "pass"
+else
+  check "protocol.md has Task Classification" "fail" "missing round classification section"
+fi
+
 if grep -q "plan.md" "$REPO_ROOT/CLAUDE.md" 2>/dev/null && grep -q "review.md" "$REPO_ROOT/CLAUDE.md" 2>/dev/null; then
   check "CLAUDE.md projects plan/review" "pass"
 else
@@ -473,6 +498,15 @@ if grep -q "using-baton" "$REPO_ROOT/README.md" 2>/dev/null && grep -q "using-ba
   check "README projects using-baton companion" "pass"
 else
   check "README projects using-baton companion" "fail" "companion-skill table missing using-baton"
+fi
+
+if grep -q "Scope Class" "$REPO_ROOT/README.md" 2>/dev/null && \
+   grep -q "Risk Class" "$REPO_ROOT/README.md" 2>/dev/null && \
+   grep -q "Scope Class" "$REPO_ROOT/README.zh-CN.md" 2>/dev/null && \
+   grep -q "Risk Class" "$REPO_ROOT/README.zh-CN.md" 2>/dev/null; then
+  check "README projects round classification" "pass"
+else
+  check "README projects round classification" "fail" "README projection missing Scope/Risk classification guidance"
 fi
 
 echo ""

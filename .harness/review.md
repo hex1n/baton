@@ -1,24 +1,24 @@
-# Review: Round 11
+# Review: Round 12
 
 ## Pre-flight
 
 ### AC Testability
-- AC-11.1: ✅ Testable
-- AC-11.2: ✅ Testable
-- AC-11.3: ✅ Testable
-- AC-11.4: ✅ Testable
+- AC-12.1: ✅ Testable
+- AC-12.2: ✅ Testable
+- AC-12.3: ✅ Testable
+- AC-12.4: ✅ Testable
 
 ### Test Baseline
-Active Baton contract before implementation: `Round Contract` absent from live plan/template and Builder delegation still used `batch` as the implementation unit.
+Active Baton contract before implementation: task hierarchy was already explicit (`task -> round -> round contract -> slice`), but live `plan.md` metadata and projection docs still lacked scope/risk classification and round forecasts.
 
 ### Environment
 - Mode: C
 - Tier 2: unavailable
 
 ### Plan Challenges
-1. `Round Contract` must be explicit in `plan.md`; otherwise pre-flight still cannot say what it is accepting or rejecting.
-2. `slice` needs to stay inside Builder's implementation layer. It must not replace `round` in the control plane.
-3. Live validators and projections need to move in the same change, or the rename will strand Baton in a half-old schema.
+1. Classification must stay multi-axis. A single total task level would erase the difference between small-but-risky and large-but-low-risk rounds.
+2. `Expected Rounds` and `Expected Slices This Round` must remain forecasts, not gates, or Baton will duplicate `Execution Mode`.
+3. Dispatcher must consume Planner's classification rather than invent it, or ownership of the round shape becomes ambiguous.
 
 ### Contract Status
 - Status: agreed
@@ -31,12 +31,11 @@ Ready for implementation.
 ## Verification
 
 ### Tier 1: Deterministic
-- Compile / check: `bash v2/tools/check-consistency.sh` ✅ (76 pass, 0 fail, 0 warn)
+- Compile / check: `bash v2/tools/check-consistency.sh` ✅ (81 pass, 0 fail, 0 warn)
 - Tests:
-  - `rg -n 'Round Contract|Contract Status|Implementation Slices' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` ✅
-  - `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` ✅
-  - `bash v2/tools/validate-live-state.sh` ✅ (51 pass, 0 fail, 0 warn)
-  - `bash v2/tools/validate-round-sync.sh` ✅ (plan/review aligned on Round 11)
+  - `bash v2/tests/run.sh` ✅ (6 pass, 0 fail)
+  - `bash v2/tools/validate-live-state.sh` ✅ (59 pass, 0 fail, 0 warn)
+  - `bash v2/tools/validate-round-sync.sh` ✅ (plan/review aligned on Round 12)
 
 ### Tier 2: Runtime
 Skipped — Mode C/C+.
@@ -44,10 +43,10 @@ Skipped — Mode C/C+.
 ### Tier 3a: AC Coverage
 | AC | Test | Exists | Passes | Verifies AC |
 |----|------|--------|--------|-------------|
-| AC-11.1 | `rg -n 'Round Contract|Contract Status|Implementation Slices' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` | ✅ | ✅ | ✅ |
-| AC-11.2 | `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` | ✅ | ✅ | ✅ |
-| AC-11.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ | ✅ | ✅ |
-| AC-11.4 | `rg -n 'sprint|Sprint' v2 README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md project-profile.md .harness` | ✅ | ✅ | ✅ |
+| AC-12.1 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md .harness/plan.md` | ✅ | ✅ | ✅ |
+| AC-12.2 | `rg -n 'Task Classification|Execution Mode.*orchestration|Scope Class|Risk Class' v2/protocol.md v2/skills/planner v2/skills/dispatch` | ✅ | ✅ | ✅ |
+| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh` | ✅ | ✅ | ✅ |
+| AC-12.4 | `bash v2/tools/validate-round-sync.sh && test -f .harness/review-round-11.md` | ✅ | ✅ | ✅ |
 
 ## Findings
 
@@ -68,17 +67,16 @@ None.
 ## Human Judgment
 
 ### Already verified
-- `Round` remains the top-level Baton delivery loop; Builder-only work is now modeled as `slice`.
-- Pre-flight now has an explicit `Contract Status` section instead of only a prose recommendation.
-- Builder delegation vocabulary and scratch layout align on `slice`.
-- Round 10 is preserved separately in `.harness/review-round-10.md`.
-- Contract tests, consistency checks, live-state validation, and round-sync validation all passed after the refactor.
+- `plan.md § Metadata` now carries `Scope Class`, `Risk Class`, `Expected Rounds`, and `Expected Slices This Round` in both the template and the active live plan.
+- Protocol, Planner, and Dispatcher now distinguish round classification, round forecasts, verifier capability, and execution mode instead of collapsing them into one label.
+- Projection docs and quick references now expose the same classification model in both English and Chinese.
+- Round 11 is preserved separately in `.harness/review-round-11.md`, and the active control plane has moved to Round 12.
 
 ### Needs your judgment
 1. None.
 
 ### Risk note
-Verifier ran in Mode C. Confidence: medium-high for protocol/tooling scope, but runtime independence remains degraded because this repo has no live application environment.
+Verifier ran in Mode C. Confidence: medium-high for protocol and artifact-governance scope, but runtime independence remains degraded because this repository has no live application environment.
 
 ## Routing Signals
 | Key | Value |

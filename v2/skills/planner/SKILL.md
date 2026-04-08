@@ -42,7 +42,7 @@ Read `.harness/plan.md` and the invocation context:
 
 Use `v2/templates/plan.template.md` exactly. Always fill:
 
-- `§ Metadata` — metadata for the full task and current round
+- `§ Metadata` — task identity, verifier/execution modes, scope/risk classification, and round forecasts
 - `§ Context` — what you read, with file paths and line numbers
 - `§ Scope Breakdown` — clear / mostly clear / fuzzy breakdown
 - `§ Round History` — compressed history that preserves load-bearing decisions
@@ -55,9 +55,11 @@ Use `v2/templates/plan.template.md` exactly. Always fill:
 2. Cite what you read. If you did not inspect a file, do not make claims about it.
 3. Clarifying questions must be load-bearing and scale with complexity.
 4. Record decisions with rationale, including rejected approaches that still constrain future rounds.
-5. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
-6. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
-7. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
-8. Verify numeric claims with commands. Never estimate counts or sizes by eye.
-9. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
-10. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.
+5. Fill `Scope Class` and `Risk Class` before locking the round contract. They explain the round; they do not replace `Execution Mode`.
+6. Forecast `Expected Rounds` and `Expected Slices This Round` honestly. They are planning aids, not promises.
+7. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
+8. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
+9. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
+10. Verify numeric claims with commands. Never estimate counts or sizes by eye.
+11. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
+12. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.

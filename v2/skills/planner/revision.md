@@ -24,6 +24,7 @@ Decide whether the issue is:
 - Update § Approach with the revised design
 - Note what changed and why in § Decisions
 - Add or update § Open Decisions if human judgment is still required
+- Update `Scope Class`, `Risk Class`, or round forecasts if the revision changes the round shape
 - Update ACs if the design change requires it
 - Preserve round history; do not rewrite it
 ```

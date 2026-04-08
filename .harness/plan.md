@@ -1,49 +1,57 @@
-# Plan: Round Contract & Slice Terminology Refactor
+# Plan: Baton Protocol Refinement
 
 ## Metadata
 
 | Key | Value |
 |-----|-------|
-| Name | Round Contract & Slice Terminology Refactor |
-| Description | Add `Round Contract` to Baton's control plane, rename Builder-internal `batch` terminology to `slice`, and align live artifacts, docs, tools, and validators to the new task hierarchy (`task -> round -> round contract -> slice`) |
+| Name | Baton Protocol Refinement |
+| Description | Continue refining Baton's protocol, control-plane artifacts, naming, task hierarchy, and round classification model |
 | Started | 2026-04-08 |
-| Round | 11 |
+| Round | 12 |
 | Verifier Mode | C |
 | Execution Mode | standard |
+| Scope Class | S3 |
+| Risk Class | R2 |
+| Expected Rounds | 1 |
+| Expected Slices This Round | 3+ |
 
 ## Context
 
-- Round 9 finished the active section-label cleanup and left the active contract on `Metadata`, `Scope Breakdown`, `Round History`, `Human Judgment`, and `Needs your judgment`.
-- The remaining naming asymmetry is now role-level: `Planner / Builder / Verifier` are noun-role names, while the router role still used the older label in active prose.
-- The desired contract is narrower than a full rename. User-facing command and path stability matter, so `/dispatch`, `dispatch/`, and `name: dispatch` stay unchanged.
-- The cleanup target is only the role label in active docs, protocol text, skill docs, templates, validator messaging, and live control-plane summaries.
-- Historical snapshots in `.harness/review-round-*.md` stay frozen; they should not be retroactively normalized.
+- Round 11 completed the hierarchy cleanup around `task -> round -> round contract -> slice`, and live artifacts already use `Round Contract` plus `Implementation Slices`.
+- Baton now distinguishes task structure cleanly, but it still lacks explicit task classification in the control plane. `Execution Mode` and `Verifier Mode` exist, yet they do not directly express scope, risk, or forecast.
+- The desired change is not a single total level. Baton should keep multi-axis classification so a round can be small-but-risky or large-but-low-risk without collapsing that nuance.
+- The new fields belong in `plan.md § Metadata`, because Planner owns the round shape, Dispatcher consumes it, and Verifier must challenge the resulting round contract instead of guessing complexity from prose.
+- Archived review snapshots remain frozen. Only the active control plane and forward projections should adopt the new classification model.
 
 ### Exploration Boundary
 
 | Explored | Not explored | Reason |
 |----------|-------------|--------|
-| `README.md` | | role overview must use `Dispatcher` consistently |
-| `README.zh-CN.md` | | bilingual role overview must match |
-| `v2/CLAUDE.md` | | quick-reference artifact ownership text mentions the router role |
-| `v2/protocol.md` | | protocol is the canonical role-definition layer |
-| `v2/templates/plan.template.md` | | template notes still mention who asks human questions |
-| `v2/skills/dispatch/*` | | the role-local docs must describe the role as `Dispatcher` even though the command is `/dispatch` |
-| `v2/skills/planner/*` | | planner docs mention who owns question flow |
-| `v2/skills/verifier/*` | | verifier docs mention who consumes routing signals and activates add-ons |
-| `v2/skills/builder/SKILL.md` | | builder escalation language references the router role |
-| `v2/tools/validate-round-sync.sh` | | user-facing validator output should use the current role name |
-| `.harness/plan.md` | | live plan must record the naming decision cleanly |
-| `.harness/review.md` | | live review must verify the naming decision cleanly |
-| | `/dispatch` command rename | intentionally out of scope; command stability is a constraint, not a target |
-| | `dispatch/` directory rename | intentionally out of scope; file-system churn is unnecessary for a prose-level naming cleanup |
+| `v2/templates/plan.template.md` | | add the new classification and forecast metadata fields |
+| `v2/protocol.md` | | define the classification model and the default execution-mode mapping |
+| `v2/skills/planner/SKILL.md` | | Planner must be required to fill the new metadata |
+| `v2/skills/planner/planning.md` | | planning flow must classify the round before locking the contract |
+| `v2/skills/planner/revision.md` | | revisions may need to update classification if the round shape changes |
+| `v2/skills/dispatch/SKILL.md` | | Dispatcher must consume, not invent, classification |
+| `v2/skills/dispatch/routing.md` | | routing rules must derive execution mode from classification |
+| `v2/tools/validate-live-state.sh` | | live-state validation must require the new metadata fields |
+| `v2/tests/contracts/02-artifact-contracts.sh` | | artifact contract tests must pin the new metadata fields and protocol section |
+| `v2/tools/check-consistency.sh` | | consistency checks must project the classification model into templates and README |
+| `README.md` | | English projection layer must explain classification, forecast, verifier mode, and execution mode |
+| `README.zh-CN.md` | | Chinese projection layer must explain the same model |
+| `CLAUDE.md` | | root quick reference must project the new classification layer |
+| `v2/CLAUDE.md` | | v2 quick reference must project the new classification layer |
+| `.harness/plan.md` | | live plan must carry the new metadata and Round 12 contract |
+| `.harness/review.md` | | live review must evaluate the classification change and stay round-aligned |
+| | `v2/skills/builder/*` | builder delegation is already on `slice`; this round is about classification, not implementation-unit naming |
+| | `v2/tools/external-review.sh` | provider-neutral review adapter is unaffected by classification fields |
 
 ### Metrics Baseline
 
 | Metric | Value | Verification command |
 |--------|-------|---------------------|
-| Remaining active old-router-label hits before Round 10 live-state refresh | 0 | `rg -n '\\bDispatch\\b' README.md README.zh-CN.md project-profile.md v2/CLAUDE.md v2/protocol.md v2/skills v2/templates v2/tools` |
-| Archived review snapshots intentionally left frozen | 9 | `ls .harness/review-round-*.md | wc -l` |
+| Archived review snapshots before Round 12 | 11 | `ls .harness/review-round-*.md | wc -l` |
+| Classification metadata rows required by the new plan template | 4 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md | wc -l` |
 
 ## Scope Breakdown
 
@@ -62,7 +70,9 @@
 | F11 | Remove redundant `module-` prefix from skill-local files | Complete | 7 |
 | F12 | Artifact contract rename: `brief/eval` → `plan/review` | Complete | 8 |
 | F13 | Active section-label cleanup after the artifact rename | Complete | 9 |
-| F14 | Router role-name cleanup to `Dispatcher` in prose | Clear | 10 |
+| F14 | Router role-name cleanup to `Dispatcher` in prose | Complete | 10 |
+| F15 | Task hierarchy normalization to `round -> round contract -> slice` | Complete | 11 |
+| F16 | Explicit task classification and forecasting in `plan.md § Metadata` | Clear | 12 |
 
 ## Round History
 
@@ -106,102 +116,107 @@
 - Decisions: align the router role name on `Dispatcher` in active prose while preserving `/dispatch`, `dispatch/`, and `name: dispatch`
 - Open: Builder-internal `batch` terminology still blurred control-plane and implementation-layer concepts
 
-## Round 11
+### Round 11: Round contract and slice terminology finalized ✅
+- Decisions: keep `Round` as the top-level delivery cycle, make `Round Contract` explicit, rename Builder-internal `batch` to `slice`, and avoid compatibility shims
+- Open: Baton still lacked explicit scope/risk classification and round forecasts in the active control plane
+
+## Round 12
 
 ### Acceptance Criteria
 
-**AC-11.1: Baton defines an explicit round contract**
-- Given: `round` is Baton's top-level delivery cycle
+**AC-12.1: Baton records classification and forecast fields in the active control plane**
+- Given: `plan.md § Metadata` is the canonical summary for the current round
 - When: this round is complete
-- Then: `plan.md`, protocol text, Planner guidance, and Verifier pre-flight all include `§ Round Contract`
+- Then: the active plan and the plan template both include `Scope Class`, `Risk Class`, `Expected Rounds`, and `Expected Slices This Round`
 
-**AC-11.2: Builder-internal work is described as slices, not the older internal term**
-- Given: Builder delegation is an implementation detail, not the control-plane unit
+**AC-12.2: Baton distinguishes classification, forecast, evidence mode, and execution mode**
+- Given: the harness already has `Verifier Mode` and `Execution Mode`
 - When: this round is complete
-- Then: Builder skills, templates, helper tooling, and scratch paths use `slice` terminology end-to-end
+- Then: protocol, Planner guidance, and Dispatcher guidance clearly explain that `Scope/Risk` classify the round, forecasts predict shape, `Verifier Mode` describes evidence capability, and `Execution Mode` is the orchestration decision
 
-**AC-11.3: Live artifacts and validators understand the new hierarchy**
-- Given: `.harness/plan.md` and `.harness/review.md` are the active control plane
+**AC-12.3: Validators and projection docs enforce the new classification model**
+- Given: Baton depends on projection sync and live validators
 - When: this round is complete
-- Then: live artifacts carry `Round Contract` and `Implementation Slices`, and validators enforce the new schema
+- Then: consistency checks, artifact contract tests, live-state validation, README projections, and quick references all include the new classification layer
 
-**AC-11.4: Baton keeps `Round` instead of renaming it to `Sprint`**
-- Given: Anthropic's `sprint` is semantically closer to Baton's full round than to a Builder slice
+**AC-12.4: Live artifacts advance cleanly to Round 12**
+- Given: Round 11 is already complete
 - When: this round is complete
-- Then: protocol/docs describe the hierarchy as `task -> round -> round contract -> slice`
+- Then: `.harness/review-round-11.md` preserves the previous review, `.harness/plan.md` and `.harness/review.md` align on Round 12, and all validators pass
 
 ### Open Decisions
 
 | ID | Question | Options | Status | Blocking |
 |----|----------|---------|--------|----------|
-| OD-11.1 | None. The naming decision is to keep `Round` and rename Builder-internal `batch` to `slice`. | — | resolved | no |
+| OD-12.1 | None. The decision is to keep multi-axis classification instead of collapsing Baton to a single task level. | — | resolved | no |
 
 ### Round Contract
 
 | Key | Value |
 |-----|-------|
-| Scope In | Add `§ Round Contract` to the control plane, rename Builder-internal terminology from `batch` to `slice`, and align docs/tools/live artifacts |
-| Scope Out | Renaming `Round` to `Sprint`, changing public role entrypoints, or introducing a new top-level lifecycle unit |
-| Done Criteria | Templates, protocol, Builder/Planner/Verifier guides, scratch helper, validators, and live artifacts all use the new hierarchy consistently |
-| Verification Plan | Run contract tests, consistency checks, live-state validation, and round-sync validation after the rename |
-| Exit Threshold | `check-consistency.sh`, `validate-live-state.sh`, and `validate-round-sync.sh` all pass without compatibility shims |
-| Deferred Items | Revisit deeper task-recovery / scope-change semantics only if the new hierarchy exposes gaps |
+| Scope In | Add scope/risk classification plus round forecasts to Baton's control plane, protocol, planner/dispatcher guidance, validators, projection docs, and live artifacts |
+| Scope Out | Renaming `Round`, creating a single total task level, or revisiting Builder slice terminology |
+| Done Criteria | Templates, protocol, Planner, Dispatcher, validators, README, CLAUDE, and live artifacts all use the same classification model and validate cleanly |
+| Verification Plan | Run contract tests, consistency checks, live-state validation, and round-sync validation after updating the live plan/review pair |
+| Exit Threshold | `v2/tests/run.sh`, `check-consistency.sh`, `validate-live-state.sh`, and `validate-round-sync.sh` all pass with the live task on Round 12 |
+| Deferred Items | Consider richer review-sidecar classification only if the new plan metadata still leaves routing ambiguity |
 
 ### Approach
 
-Treat `Round` as the Baton equivalent of Anthropic's higher-level `sprint`, and treat `slice` as the Builder-only implementation unit beneath it. Make `Round Contract` explicit in the task artifact and force Verifier pre-flight to agree or reject that contract before Builder starts. Rename the Builder delegation chain physically, not just in prose, so tooling and scratch state use the same vocabulary as the protocol.
+Keep Baton's task structure unchanged: `task -> round -> round contract -> slice`. Add classification only at the `plan.md § Metadata` layer so Planner defines the round, Dispatcher consumes it, and Verifier can challenge whether the contract matches the declared scope/risk. Avoid a single total level, because Baton needs to express small-but-risky and large-but-low-risk work without flattening that nuance.
 
-**This round:** formalize `round -> round contract -> slice`
-**Not this round:** add compatibility aliases or a new public role
+**This round:** add explicit `Scope Class`, `Risk Class`, and forecast fields, then wire them through protocol, planners, routing, validators, and live artifacts.
+**Not this round:** invent a new top-level lifecycle term or replace `Verifier Mode` with a new evidence taxonomy.
 
 ### Implementation Slices
 
 ```text
-Slice 1: refactor the control plane
-  Files: v2/templates/plan.template.md, v2/templates/review.template.md, v2/protocol.md, v2/skills/planner/*, v2/skills/verifier/*
-  Check: rg -n 'Round Contract|Implementation Slices|Contract Status' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier
-  Commit: "round-11 slice 1: add round contract"
+Slice 1: classify the protocol
+  Files: v2/templates/plan.template.md, v2/protocol.md, v2/skills/planner/SKILL.md, v2/skills/planner/planning.md, v2/skills/planner/revision.md, v2/skills/dispatch/SKILL.md, v2/skills/dispatch/routing.md
+  Check: rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round|Task Classification' v2/templates/plan.template.md v2/protocol.md v2/skills/planner v2/skills/dispatch
+  Commit: "round-12 slice 1: add task classification model"
 
-Slice 2: rename Builder delegation to slice terminology
-  Files: v2/skills/builder/*, v2/templates/slice-packet.template.md, v2/templates/worker-report.template.*, v2/tools/builder-slice.sh, .context/baton/README.md
-  Check: rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md
-  Commit: "round-11 slice 2: rename builder delegation to slice"
+Slice 2: enforce classification through validators and projections
+  Files: v2/tools/validate-live-state.sh, v2/tests/contracts/02-artifact-contracts.sh, v2/tools/check-consistency.sh, README.md, README.zh-CN.md, CLAUDE.md, v2/CLAUDE.md
+  Check: rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round|Task Classification' v2/tools/validate-live-state.sh v2/tests/contracts/02-artifact-contracts.sh v2/tools/check-consistency.sh README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md
+  Commit: "round-12 slice 2: project classification model"
 
-Slice 3: align validators, live artifacts, and projections
-  Files: v2/tools/check-consistency.sh, v2/tools/validate-live-state.sh, v2/tests/contracts/*.sh, README.md, README.zh-CN.md, CLAUDE.md, v2/CLAUDE.md, project-profile.md, .harness/*
-  Check: bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh
-  Commit: "round-11 slice 3: align live state to round contract"
+Slice 3: advance the live control plane
+  Files: .harness/plan.md, .harness/review.md, .harness/review-round-11.md
+  Check: bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh
+  Commit: "round-12 slice 3: refresh live control plane"
 ```
 
 ### AC → Test Mapping
 
 | AC | Test identifier | Status |
 |----|----------------|--------|
-| AC-11.1 | `rg -n 'Round Contract|Contract Status' v2/templates v2/protocol.md v2/skills/planner v2/skills/verifier` | ✅ |
-| AC-11.2 | `rg -n 'Slice Packet|slice-|builder-slice|Implementation Slices' v2/skills/builder v2/templates v2/tools .context/baton/README.md` | ✅ |
-| AC-11.3 | `bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh` | ✅ |
-| AC-11.4 | `rg -n 'sprint|Sprint' v2 README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md project-profile.md .harness` | ✅ |
+| AC-12.1 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md .harness/plan.md` | ✅ |
+| AC-12.2 | `rg -n 'Task Classification|Execution Mode.*orchestration|Scope Class|Risk Class' v2/protocol.md v2/skills/planner v2/skills/dispatch` | ✅ |
+| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh` | ✅ |
+| AC-12.4 | `bash v2/tools/validate-round-sync.sh && test -f .harness/review-round-11.md` | ✅ |
 
 ### Commit Checkpoints
 
 | Slice | Files | Suggested message | Compile | Tests |
 |-------|-------|-------------------|---------|-------|
-| 1 | `v2/templates/plan.template.md`, `v2/templates/review.template.md`, `v2/protocol.md`, `v2/skills/planner/*`, `v2/skills/verifier/*` | round-11 slice 1: add round contract | ✅ | ✅ |
-| 2 | `v2/skills/builder/*`, `v2/templates/slice-packet.template.md`, `v2/templates/worker-report.template.*`, `v2/tools/builder-slice.sh`, `.context/baton/README.md` | round-11 slice 2: rename builder delegation to slice | ✅ | ✅ |
-| 3 | `v2/tools/check-consistency.sh`, `v2/tools/validate-live-state.sh`, `v2/tests/contracts/*.sh`, `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `v2/CLAUDE.md`, `project-profile.md`, `.harness/*` | round-11 slice 3: align live state to round contract | ✅ | ✅ |
+| 1 | `v2/templates/plan.template.md`, `v2/protocol.md`, `v2/skills/planner/*`, `v2/skills/dispatch/*` | round-12 slice 1: add task classification model | ✅ | ✅ |
+| 2 | `v2/tools/validate-live-state.sh`, `v2/tests/contracts/02-artifact-contracts.sh`, `v2/tools/check-consistency.sh`, `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `v2/CLAUDE.md` | round-12 slice 2: project classification model | ✅ | ✅ |
+| 3 | `.harness/plan.md`, `.harness/review.md`, `.harness/review-round-11.md` | round-12 slice 3: refresh live control plane | ✅ | ✅ |
 
 ### Discoveries
 
-- Anthropic's `sprint` maps more closely to Baton's full `round` than to Builder's internal implementation cuts.
-- `Round Contract` is the missing Baton concept; without it, pre-flight can challenge a plan but not explicitly agree on what "done" means.
-- `slice` is a better Builder term than `batch` because it naturally covers both planned implementation cuts and verifier-driven fix slices.
+- Baton's missing piece was not a new lifecycle unit. It was explicit classification of the current round's size, risk, and likely shape.
+- `Expected Rounds` and `Expected Slices This Round` must stay forecasts; if treated as gates, Baton would duplicate `Execution Mode` and confuse planning with orchestration.
+- Dispatcher should consume Planner's classification rather than recompute it, otherwise Baton would split ownership of the round shape across roles.
+- The coarse forecast enum is working as intended: `3+` prevents false precision in live planning even when the current round happens to use three concrete slices.
 
 ### Risks
 
-- Renaming the Builder helper and scratch layout can leave drift in validators or docs if any active reference is missed.
-- Archived snapshots remain intentionally frozen, so terminology scans must focus on active control-plane files.
+- Live-state validation is now stricter; any stale plan metadata will fail immediately once Round 12 is written.
+- Projection docs can drift on this topic because classification touches README, CLAUDE, protocol, and role-local guidance at once.
 
 ## Future Rounds (tentative)
 
-- Round 12: deepen task-recovery / scope-change / closeout semantics if the round-contract model exposes gaps
-- Round 13: consider whether review findings need a stronger contract beyond `Routing Signals`
+- Round 13: deepen task-recovery / scope-change / closeout semantics if the classification model exposes new routing ambiguity
+- Round 14: consider whether review findings need structured severity or ownership fields beyond `Routing Signals`

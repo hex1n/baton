@@ -7,6 +7,7 @@
 Structured control-plane fields:
 
 ```text
+plan.md § Metadata         → Scope Class + Risk Class + round forecasts + Verifier/Execution modes
 plan.md § Open Decisions   → explicit human questions + blocking status
 plan.md § Round Contract   → agreed in-scope work + done threshold for the round
 review.md § Routing Signals   → next route + human-review requirement + blocking reason
@@ -38,18 +39,20 @@ project-profile.md  → exists? (project configured?)
 For a new task or a new round pending:
 
 ```
-0. Determine execution mode:
-   → ≤5 ACs AND single slice? → Compact (inline, self-check)
-   → >5 ACs OR multi-slice, standard project? → Standard (separate roles, core Verifier only)
-   → Security-sensitive, Mode C/C+, multi-round, or human requests it? → Full (add Verifier add-on files)
-   → Ask the human if unclear: "compact / standard / full"
-
-1. Read project-profile.md
-2. Invoke Planner → expected output: plan.md Round 1 or next round
+0. Read project-profile.md
+1. Invoke Planner → expected output: plan.md Round 1 or next round
    → If Planner returns without plan.md, re-invoke
    → If .harness/exploration.md exists and plan.md does not, tell Planner to reuse it
-3. Invoke Verifier pre-flight
-4. Read `review.md § Routing Signals`
+2. Read `plan.md § Metadata`
+   → Scope Class + Risk Class explain the round
+   → Expected Rounds + Expected Slices This Round are forecasts
+3. Determine execution mode:
+   → `S1 + R1 + Mode A/B`, ≤5 ACs, `Expected Slices This Round = 1`? → Compact candidate
+   → `S2/S3` with `R1/R2`? → Standard
+   → `S4`, `R3`, or `Mode C/C+`? → Full
+   → Ask the human if classification and constraints still leave doubt: "compact / standard / full"
+4. Invoke Verifier pre-flight
+5. Read `review.md § Routing Signals`
 ```
 
 Human approval, structural-trigger messaging, and post-pre-flight routing live in `checkpoints.md`.

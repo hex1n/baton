@@ -57,6 +57,18 @@ require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Round Contract$
   "plan template includes Round Contract section" "Round Contract section missing from plan template"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Implementation Slices$" \
   "plan template includes Implementation Slices section" "Implementation Slices section missing from plan template"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Scope Class \\|" \
+  "plan template includes Scope Class metadata" "Scope Class row missing from plan template metadata"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Risk Class \\|" \
+  "plan template includes Risk Class metadata" "Risk Class row missing from plan template metadata"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Expected Rounds \\|" \
+  "plan template includes Expected Rounds forecast" "Expected Rounds row missing from plan template metadata"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Expected Slices This Round \\|" \
+  "plan template includes Expected Slices forecast" "Expected Slices This Round row missing from plan template metadata"
+require_pattern "$REPO_ROOT/v2/protocol.md" "^## Task Classification$" \
+  "protocol defines task classification" "Task Classification section missing from protocol"
+require_pattern "$REPO_ROOT/v2/protocol.md" "Execution Mode.*orchestration decision" \
+  "protocol distinguishes classification from execution mode" "Execution Mode relationship to classification missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^## Routing Signals$" \
   "review template includes Routing Signals section" "Routing Signals section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Contract Status$" \

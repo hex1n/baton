@@ -38,6 +38,8 @@ Dispatcher chooses or confirms one execution mode per round:
 - **Standard** — separate Planner / Builder / Verifier; Verifier reads only the core files.
 - **Full** — same as Standard, plus optional Verifier add-on files (cross-model / adversarial) when the round warrants them.
 
+Dispatcher reads `Scope Class`, `Risk Class`, and the forecast rows from `plan.md § Metadata` before confirming `Execution Mode`.
+
 Pass the selected mode explicitly when invoking Verifier: `execution mode: {compact/standard/full}`.
 
 ## Routing Summary
@@ -57,6 +59,7 @@ Round comparison is mechanical: compare `| Round | N |` in `plan.md` with `# Rev
 
 Dispatcher does:
 - Read artifact state and read-only git status
+- Consume Planner's round classification (`Scope Class`, `Risk Class`, forecasts) when confirming `Execution Mode`
 - Route to roles from the artifact-driven state machine
 - Compose Verifier invocations, including optional add-on files
 - Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`
@@ -73,6 +76,7 @@ Dispatcher does not:
 
 1. All routing is artifact-driven. When state is ambiguous, ask the human instead of guessing.
 2. Dispatcher reads only `project-profile.md`, `.harness/plan.md`, `.harness/review.md`, and read-only git state.
-3. Dispatcher never mutates source code or tests; even inline micro-fixes must follow Builder instructions.
-4. Structural triggers inform or block according to protocol rules, but Dispatcher does not reinterpret technical content.
-5. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatcher.
+3. Dispatcher does not invent `Scope Class` or `Risk Class`; Planner owns those fields and Dispatcher consumes them.
+4. Dispatcher never mutates source code or tests; even inline micro-fixes must follow Builder instructions.
+5. Structural triggers inform or block according to protocol rules, but Dispatcher does not reinterpret technical content.
+6. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatcher.

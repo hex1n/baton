@@ -10,6 +10,10 @@
 | Round | {N} |
 | Verifier Mode | {A / B / C / C+} |
 | Execution Mode | {compact / standard / full} |
+| Scope Class | {S1 / S2 / S3 / S4} |
+| Risk Class | {R1 / R2 / R3} |
+| Expected Rounds | {1 / 2 / 3+} |
+| Expected Slices This Round | {1 / 2 / 3+} |
 
 ## Context
 

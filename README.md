@@ -123,9 +123,26 @@ flowchart TD
 | Artifact | Location | Lifecycle |
 |----------|----------|-----------|
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
-| `.harness/plan.md` | `.harness/` | Per task — ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
+| `.harness/plan.md` | `.harness/` | Per task — round classification, forecasts, ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
 | `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, optional findings-sidecar pointer |
 | `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder slice packets, worker reports |
+
+## Task Classification
+
+Every active round carries four classification fields in `plan.md § Metadata`:
+
+| Field | Meaning |
+|-------|---------|
+| `Scope Class` | `S1-S4` size/coupling classification for the round |
+| `Risk Class` | `R1-R3` impact classification for mistakes in the round |
+| `Expected Rounds` | coarse forecast for total Baton rounds the task likely needs |
+| `Expected Slices This Round` | coarse forecast for Builder slices in the current round |
+
+Keep the layers distinct:
+- `Scope Class` and `Risk Class` classify the work.
+- `Expected Rounds` and `Expected Slices This Round` are forecasts.
+- `Verifier Mode` describes the evidence environment.
+- `Execution Mode` is the orchestration choice (`compact / standard / full`).
 
 ## Quick Start
 
@@ -135,6 +152,8 @@ flowchart TD
 ```
 
 First time on a project? Dispatcher will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
+
+Planner then writes the round classification, forecasts, and `Round Contract` before Dispatcher confirms `Execution Mode`.
 
 The public commands stay stable (`/dispatch`, `/planner`, `/builder`, `/verifier`). Detailed procedures live in sibling role files under each role directory.
 

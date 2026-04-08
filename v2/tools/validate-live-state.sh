@@ -72,6 +72,10 @@ if [[ -f "$PLAN" ]]; then
   require_heading "$PLAN" '^# Plan:' "plan title" "missing '# Plan:'"
   require_heading "$PLAN" '^## Metadata$' "plan metadata section" "missing '## Metadata'"
   require_heading "$PLAN" '^\| Execution Mode \|' "plan execution mode" "missing Execution Mode row in task table"
+  require_heading "$PLAN" '^\| Scope Class \|' "plan scope class" "missing Scope Class row in task table"
+  require_heading "$PLAN" '^\| Risk Class \|' "plan risk class" "missing Risk Class row in task table"
+  require_heading "$PLAN" '^\| Expected Rounds \|' "plan expected rounds" "missing Expected Rounds row in task table"
+  require_heading "$PLAN" '^\| Expected Slices This Round \|' "plan expected slices" "missing Expected Slices This Round row in task table"
   require_heading "$PLAN" '^## Context$' "plan context section" "missing '## Context'"
   require_heading "$PLAN" '^### Exploration Boundary$' "plan exploration boundary" "missing '### Exploration Boundary'"
   require_heading "$PLAN" '^## Scope Breakdown$' "plan scope breakdown" "missing '## Scope Breakdown'"
@@ -107,6 +111,30 @@ if [[ -f "$PLAN" ]]; then
     check "plan uses current mode terminology" "fail" "found legacy strict/compact terminology"
   else
     check "plan uses current mode terminology" "pass"
+  fi
+
+  if grep -qE '^\| Scope Class \| S[1-4] \|$' "$PLAN" 2>/dev/null; then
+    check "plan scope class value" "pass"
+  else
+    check "plan scope class value" "fail" "Scope Class must be one of S1-S4"
+  fi
+
+  if grep -qE '^\| Risk Class \| R[1-3] \|$' "$PLAN" 2>/dev/null; then
+    check "plan risk class value" "pass"
+  else
+    check "plan risk class value" "fail" "Risk Class must be one of R1-R3"
+  fi
+
+  if grep -qE '^\| Expected Rounds \| (1|2|3\+) \|$' "$PLAN" 2>/dev/null; then
+    check "plan expected rounds value" "pass"
+  else
+    check "plan expected rounds value" "fail" "Expected Rounds must be 1, 2, or 3+"
+  fi
+
+  if grep -qE '^\| Expected Slices This Round \| (1|2|3\+) \|$' "$PLAN" 2>/dev/null; then
+    check "plan expected slices value" "pass"
+  else
+    check "plan expected slices value" "fail" "Expected Slices This Round must be 1, 2, or 3+"
   fi
 else
   check "plan.md present" "warn" "no active task plan found"

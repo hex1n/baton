@@ -123,9 +123,26 @@ flowchart TD
 | 制品 | 位置 | 生命周期 |
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
-| `.harness/plan.md` | `.harness/` | 每任务 — AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
+| `.harness/plan.md` | `.harness/` | 每任务 — 轮次分类、预测、AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
 | `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`，以及可选的 findings-sidecar 指针 |
 | `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记、Builder slice packet、worker report |
+
+## 任务分类
+
+每个活跃轮次都会在 `plan.md § Metadata` 中携带 4 个分类字段：
+
+| 字段 | 含义 |
+|------|------|
+| `Scope Class` | 当前轮次的规模 / 耦合等级，取值 `S1-S4` |
+| `Risk Class` | 当前轮次的风险等级，取值 `R1-R3` |
+| `Expected Rounds` | 整个任务大概还需要多少个 Baton 轮次的粗预测 |
+| `Expected Slices This Round` | 当前轮次大概需要多少个 Builder slice 的粗预测 |
+
+这几个层级不要混用：
+- `Scope Class` 和 `Risk Class` 是分类。
+- `Expected Rounds` 和 `Expected Slices This Round` 是预测。
+- `Verifier Mode` 表示证据环境。
+- `Execution Mode` 表示编排方式（`compact / standard / full`）。
 
 ## 快速开始
 
@@ -135,6 +152,8 @@ flowchart TD
 ```
 
 首次使用？Dispatcher 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
+
+然后 Planner 会先写出当前轮次的分类、预测和 `Round Contract`，Dispatcher 再据此确认 `Execution Mode`。
 
 公共命令保持不变（`/dispatch`、`/planner`、`/builder`、`/verifier`），细节步骤下沉到各角色目录里的同级职责文件。
 

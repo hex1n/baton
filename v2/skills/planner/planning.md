@@ -74,7 +74,34 @@ F2: Trigger logic       → Mostly clear ⚠️
 F3: Notification        → Fuzzy ❓
 ```
 
-### Step 5: Design candidate approaches
+### Step 5: Classify the round
+
+Before locking the approach, fill the round metadata in `plan.md § Metadata`:
+
+```text
+Scope Class:
+  S1 = single-round, single-slice, local change
+  S2 = single-round, multi-slice, clear boundaries
+  S3 = multi-module or dependency-chain work
+  S4 = multi-round, cross-boundary, evolving requirements
+
+Risk Class:
+  R1 = low risk, easy rollback
+  R2 = medium risk, affects core logic or shared state
+  R3 = high risk, security / migration / public interface / irreversible side effects
+
+Forecast:
+  Expected Rounds = likely total Baton rounds for the task
+  Expected Slices This Round = likely implementation slices in this round
+```
+
+Rules:
+- classify the round that is about to be executed, not the whole project
+- use the highest justified risk class, not the average one
+- forecasts should be honest and coarse; `3+` is better than fake precision
+- these fields explain `Execution Mode`; they do not replace it
+
+### Step 6: Design candidate approaches
 
 Take the clearest feature block(s) for the current round. Do not over-plan what is still fuzzy.
 
@@ -99,7 +126,7 @@ Confidence criteria:
 - **中** — viable but involves trade-offs or unverified assumptions
 - **低** — technically possible but heavy unknowns or pattern mismatch
 
-### Step 6: Record approach decisions for Dispatcher
+### Step 7: Record approach decisions for Dispatcher
 
 If multiple approaches exist, write the comparison in `§ Approach Evaluation` and add an open decision row for Dispatcher:
 
@@ -121,7 +148,7 @@ OD-{N}.X | Which approach should this round take? |
 
 If only one viable approach exists, record `None.` as resolved in `§ Open Decisions`.
 
-### Step 7: Write ACs, round contract, and implementation slices
+### Step 8: Write ACs, round contract, and implementation slices
 
 For the chosen approach, write:
 
@@ -156,7 +183,7 @@ AC writing rules:
 - annotate unverified assumptions as `⚠️ LOW CONFIDENCE: {assumption}`
 - avoid brittle absolute line-count ACs unless you first verify the baseline with commands
 
-### Step 8: Declare round scope boundaries
+### Step 9: Declare round scope boundaries
 
 If the task naturally decomposes into layers or distinct concerns, state explicitly in `plan.md § Round N → Approach`:
 
@@ -165,7 +192,7 @@ This round: {what is in scope}
 Not this round: {what is explicitly deferred}
 ```
 
-### Step 9: Write `plan.md`
+### Step 10: Write `plan.md`
 
 Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices`.
 
@@ -174,13 +201,13 @@ Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract
 For later rounds:
 
 ```
-1. Read plan.md, especially § Discoveries and completed-round summaries
+1. Read plan.md, especially § Metadata, § Discoveries, and completed-round summaries
 2. Incorporate:
    - human feedback from the previous checkpoint
    - Builder discoveries
    - any `[boundary update]` discoveries
    - anything that changes remaining feature clarity
-3. Repeat Round 1 Steps 5-8 for the next slice of work
+3. Repeat Round 1 Steps 5-9 for the next slice of work
 4. Update plan.md:
    - compress round history
    - trim stale context

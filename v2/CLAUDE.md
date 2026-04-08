@@ -33,9 +33,16 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It keeps `/
 | Artifact | Location | Owner | Lifecycle |
 |----------|----------|-------|-----------|
 | `project-profile.md` | project root | Human (Planner generates draft) | Persistent across tasks |
-| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` for Dispatcher |
+| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries round classification, forecasts, `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` for Dispatcher |
 | `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals` for Dispatcher |
 | `.context/baton/active/` | `.context/` | Builder / Verifier scratch helpers | Non-canonical scratch only; includes findings sidecars and optional slice delegation state |
+
+## Task Classification
+
+- `Scope Class` / `Risk Class` classify the current round in `plan.md § Metadata`.
+- `Expected Rounds` / `Expected Slices This Round` are forecasts, not control-plane gates.
+- `Verifier Mode` captures evidence capability.
+- `Execution Mode` is the orchestration choice Dispatcher confirms from the classification.
 
 ## Quick Start
 

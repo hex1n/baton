@@ -50,11 +50,57 @@ For behavior-shaping changes:
 3. Record an eval note in the task / commit / PR describing the problem, changed behavior, validation commands, and residual risk
 4. Prefer one behavior problem per change instead of bundled rewrites
 
+## Task Classification
+
+Every round carries four planning inputs in `plan.md § Metadata`:
+
+| Field | Meaning |
+|-------|---------|
+| `Scope Class` | How large and coupled the round is |
+| `Risk Class` | How costly a mistake would be |
+| `Expected Rounds` | Forecast for how many Baton rounds the full task will likely need |
+| `Expected Slices This Round` | Forecast for how many Builder implementation slices this round will likely use |
+
+These fields explain the round. They do not replace `Verifier Mode` or `Execution Mode`.
+
+### Scope Class
+
+| Class | Meaning |
+|-------|---------|
+| `S1` | Single-round, single-slice, local change with clear boundaries |
+| `S2` | Single-round, multi-slice work with clear boundaries |
+| `S3` | Multi-module or dependency-chain work with meaningful coordination cost |
+| `S4` | Multi-round, cross-boundary work where requirements are likely to keep evolving during delivery |
+
+### Risk Class
+
+| Class | Meaning |
+|-------|---------|
+| `R1` | Low risk, easy to roll back, impact stays local |
+| `R2` | Medium risk, affects core logic, shared state, or existing behavior |
+| `R3` | High risk, involves security, migrations, public interfaces, or irreversible side effects |
+
+### Forecast Fields
+
+`Expected Rounds` and `Expected Slices This Round` are forecasts, not gates. They help humans and Dispatcher reason about likely shape and cost, but do not override the actual artifact state.
+
+### Default Execution-Mode Mapping
+
+Dispatcher chooses `Execution Mode` after Planner writes the round classification. Default mapping:
+
+| Signals | Default mode |
+|---------|--------------|
+| `S1 + R1 + Verifier Mode A/B`, `≤5` ACs, `Expected Slices This Round = 1` | Compact candidate |
+| `S2` or `S3`, with `R1` or `R2` | Standard |
+| `S4`, `R3`, or `Verifier Mode C/C+` | Full |
+
+`Execution Mode` is an orchestration decision derived from classification, verifier capability, and human preference. `Verifier Mode` remains the evidence environment; it is not a task size label.
+
 ## Execution Modes
 
-The harness supports three execution modes. Dispatcher selects based on task complexity; human can override.
+The harness supports three execution modes. Dispatcher selects after reading the round classification in `plan.md § Metadata`; human can override.
 
-### Compact Mode (simple tasks: ≤5 ACs, single slice)
+### Compact Mode (simple low-risk rounds: typically `S1 + R1`)
 
 Planner and Builder merge into one execution. Verifier role is replaced by a self-check checklist + human review.
 - **No context isolation** — planning and building happen in the same conversation
@@ -76,7 +122,7 @@ Compact mode flow:
 
 **Why no fake Verifier:** Assumption ① says AI can't self-evaluate. In compact mode, the Verifier shares Builder's context — making it structurally non-independent. Rather than pretend, compact mode is honest: Builder self-checks, human provides the real independent review.
 
-### Standard Mode (medium tasks: >5 ACs OR multi-slice, typical choice)
+### Standard Mode (medium rounds: typically `S2/S3` with `R1/R2`)
 
 Each role runs as an independent subagent. Verifier runs **core steps only** — deterministic verification + AC coverage. No cross-model review, no adversarial testing, no structural triggers.
 - **Full context isolation** — each role starts fresh, reads only from artifacts
@@ -93,7 +139,7 @@ Dispatcher (main conversation)
   → spawn Agent: Verifier verification (core) → writes review.md
 ```
 
-### Full Mode (complex/security-sensitive tasks)
+### Full Mode (complex, high-risk, or degraded-evidence rounds)
 
 Same as Standard, but Verifier runs **all add-on files** — cross-model review, adversarial testing, structural triggers. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
 - **Full context isolation** — same as Standard
@@ -105,11 +151,11 @@ Same as Standard, but Verifier runs **all add-on files** — cross-model review,
 
 | Signal | Mode |
 |--------|------|
-| ≤5 ACs AND single slice | Compact |
-| >5 ACs OR multi-slice, standard project | Standard |
-| Security-sensitive, Mode C/C+, multi-round, or human requests it | Full |
+| `S1 + R1 + Mode A/B`, `≤5` ACs, single slice | Compact |
+| `S2/S3` with `R1/R2` | Standard |
+| `S4`, `R3`, `Mode C/C+`, or human requests it | Full |
 
-**Dispatcher selects the mode** based on project-profile.md and task complexity. Human can override.
+**Dispatcher selects the mode** from `plan.md § Metadata`, `project-profile.md`, and the human's preference. Human can override.
 
 ## Roles
 
@@ -170,7 +216,7 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** .harness/
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
-- **Contains:** round-by-round acceptance criteria, `§ Round Contract`, approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
+- **Contains:** task metadata, round classification + forecasts, round-by-round acceptance criteria, `§ Round Contract`, approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
 - **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatcher reads this section literally instead of inferring questions from narrative text.
 - **Structured round field:** `§ Round Contract` is the explicit agreement for what this round delivers, what stays out of scope, how Verifier should check it, and what threshold counts as done.
@@ -210,7 +256,8 @@ Every task is a sequence of rounds. Simple tasks complete in one round. Complex 
 
 ```
 Round N:
-  1. Planner    → writes/updates plan.md with this round's ACs
+  1. Planner    → writes/updates plan.md with this round's metadata classification,
+                    forecasts, and ACs
                     + `§ Open Decisions`
                     + `§ Round Contract`
                     + `§ Implementation Slices`
