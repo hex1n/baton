@@ -24,7 +24,7 @@ This file is the single source of truth for all protocol rules. Other files deri
 
 **When adding or changing a rule:** update protocol.md first, then propagate to the files above. If a downstream file contradicts protocol.md, protocol.md wins.
 
-**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, module files, README projection layer rules, and language neutrality across all downstream files.
+**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, companion files, README projection layer rules, and language neutrality across all downstream files.
 
 ## Execution Modes
 
@@ -36,7 +36,7 @@ Planner and Builder merge into one execution. Verifier role is replaced by a sel
 - **No context isolation** — planning and building happen in the same conversation
 - **No independent Verifier** — Builder self-verifies against a checklist; human provides the independent review
 - **Lower cost** — no subagent overhead, no separate Verifier invocations
-- **Verifier modules:** none (self-check only)
+- **Verifier add-ons:** none (self-check only)
 
 ```
 Compact mode flow:
@@ -46,8 +46,8 @@ Compact mode flow:
      □ All tests pass (test command from project-profile.md)?
      □ No new failures vs baseline?
      □ Test assertions actually match AC requirements?
-  3. Write eval.md (marked as "self-check, not independent verification")
-  4. Human reviews eval.md + code changes
+  3. Write review.md (marked as "self-check, not independent verification")
+  4. Human reviews review.md + code changes
 ```
 
 **Why no fake Verifier:** Assumption ① says AI can't self-evaluate. In compact mode, the Verifier shares Builder's context — making it structurally non-independent. Rather than pretend, compact mode is honest: Builder self-checks, human provides the real independent review.
@@ -58,24 +58,24 @@ Each role runs as an independent subagent. Verifier runs **core steps only** —
 - **Full context isolation** — each role starts fresh, reads only from artifacts
 - **Verifier independence guaranteed** — cannot see Builder's process, only results
 - **Moderate cost** — subagent overhead, but Verifier reads ~50% less than Full mode
-- **Verifier modules:** `[core]` only
+- **Verifier add-ons:** `[core]` only
 
 ```
 Dispatch (main conversation)
-  → spawn Agent: Planner → writes brief.md
-  → spawn Agent: Verifier pre-flight (core) → writes eval.md
+  → spawn Agent: Planner → writes plan.md
+  → spawn Agent: Verifier pre-flight (core) → writes review.md
   → human approves
   → spawn Agent: Builder → writes code + tests
-  → spawn Agent: Verifier verification (core) → writes eval.md
+  → spawn Agent: Verifier verification (core) → writes review.md
 ```
 
 ### Full Mode (complex/security-sensitive tasks)
 
-Same as Standard, but Verifier runs **all modules** — cross-model review, adversarial testing, structural triggers. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
+Same as Standard, but Verifier runs **all add-on files** — cross-model review, adversarial testing, structural triggers. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
 - **Full context isolation** — same as Standard
-- **Verifier runs all modules** — maximum verification depth
+- **Verifier runs all add-on files** — maximum verification depth
 - **Higher cost** — Verifier reads full SKILL.md, may invoke external reviewer
-- **Verifier modules:** `[core]` + all `[module]` steps
+- **Verifier add-ons:** `[core]` + all add-on steps
 
 **When to use which mode:**
 
@@ -93,31 +93,32 @@ Three roles. No more.
 
 ### Planner
 
-Understands the codebase, clarifies requirements with the user, designs the technical approach.
+Understands the codebase, identifies load-bearing requirement questions, designs the technical approach, and records human decisions for Dispatch to ask.
 
-- **Reads:** project-profile.md, brief.md (all rounds), relevant source code
-- **Writes:** brief.md (creates Round 1 or appends Round N)
+- **Reads:** project-profile.md, plan.md (all rounds), relevant source code
+- **Writes:** plan.md (creates Round 1 or appends Round N)
 - **Runs:** once per round; re-invoked if Verifier escalates a design issue
-- **Context:** fresh subagent per invocation; brief.md carries continuity
+- **Context:** fresh subagent per invocation; plan.md carries continuity
 
 ### Builder
 
 Implements code and writes tests. The only role that modifies source code.
 
-- **Reads:** project-profile.md (conventions, traps), brief.md (current round only)
-- **Writes:** source code, tests, brief.md § Discoveries (only this section)
+- **Reads:** project-profile.md (conventions, traps), plan.md (current round only)
+- **Writes:** source code, tests, plan.md § AC → Test Mapping, § Commit Checkpoints, § Discoveries
 - **Runs:** once per round; may re-run after Verifier code-fix feedback
-- **Context:** fresh subagent per round; reads brief.md + relevant source for context
+- **Context:** fresh subagent per round; reads plan.md + relevant source for context
 
 ### Verifier
 
 Independently verifies implementation quality. Challenges plan quality before build.
 
-- **Reads:** project-profile.md, brief.md (current round ACs), test results, runtime signals
+- **Reads:** project-profile.md, plan.md (current round ACs), test results, runtime signals
 - **Does NOT read:** Builder's source code during verification mode
-- **Writes:** eval.md
+- **Writes:** review.md only
 - **Runs:** twice per round (pre-flight before build, verification after build)
-- **Context:** isolated subagent; brief.md + observed behavior only
+- **Context:** isolated subagent; plan.md + observed behavior only
+- **Boundary:** never modifies source code, tests, or the working tree as part of verification
 
 ## Artifacts
 
@@ -129,16 +130,17 @@ Independently verifies implementation quality. Challenges plan quality before bu
 - **Read by:** all roles at the start of every invocation
 - **Lifecycle:** lives across tasks, updated occasionally
 
-### .harness/brief.md — task level, living document
+### .harness/plan.md — task level, living document
 
 - **Location:** .harness/
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
-- **Contains:** round-by-round acceptance criteria, approach, decisions, progress, discoveries
+- **Contains:** round-by-round acceptance criteria, approach, decisions, `§ Open Decisions`, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
+- **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatch reads this section literally instead of inferring questions from narrative text.
 - **Compression:** Planner compresses at the START of each new round (not end of previous), so Verifier has full info during verification. Compression rules per section:
-  - § Completed Rounds: summary + key decisions + unresolved discoveries (not just one-line)
+  - § Round History: summary + key decisions + unresolved discoveries (not just one-line)
   - § Context: only keep entries relevant to current/future rounds
-  - § Feature Decomposition: completed features marked ✅, descriptions collapsed
+  - § Scope Breakdown: completed features marked ✅, descriptions collapsed
   - § Discoveries: items absorbed into design marked [absorbed], only open items remain
 - **Compression quality guard — never compress away:**
   - Decisions that constrain future rounds (e.g., "chose sync over async" limits Round 3 options)
@@ -147,13 +149,14 @@ Independently verifies implementation quality. Challenges plan quality before bu
   - The reason an approach was rejected (not just which was chosen)
   - If unsure whether to keep or compress an item, keep it
 
-### .harness/eval.md — round level, archived per round
+### .harness/review.md — round level, archived per round
 
 - **Location:** .harness/
 - **Maintained by:** Verifier (writes), Dispatch (archives)
-- **Contains:** pre-flight results, verification findings, human review guidance
-- **Lifecycle:** Verifier writes eval.md for current round. Before starting a new round, Dispatch copies eval.md → eval-round-{N}.md to preserve history. Previous rounds' evals are always available in .harness/ without needing git.
-- **Round tag:** eval.md header must include `# Evaluation: Round {N}` so Dispatch can compare against brief.md's current round
+- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals`
+- **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatch copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
+- **Round tag:** review.md header must include `# Review: Round {N}` so Dispatch can compare against plan.md's current round
+- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatch what should happen next (`builder / planner / human / closeout`) and whether human review is required.
 
 ## Round Lifecycle
 
@@ -161,14 +164,17 @@ Every task is a sequence of rounds. Simple tasks complete in one round. Complex 
 
 ```
 Round N:
-  1. Planner    → writes/updates brief.md with this round's ACs
+  1. Planner    → writes/updates plan.md with this round's ACs
+                    + `§ Open Decisions`
   2. Verifier      → pre-flight (testability + baseline + plan challenge)
-  3. Human      → approves plan (or asks revision)
+                    + `§ Routing Signals`
+  3. Human      → resolves Open Decisions, then approves plan (or asks revision)
   4. Builder    → implements code + tests in batches
   5. Verifier      → verification (Tier 1 → Tier 2 → Tier 3)
-  6. Resolution → code bugs back to Builder; design issues to Planner
-  7. Completion → git tag round-N-done
-  8. Human      → continue / add requirement / done
+                    + `§ Routing Signals`
+  6. Resolution → Dispatch routes from review.md § Routing Signals
+  7. Completion → optional human tag / checkpoint after the round is accepted
+  8. Human      → continue / change scope / close out
 ```
 
 Steps 4-6 may iterate (Builder ⇄ Verifier) up to 3 times before escalation.
@@ -188,15 +194,27 @@ Four paths, three speeds:
 
 ## Human Checkpoints
 
-Only at decision points. Never for status updates. All human interactions use `AskUserQuestion` with explicit options.
+Only at decision points. Never for status updates. Planner and Verifier write structured decision / routing fields into artifacts; Dispatch is the only role that asks the human. All human interactions use `AskUserQuestion` with explicit options.
 
 | When | What human sees | AskUserQuestion options |
 |------|----------------|------------------------|
-| After Planner + Verifier pre-flight | brief.md + pre-flight challenges | approve / revise / reject |
-| After Round completion | eval.md § Human Review Guidance | continue / add requirement / done |
+| After Planner + Verifier pre-flight | plan.md § Open Decisions + pre-flight challenges | resolve decisions, then approve / revise / reject |
+| After Round completion | review.md § Human Judgment + § Routing Signals | continue / change scope / close out |
 | Migration generated | Migration / schema change script | approve / reject |
-| 3x Builder ⇄ Verifier without resolution | Failure history | change approach / change requirements / abort |
-| Resume existing task | Task status summary | resume / start fresh / abort |
+| 3x Builder ⇄ Verifier without resolution | Failure history | change approach / change scope / abandon task |
+| Recover existing task | Task status summary | continue current task / reset task / abandon task |
+
+## Lifecycle Terms
+
+Use these names consistently across the protocol and skill layer:
+
+| Term | Meaning | Replaces |
+|------|---------|----------|
+| **Task Recovery** | Re-enter an in-progress task from artifact state after a pause, crash, or resumed session | `resume` |
+| **Scope Change** | Add or revise requirements without discarding already completed work unless the human explicitly resets the task | `add requirement` |
+| **Task Closeout** | Finalize a completed task: optional PR/update prompts, then archive artifacts as the terminal step | `done` / `archive-time` |
+
+`archive` is an implementation detail of Task Closeout, not the user-facing concept.
 
 ## Verifier Verification Modes
 
@@ -228,9 +246,9 @@ L2.5 exists because cross-model review has different blind spots from Builder �
 
 **Mode C explicitly permits reading production code** — without runtime evidence, code review is the only deep verification available. This is an honest degradation, not a contradiction.
 
-**Mode C+ upgrades code review independence** by delegating production code review to an external AI reviewer (configured in project-profile.md § External Reviewer). The external model has different training and blind spots, breaking the "same model evaluates same model" problem. See `verifier/module-crossmodel.md` for tool-specific setup and commands. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
+**Mode C+ upgrades code review independence** by delegating production code review to an external AI reviewer (configured in project-profile.md § External Reviewer). The external model has different training and blind spots, breaking the "same model evaluates same model" problem. See `verifier/cross-model.md` for tool-specific setup and commands. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
 
-**eval.md must state which mode was used and the evidence level distribution.** Mode B/C must include: "⚠️ Verification independence: degraded — human review weight is higher."
+**review.md must state which mode was used and the evidence level distribution.** Mode B/C must include: "⚠️ Verification independence: degraded — human review weight is higher."
 
 ## Test Baseline Protocol
 
@@ -239,19 +257,19 @@ Flaky tests are reality. The harness handles them.
 1. **Before Builder starts:** Verifier runs the project's test command (from project-profile.md) on unmodified code → records pass/fail/skip with test IDs
 2. **After Builder completes:** Verifier runs the same test command again → compares to baseline
 3. **Only NEW failures count** as Builder-introduced issues
-4. **Baseline failures** are listed in eval.md but do not block
+4. **Baseline failures** are listed in review.md but do not block
 
 ## Git Strategy
 
 **AI must not run git commands that mutate the repository** (index, working tree, history, or remote state). All mutating operations (commit, push, add, reset, etc.) are human-operated. AI may only run read-only git commands that inspect state without changing anything.
 
-**Builder signals commit checkpoints** after each passing batch by recording them in brief.md. The human commits at their discretion.
+**Builder signals commit checkpoints** after each passing batch by recording them in plan.md. The human commits at their discretion.
 
 **Recommended workflow** (human-operated):
 - Create feature branch before Round 1
 - Commit after each batch checkpoint: `git commit -m "round-{N} batch {M}: {description}"`
-- Tag after each successful round: `git tag round-N-done`
-- Create PR after task completion
+- Tag after each successful round if you use tags: `git tag round-N-accepted`
+- Create PR during task closeout if needed
 
 **Rules:**
 - Never force push
@@ -264,9 +282,10 @@ Flaky tests are reality. The harness handles them.
 **Verifier prioritizes higher-level evidence.** The goal is not "never read code" — it is "evaluation evidence should not be controlled by the party being evaluated."
 
 - **Mode A/B:** Verifier does NOT read Builder's production code. L1 evidence (test results, runtime behavior) is sufficient.
-- **Mode C:** Verifier MAY read production code (L3) because no runtime evidence exists. eval.md must declare this degradation.
-- **Mode C+:** Verifier delegates production code review to an external AI tool (L2.5). Verifier still reads test files and coordinates, but the code judgment comes from a different model. eval.md must state "Cross-model review (L2.5)" for those findings.
+- **Mode C:** Verifier MAY read production code (L3) because no runtime evidence exists. review.md must declare this degradation.
+- **Mode C+:** Verifier delegates production code review to an external AI tool (L2.5). Verifier still reads test files and coordinates, but the code judgment comes from a different model. review.md must state "Cross-model review (L2.5)" for those findings.
 - **All modes:** Verifier MAY read test files (L2) to audit test quality, but must independently judge whether tests actually verify ACs — not just trust Builder's AC→test mapping.
+- **All verifier techniques must be read-only.** No mutation testing, temporary source edits, or rescue-style fixes during verification. If stronger proof requires code changes, route back to Builder with a concrete finding.
 
 **Pre-flight CAN always read source code** — pre-flight is a planning review (challenging the approach), not a code review (evaluating the implementation).
 
@@ -278,12 +297,12 @@ Tags are exact strings used across artifacts for mechanical detection by Dispatc
 
 | Tag | Where | Set by | Detected by | Meaning |
 |-----|-------|--------|-------------|---------|
-| `⚠️ LOW CONFIDENCE: {what}` | brief.md, eval.md | Any role | Dispatch | Uncertain assumption, needs human verification |
-| `⚠️ GAP` | brief.md § Exploration Boundary | Planner | Dispatch | Unexplored area that might be affected |
-| `[assumed — verify]` | brief.md § ACs | Planner | Dispatch | AC depends on unconfirmed assumption, blocks Builder |
-| `[diverges from human choice]` | brief.md § Decisions | Planner | Dispatch | Planner overrode a human's explicit selection |
-| `[deferred — Mode C]` | brief.md § AC → Test Mapping | Builder | Verifier | Test compiles but run-verification skipped (no runtime) |
-| `[boundary update]` | brief.md § Discoveries | Builder | Planner | New module found that wasn't in exploration boundary |
+| `⚠️ LOW CONFIDENCE: {what}` | plan.md, review.md | Any role | Dispatch | Uncertain assumption, needs human verification |
+| `⚠️ GAP` | plan.md § Exploration Boundary | Planner | Dispatch | Unexplored area that might be affected |
+| `[assumed — verify]` | plan.md § ACs | Planner | Dispatch | AC depends on unconfirmed assumption, blocks Builder |
+| `[diverges from human choice]` | plan.md § Decisions | Planner | Dispatch | Planner overrode a human's explicit selection |
+| `[deferred — Mode C]` | plan.md § AC → Test Mapping | Builder | Verifier | Test compiles but run-verification skipped (no runtime) |
+| `[boundary update]` | plan.md § Discoveries | Builder | Planner | New module found that wasn't in exploration boundary |
 
 **When adding a new protocol tag:** define it in this table first, then reference it from SKILL.md files. Tags are protocol-level contracts, not role-level conventions.
 
@@ -297,7 +316,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 - Builder discovers the approach may not work but isn't certain
 
 **How to signal:**
-- In brief.md or eval.md, annotate: `⚠️ LOW CONFIDENCE: {what}. Reason: {why}. Suggest: {what human should verify}`
+- In plan.md or review.md, annotate: `⚠️ LOW CONFIDENCE: {what}. Reason: {why}. Suggest: {what human should verify}`
 
 **Protocol-level trigger:**
 - If both Planner and Verifier independently flag the same assumption as low-confidence → mandatory human review before proceeding
@@ -316,27 +335,28 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 | Compilation fails 3x on same batch | Builder reverts its own changes (re-read file, re-edit), regenerates batch. If human has committed a checkpoint, human may `git reset` to recover. |
 | Verifier rejects Builder 3x on same issue | Escalate: code bug → design issue → Planner |
 | Planner revision doesn't resolve | Escalate to human with full history |
-| Session crash mid-round | Read brief.md progress + `git log` → resume from last checkpoint |
+| Session crash mid-round | Read plan.md progress + `git log` → recover from the last checkpoint |
 | Someone else pushed to branch | Verifier pre-flight detects baseline change → re-baseline |
-| App won't start for Tier 2 | Degrade to Mode B/C, note in eval.md |
+| App won't start for Tier 2 | Degrade to Mode B/C, note in review.md |
 
 ## Rules
 
 ### Core Rules (all modes)
 
-1. brief.md is the single source of truth for what's being built
-2. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
-3. Human approval required before Builder starts each round
-4. Max 3 Builder ⇄ Verifier iterations per round before escalation
-5. In Standard/Full mode, each role starts with a fresh context; files carry state, not conversation. In Compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
-6. Dispatch determines execution mode (Compact/Standard/Full) at task start; human can override
-7. If an assumption encoded by a harness component is invalidated, remove the component
+1. plan.md is the single source of truth for what's being built
+2. Builder is the only role that modifies source code or tests. Planner, Dispatch, Verifier, and Verifier add-on files are read-only with respect to the codebase.
+3. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
+4. Human approval required before Builder starts each round
+5. Max 3 Builder ⇄ Verifier iterations per round before escalation
+6. In Standard/Full mode, each role starts with a fresh context; files carry state, not conversation. In Compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
+7. Dispatch determines execution mode (Compact/Standard/Full) at task start; human can override
+8. If an assumption encoded by a harness component is invalidated, remove the component
 
 ### Module Rules (Standard/Full mode)
 
-8. Planner compresses brief.md at the start of each new round (summary + key decisions + open discoveries per section)
-9. All work on feature branches
-10. Git tag after each successful round
-11. Migration scripts require separate human approval
-12. Round scope lock: after human approves a round's plan, its ACs are frozen. New requirements go to the next round (see Dispatch § Add Requirement Flow). Builder and Verifier work against the approved ACs, not a moving target
-13. Dispatch routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatch never auto-decides these
+9. Planner compresses plan.md at the start of each new round (summary + key decisions + open discoveries per section)
+10. All work on feature branches
+11. Git tag after each successful round
+12. Migration scripts require separate human approval
+13. Round scope lock: after human approves a round's plan, its ACs are frozen. New scope changes go to the next round (see Dispatch § Scope Change Flow). Builder and Verifier work against the approved ACs, not a moving target
+14. Dispatch routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatch never auto-decides these

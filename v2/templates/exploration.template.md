@@ -1,8 +1,8 @@
 # Exploration Checkpoint
 
-> Transient file. Written by Planner after Step 2 (exploration) as a checkpoint against Agent breakage. Deleted when brief.md is complete.
+> Transient file. Written by Planner after Step 2 (exploration) as a checkpoint against Agent breakage. Deleted when plan.md is complete.
 
-## Task
+## Objective
 
 {One-line task description from user}
 

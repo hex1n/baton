@@ -45,11 +45,17 @@ else
   check "protocol.md has compact/standard/full" "fail" "modes not found"
 fi
 
-# brief.template.md should match
-if grep -q "compact.*standard.*full" "$REPO_ROOT/v2/templates/brief.template.md" 2>/dev/null; then
-  check "brief.template.md execution mode" "pass"
+# plan.template.md should match
+if grep -q "compact.*standard.*full" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md execution mode" "pass"
 else
-  check "brief.template.md execution mode" "fail" "still has old mode names (strict/compact?)"
+  check "plan.template.md execution mode" "fail" "still has old mode names (strict/compact?)"
+fi
+
+if grep -q "^### Open Decisions$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md open decisions" "pass"
+else
+  check "plan.template.md open decisions" "fail" "missing structured Open Decisions section"
 fi
 
 # Dispatch should reference all three
@@ -64,11 +70,11 @@ echo ""
 # --- 2. Verifier Modes (A/B/C/C+) ---
 echo "2. Verifier Modes"
 
-# brief.template.md should have C+
-if grep -q "C+" "$REPO_ROOT/v2/templates/brief.template.md" 2>/dev/null; then
-  check "brief.template.md has C+" "pass"
+# plan.template.md should have C+
+if grep -q "C+" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md has C+" "pass"
 else
-  check "brief.template.md has C+" "fail" "missing C+ mode"
+  check "plan.template.md has C+" "fail" "missing C+ mode"
 fi
 
 # project-profile.template.md should have C+
@@ -78,10 +84,94 @@ else
   check "project-profile.template.md has C+" "fail" "missing C+ mode"
 fi
 
+if [[ -f "$REPO_ROOT/v2/templates/review.template.md" ]]; then
+  check "review.template.md exists" "pass"
+else
+  check "review.template.md exists" "fail" "missing review template"
+fi
+
+if grep -q "^## Routing Signals$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md routing signals" "pass"
+else
+  check "review.template.md routing signals" "fail" "missing structured Routing Signals section"
+fi
+
 echo ""
 
-# --- 3. Verifier module files exist ---
-echo "3. Verifier Module Files"
+# --- 3. Skill companion files exist ---
+echo "3. Skill Companion Files"
+
+if [[ -f "$REPO_ROOT/v2/skills/dispatch/SKILL.md" ]]; then
+  check "dispatch/SKILL.md exists" "pass"
+else
+  check "dispatch/SKILL.md exists" "fail" "dispatch entrypoint missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/dispatch/routing.md" ]]; then
+  check "dispatch/routing.md exists" "pass"
+else
+  check "dispatch/routing.md exists" "fail" "dispatch routing file missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/dispatch/checkpoints.md" ]]; then
+  check "dispatch/checkpoints.md exists" "pass"
+else
+  check "dispatch/checkpoints.md exists" "fail" "dispatch checkpoints file missing"
+fi
+
+if grep -q "routing.md" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
+  check "dispatch references routing.md" "pass"
+else
+  check "dispatch references routing.md" "fail" "dispatch entrypoint doesn't reference routing file"
+fi
+
+if grep -q "checkpoints.md" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
+  check "dispatch references checkpoints.md" "pass"
+else
+  check "dispatch references checkpoints.md" "fail" "dispatch entrypoint doesn't reference checkpoints file"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/SKILL.md" ]]; then
+  check "planner/SKILL.md exists" "pass"
+else
+  check "planner/SKILL.md exists" "fail" "planner entrypoint missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/profile.md" ]]; then
+  check "planner/profile.md exists" "pass"
+else
+  check "planner/profile.md exists" "fail" "planner profile file missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/planning.md" ]]; then
+  check "planner/planning.md exists" "pass"
+else
+  check "planner/planning.md exists" "fail" "planner planning file missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/revision.md" ]]; then
+  check "planner/revision.md exists" "pass"
+else
+  check "planner/revision.md exists" "fail" "planner revision file missing"
+fi
+
+if grep -q "profile.md" "$REPO_ROOT/v2/skills/planner/SKILL.md" 2>/dev/null; then
+  check "planner references profile.md" "pass"
+else
+  check "planner references profile.md" "fail" "planner entrypoint doesn't reference profile file"
+fi
+
+if grep -q "planning.md" "$REPO_ROOT/v2/skills/planner/SKILL.md" 2>/dev/null; then
+  check "planner references planning.md" "pass"
+else
+  check "planner references planning.md" "fail" "planner entrypoint doesn't reference planning file"
+fi
+
+if grep -q "revision.md" "$REPO_ROOT/v2/skills/planner/SKILL.md" 2>/dev/null; then
+  check "planner references revision.md" "pass"
+else
+  check "planner references revision.md" "fail" "planner entrypoint doesn't reference revision file"
+fi
 
 if [[ -f "$REPO_ROOT/v2/skills/verifier/SKILL.md" ]]; then
   check "verifier/SKILL.md exists" "pass"
@@ -89,29 +179,53 @@ else
   check "verifier/SKILL.md exists" "fail" "core verifier file missing"
 fi
 
-if [[ -f "$REPO_ROOT/v2/skills/verifier/module-crossmodel.md" ]]; then
-  check "verifier/module-crossmodel.md exists" "pass"
+if [[ -f "$REPO_ROOT/v2/skills/verifier/preflight.md" ]]; then
+  check "verifier/preflight.md exists" "pass"
 else
-  check "verifier/module-crossmodel.md exists" "fail" "cross-model module missing"
+  check "verifier/preflight.md exists" "fail" "pre-flight file missing"
 fi
 
-if [[ -f "$REPO_ROOT/v2/skills/verifier/module-adversarial.md" ]]; then
-  check "verifier/module-adversarial.md exists" "pass"
+if [[ -f "$REPO_ROOT/v2/skills/verifier/verification.md" ]]; then
+  check "verifier/verification.md exists" "pass"
 else
-  check "verifier/module-adversarial.md exists" "fail" "adversarial module missing"
+  check "verifier/verification.md exists" "fail" "verification file missing"
 fi
 
-# Dispatch should reference module files
-if grep -q "module-crossmodel" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
-  check "dispatch references module-crossmodel.md" "pass"
+if [[ -f "$REPO_ROOT/v2/skills/verifier/cross-model.md" ]]; then
+  check "verifier/cross-model.md exists" "pass"
 else
-  check "dispatch references module-crossmodel.md" "fail" "dispatch doesn't reference cross-model module"
+  check "verifier/cross-model.md exists" "fail" "cross-model file missing"
 fi
 
-if grep -q "module-adversarial" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
-  check "dispatch references module-adversarial.md" "pass"
+if [[ -f "$REPO_ROOT/v2/skills/verifier/adversarial.md" ]]; then
+  check "verifier/adversarial.md exists" "pass"
 else
-  check "dispatch references module-adversarial.md" "fail" "dispatch doesn't reference adversarial module"
+  check "verifier/adversarial.md exists" "fail" "adversarial file missing"
+fi
+
+# Verifier entrypoint should reference module files
+if grep -q "preflight.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
+  check "verifier references preflight.md" "pass"
+else
+  check "verifier references preflight.md" "fail" "verifier entrypoint doesn't reference pre-flight file"
+fi
+
+if grep -q "verification.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
+  check "verifier references verification.md" "pass"
+else
+  check "verifier references verification.md" "fail" "verifier entrypoint doesn't reference verification file"
+fi
+
+if grep -q "cross-model.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
+  check "verifier references cross-model.md" "pass"
+else
+  check "verifier references cross-model.md" "fail" "verifier entrypoint doesn't reference cross-model file"
+fi
+
+if grep -q "adversarial.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
+  check "verifier references adversarial.md" "pass"
+else
+  check "verifier references adversarial.md" "fail" "verifier entrypoint doesn't reference adversarial file"
 fi
 
 echo ""
@@ -138,11 +252,11 @@ for readme in "$REPO_ROOT/README.md" "$REPO_ROOT/README.zh-CN.md"; do
     check "$name: no old mode names" "pass"
   fi
 
-  # Check verifier module files in structure tree
-  if grep -q "module-crossmodel\|module-adversarial" "$readme" 2>/dev/null; then
-    check "$name: structure tree has modules" "pass"
+  # Check verifier companion files in structure tree
+  if grep -Eq 'cross-model|adversarial' "$readme" 2>/dev/null; then
+    check "$name: structure tree has companion files" "pass"
   else
-    check "$name: structure tree has modules" "warn" "verifier modules not shown in structure tree"
+    check "$name: structure tree has companion files" "warn" "verifier companion files not shown in structure tree"
   fi
 done
 
@@ -181,14 +295,29 @@ fi
 
 echo ""
 
-# --- 7. Dispatch complexity ---
-echo "7. Dispatch Complexity"
+# --- 7. Skill complexity ---
+echo "7. Skill Complexity"
 
 dispatch_lines=$(wc -l < "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null || echo 0)
-if [[ "$dispatch_lines" -gt 300 ]]; then
-  check "dispatch/SKILL.md line count ($dispatch_lines)" "warn" "exceeds 300 lines — review for scope creep"
+planner_lines=$(wc -l < "$REPO_ROOT/v2/skills/planner/SKILL.md" 2>/dev/null || echo 0)
+verifier_lines=$(wc -l < "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null || echo 0)
+
+if [[ "$dispatch_lines" -gt 180 ]]; then
+  check "dispatch/SKILL.md line count ($dispatch_lines)" "warn" "exceeds 180 lines — public entrypoint is getting heavy"
 else
   check "dispatch/SKILL.md line count ($dispatch_lines)" "pass"
+fi
+
+if [[ "$planner_lines" -gt 180 ]]; then
+  check "planner/SKILL.md line count ($planner_lines)" "warn" "exceeds 180 lines — public entrypoint is getting heavy"
+else
+  check "planner/SKILL.md line count ($planner_lines)" "pass"
+fi
+
+if [[ "$verifier_lines" -gt 180 ]]; then
+  check "verifier/SKILL.md line count ($verifier_lines)" "warn" "exceeds 180 lines — public entrypoint is getting heavy"
+else
+  check "verifier/SKILL.md line count ($verifier_lines)" "pass"
 fi
 
 echo ""
@@ -197,7 +326,7 @@ echo ""
 echo "8. Protocol Host Neutrality"
 
 if grep -qi 'codex-plugin-cc\|/codex:\|openai codex\|claude code' "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
-  check "protocol.md: host-neutral" "fail" "contains tool-specific references — should use generic terms, defer to module files"
+  check "protocol.md: host-neutral" "fail" "contains tool-specific references — should use generic terms, defer to companion files"
 else
   check "protocol.md: host-neutral" "pass"
 fi
@@ -205,6 +334,26 @@ fi
 echo ""
 
 # --- Summary ---
+echo "9. Live State Validation"
+
+if [[ -f "$REPO_ROOT/project-profile.md" || -f "$REPO_ROOT/.harness/plan.md" || -f "$REPO_ROOT/.harness/review.md" ]]; then
+  if bash "$REPO_ROOT/v2/tools/validate-live-state.sh" --repo-root "$REPO_ROOT" >/tmp/baton-live-state.log 2>&1; then
+    check "validate-live-state.sh" "pass"
+  else
+    detail=$(sed -n '1,3p' /tmp/baton-live-state.log | tr '\n' ' ')
+    check "validate-live-state.sh" "fail" "${detail:-live state validation failed}"
+  fi
+
+  if bash "$REPO_ROOT/v2/tools/validate-round-sync.sh" --repo-root "$REPO_ROOT" >/tmp/baton-round-sync.log 2>&1; then
+    check "validate-round-sync.sh" "pass"
+  else
+    detail=$(sed -n '1,3p' /tmp/baton-round-sync.log | tr '\n' ' ')
+    check "validate-round-sync.sh" "fail" "${detail:-round sync validation failed}"
+  fi
+else
+  check "live state validation" "warn" "no live state found"
+fi
+
 echo "========================="
 echo "Results: $PASS pass, $FAIL fail, $WARN warn"
 

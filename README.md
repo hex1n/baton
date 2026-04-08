@@ -21,28 +21,40 @@ v2/
 ├── protocol.md                        Full protocol spec
 ├── CLAUDE.md                          Quick reference
 ├── skills/
-│   ├── dispatch/SKILL.md              Entry point — state detection & routing
-│   ├── planner/SKILL.md               Codebase understanding, requirements, design
+│   ├── dispatch/
+│   │   ├── SKILL.md                   Public entrypoint — state detection & routing
+│   │   ├── routing.md                 State detection, routing, bootstrap
+│   │   └── checkpoints.md             Human checkpoints and lifecycle transitions
+│   ├── planner/
+│   │   ├── SKILL.md                   Public entrypoint — planning contract
+│   │   ├── profile.md                 Project-profile generation
+│   │   ├── planning.md                Round 1 / Round N planning
+│   │   └── revision.md                Verifier-driven design revision
 │   ├── builder/SKILL.md               Implementation with batch compile strategy
 │   └── verifier/
-│       ├── SKILL.md                   Core verification (pre-flight + Tier 1/2/3a)
-│       ├── module-crossmodel.md       Cross-model review via codex-plugin-cc
-│       └── module-adversarial.md      Adversarial testing (security/boundary)
+│       ├── SKILL.md                   Public entrypoint — verification contract
+│       ├── preflight.md               Pre-flight plan challenge
+│       ├── verification.md            Tier 1 / 2 / 3a verification
+│       ├── cross-model.md             Cross-model review via codex-plugin-cc
+│       └── adversarial.md             Adversarial testing (security/boundary)
 ├── templates/
 │   ├── project-profile.template.md    Project-level persistent knowledge
-│   └── brief.template.md             Per-task living document
+│   ├── plan.template.md              Per-task living document
+│   └── review.template.md            Per-round review output
 └── tools/
-    ├── archive-round.sh              Archive completed rounds
-    └── check-consistency.sh          Verify protocol-to-downstream sync
+    ├── archive-task.sh                Archive task state during closeout
+    ├── check-consistency.sh           Verify protocol-to-downstream sync
+    ├── validate-live-state.sh         Validate current project-profile / plan / review shape
+    └── validate-round-sync.sh         Validate plan/review round alignment
 ```
 
 ## Roles
 
 | Role | Reads | Writes | Key rule |
 |------|-------|--------|----------|
-| **Planner** | project-profile.md, brief.md, source code | brief.md (ACs, approach, batch plan) | Clarifying questions scale with complexity |
-| **Builder** | project-profile.md, brief.md (current round) | Source code, tests, brief.md § Discoveries | Every AC gets a test |
-| **Verifier** | project-profile.md, brief.md (ACs), test results | eval.md | Never reads Builder's source code (Mode A/B) |
+| **Planner** | project-profile.md, plan.md, source code | plan.md (ACs, approach, batch plan) | Clarifying questions scale with complexity |
+| **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Every AC gets a test |
+| **Verifier** | project-profile.md, plan.md (ACs), test results | review.md | Never reads Builder's source code (Mode A/B) |
 
 **Dispatch** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
@@ -51,13 +63,13 @@ v2/
 ```mermaid
 flowchart TD
     Start([New Task / New Round]) --> Planner
-    Planner["<b>Planner</b><br/>Understand codebase<br/>Write ACs + approach"] -->|brief.md| PreFlight
-    PreFlight["<b>Verifier</b> pre-flight<br/>Testability check<br/>Plan challenge"] -->|eval.md| HumanApprove
+    Planner["<b>Planner</b><br/>Understand codebase<br/>Write ACs + approach"] -->|plan.md| PreFlight
+    PreFlight["<b>Verifier</b> pre-flight<br/>Testability check<br/>Plan challenge"] -->|review.md| HumanApprove
     HumanApprove{Human<br/>approves?}
     HumanApprove -->|revise| Planner
     HumanApprove -->|approve| Builder
     Builder["<b>Builder</b><br/>Implement in batches<br/>Write tests for each AC"] -->|code + tests| Verify
-    Verify["<b>Verifier</b> verification<br/>Tier 1: tests<br/>Tier 2: runtime<br/>Tier 3: coverage"] -->|eval.md| Verdict
+    Verify["<b>Verifier</b> verification<br/>Tier 1: tests<br/>Tier 2: runtime<br/>Tier 3: coverage"] -->|review.md| Verdict
 
     Verdict{Verdict}
     Verdict -->|"pass"| HumanNext
@@ -67,8 +79,8 @@ flowchart TD
 
     HumanNext{Human<br/>decision}
     HumanNext -->|continue| Start
-    HumanNext -->|add requirement| Start
-    HumanNext -->|done| Archive([Archive & Done])
+    HumanNext -->|change scope| Start
+    HumanNext -->|close out| Archive([Closeout & Archive])
 
     style Planner fill:#4A90D9,color:#fff
     style Builder fill:#7B68EE,color:#fff
@@ -83,8 +95,8 @@ flowchart TD
 | Artifact | Location | Lifecycle |
 |----------|----------|-----------|
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
-| `.harness/brief.md` | `.harness/` | Per task — ACs, approach, discoveries. Archived on completion |
-| `.harness/eval.md` | `.harness/` | Per round — verification findings, human review guidance |
+| `.harness/plan.md` | `.harness/` | Per task — ACs, approach, `Open Decisions`, discoveries. Archived on completion |
+| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals` |
 
 ## Quick Start
 
@@ -94,6 +106,8 @@ flowchart TD
 ```
 
 First time on a project? Dispatch will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
+
+The public commands stay stable (`/dispatch`, `/planner`, `/builder`, `/verifier`). Detailed procedures live in sibling role files under each role directory.
 
 ## Feedback Loops
 

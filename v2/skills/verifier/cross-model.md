@@ -1,4 +1,4 @@
-# Verifier Module: Cross-model Review
+# Verifier Guide: Cross-model Review
 
 > Requires: [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) installed and configured in project-profile.md § External Reviewer.
 > Activated by: Dispatch in Full mode when Mode C+ is detected.
@@ -9,7 +9,7 @@
 After completing core Step 5 (Plan Quality Challenge), run this step.
 
 ```
-1. Run /codex:adversarial-review on brief.md
+1. Run /codex:adversarial-review on plan.md
    → Focus: "Challenge the acceptance criteria and approach.
      Are there hidden assumptions? Missing edge cases?
      Does the approach conflict with the codebase's actual patterns?"
@@ -38,7 +38,7 @@ After completing core Step 5 (Plan Quality Challenge), run this step.
 model's opinion. With it, each finding is either grounded in code evidence (confirmed),
 flagged for human judgment (plausible), or eliminated (rejected).
 
-### Pre-flight eval.md section (append to core eval.md output)
+### Pre-flight review.md section (append to core review.md output)
 
 ```markdown
 ### Cross-model Plan Challenge
@@ -63,7 +63,7 @@ After completing core Step 3 (Tier 3a AC Coverage), run this step.
 2. If this is the final round, also run:
    /codex:adversarial-review --base {round-start-commit}
    → Codex challenges design choices and assumptions
-   → Pass brief.md ACs as focus context for targeted pressure-testing
+   → Pass plan.md ACs as focus context for targeted pressure-testing
 
 3. Retrieve results:
    → /codex:status to check completion
@@ -77,17 +77,17 @@ After completing core Step 3 (Tier 3a AC Coverage), run this step.
       → ✅ Confirmed: Codex found something real that Verifier's own checks missed.
         Tag [cross-model, confirmed]. Add to § Findings with evidence.
       → ⚠️ Plausible: can't verify without reading production code (which Verifier
-        avoids in Mode A/B). Surface to human in § Recommend you review.
+        avoids in Mode A/B). Surface to human in § Needs your judgment.
         Tag [cross-model, unverified].
       → ❌ Rejected: contradicts Tier 1 evidence (e.g., Codex says test fails but
         it actually passes). Note briefly. Do NOT include in findings.
 
 5. If Codex is unavailable (not installed, auth error, timeout):
    → Fall back to Mode C (same-model review)
-   → Note in eval.md: "Cross-model review unavailable, fell back to L3"
+   → Note in review.md: "Cross-model review unavailable, fell back to L3"
 ```
 
-### Verification eval.md section (append to core eval.md output)
+### Verification review.md section (append to core review.md output)
 
 ```markdown
 ### Cross-model Review
@@ -99,13 +99,8 @@ After completing core Step 3 (Tier 3a AC Coverage), run this step.
   {or "N/A" or "Unavailable, fell back to L3"}
 ```
 
----
-
-## Optional: `/codex:rescue`
-
-If Codex identifies a fixable issue, Verifier MAY use `/codex:rescue` to let Codex attempt the fix directly (runs in background). This is a cross-model alternative to routing back to Builder. Use only for small, isolated code bugs where Builder has already failed once on the same issue.
-
-## Rules (module-specific)
+## Rules (file-specific)
 
 1. **L2.5 findings are never accepted blindly.** Cross-examine every Codex finding against codebase evidence. Classify as confirmed/plausible/rejected.
 2. **Prioritize L2.5 over L3.** When cross-model review is available, prefer it over same-model code review.
+3. **Cross-model review stays read-only.** This file may surface findings, never trigger or apply fixes. All code changes still route through Builder.

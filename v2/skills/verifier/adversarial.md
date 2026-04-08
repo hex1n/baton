@@ -1,4 +1,4 @@
-# Verifier Module: Adversarial Testing
+# Verifier Guide: Adversarial Testing
 
 > Activated by: Dispatch in Full mode.
 > When to run: Final round (full suite) or any round with security-surface ACs and Mode A (input + auth subset only).
@@ -40,7 +40,7 @@ d) Resource exhaustion:
 - P2 (should fix): missing input validation, no rate limiting
 - P3 (nice to have): verbose error messages, slow response under extreme load
 
-### Verification eval.md section (append to core eval.md output)
+### Verification review.md section (append to core review.md output)
 
 ```markdown
 ### Adversarial Testing

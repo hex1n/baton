@@ -21,28 +21,40 @@ v2/
 ├── protocol.md                        完整协议规范
 ├── CLAUDE.md                          快速参考
 ├── skills/
-│   ├── dispatch/SKILL.md              入口 — 状态检测与路由
-│   ├── planner/SKILL.md               代码理解、需求澄清、方案设计
+│   ├── dispatch/
+│   │   ├── SKILL.md                   公共入口 — 状态检测与路由
+│   │   ├── routing.md                 状态检测、路由、bootstrap
+│   │   └── checkpoints.md             人工检查点与生命周期流转
+│   ├── planner/
+│   │   ├── SKILL.md                   公共入口 — 规划契约
+│   │   ├── profile.md                 project-profile 生成
+│   │   ├── planning.md                Round 1 / Round N 规划
+│   │   └── revision.md                Verifier 触发的设计修订
 │   ├── builder/SKILL.md               实现（分批编译策略）
 │   └── verifier/
-│       ├── SKILL.md                   核心验证（预检 + Tier 1/2/3a）
-│       ├── module-crossmodel.md       跨模型审查（codex-plugin-cc）
-│       └── module-adversarial.md      对抗测试（安全/边界）
+│       ├── SKILL.md                   公共入口 — 验证契约
+│       ├── preflight.md               预检与方案挑战
+│       ├── verification.md            Tier 1 / 2 / 3a 验证
+│       ├── cross-model.md             跨模型审查（codex-plugin-cc）
+│       └── adversarial.md             对抗测试（安全/边界）
 ├── templates/
 │   ├── project-profile.template.md    项目级持久知识模板
-│   └── brief.template.md             任务级活文档模板
+│   ├── plan.template.md              任务级活文档模板
+│   └── review.template.md            每轮次审查输出模板
 └── tools/
-    ├── archive-round.sh              归档已完成的轮次
-    └── check-consistency.sh          验证协议到下游文件的一致性
+    ├── archive-task.sh                在收口阶段归档任务状态
+    ├── check-consistency.sh           验证协议到下游文件的一致性
+    ├── validate-live-state.sh         验证当前 project-profile / plan / review 结构
+    └── validate-round-sync.sh         验证 plan/review 轮次对齐
 ```
 
 ## 角色
 
 | 角色 | 读取 | 写入 | 核心规则 |
 |------|------|------|----------|
-| **Planner** | project-profile.md, brief.md, 源代码 | brief.md（AC、方案、批次计划） | 澄清问题数量随复杂度缩放 |
-| **Builder** | project-profile.md, brief.md（当前轮次） | 源代码、测试、brief.md § Discoveries | 每个 AC 必须有测试 |
-| **Verifier** | project-profile.md, brief.md（AC）、测试结果 | eval.md | 验证时不读 Builder 的源代码（Mode A/B） |
+| **Planner** | project-profile.md, plan.md, 源代码 | plan.md（AC、方案、批次计划） | 澄清问题数量随复杂度缩放 |
+| **Builder** | project-profile.md, plan.md（当前轮次） | 源代码、测试、plan.md § Discoveries | 每个 AC 必须有测试 |
+| **Verifier** | project-profile.md, plan.md（AC）、测试结果 | review.md | 验证时不读 Builder 的源代码（Mode A/B） |
 
 **Dispatch** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
@@ -51,13 +63,13 @@ v2/
 ```mermaid
 flowchart TD
     Start([新任务 / 新轮次]) --> Planner
-    Planner["<b>Planner</b><br/>理解代码库<br/>编写 AC + 方案"] -->|brief.md| PreFlight
-    PreFlight["<b>Verifier</b> 预检<br/>可测性检查<br/>方案挑战"] -->|eval.md| HumanApprove
+    Planner["<b>Planner</b><br/>理解代码库<br/>编写 AC + 方案"] -->|plan.md| PreFlight
+    PreFlight["<b>Verifier</b> 预检<br/>可测性检查<br/>方案挑战"] -->|review.md| HumanApprove
     HumanApprove{Human<br/>批准?}
     HumanApprove -->|修订| Planner
     HumanApprove -->|批准| Builder
     Builder["<b>Builder</b><br/>分批实现<br/>每个 AC 写测试"] -->|代码 + 测试| Verify
-    Verify["<b>Verifier</b> 验证<br/>Tier 1: 测试<br/>Tier 2: 运行时<br/>Tier 3: 覆盖率"] -->|eval.md| Verdict
+    Verify["<b>Verifier</b> 验证<br/>Tier 1: 测试<br/>Tier 2: 运行时<br/>Tier 3: 覆盖率"] -->|review.md| Verdict
 
     Verdict{结果}
     Verdict -->|"通过"| HumanNext
@@ -67,8 +79,8 @@ flowchart TD
 
     HumanNext{Human<br/>决定}
     HumanNext -->|继续| Start
-    HumanNext -->|追加需求| Start
-    HumanNext -->|完成| Archive([归档 & 结束])
+    HumanNext -->|变更范围| Start
+    HumanNext -->|收口| Archive([收口归档 & 结束])
 
     style Planner fill:#4A90D9,color:#fff
     style Builder fill:#7B68EE,color:#fff
@@ -83,8 +95,8 @@ flowchart TD
 | 制品 | 位置 | 生命周期 |
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
-| `.harness/brief.md` | `.harness/` | 每任务 — AC、方案、发现。完成后归档 |
-| `.harness/eval.md` | `.harness/` | 每轮次 — 验证发现、人工审查指引 |
+| `.harness/plan.md` | `.harness/` | 每任务 — AC、方案、`Open Decisions`、发现。完成后归档 |
+| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工审查指引、`Routing Signals` |
 
 ## 快速开始
 
@@ -94,6 +106,8 @@ flowchart TD
 ```
 
 首次使用？Dispatch 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
+
+公共命令保持不变（`/dispatch`、`/planner`、`/builder`、`/verifier`），细节步骤下沉到各角色目录里的同级职责文件。
 
 ## 反馈回路
 

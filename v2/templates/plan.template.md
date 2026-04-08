@@ -1,6 +1,6 @@
-# Brief: {task name}
+# Plan: {task name}
 
-## Task
+## Metadata
 
 | Key | Value |
 |-----|-------|
@@ -34,7 +34,7 @@
 | {e.g., Orchestrator @Resource count} | {14} | `grep -c '@Resource' path/to/File.java` |
 | {e.g., OrchestratorTest line count} | {2570} | `wc -l path/to/FileTest.java` |
 
-## Feature Decomposition
+## Scope Breakdown
 
 > Break the full task into independent feature blocks. Assess clarity.
 
@@ -44,9 +44,9 @@
 | F2 | {description} | Mostly clear | 1 |
 | F3 | {description} | Fuzzy | future |
 
-## Completed Rounds
+## Round History
 
-> Compressed summaries. Keep brief.md from growing unbounded, but preserve key decisions and open discoveries.
+> Compressed summaries. Keep plan.md from growing unbounded, but preserve key decisions and open discoveries.
 
 ### Round 1: {summary} ✅ ({N} tests)
 - Decisions: {key decisions that affect future rounds}
@@ -99,6 +99,14 @@
 | Decision | Chose | Rejected | Why |
 |----------|-------|----------|-----|
 | {question} | {option A} | {option B} | {rationale} |
+
+### Open Decisions
+
+> Planner records unresolved human choices here. Dispatch asks these questions; Planner does not ask directly.
+
+| ID | Question | Options | Status | Blocking |
+|----|----------|---------|--------|----------|
+| OD-{N}.1 | {question or "None."} | {option A / option B / —} | {open / resolved} | {yes / no} |
 
 ### Approach
 
