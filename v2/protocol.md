@@ -210,12 +210,12 @@ Verifier evidence is classified by independence from Builder:
 |-------|------------|---------|
 | **L1** Independent | Builder cannot influence the outcome | Test pass/fail, runtime behavior, compile results |
 | **L2** Auditable | Builder produced it, but Verifier can verify | Test code quality, AC→test mapping |
-| **L2.5** Cross-model | A different model reviews Builder's output | [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) review via `/codex:review`, `/codex:adversarial-review` |
+| **L2.5** Cross-model | A different model reviews Builder's output | External AI reviewer configured in project-profile.md § External Reviewer |
 | **L3** Non-independent | Same model reviews same model's output | Production code review, AI judgment |
 
 L2.5 exists because cross-model review has different blind spots from Builder — it is structurally more independent than L3, but still AI judgment (not deterministic like L1). It is only available when project-profile.md configures an external reviewer.
 
-**Cross-examination rule:** L2.5 findings are never accepted blindly. Verifier must cross-examine each finding against codebase evidence and classify as confirmed (✅ with file:line proof), plausible (⚠️ needs human), or rejected (❌ with reason). This produces higher-quality signal than either model alone — Codex catches what Claude misses, Claude grounds or filters what Codex claims.
+**Cross-examination rule:** L2.5 findings are never accepted blindly. Verifier must cross-examine each finding against codebase evidence and classify as confirmed (✅ with file:line proof), plausible (⚠️ needs human), or rejected (❌ with reason). This produces higher-quality signal than either model alone — the external reviewer catches what the primary model misses, the primary model grounds or filters what the external reviewer claims.
 
 ### Mode Table
 
@@ -228,7 +228,7 @@ L2.5 exists because cross-model review has different blind spots from Builder �
 
 **Mode C explicitly permits reading production code** — without runtime evidence, code review is the only deep verification available. This is an honest degradation, not a contradiction.
 
-**Mode C+ upgrades code review independence** by delegating production code review to [codex-plugin-cc](https://github.com/openai/codex-plugin-cc), which runs OpenAI Codex inside Claude Code. Codex has different training and blind spots, breaking the "same model evaluates same model" problem. Verifier uses `/codex:review` for standard review and `/codex:adversarial-review` for design challenge. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
+**Mode C+ upgrades code review independence** by delegating production code review to an external AI reviewer (configured in project-profile.md § External Reviewer). The external model has different training and blind spots, breaking the "same model evaluates same model" problem. See `verifier/module-crossmodel.md` for tool-specific setup and commands. C+ is not as strong as Mode A/B (still AI judgment, not deterministic), but is meaningfully more independent than C.
 
 **eval.md must state which mode was used and the evidence level distribution.** Mode B/C must include: "⚠️ Verification independence: degraded — human review weight is higher."
 
@@ -324,3 +324,4 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 10. Git tag after each successful round
 11. Migration scripts require separate human approval
 12. Round scope lock: after human approves a round's plan, its ACs are frozen. New requirements go to the next round (see Dispatch § Add Requirement Flow). Builder and Verifier work against the approved ACs, not a moving target
+13. Dispatch routes but never judges. Execution mode selection, finding categorization, and severity assessment always involve human confirmation or read from artifact labels — Dispatch never auto-decides these

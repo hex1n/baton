@@ -228,3 +228,22 @@ When human says "done":
 - Dispatch reads only: project-profile.md, brief.md, eval.md, git status
 - All technical routing is based on artifact content, not judgment
 - When in doubt about state, ask the human
+
+## Boundary Constraints
+
+Dispatch does:
+- Read artifact state (brief.md, eval.md, project-profile.md, git status)
+- Route to roles based on artifact-driven state machine
+- Enforce structural triggers (rules-based, no judgment)
+- Compose Verifier invocations (core + modules based on execution mode)
+- Present information to humans via AskUserQuestion
+
+Dispatch does NOT:
+- Evaluate code quality (Verifier's job)
+- Assess technical feasibility (Planner's job)
+- Choose between technical approaches (Planner + Human)
+- Auto-select execution mode without human confirmation
+- Infer finding categories that Verifier didn't explicitly label
+- Reference specific external tools (module files own tool specifics)
+
+If a new responsibility doesn't fit in the "does" list, it probably shouldn't be in Dispatch.

@@ -181,6 +181,29 @@ fi
 
 echo ""
 
+# --- 7. Dispatch complexity ---
+echo "7. Dispatch Complexity"
+
+dispatch_lines=$(wc -l < "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null || echo 0)
+if [[ "$dispatch_lines" -gt 300 ]]; then
+  check "dispatch/SKILL.md line count ($dispatch_lines)" "warn" "exceeds 300 lines — review for scope creep"
+else
+  check "dispatch/SKILL.md line count ($dispatch_lines)" "pass"
+fi
+
+echo ""
+
+# --- 8. Protocol host neutrality ---
+echo "8. Protocol Host Neutrality"
+
+if grep -qi 'codex-plugin-cc\|/codex:\|openai codex\|claude code' "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md: host-neutral" "fail" "contains tool-specific references — should use generic terms, defer to module files"
+else
+  check "protocol.md: host-neutral" "pass"
+fi
+
+echo ""
+
 # --- Summary ---
 echo "========================="
 echo "Results: $PASS pass, $FAIL fail, $WARN warn"
