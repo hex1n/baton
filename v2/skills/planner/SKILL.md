@@ -104,10 +104,38 @@ Rules:
   - If you haven't done Step 4 yet, use 3 as default and revisit if needed
 - Each question includes options derived from what you've read
 - Skip questions where the answer is obvious from context
-- If requirements are clear enough to start, don't ask
+- If requirements are clear enough to start, skip to Step 4
 
-Use AskUserQuestion:
+**Before asking questions, persist exploration to `.harness/exploration.md`** (see Rule 8). This ensures that if the Agent session breaks during Q&A, the next Agent doesn't re-explore from scratch.
 
+```
+exploration.md structure:
+  ## Files Explored
+  - `{path}` L{N}-{M}: {key finding}
+  
+  ## Key Findings
+  - {finding with file references}
+  
+  ## Open Questions (for human)
+  - Q1: {question} → Option A: {…} / Option B: {…}
+  - Q2: {question} → …
+  
+  ## Human Answers
+  (filled by Dispatch after AskUserQuestion; empty on first write)
+```
+
+**Two paths depending on tool availability:**
+
+Path A — AskUserQuestion is available (preferred):
+  → Use AskUserQuestion directly, receive answer, continue to Step 4
+
+Path B — AskUserQuestion is not available (subagent limitation):
+  → Write questions to `.harness/exploration.md` § Open Questions
+  → Return to Dispatch (Agent session ends here)
+  → Dispatch handles Q&A relay (see Dispatch SKILL.md § Planner Q&A Relay)
+  → New Planner Agent reads exploration.md (with answers filled in) and continues from Step 4
+
+Example question format (for either path):
 ```
 "Before I plan, a few questions:
 

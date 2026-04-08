@@ -41,7 +41,10 @@ project-profile.md  → exists? (project configured?)
    → AskUserQuestion if unclear: "compact / standard / full"
    When invoking Verifier, pass the mode: "execution mode: {compact/standard/full}"
 1. Read project-profile.md
-2. Invoke Planner → brief.md Round 1
+2. Invoke Planner → expected output: brief.md Round 1
+   → If Planner returns without brief.md but .harness/exploration.md exists
+     with § Open Questions filled and § Human Answers empty:
+     this is a Q&A relay (see § Planner Q&A Relay below). Handle it, then re-invoke Planner.
 3. Invoke Verifier pre-flight
 4. Present brief.md + pre-flight summary to human. Before presenting:
    → **Decision tag check:** scan brief.md § Decisions for the `[diverges from human choice]` protocol tag
@@ -156,9 +159,11 @@ How "invoke" works depends on execution mode:
 ```
 Standard mode:
   "Invoke Planner" → spawn Agent with Planner's SKILL.md
-    → If .harness/exploration.md exists (from a previous broken Planner session),
-      tell the new Planner: "Read .harness/exploration.md — it contains findings
-      from a prior exploration. Do not re-read files already covered there."
+    → If .harness/exploration.md exists with § Human Answers filled:
+      tell Planner: "Read .harness/exploration.md — exploration and answers are
+      already there. Continue from Step 4 (do not re-explore)."
+    → If .harness/exploration.md exists with § Human Answers empty:
+      this is a broken session — run Q&A Relay first, then re-invoke.
   "Invoke Builder" → spawn Agent with Builder's SKILL.md
   "Invoke Verifier" → spawn Agent with Verifier's SKILL.md ONLY
     → Tell Verifier: "execution mode: standard"
@@ -181,6 +186,23 @@ Compact mode:
     → Write eval.md marked as "self-check"
   No separate Verifier — human provides independent review
 ```
+
+## Planner Q&A Relay
+
+When Planner returns without brief.md but leaves `.harness/exploration.md` with unanswered questions, Dispatch acts as a relay:
+
+```
+1. Read .harness/exploration.md § Open Questions
+2. Present questions to human via AskUserQuestion (preserve Planner's question format)
+3. Write human's answers to .harness/exploration.md § Human Answers
+4. Re-invoke Planner:
+   → "Read .harness/exploration.md — exploration findings and human answers are in the file.
+      Continue from Step 4 (Feature Decomposition). Do not re-explore."
+5. Planner reads exploration.md, uses answers, outputs brief.md
+6. On success, Planner deletes exploration.md (brief.md is now the source of truth)
+```
+
+This handles the case where a Planner subagent cannot use AskUserQuestion directly. Dispatch adds no judgment — it only relays questions and writes back answers.
 
 ## Micro-fix Fast Path
 
