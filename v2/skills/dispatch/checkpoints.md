@@ -13,7 +13,7 @@ After Planner completes and Verifier pre-flight finishes:
      and mark the row resolved.
    → If any row still has `Blocking = yes`, do NOT ask for round-contract approval yet.
 
-2. Present plan.md § Round Contract + pre-flight summary to the human once blocking open decisions are resolved.
+2. Present plan.md § Round Contract + pre-flight summary + recommended `Verification Add-ons` + `Plan Quality` + `Round Load` to the human once blocking open decisions are resolved.
 
 3. Decision tag check:
    → Scan plan.md § Decisions for `[diverges from human choice]`
@@ -22,17 +22,47 @@ After Planner completes and Verifier pre-flight finishes:
       See plan.md § Decisions for rationale."
 
 4. Ask:
-   "Round contract ready for review.
+   If `Blocking = overload`:
+     "Round contract is technically coherent, but Verifier classified it as overloaded.
 
-   Pre-flight confirms ACs are testable and approach is consistent.
-   But only you can confirm the ACs are correct:
-   - Do the ACs match what you actually want built?
-   - Are there scenarios the ACs don't cover?
-   - Any AC where the expected outcome is wrong?
+     Pre-flight confirms ACs are testable and approach is consistent.
+     But this round currently exceeds Baton's default single-round load guard:
+     - Do the ACs match what you actually want built?
+     - Should this round be split before Builder starts?
+     - If not, do you want to record a human-approved overload override?
+     - Do you want to keep the recommended verification add-ons for the verify pass?
 
-   [See plan.md § Round N → Acceptance Criteria]
+     [See plan.md § Round N → Acceptance Criteria]
 
-   approve / revise / reject"
+     split / override / revise / reject"
+
+   Else if `Plan Quality = under-searched`:
+     "Round contract is coherent, but Verifier marked the plan as under-searched.
+
+     Pre-flight does not think the round contract is wrong.
+     It thinks the planning search was too shallow for this round:
+     - Is the plan solving the right problem?
+     - Were the real alternatives explored enough?
+     - Do you want a deepen pass before Builder starts?
+     - Or do you want to proceed with this plan anyway?
+
+     [See plan.md § Round N → Plan Quality]
+
+     approve / deepen / revise / reject"
+
+   Otherwise:
+     "Round contract ready for review.
+
+     Pre-flight confirms ACs are testable and approach is consistent.
+     But only you can confirm the ACs are correct:
+     - Do the ACs match what you actually want built?
+     - Are there scenarios the ACs don't cover?
+     - Any AC where the expected outcome is wrong?
+     - Do you want to keep the recommended verification add-ons for the verify pass?
+
+     [See plan.md § Round N → Acceptance Criteria]
+
+     approve / revise / reject"
 ```
 
 ## Structural Trigger Messaging
@@ -51,9 +81,23 @@ Before routing on the human response, check protocol-defined triggers:
 
 - review.md has [cross-model] findings
   → append: "⚠️ Cross-model review raised additional concerns: {summary}."
+
+- `Plan Quality = under-searched`
+  → append: "⚠️ Verifier thinks this plan is coherent but under-searched. Consider a deepen pass before approval."
+
+- `Round Load = heavy`
+  → append: "⚠️ Planner forecasted a heavy full-mode round. Review `plan.md § Round Contract → Budget Note` before approving."
+
+- `Round Load = overloaded`
+  and `Blocking = overload`
+  → append: "⛔ Verifier classified this round as overloaded. Builder cannot start until you split the round or record a human-approved overload override."
+
+- `Round Load = overloaded`
+  and `Blocking = none`
+  → append: "⚠️ Human-approved overload override is already recorded. Builder may proceed, but this round is still above Baton's default load guard."
 ```
 
-**Routing rule:** triggers inform, not block, except `[assumed — verify]` and `§ Open Decisions` rows with `Blocking = yes`, which block Builder until they are resolved.
+**Routing rule:** triggers inform, not block, except `[assumed — verify]`, `§ Open Decisions` rows with `Blocking = yes`, and `Round Load = overloaded` without a recorded override. Those block Builder until they are resolved.
 
 ## Approval Routing
 
@@ -64,10 +108,33 @@ approve:
   → only valid if no blocking trigger or blocking open decision remains
   → invoke Builder
 
-revise:
-  → invoke Planner in Revision mode
+deepen:
+  → invoke Planner in Revision mode with a deepen request:
+      improve problem framing, assumptions, alternatives, and failure mode
+      without changing the task unless the deeper search proves the framing itself is wrong
   → re-run Verifier pre-flight
   → return to the approval checkpoint
+
+split:
+  → invoke Planner in Revision mode to reduce the round or split work into a new round
+  → Planner must clear `plan.md § Round Contract → Overload Override` back to `none`
+  → re-run Verifier pre-flight
+  → return to the approval checkpoint
+
+override:
+  → invoke Planner in Revision mode to record `plan.md § Round Contract → Overload Override = human-approved`
+  → Planner must refresh `Budget Note` to explain why the round remains single-round despite overload
+  → re-run Verifier pre-flight
+  → return to the approval checkpoint
+
+revise:
+  → if the revision only changes verify-pass add-ons:
+      re-run Verifier pre-flight with the human add-on note
+      return to the approval checkpoint
+  → otherwise:
+      invoke Planner in Revision mode
+      re-run Verifier pre-flight
+      return to the approval checkpoint
 
 reject:
   → ask: "Describe a different direction, or abandon task?"

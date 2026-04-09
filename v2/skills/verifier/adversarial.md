@@ -1,6 +1,6 @@
 # Verifier Guide: Adversarial Testing
 
-> Activated by: Dispatcher in Full mode.
+> Activated by: Dispatcher during Full-mode verification when selected for the round.
 > When to run: Final round (full suite) or any round with security-surface ACs and Mode A (input + auth subset only).
 
 ## Adversarial Testing

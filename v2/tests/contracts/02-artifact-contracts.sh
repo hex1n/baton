@@ -55,6 +55,16 @@ require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| ID \\| Question
   "plan template includes Open Decisions table" "Open Decisions table header missing"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Round Contract$" \
   "plan template includes Round Contract section" "Round Contract section missing from plan template"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Plan Quality$" \
+  "plan template includes Plan Quality section" "Plan Quality section missing from plan template"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Planning Depth \\|" \
+  "plan template includes Planning Depth row" "Planning Depth row missing from Plan Quality"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Key Entry Points \\|" \
+  "plan template includes Key Entry Points row" "Key Entry Points row missing from Round Contract"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Budget Note \\|" \
+  "plan template includes Budget Note row" "Budget Note row missing from Round Contract"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Overload Override \\|" \
+  "plan template includes Overload Override row" "Overload Override row missing from Round Contract"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Implementation Slices$" \
   "plan template includes Implementation Slices section" "Implementation Slices section missing from plan template"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Scope Class \\|" \
@@ -75,12 +85,26 @@ require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Contract Stat
   "review template includes Contract Status section" "Contract Status section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Findings Sidecar$" \
   "review template includes findings sidecar section" "Findings Sidecar section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Verification Add-ons \\(for verify pass\\)$" \
+  "review template includes pre-flight verification add-ons section" "Verification Add-ons section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Plan Quality$" \
+  "review template includes plan quality section" "Plan Quality section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Round Load$" \
+  "review template includes round load section" "Round Load section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Activated Add-ons$" \
+  "review template includes activated add-ons section" "Activated Add-ons section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Next Route \\|" \
   "review template includes next-route row" "Next Route row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Human Review Needed \\|" \
   "review template includes human-review row" "Human Review Needed row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Blocking \\|" \
   "review template includes blocking row" "Blocking row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Verification Add-ons \\|" \
+  "review template includes verification add-ons row" "Verification Add-ons row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Plan Quality \\|" \
+  "review template includes plan quality row" "Plan Quality row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Round Load \\|" \
+  "review template includes round load row" "Round Load row missing"
 require_pattern "$REPO_ROOT/CLAUDE.md" "plan\\.md" \
   "root CLAUDE projects plan.md" "root CLAUDE still points at legacy artifact names"
 require_pattern "$REPO_ROOT/CLAUDE.md" "review\\.md" \

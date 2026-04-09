@@ -1,7 +1,7 @@
 # Verifier Guide: Cross-model Review
 
 > Requires: `project-profile.md § External Reviewer` configured and `bash v2/tools/external-review.sh` available.
-> Activated by: Dispatcher in Full mode when Mode C+ is detected.
+> Activated by: Dispatcher during Full-mode review when selected for the round and the external reviewer is available.
 > Evidence level: L2.5 (cross-model) — different model = different blind spots.
 
 Raw adapter/provider outputs live under:

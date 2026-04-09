@@ -46,7 +46,7 @@ Use `v2/templates/plan.template.md` exactly. Always fill:
 - `§ Context` — what you read, with file paths and line numbers
 - `§ Scope Breakdown` — clear / mostly clear / fuzzy breakdown
 - `§ Round History` — compressed history that preserves load-bearing decisions
-- `§ Round N` — ACs, decisions, `§ Open Decisions`, `§ Round Contract`, approach, implementation slices, risks
+- `§ Round N` — ACs, `§ Plan Quality`, decisions, `§ Open Decisions`, `§ Round Contract` (including key entry points when relevant), approach, implementation slices, risks
 - `§ Future Rounds` — tentative placeholders only
 
 ## Rules
@@ -57,9 +57,11 @@ Use `v2/templates/plan.template.md` exactly. Always fill:
 4. Record decisions with rationale, including rejected approaches that still constrain future rounds.
 5. Fill `Scope Class` and `Risk Class` before locking the round contract. They explain the round; they do not replace `Execution Mode`.
 6. Forecast `Expected Rounds` and `Expected Slices This Round` honestly. They are planning aids, not promises.
-7. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
-8. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
-9. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
-10. Verify numeric claims with commands. Never estimate counts or sizes by eye.
-11. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
-12. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.
+7. Choose `Planning Depth` honestly. Use `deepen` when the round needs better search quality, not just more prose.
+8. If `Planning Depth = deepen`, fill `§ Plan Quality` with a problem statement, assumptions, constraints vs conventions, alternatives, and failure mode.
+9. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
+10. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
+11. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
+12. Verify numeric claims with commands. Never estimate counts or sizes by eye.
+13. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
+14. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.

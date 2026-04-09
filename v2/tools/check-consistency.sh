@@ -64,6 +64,36 @@ else
   check "plan.template.md round contract" "fail" "missing structured Round Contract section"
 fi
 
+if grep -q "^### Plan Quality$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md plan quality section" "pass"
+else
+  check "plan.template.md plan quality section" "fail" "missing Plan Quality section"
+fi
+
+if grep -q "^| Planning Depth |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md planning depth row" "pass"
+else
+  check "plan.template.md planning depth row" "fail" "missing Planning Depth row in Plan Quality"
+fi
+
+if grep -q "^| Key Entry Points |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md key entry points" "pass"
+else
+  check "plan.template.md key entry points" "fail" "missing Key Entry Points row in Round Contract"
+fi
+
+if grep -q "^| Budget Note |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md budget note" "pass"
+else
+  check "plan.template.md budget note" "fail" "missing Budget Note row in Round Contract"
+fi
+
+if grep -q "^| Overload Override |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md overload override" "pass"
+else
+  check "plan.template.md overload override" "fail" "missing Overload Override row in Round Contract"
+fi
+
 if grep -q "^### Implementation Slices$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
   check "plan.template.md implementation slices" "pass"
 else
@@ -161,6 +191,72 @@ if grep -q "^### Findings Sidecar$" "$REPO_ROOT/v2/templates/review.template.md"
   check "review.template.md findings sidecar" "pass"
 else
   check "review.template.md findings sidecar" "fail" "missing findings sidecar section"
+fi
+
+if grep -q "^### Verification Add-ons (for verify pass)$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md verification add-ons" "pass"
+else
+  check "review.template.md verification add-ons" "fail" "missing Verification Add-ons section"
+fi
+
+if grep -q "^### Plan Quality$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md plan quality" "pass"
+else
+  check "review.template.md plan quality" "fail" "missing Plan Quality section"
+fi
+
+if grep -q "^### Round Load$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md round load" "pass"
+else
+  check "review.template.md round load" "fail" "missing Round Load section"
+fi
+
+if grep -q "^### Activated Add-ons$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md activated add-ons" "pass"
+else
+  check "review.template.md activated add-ons" "fail" "missing Activated Add-ons section"
+fi
+
+if grep -q "^| Verification Add-ons |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md verification add-ons routing row" "pass"
+else
+  check "review.template.md verification add-ons routing row" "fail" "missing Verification Add-ons row in Routing Signals"
+fi
+
+if grep -q "^| Plan Quality |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md plan quality routing row" "pass"
+else
+  check "review.template.md plan quality routing row" "fail" "missing Plan Quality row in Routing Signals"
+fi
+
+if grep -q "^| Round Load |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md round load routing row" "pass"
+else
+  check "review.template.md round load routing row" "fail" "missing Round Load row in Routing Signals"
+fi
+
+if grep -q "selected add-on files" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md full mode selected add-ons wording" "pass"
+else
+  check "protocol.md full mode selected add-ons wording" "fail" "protocol still implies all add-ons always run"
+fi
+
+if grep -q "Round Load Guard" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md round load guard wording" "pass"
+else
+  check "protocol.md round load guard wording" "fail" "protocol missing round load guard section"
+fi
+
+if grep -q "Planning Depth" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md planning depth wording" "pass"
+else
+  check "protocol.md planning depth wording" "fail" "protocol missing planning depth section"
+fi
+
+if [[ -f "$REPO_ROOT/v2/tools/validate-round-contract.sh" ]]; then
+  check "validate-round-contract.sh exists" "pass"
+else
+  check "validate-round-contract.sh exists" "fail" "missing round-contract lint tool"
 fi
 
 echo ""
@@ -577,6 +673,13 @@ if [[ -f "$REPO_ROOT/project-profile.md" || -f "$REPO_ROOT/.harness/plan.md" || 
   else
     detail=$(sed -n '1,3p' /tmp/baton-round-sync.log | tr '\n' ' ')
     check "validate-round-sync.sh" "fail" "${detail:-round sync validation failed}"
+  fi
+
+  if bash "$REPO_ROOT/v2/tools/validate-round-contract.sh" --repo-root "$REPO_ROOT" >/tmp/baton-round-contract.log 2>&1; then
+    check "validate-round-contract.sh" "pass"
+  else
+    detail=$(sed -n '1,4p' /tmp/baton-round-contract.log | tr '\n' ' ')
+    check "validate-round-contract.sh" "fail" "${detail:-round contract lint failed}"
   fi
 else
   check "live state validation" "warn" "no live state found"

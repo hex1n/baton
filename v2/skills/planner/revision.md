@@ -25,8 +25,11 @@ Decide whether the issue is:
 - Note what changed and why in § Decisions
 - Add or update § Open Decisions if human judgment is still required
 - Update `Scope Class`, `Risk Class`, or round forecasts if the revision changes the round shape
+- Update `§ Round Contract → Key Entry Points` if the revision changes which entry points must remain in scope
 - Update ACs if the design change requires it
 - Preserve round history; do not rewrite it
 ```
 
 If the design issue exposes a requirement gap instead of a design problem, surface it back to Dispatcher for a human checkpoint instead of silently deciding it.
+
+If Dispatcher or Verifier asks for a deepen pass, keep the task and AC direction stable unless the deeper search proves the framing itself is wrong. In that case, update `§ Plan Quality`, then revise the affected approach / ACs explicitly instead of silently swapping plans.

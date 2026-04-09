@@ -67,7 +67,8 @@ Before merging a core change, run:
 ```bash
 bash v2/tools/check-consistency.sh
 bash v2/tools/validate-live-state.sh
+bash v2/tools/validate-round-contract.sh
 bash v2/tools/validate-round-sync.sh
 ```
 
-`check-consistency.sh` is the repo-level entrypoint. It also runs Baton's contract tests.
+`check-consistency.sh` is the repo-level entrypoint. It also runs Baton's contract tests and the live round-contract lint.

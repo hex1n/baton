@@ -82,11 +82,16 @@ if [[ -f "$PLAN" ]]; then
   require_heading "$PLAN" '^## Round History$' "plan round history" "missing '## Round History'"
   require_heading "$PLAN" '^## Round [0-9]+$' "plan current round" "missing current round section"
   require_heading "$PLAN" '^### Acceptance Criteria$' "plan AC section" "missing '### Acceptance Criteria'"
+  require_heading "$PLAN" '^### Plan Quality$' "plan plan quality section" "missing '### Plan Quality'"
+  require_heading "$PLAN" '^\| Planning Depth \|' "plan planning depth row" "missing Planning Depth row in Plan Quality"
   require_heading "$PLAN" '^### Open Decisions$' "plan open decisions" "missing '### Open Decisions'"
   require_heading "$PLAN" '^\| ID \| Question \| Options \| Status \| Blocking \|' "plan open decisions table" "missing Open Decisions table header"
   require_heading "$PLAN" '^### Round Contract$' "plan round contract" "missing '### Round Contract'"
   require_heading "$PLAN" '^\| Scope In \|' "plan round contract scope in" "missing Scope In row in Round Contract"
+  require_heading "$PLAN" '^\| Key Entry Points \|' "plan round contract key entry points" "missing Key Entry Points row in Round Contract"
   require_heading "$PLAN" '^\| Verification Plan \|' "plan round contract verification plan" "missing Verification Plan row in Round Contract"
+  require_heading "$PLAN" '^\| Budget Note \|' "plan round contract budget note" "missing Budget Note row in Round Contract"
+  require_heading "$PLAN" '^\| Overload Override \|' "plan round contract overload override" "missing Overload Override row in Round Contract"
   require_heading "$PLAN" '^### Approach$' "plan approach section" "missing '### Approach'"
   require_heading "$PLAN" '^### Implementation Slices$' "plan implementation slices" "missing '### Implementation Slices'"
   require_heading "$PLAN" '^### AC → Test Mapping$' "plan AC mapping" "missing '### AC → Test Mapping'"
@@ -136,6 +141,18 @@ if [[ -f "$PLAN" ]]; then
   else
     check "plan expected slices value" "fail" "Expected Slices This Round must be 1, 2, or 3+"
   fi
+
+  if grep -qE '^\| Overload Override \| (none|human-approved) \|$' "$PLAN" 2>/dev/null; then
+    check "plan overload override value" "pass"
+  else
+    check "plan overload override value" "fail" "Overload Override must be none or human-approved"
+  fi
+
+  if grep -qE '^\| Planning Depth \| (normal|deepen) \|$' "$PLAN" 2>/dev/null; then
+    check "plan planning depth value" "pass"
+  else
+    check "plan planning depth value" "fail" "Planning Depth must be normal or deepen"
+  fi
 else
   check "plan.md present" "warn" "no active task plan found"
 fi
@@ -148,7 +165,16 @@ if [[ -f "$REVIEW" ]]; then
   require_heading "$REVIEW" '^## Pre-flight' "review pre-flight section" "missing '## Pre-flight'"
   require_heading "$REVIEW" '^### Contract Status$' "review contract status" "missing '### Contract Status'"
   require_heading "$REVIEW" '^- Status: ' "review contract status value" "missing contract status line"
+  require_heading "$REVIEW" '^### Verification Add-ons \(for verify pass\)$' "review verification add-ons section" "missing '### Verification Add-ons (for verify pass)'"
+  require_heading "$REVIEW" '^- Recommended: ' "review verification add-ons value" "missing verification add-ons recommendation line"
+  require_heading "$REVIEW" '^### Plan Quality$' "review plan quality section" "missing '### Plan Quality'"
+  require_heading "$REVIEW" '^- Depth: ' "review plan quality depth" "missing plan quality depth line"
+  require_heading "$REVIEW" '^- Search Adequacy: ' "review plan quality adequacy" "missing search adequacy line"
+  require_heading "$REVIEW" '^### Round Load$' "review round load section" "missing '### Round Load'"
+  require_heading "$REVIEW" '^- Load: ' "review round load value" "missing round load line"
   require_heading "$REVIEW" '^## Verification$' "review verification section" "missing '## Verification'"
+  require_heading "$REVIEW" '^### Activated Add-ons$' "review activated add-ons" "missing '### Activated Add-ons'"
+  require_heading "$REVIEW" '^- Used: ' "review activated add-ons value" "missing activated add-ons used line"
   require_heading "$REVIEW" '^## Findings$' "review findings section" "missing '## Findings'"
   require_heading "$REVIEW" '^### Findings Sidecar$' "review findings sidecar" "missing '### Findings Sidecar'"
   require_heading "$REVIEW" '^- Path: ' "review findings sidecar path" "missing findings sidecar path line"
@@ -158,6 +184,9 @@ if [[ -f "$REVIEW" ]]; then
   require_heading "$REVIEW" '^\| Next Route \|' "review next route row" "missing Next Route row"
   require_heading "$REVIEW" '^\| Human Review Needed \|' "review human review row" "missing Human Review Needed row"
   require_heading "$REVIEW" '^\| Blocking \|' "review blocking row" "missing Blocking row"
+  require_heading "$REVIEW" '^\| Verification Add-ons \|' "review verification add-ons row" "missing Verification Add-ons row"
+  require_heading "$REVIEW" '^\| Plan Quality \|' "review plan quality row" "missing Plan Quality row"
+  require_heading "$REVIEW" '^\| Round Load \|' "review round load row" "missing Round Load row"
   require_heading "$REVIEW" '^## Verdict' "review verdict" "missing '## Verdict'"
 
   if [[ "$review_routing_signals_count" -eq 1 ]]; then

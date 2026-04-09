@@ -36,11 +36,11 @@ Dispatcher chooses or confirms one execution mode per round:
 
 - **Compact** — inline Planner + Builder, self-check only, human provides independent review.
 - **Standard** — separate Planner / Builder / Verifier; Verifier reads only the core files.
-- **Full** — same as Standard, plus optional Verifier add-on files (cross-model / adversarial) when the round warrants them.
+- **Full** — same as Standard, but Dispatcher may activate selected Verifier add-on files (cross-model / adversarial) for the round.
 
 Dispatcher reads `Scope Class`, `Risk Class`, and the forecast rows from `plan.md § Metadata` before confirming `Execution Mode`.
 
-Pass the selected mode explicitly when invoking Verifier: `execution mode: {compact/standard/full}`.
+Pass the selected mode explicitly when invoking Verifier: `execution mode: {compact/standard/full}`. In Full mode, Dispatcher also passes the add-on files selected for the round.
 
 ## Routing Summary
 
@@ -61,8 +61,8 @@ Dispatcher does:
 - Read artifact state and read-only git status
 - Consume Planner's round classification (`Scope Class`, `Risk Class`, forecasts) when confirming `Execution Mode`
 - Route to roles from the artifact-driven state machine
-- Compose Verifier invocations, including optional add-on files
-- Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`
+- Compose Verifier invocations, including selected add-on files from `review.md § Routing Signals` and any explicit human override
+- Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`, including plan-quality guidance, round-load blockers, and recorded overload overrides
 
 Dispatcher does not:
 - Read production source code

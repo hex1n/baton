@@ -123,8 +123,8 @@ flowchart TD
 | Artifact | Location | Lifecycle |
 |----------|----------|-----------|
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
-| `.harness/plan.md` | `.harness/` | Per task — round classification, forecasts, ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
-| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, optional findings-sidecar pointer |
+| `.harness/plan.md` | `.harness/` | Per task — round classification, forecasts, optional `Plan Quality`, ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
+| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, verify-pass add-on selection, plan-quality assessment, round-load assessment, optional findings-sidecar pointer |
 | `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder slice packets, worker reports |
 
 ## Task Classification
@@ -140,9 +140,10 @@ Every active round carries four classification fields in `plan.md § Metadata`:
 
 Keep the layers distinct:
 - `Scope Class` and `Risk Class` classify the work.
-- `Expected Rounds` and `Expected Slices This Round` are forecasts.
+- `Expected Rounds` and `Expected Slices This Round` are forecasts that can trigger round-load warnings and, in overloaded cases, block Builder until the round is split or explicitly overridden.
 - `Verifier Mode` describes the evidence environment.
 - `Execution Mode` is the orchestration choice (`compact / standard / full`).
+- `Planning Depth` describes whether the round needs a deepen pass before Builder starts.
 
 ## Quick Start
 

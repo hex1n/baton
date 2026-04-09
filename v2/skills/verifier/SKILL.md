@@ -20,8 +20,8 @@ You have two jobs:
 |------|--------------|------|
 | `v2/skills/verifier/preflight.md` | `preflight` mode | AC testability, baseline, environment capability, round-contract challenge, pre-flight review output |
 | `v2/skills/verifier/verification.md` | `verify` mode | Tier 1 / 2 / 3a verification, escalation criteria, final review output |
-| `v2/skills/verifier/cross-model.md` | Full mode when Dispatcher explicitly enables it | Read-only cross-model pressure testing |
-| `v2/skills/verifier/adversarial.md` | Full mode on final or security-sensitive rounds | Read-only adversarial checks |
+| `v2/skills/verifier/cross-model.md` | Full mode when Dispatcher explicitly activates it for the round | Read-only cross-model pressure testing |
+| `v2/skills/verifier/adversarial.md` | Full mode when Dispatcher explicitly activates it for the round | Read-only adversarial checks |
 
 ## Execution Order
 
@@ -30,14 +30,17 @@ You have two jobs:
 ```
 If argument is "preflight":
   1. Read `preflight.md`
-  2. In full mode, also read any optional add-on files Dispatcher named
-  3. Write / refresh the pre-flight section in review.md
-  4. Write `§ Routing Signals` for Dispatcher
+  2. In full mode, also read any optional pre-flight add-on files Dispatcher named
+  3. Decide which verify-pass add-ons this round should activate
+  4. Classify the round load as `normal / heavy / overloaded`
+  5. Assess plan quality (`adequate / under-searched`) for the current planning depth
+  6. Write / refresh the pre-flight section in review.md
+  7. Write `§ Routing Signals` for Dispatcher, including `Verification Add-ons`, `Plan Quality`, and `Round Load`
 
 If argument is "verify":
   1. Read `verification.md`
-  2. In full mode, also read any optional add-on files Dispatcher named
-  3. Write / refresh review.md with verification findings
+  2. In full mode, also read any optional add-on files Dispatcher activated for this round
+  3. Write / refresh review.md with verification findings and `Activated Add-ons`
   4. Write `§ Routing Signals` for Dispatcher
 ```
 
@@ -58,3 +61,4 @@ If argument is "verify":
 5. Credit what works. Human review guidance should separate verified areas from judgment calls.
 6. Optional add-on files stay read-only and additive. They can surface more evidence, never apply fixes.
 7. Every review.md must include `§ Routing Signals`. Dispatcher routes from that section, not from prose inference.
+8. Pre-flight must record the verify-pass add-ons, plan-quality judgment, and round-load judgment in `§ Routing Signals` before Builder starts.

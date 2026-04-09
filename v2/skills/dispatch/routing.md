@@ -8,9 +8,10 @@ Structured control-plane fields:
 
 ```text
 plan.md § Metadata         → Scope Class + Risk Class + round forecasts + Verifier/Execution modes
+plan.md § Plan Quality     → planning depth + problem framing + alternatives for the current round
 plan.md § Open Decisions   → explicit human questions + blocking status
-plan.md § Round Contract   → agreed in-scope work + done threshold for the round
-review.md § Routing Signals   → next route + human-review requirement + blocking reason
+plan.md § Round Contract   → agreed in-scope work + done threshold for the round + overload override
+review.md § Routing Signals   → next route + human-review requirement + blocking reason + verify-pass add-ons + plan-quality assessment + round-load assessment
 ```
 
 Scratch files under `.context/baton/active/` are optional tooling aids. Dispatcher never routes from them.
@@ -53,6 +54,7 @@ For a new task or a new round pending:
    → Ask the human if classification and constraints still leave doubt: "compact / standard / full"
 4. Invoke Verifier pre-flight
 5. Read `review.md § Routing Signals`
+   → If `Blocking = overload`, hand off to `checkpoints.md` before Builder can start
 ```
 
 Human approval, structural-trigger messaging, and post-pre-flight routing live in `checkpoints.md`.
@@ -67,8 +69,11 @@ After Builder completes, before invoking Verifier verification:
    → If Builder did not provide mappings, note:
      "⚠️ AC→Test Mapping not updated by Builder"
      in the Verifier invocation context
-2. Invoke Verifier verification
-3. Route from `review.md § Routing Signals`:
+2. Read `review.md § Routing Signals`
+   → Capture `Verification Add-ons`
+3. Invoke Verifier verification
+   → In Full mode, activate only the add-on files listed in `Verification Add-ons`
+4. Route from `review.md § Routing Signals`:
    - `Next Route = builder` → route back to Builder
    - `Next Route = planner` → route to Planner revision, then back through pre-flight
    - `Next Route = human` → hand off to `checkpoints.md`
@@ -89,10 +94,15 @@ Standard mode:
     → Tell Verifier: "execution mode: standard"
 
 Full mode:
-  Same as Standard, but Verifier also reads optional add-on files:
-    - v2/skills/verifier/cross-model.md (Mode C+ / external reviewer available)
-    - v2/skills/verifier/adversarial.md (final round or security-surface ACs)
-    → Tell Verifier: "execution mode: full, modules: [crossmodel, adversarial]"
+  Verifier pre-flight:
+    - invoke with "execution mode: full"
+    - pre-flight records `Verification Add-ons` in review.md
+  Verifier verification:
+    - read `review.md § Routing Signals` → `Verification Add-ons`
+    - activate only the listed add-on files
+      - v2/skills/verifier/cross-model.md
+      - v2/skills/verifier/adversarial.md
+    - tell Verifier: "execution mode: full, modules: [{selected modules}]"
 
 Compact mode:
   Planner + Builder merge into one inline execution:
@@ -104,6 +114,10 @@ Compact mode:
 ```
 
 Each role starts fresh. Pass context through arguments and artifacts, never through conversation history.
+
+Dispatcher reads `Verification Add-ons` literally from `review.md § Routing Signals`. It does not infer add-ons from prose.
+Dispatcher reads `Plan Quality` literally from `review.md § Routing Signals`. It does not infer "under-searched" from narrative text.
+Dispatcher reads `Round Load` and `Blocking = overload` literally from `review.md § Routing Signals`. It does not infer overload from narrative text.
 
 ## Micro-fix Fast Path
 

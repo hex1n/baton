@@ -23,6 +23,20 @@
 ### Recommendation
 {ready / revise / blocked}
 
+### Verification Add-ons (for verify pass)
+- Recommended: `{none / adversarial / cross-model / adversarial,cross-model}`
+- Why: `{brief reason, or "None."}`
+
+### Plan Quality
+- Depth: `{normal / deepen}`
+- Search Adequacy: `{adequate / under-searched}`
+- Why: `{brief reason}`
+
+### Round Load
+- Load: `{normal / heavy / overloaded}`
+- Why: `{brief reason}`
+- Action: `{proceed / warn / split-or-override / proceed-under-override}`
+
 ## Verification
 
 ### Tier 1: Deterministic
@@ -36,6 +50,10 @@
 | AC | Test | Exists | Passes | Verifies AC |
 |----|------|--------|--------|-------------|
 | AC-{N}.1 | {test identifier} | {status} | {status} | {status} |
+
+### Activated Add-ons
+- Used: `{none / adversarial / cross-model / adversarial,cross-model}`
+- Notes: `{what ran, or "Not run yet."}`
 
 ## Findings
 
@@ -73,7 +91,10 @@ Verifier ran in Mode {A / B / C / C+}. Confidence: {high / medium / low}.
 |-----|-------|
 | Next Route | {builder / planner / human / closeout} |
 | Human Review Needed | {yes / no} |
-| Blocking | {none / code-bug / design-issue / requirement-gap / environment / assumption} |
+| Blocking | {none / code-bug / design-issue / requirement-gap / environment / assumption / overload} |
+| Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Plan Quality | {adequate / under-searched} |
+| Round Load | {normal / heavy / overloaded} |
 
 ## Verdict
 {PASS / FAIL / BLOCKED}

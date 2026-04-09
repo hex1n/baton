@@ -70,7 +70,7 @@ If capability was already established in earlier rounds and nothing changed, tru
 
 ## Step 5: Plan Quality Challenge
 
-Read `plan.md § Approach` and `§ Round Contract`, then challenge the plan on five dimensions:
+Read `plan.md § Plan Quality`, `§ Approach`, and `§ Round Contract`, then challenge the plan on six dimensions:
 
 **a) Consistency with existing code**
 
@@ -112,9 +112,28 @@ built-in capability instead. This reduces implementation to 2 files."
 Check whether:
 - Scope In matches the actual ACs
 - Scope Out really excludes adjacent risky work
+- Scope Out does not exclude anything named in `Round Contract → Key Entry Points`
+- Mode C deferrals do not incorrectly remove required structural test work
+- Budget Note exists when the round forecast is intentionally heavy
+- Overload Override stays `none` unless a human exception has already been recorded
 - Done Criteria are observable
 - Verification Plan is realistic for the configured mode
+- Verification Plan matches Done Criteria
 - Exit Threshold is strict enough for the round"
+```
+
+**f) Search adequacy**
+
+```text
+"This plan may be coherent but still under-searched.
+Check whether:
+- the plan solves the real problem, not just the user's stated solution
+- `Planning Depth` is appropriate for the round
+- deepen rounds actually list load-bearing assumptions
+- constraints are separated from conventions
+- alternatives are meaningfully different, or the single-path justification is credible
+- the stated failure mode is real rather than ceremonial
+- a clearly smaller / simpler approach was skipped without explanation"
 ```
 
 Challenge rules:
@@ -123,7 +142,102 @@ Challenge rules:
 - max 5 challenges per pre-flight
 - if the plan is solid, say so explicitly
 
-## Step 6: Output Pre-flight Section in `review.md`
+## Step 6: Plan Quality Assessment
+
+Assess whether the plan has been searched deeply enough for the declared planning depth:
+
+```text
+adequate:
+  - normal-depth round with a narrow solution space
+  - or deepen round with a credible problem statement, assumptions, alternatives, and failure mode
+
+under-searched:
+  - deepen-triggered round still uses `Planning Depth = normal`
+  - or the problem statement still describes a solution rather than an outcome
+  - or alternatives are missing / trivial when real alternatives exist
+  - or the plan clearly skipped a simpler path without explaining why
+  - or the failure mode / assumptions block is missing or non-informative
+```
+
+If the plan is coherent but under-searched:
+
+```text
+- keep `Contract Status` about coherence
+- set `Plan Quality = under-searched`
+- recommend a deepen pass before Builder starts
+- keep `Next Route = human` so Dispatcher can offer `deepen`
+```
+
+## Step 7: Verification Add-on Recommendation
+
+Recommend verify-pass add-ons for the current round:
+
+```text
+Recommend `adversarial` if any of:
+  - Risk Class = R3
+  - Scope Class = S4
+  - Verifier Mode = C/C+
+  - ACs or Round Contract involve:
+      shared-state mutation
+      transaction boundaries
+      concurrency or locking
+      idempotency chains
+      delete-and-rebuild flows
+      irreversible side effects
+
+Recommend `cross-model` only if:
+  - project-profile.md enables an external reviewer
+  - and at least one of:
+      the human explicitly asked for cross-model review
+      the round is both high-risk and final
+      confidence remains degraded after the core challenge
+
+Otherwise recommend `none`.
+```
+
+Record the result in `review.md` for the verify pass. The recommendation must be structured and brief.
+
+## Step 8: Round Load Assessment
+
+Classify the round load from the current round metadata, verifier pressure, and exploration uncertainty:
+
+```text
+normal:
+  - round should fit one Builder pass and one verification pass
+  - no unusual coordination pressure detected
+
+heavy:
+  - at least one notable load signal exists
+  - but the overload condition below is not met
+
+overloaded:
+  - Expected Slices This Round = 3+
+  - and verifier pressure is elevated:
+      Verifier Mode = C/C+
+      or recommended Verification Add-ons != none
+  - and uncertainty / blast radius is elevated:
+      Scope Class = S4
+      or Risk Class = R3
+      or Exploration Boundary contains ⚠️ GAP
+```
+
+Blocking rule:
+
+```text
+If Round Load = overloaded and plan.md § Round Contract → Overload Override != human-approved:
+  - keep Contract Status about plan quality, not size
+  - set Recommendation to "Split the round or record a human-approved overload override."
+  - write `Blocking = overload`
+  - write `Round Load = overloaded`
+
+If Round Load = overloaded and Overload Override = human-approved:
+  - keep `Round Load = overloaded`
+  - set `Blocking = none`
+  - set Action to `proceed-under-override`
+  - state clearly that the round proceeds only under recorded human override
+```
+
+## Step 9: Output Pre-flight Section in `review.md`
 
 ```markdown
 ## Pre-flight
@@ -154,12 +268,29 @@ Challenge rules:
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
 
+### Verification Add-ons (for verify pass)
+- Recommended: {none / adversarial / cross-model / adversarial,cross-model}
+- Why: {brief reason}
+
+### Plan Quality
+- Depth: {normal / deepen}
+- Search Adequacy: {adequate / under-searched}
+- Why: {brief reason}
+
+### Round Load
+- Load: {normal / heavy / overloaded}
+- Why: {brief reason}
+- Action: {proceed / warn / split-or-override / proceed-under-override}
+
 ## Routing Signals
 | Key | Value |
 |-----|-------|
 | Next Route | human |
 | Human Review Needed | yes |
-| Blocking | {none / assumption / environment} |
+| Blocking | {none / assumption / environment / overload} |
+| Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Plan Quality | {adequate / under-searched} |
+| Round Load | {normal / heavy / overloaded} |
 ```
 
 ## Lightweight Pre-flight (Small Tasks)
@@ -173,6 +304,8 @@ ACs: {N} total, all testable ✅
 Baseline: {test count or N/A}
 Mode: {A/B/C}
 Challenges: {none / 1-2 bullet points}
+Plan Quality: {adequate / under-searched}
+Round Load: {normal / heavy / overloaded}
 Contract Status: {agreed / revise}
 Recommendation: Ready for implementation.
 ```

@@ -123,8 +123,8 @@ flowchart TD
 | 制品 | 位置 | 生命周期 |
 |------|------|----------|
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
-| `.harness/plan.md` | `.harness/` | 每任务 — 轮次分类、预测、AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
-| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`，以及可选的 findings-sidecar 指针 |
+| `.harness/plan.md` | `.harness/` | 每任务 — 轮次分类、预测、可选的 `Plan Quality`、AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
+| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`、verify-pass add-on 选择、plan-quality 评估、round-load 评估，以及可选的 findings-sidecar 指针 |
 | `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记、Builder slice packet、worker report |
 
 ## 任务分类
@@ -140,9 +140,10 @@ flowchart TD
 
 这几个层级不要混用：
 - `Scope Class` 和 `Risk Class` 是分类。
-- `Expected Rounds` 和 `Expected Slices This Round` 是预测。
+- `Expected Rounds` 和 `Expected Slices This Round` 是预测；它们会触发 round-load 提示，而在真正 overloaded 的情况下会阻断 Builder，直到拆 round 或显式 override。
 - `Verifier Mode` 表示证据环境。
 - `Execution Mode` 表示编排方式（`compact / standard / full`）。
+- `Planning Depth` 表示这轮在进 Builder 前是否需要额外的 deepen 规划搜索。
 
 ## 快速开始
 

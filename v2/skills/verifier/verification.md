@@ -92,7 +92,31 @@ For 1-2 high-risk ACs:
    flag the test as weak and route it back to Builder
 ```
 
-## Step 5: Output `review.md`
+## Step 5: Verifier Add-on Passes (Full mode only)
+
+If Dispatcher activated add-ons for this round:
+
+```text
+1. Read the activated add-ons from the Verifier invocation context
+2. Run only those add-on files
+3. Merge their output into `review.md`
+4. Tag findings by source where helpful:
+   - [adversarial]
+   - [cross-model, confirmed]
+   - [cross-model, unverified]
+5. Record the actual set in:
+   ### Activated Add-ons
+```
+
+If no add-ons were activated, record:
+
+```text
+### Activated Add-ons
+- Used: none
+- Notes: None.
+```
+
+## Step 6: Output `review.md`
 
 ```markdown
 # Review: Round {N}
@@ -120,6 +144,10 @@ For 1-2 high-risk ACs:
 |----|------|--------|--------|-------------|
 | AC-{N}.1 | {test identifier} | ✅ | ✅ | ✅ |
 | AC-{N}.2 | {test identifier} | ✅ | ✅ | ⚠️ weak assertion |
+
+### Activated Add-ons
+- Used: {none / adversarial / cross-model / adversarial,cross-model}
+- Notes: {what ran}
 
 ## Findings
 
@@ -156,7 +184,9 @@ Verifier ran in Mode {A/B/C}. Confidence: {high/medium/low}.
 |-----|-------|
 | Next Route | {builder / planner / human / closeout} |
 | Human Review Needed | {yes / no} |
-| Blocking | {none / code-bug / design-issue / requirement-gap / environment} |
+| Blocking | {none / code-bug / design-issue / requirement-gap / environment / overload} |
+| Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Round Load | {normal / heavy / overloaded} |
 ```
 
 If you produced non-trivial findings, also write a normalized JSON sidecar at:

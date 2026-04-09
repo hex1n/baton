@@ -26,6 +26,8 @@ Based on the task description:
 
 Record what you read in `plan.md § Context`. **Cite specific files and line numbers.** If you did not read a file, do not make claims about it.
 
+If a file or module is a load-bearing technical entry point for the round, carry it forward into `plan.md § Round Contract → Key Entry Points` so Verifier and validators can check that `Scope Out` does not accidentally exclude it.
+
 Then declare the exploration boundary in `plan.md § Context`:
 
 ```
@@ -101,6 +103,32 @@ Rules:
 - forecasts should be honest and coarse; `3+` is better than fake precision
 - these fields explain `Execution Mode`; they do not replace it
 
+### Step 5b: Choose planning depth
+
+Set `plan.md § Plan Quality → Planning Depth`:
+
+```text
+normal:
+  - the problem is well-understood
+  - the solution space is narrow
+  - no substantial architectural search is needed
+
+deepen:
+  - Scope Class = S3/S4
+  - or Risk Class = R2/R3
+  - or the round changes protocol / validators / control-plane behavior
+  - or the user stated a solution rather than a problem
+  - or multiple viable approaches obviously exist
+```
+
+If `Planning Depth = deepen`, write a compact first-principles block in `§ Plan Quality`:
+
+- `Problem Statement` — state the outcome problem without solution wording where possible
+- `Load-Bearing Assumptions` — list the 1-3 assumptions that would collapse the plan if false
+- `Constraints vs Conventions` — separate what is truly fixed from what is inherited but changeable
+- `Alternatives Considered` — compare at least two meaningfully different approaches, or explain why only one path is viable
+- `Failure Mode` — state how the recommendation is most likely to fail
+
 ### Step 6: Design candidate approaches
 
 Take the clearest feature block(s) for the current round. Do not over-plan what is still fuzzy.
@@ -109,6 +137,8 @@ Generate multiple approaches only when:
 - there are genuine architectural alternatives
 - trade-offs materially differ
 - the right answer depends on business context the Planner cannot determine alone
+
+If `Planning Depth = deepen`, "multiple approaches" means different mechanisms or responsibility allocations, not small parameter tweaks.
 
 For each candidate approach, evaluate:
 
@@ -148,6 +178,8 @@ OD-{N}.X | Which approach should this round take? |
 
 If only one viable approach exists, record `None.` as resolved in `§ Open Decisions`.
 
+If `Planning Depth = deepen` and only one approach is viable, record why the alternatives are not viable in `§ Plan Quality → Alternatives Considered`.
+
 ### Step 8: Write ACs, round contract, and implementation slices
 
 For the chosen approach, write:
@@ -166,6 +198,7 @@ Approach:
 
 Round Contract:
   Scope In / Scope Out
+  Key Entry Points
   Done Criteria
   Verification Plan
   Exit Threshold
@@ -194,7 +227,7 @@ Not this round: {what is explicitly deferred}
 
 ### Step 10: Write `plan.md`
 
-Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices`.
+Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices`. When the round depends on a facade, controller, orchestrator, adapter, or other load-bearing entry point, list it explicitly in `Key Entry Points` instead of leaving that constraint implicit in prose.
 
 ## Round N (Next Round)
 

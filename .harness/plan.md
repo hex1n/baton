@@ -144,6 +144,17 @@
 - When: this round is complete
 - Then: `.harness/review-round-11.md` preserves the previous review, `.harness/plan.md` and `.harness/review.md` align on Round 12, and all validators pass
 
+### Plan Quality
+
+| Key | Value |
+|-----|-------|
+| Planning Depth | deepen |
+| Problem Statement | Baton could produce coherent, testable plans without proving that the search behind those plans was deep enough, which let first-viable solutions pass as if they were best-known solutions. |
+| Load-Bearing Assumptions | A compact control-plane section is enough to carry higher-quality search; Verifier can judge under-searched plans without becoming a second planner; Dispatcher can route deepen without adding a new public role. |
+| Constraints vs Conventions | True constraints: `plan.md` must stay artifact-first and compact, Dispatcher remains the only human-facing role, Builder still starts only after approval. Conventions: `revise` currently bundles coherence fixes and deeper thinking, and approach evaluation is only weakly enforced. |
+| Alternatives Considered | A) strengthen `revise` only and keep plan quality implicit; B) add explicit `deepen` route plus a small `Plan Quality` block and pre-flight search-adequacy check. Recommendation: B because it creates a mechanical state for under-searched plans instead of hiding them in prose. |
+| Failure Mode | Humans may continue pressing `approve`, which would leave `deepen` underused even though the new path exists. |
+
 ### Open Decisions
 
 | ID | Question | Options | Status | Blocking |
@@ -155,10 +166,13 @@
 | Key | Value |
 |-----|-------|
 | Scope In | Add scope/risk classification plus round forecasts to Baton's control plane, protocol, planner/dispatcher guidance, validators, projection docs, and live artifacts |
+| Key Entry Points | `v2/protocol.md`; `v2/tools/check-consistency.sh`; `v2/tools/validate-live-state.sh`; `.harness/plan.md` |
 | Scope Out | Renaming `Round`, creating a single total task level, or revisiting Builder slice terminology |
 | Done Criteria | Templates, protocol, Planner, Dispatcher, validators, README, CLAUDE, and live artifacts all use the same classification model and validate cleanly |
-| Verification Plan | Run contract tests, consistency checks, live-state validation, and round-sync validation after updating the live plan/review pair |
-| Exit Threshold | `v2/tests/run.sh`, `check-consistency.sh`, `validate-live-state.sh`, and `validate-round-sync.sh` all pass with the live task on Round 12 |
+| Verification Plan | Run contract tests, consistency checks, live-state validation, round-contract lint, and round-sync validation after updating the live plan/review pair |
+| Budget Note | None. |
+| Overload Override | none |
+| Exit Threshold | `v2/tests/run.sh`, `check-consistency.sh`, `validate-live-state.sh`, `validate-round-contract.sh`, and `validate-round-sync.sh` all pass with the live task on Round 12 |
 | Deferred Items | Consider richer review-sidecar classification only if the new plan metadata still leaves routing ambiguity |
 
 ### Approach
@@ -193,7 +207,7 @@ Slice 3: advance the live control plane
 |----|----------------|--------|
 | AC-12.1 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md .harness/plan.md` | ✅ |
 | AC-12.2 | `rg -n 'Task Classification|Execution Mode.*orchestration|Scope Class|Risk Class' v2/protocol.md v2/skills/planner v2/skills/dispatch` | ✅ |
-| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh` | ✅ |
+| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-contract.sh` | ✅ |
 | AC-12.4 | `bash v2/tools/validate-round-sync.sh && test -f .harness/review-round-11.md` | ✅ |
 
 ### Commit Checkpoints

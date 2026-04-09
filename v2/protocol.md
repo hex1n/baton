@@ -25,7 +25,7 @@ This file is the single source of truth for all protocol rules. Other files deri
 
 **When adding or changing a rule:** update protocol.md first, then propagate to the files above. If a downstream file contradicts protocol.md, protocol.md wins.
 
-**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, companion files, projection-layer rules, language neutrality, and Baton's contract tests.
+**Verify consistency:** run `bash v2/tools/check-consistency.sh` after protocol changes. It checks execution modes, verifier modes, companion files, projection-layer rules, live round-contract linting, language neutrality, and Baton's contract tests.
 
 ## Repository Layers
 
@@ -82,7 +82,48 @@ These fields explain the round. They do not replace `Verifier Mode` or `Executio
 
 ### Forecast Fields
 
-`Expected Rounds` and `Expected Slices This Round` are forecasts, not gates. They help humans and Dispatcher reason about likely shape and cost, but do not override the actual artifact state.
+`Expected Rounds` and `Expected Slices This Round` are forecasts, not task labels. They help humans and Dispatcher reason about likely shape and cost, but do not override the actual artifact state. Forecasts still feed the round-load guard, because overload is a coordination failure mode, not a replacement for `Execution Mode`.
+
+If `Expected Slices This Round = 3+` on a `Full`-mode round or a round classified `S4` / `R3`, Planner must justify the single-round budget in `plan.md § Round Contract → Budget Note` and leave `Overload Override = none` unless a human-approved exception is already recorded.
+
+### Planning Depth
+
+Planner must classify whether the round needs normal planning or a deepen pass.
+
+| Depth | Meaning |
+|-------|---------|
+| `normal` | Problem is well-understood, solution space is narrow, and the round does not need substantial search before Builder starts |
+| `deepen` | The round needs stronger first-principles search before implementation because the framing or solution space is still load-bearing |
+
+Default deepen triggers:
+
+- `Scope Class = S3/S4`
+- `Risk Class = R2/R3`
+- the round changes protocol / validators / control-plane behavior
+- the user stated a solution more clearly than the underlying problem
+- multiple viable approaches obviously exist
+
+`Planning Depth` is not an execution mode. It controls how much search Baton requires before Builder starts. On deepen rounds, Planner must fill `plan.md § Plan Quality`, Verifier must assess search adequacy during pre-flight, and Dispatcher must support a `deepen` route before Builder starts.
+
+### Round Load Guard
+
+Verifier pre-flight must classify each round as `normal`, `heavy`, or `overloaded` and record the result in `review.md § Pre-flight` and `review.md § Routing Signals`.
+
+Default classification:
+
+- `normal` — the round should fit one Builder pass and one verification pass without unusual coordination pressure
+- `heavy` — notable load exists, but the overload condition below is not met
+- `overloaded` — all of:
+  - `Expected Slices This Round = 3+`
+  - verifier pressure is elevated: `Verifier Mode = C/C+` or selected `Verification Add-ons != none`
+  - uncertainty or blast radius is elevated: `Scope Class = S4`, `Risk Class = R3`, or `plan.md § Exploration Boundary` contains `⚠️ GAP`
+
+If `Round Load = heavy`, Dispatcher must surface a budget warning at approval.
+
+If `Round Load = overloaded` and `plan.md § Round Contract → Overload Override != human-approved`, Dispatcher must not start Builder. The human must either:
+
+1. ask Planner to split / reduce the round, then re-run pre-flight
+2. explicitly approve the single-round exception, have Planner record `Overload Override = human-approved` and refresh `Budget Note`, then re-run pre-flight before Builder starts
 
 ### Default Execution-Mode Mapping
 
@@ -94,7 +135,7 @@ Dispatcher chooses `Execution Mode` after Planner writes the round classificatio
 | `S2` or `S3`, with `R1` or `R2` | Standard |
 | `S4`, `R3`, or `Verifier Mode C/C+` | Full |
 
-`Execution Mode` is an orchestration decision derived from classification, verifier capability, and human preference. `Verifier Mode` remains the evidence environment; it is not a task size label.
+`Execution Mode` is an orchestration decision derived from classification, verifier capability, and human preference. `Verifier Mode` remains the evidence environment; it is not a task size label. In `Full` mode, the Verifier add-on envelope is available, but the specific add-ons activated for the round are selected during pre-flight and recorded in `review.md § Routing Signals`. `Round Load` is a separate admission-control judgment, not a fourth execution mode.
 
 ## Execution Modes
 
@@ -141,11 +182,11 @@ Dispatcher (main conversation)
 
 ### Full Mode (complex, high-risk, or degraded-evidence rounds)
 
-Same as Standard, but Verifier runs **all add-on files** — cross-model review, adversarial testing, structural triggers. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
+Same as Standard, but Dispatcher may activate **selected add-on files** for the round — cross-model review, adversarial testing, or other protocol-defined Verifier add-ons. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
 - **Full context isolation** — same as Standard
-- **Verifier runs all add-on files** — maximum verification depth
+- **Verifier runs selected add-on files** — deeper verification when the round warrants it
 - **Higher cost** — Verifier reads full SKILL.md, may invoke external reviewer
-- **Verifier add-ons:** `[core]` + all add-on steps
+- **Verifier add-ons:** `[core]` + selected add-on steps
 
 **When to use which mode:**
 
@@ -216,10 +257,10 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** .harness/
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
-- **Contains:** task metadata, round classification + forecasts, round-by-round acceptance criteria, `§ Round Contract`, approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
+- **Contains:** task metadata, round classification + forecasts, round-by-round acceptance criteria, `§ Plan Quality`, `§ Round Contract` (including budget rationale and any overload override), approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
 - **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatcher reads this section literally instead of inferring questions from narrative text.
-- **Structured round field:** `§ Round Contract` is the explicit agreement for what this round delivers, what stays out of scope, how Verifier should check it, and what threshold counts as done.
+- **Structured round field:** `§ Round Contract` is the explicit agreement for what this round delivers, what stays out of scope, which key entry points must remain in scope, how Verifier should check it, and what threshold counts as done.
 - **Compression:** Planner compresses at the START of each new round (not end of previous), so Verifier has full info during verification. Compression rules per section:
   - § Round History: summary + key decisions + unresolved discoveries (not just one-line)
   - § Context: only keep entries relevant to current/future rounds
@@ -236,10 +277,10 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** .harness/
 - **Maintained by:** Verifier (writes), Dispatcher (archives)
-- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals`, and an optional findings-sidecar pointer
+- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals` (including verify-pass add-on selection, plan-quality assessment, and round-load assessment), and an optional findings-sidecar pointer
 - **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatcher copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
 - **Round tag:** review.md header must include `# Review: Round {N}` so Dispatcher can compare against plan.md's current round
-- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`) and whether human review is required.
+- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`), whether human review is required, which verify-pass add-ons to activate, whether the plan is `adequate / under-searched`, and whether the round is `normal / heavy / overloaded`.
 
 ### .context/baton/ — scratch state, non-canonical
 
@@ -257,16 +298,22 @@ Every task is a sequence of rounds. Simple tasks complete in one round. Complex 
 ```
 Round N:
   1. Planner    → writes/updates plan.md with this round's metadata classification,
-                    forecasts, and ACs
+                    forecasts, ACs, and planning depth
+                    + `§ Plan Quality` when the round needs deeper search
                     + `§ Open Decisions`
                     + `§ Round Contract`
                     + `§ Implementation Slices`
-  2. Verifier      → pre-flight (testability + baseline + round-contract challenge)
+  2. Verifier   → pre-flight (testability + baseline + round-contract challenge)
+                    + plan-quality / search-adequacy assessment
+                    + verify-pass add-on recommendation
+                    + round-load assessment (`normal / heavy / overloaded`)
                     + contract agreement / revision
                     + `§ Routing Signals`
-  3. Human      → resolves Open Decisions, then approves the round contract (or asks revision)
+  3. Human      → resolves Open Decisions, then approves / deepens / revises / splits the round
+                    or records a single-round overload override before Builder starts
   4. Builder    → implements code + tests in slices
-  5. Verifier      → verification (Tier 1 → Tier 2 → Tier 3)
+  5. Verifier   → verification (Tier 1 → Tier 2 → Tier 3)
+                    + selected add-on passes when activated
                     + `§ Routing Signals`
   6. Resolution → Dispatcher routes from review.md § Routing Signals
   7. Completion → optional human tag / checkpoint after the round is accepted
@@ -294,7 +341,7 @@ Only at decision points. Never for status updates. Planner and Verifier write st
 
 | When | What human sees | AskUserQuestion options |
 |------|----------------|------------------------|
-| After Planner + Verifier pre-flight | plan.md § Open Decisions + § Round Contract + pre-flight challenges | resolve decisions, then approve / revise / reject |
+| After Planner + Verifier pre-flight | plan.md § Open Decisions + § Plan Quality + § Round Contract + pre-flight challenges + verify-pass add-ons + plan-quality assessment + round-load assessment | resolve decisions, then approve / deepen / split / override / revise / reject |
 | After Round completion | review.md § Human Judgment + § Routing Signals | continue / change scope / close out |
 | Migration generated | Migration / schema change script | approve / reject |
 | 3x Builder ⇄ Verifier without resolution | Failure history | change approach / change scope / abandon task |
@@ -442,7 +489,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 1. plan.md is the single source of truth for what's being built
 2. Builder is the only public role that modifies source code or tests. Planner, Dispatcher, Verifier, and Verifier add-on files are read-only with respect to the codebase. Internal Builder workers may assist only under Builder control and never own canonical writes.
 3. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
-4. Human approval required before Builder starts each round
+4. Human approval required before Builder starts each round. If pre-flight marks the round `overloaded`, Builder stays blocked until Planner revises the round or records a human-approved overload override in `plan.md`
 5. Max 3 Builder ⇄ Verifier iterations per round before escalation
 6. In Standard/Full mode, each role starts with a fresh context; files carry state, not conversation. In Compact mode, Planner+Builder merge and Verifier is replaced by self-check + human review.
 7. Dispatcher determines execution mode (Compact/Standard/Full) at task start; human can override

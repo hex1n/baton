@@ -32,16 +32,17 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It reinforc
 | Artifact | Location | Owner | Lifecycle |
 |----------|----------|-------|-----------|
 | `project-profile.md` | project root | Human (Planner generates draft) | Persistent across tasks |
-| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries round classification, forecasts, `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` |
-| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals` |
+| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries round classification, forecasts, optional `§ Plan Quality`, `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` |
+| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals`, verify-pass add-on selection, plan-quality assessment, and round-load assessment |
 | `.context/baton/active/` | `.context/` | Builder / Verifier scratch helpers | Non-canonical scratch only; includes findings sidecars and optional slice delegation state |
 
 ## Task Classification
 
 - `Scope Class` / `Risk Class` live in `plan.md § Metadata` and classify the current round.
-- `Expected Rounds` / `Expected Slices This Round` are forecasts, not gates.
+- `Expected Rounds` / `Expected Slices This Round` are forecasts; they can still trigger round-load warnings or overload checks.
 - `Verifier Mode` describes evidence strength.
 - `Execution Mode` is the orchestration choice that Dispatcher confirms from the classification.
+- Complex rounds may use `Planning Depth = deepen` in `plan.md § Plan Quality` so Dispatcher can route a deeper planning pass before Builder starts.
 
 ## Quick Start
 

@@ -74,6 +74,19 @@
 - When: {action}
 - Then: {expected outcome}
 
+### Plan Quality
+
+> Required on `Planning Depth = deepen`. On normal rounds, keep this section brief but explicit.
+
+| Key | Value |
+|-----|-------|
+| Planning Depth | {`normal` / `deepen`} |
+| Problem Statement | {outcome-focused problem, or `Normal-depth round.`} |
+| Load-Bearing Assumptions | {1-3 assumptions, or `None.`} |
+| Constraints vs Conventions | {true constraints vs inherited conventions, or `None.`} |
+| Alternatives Considered | {Approach A / Approach B / single viable path because ...} |
+| Failure Mode | {most likely failure mode, or `None.`} |
+
 ### Approach Evaluation
 
 > If only one viable approach, skip this section and write directly in § Approach.
@@ -119,9 +132,12 @@
 | Key | Value |
 |-----|-------|
 | Scope In | {what this round will deliver} |
+| Key Entry Points | {semicolon-separated critical files/modules that must remain in scope, or `None.`} |
 | Scope Out | {what is explicitly deferred} |
 | Done Criteria | {what must be true for the round to count as done} |
 | Verification Plan | {how Verifier should validate the round} |
+| Budget Note | {why this round should stay single-round, or `None.`} |
+| Overload Override | {`none` / `human-approved`} |
 | Exit Threshold | {e.g., all ACs pass + no blocking findings} |
 | Deferred Items | {follow-up items, or `None.`} |
 
