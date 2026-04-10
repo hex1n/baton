@@ -19,7 +19,7 @@ Read `v2/protocol.md` for the full protocol and `CONTRIBUTING.md` for repository
 | Skill | Purpose |
 |-------|---------|
 | `/dispatch` | Entry point. Detects state, routes to the right role. |
-| `/planner` | Understands codebase, clarifies requirements, designs approach → `plan.md` |
+| `/planner` | Understands codebase, clarifies requirements, designs approach → `design.md` + `plan.md` |
 | `/builder` | Implements code + tests in slices → source code, tests; optional internal worker delegation stays behind Builder |
 | `/verifier` | Pre-flight (challenge plan) + Verification (check implementation) → `review.md` |
 
@@ -32,8 +32,9 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It reinforc
 | Artifact | Location | Owner | Lifecycle |
 |----------|----------|-------|-----------|
 | `project-profile.md` | project root | Human (Planner generates draft) | Persistent across tasks |
-| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; carries round classification, forecasts, optional `§ Plan Quality`, `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` |
-| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals`, verify-pass add-on selection, plan-quality assessment, and round-load assessment |
+| `design.md` | `.harness/` | Planner | Per task, archived on completion; primary human-readable planning artifact with a minimum Baton-compatible section contract |
+| `plan.md` | `.harness/` | Planner + Builder (§ Discoveries) | Per task, archived on completion; Baton control-plane projection of `design.md`, carrying round classification, forecasts, `§ Plan Quality`, `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices` |
+| `review.md` | `.harness/` | Verifier | Per round, overwritten; carries `§ Routing Signals`, design-review add-on selection, pre-flight triage, verify-pass add-on selection, plan-quality assessment, confidence calibration, and round-load assessment |
 | `.context/baton/active/` | `.context/` | Builder / Verifier scratch helpers | Non-canonical scratch only; includes findings sidecars and optional slice delegation state |
 
 ## Task Classification
@@ -43,12 +44,15 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It reinforc
 - `Verifier Mode` describes evidence strength.
 - `Execution Mode` is the orchestration choice that Dispatcher confirms from the classification.
 - Complex rounds may use `Planning Depth = deepen` in `plan.md § Plan Quality` so Dispatcher can route a deeper planning pass before Builder starts.
+- Every round should declare `Recommendation Confidence`; Verifier records whether that confidence is calibrated before Builder starts.
+- Planner default engine policy: feature/design/change rounds use `brainstorming + writing-plans`; bug/incident/regression rounds use `systematic-debugging`.
+- In `full` mode, Verifier pre-flight may run design-stage review add-ons before human approval; `review.md § Routing Signals` then records whether Baton should auto-revise or stop for a human checkpoint.
 
 ## Quick Start
 
 1. `/dispatch` — starts a new task or recovers an existing one
 2. First time? Dispatcher invokes Planner to generate `project-profile.md`
-3. Describe your task → Planner creates `plan.md` Round 1
+3. Describe your task → Planner creates `design.md`, then projects `plan.md` Round 1
 4. Verifier pre-flight → you approve → Builder implements → Verifier verifies
 5. Repeat rounds until closeout
 
@@ -63,7 +67,7 @@ Optional companion bootstrap lives at `skills/using-baton/SKILL.md`. It reinforc
 
 ## Core Rules
 
-1. `plan.md` is the single source of truth for what's being built
+1. `plan.md` is the single source of truth for Baton execution and routing in the active task
 2. Builder is the only public role that modifies source code or tests; internal workers stay behind Builder
 3. Verifier never reads Builder's source code during verification (Mode A/B; see protocol.md § Independence Rule)
 4. Human approval required before Builder starts each round

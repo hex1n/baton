@@ -25,6 +25,7 @@ Thin orchestration entry point. Detect artifact state, select the next role, sur
    - .harness/plan.md
    - .harness/review.md
    - git status / log (read-only)
+   - `.harness/design.md` is intentionally excluded from routing reads; Planner and Verifier use it, Dispatcher does not
 2. Execute `routing.md` to classify the current task state.
 3. If the state requires a human decision, execute `checkpoints.md`.
 4. Invoke Planner / Builder / Verifier according to the companion-file outputs.
@@ -62,7 +63,7 @@ Dispatcher does:
 - Consume Planner's round classification (`Scope Class`, `Risk Class`, forecasts) when confirming `Execution Mode`
 - Route to roles from the artifact-driven state machine
 - Compose Verifier invocations, including selected add-on files from `review.md § Routing Signals` and any explicit human override
-- Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`, including plan-quality guidance, round-load blockers, and recorded overload overrides
+- Present structured checkpoints from `plan.md § Open Decisions`, `plan.md § Round Contract`, and `review.md § Routing Signals`, including design-stage triage, plan-quality guidance, confidence-calibration guidance, round-load blockers, and recorded overload overrides
 
 Dispatcher does not:
 - Read production source code
@@ -79,4 +80,5 @@ Dispatcher does not:
 3. Dispatcher does not invent `Scope Class` or `Risk Class`; Planner owns those fields and Dispatcher consumes them.
 4. Dispatcher never mutates source code or tests; even inline micro-fixes must follow Builder instructions.
 5. Structural triggers inform or block according to protocol rules, but Dispatcher does not reinterpret technical content.
-6. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatcher.
+6. Dispatcher may auto-route a bounded Planner revision when pre-flight triage says `auto-revise`; it still does not reinterpret the technical findings.
+7. Keep tool-specific mechanics inside companion files. If a new responsibility does not fit the contract above, it probably should not live in Dispatcher.

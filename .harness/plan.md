@@ -1,15 +1,17 @@
 # Plan: Baton Protocol Refinement
 
+> Baton control-plane projection of `.harness/design.md`. Keep this file concise and structured for routing, approval, and recovery.
+
 ## Metadata
 
 | Key | Value |
 |-----|-------|
 | Name | Baton Protocol Refinement |
-| Description | Continue refining Baton's protocol, control-plane artifacts, naming, task hierarchy, and round classification model |
+| Description | Continue refining Baton with design-stage review add-ons and pre-flight triage before Builder admission |
 | Started | 2026-04-08 |
-| Round | 12 |
+| Round | 14 |
 | Verifier Mode | C |
-| Execution Mode | standard |
+| Execution Mode | full |
 | Scope Class | S3 |
 | Risk Class | R2 |
 | Expected Rounds | 1 |
@@ -17,220 +19,213 @@
 
 ## Context
 
-- Round 11 completed the hierarchy cleanup around `task -> round -> round contract -> slice`, and live artifacts already use `Round Contract` plus `Implementation Slices`.
-- Baton now distinguishes task structure cleanly, but it still lacks explicit task classification in the control plane. `Execution Mode` and `Verifier Mode` exist, yet they do not directly express scope, risk, or forecast.
-- The desired change is not a single total level. Baton should keep multi-axis classification so a round can be small-but-risky or large-but-low-risk without collapsing that nuance.
-- The new fields belong in `plan.md § Metadata`, because Planner owns the round shape, Dispatcher consumes it, and Verifier must challenge the resulting round contract instead of guessing complexity from prose.
-- Archived review snapshots remain frozen. Only the active control plane and forward projections should adopt the new classification model.
+- `v2/protocol.md`: Round 13 already established `design.md` as the planning artifact and made Superpowers semantics the default Planner engine policy, but it deferred design-stage adversarial / cross-model review orchestration to the next round.
+- `v2/templates/review.template.md`: pre-flight still recorded only verify-pass add-ons, so Baton had no canonical slot for design-stage add-ons or triage.
+- `v2/skills/dispatch/checkpoints.md` + `v2/skills/dispatch/routing.md`: Dispatcher could not distinguish "structural design fix before approval" from "human checkpoint before approval".
+- `v2/skills/verifier/adversarial.md` + `v2/skills/verifier/cross-model.md`: both guides still leaned toward verification-phase review and lacked design-stage triage semantics.
+- `v2/tools/validate-live-state.sh`, `v2/tools/validate-round-contract.sh`, `v2/tools/check-consistency.sh`, and contract tests must all enforce the new control-plane fields or Baton will drift back to prose-only routing.
+- `.harness/review-round-13.md`: Round 13 review is archived before making Round 14 active.
 
 ### Exploration Boundary
 
 | Explored | Not explored | Reason |
 |----------|-------------|--------|
-| `v2/templates/plan.template.md` | | add the new classification and forecast metadata fields |
-| `v2/protocol.md` | | define the classification model and the default execution-mode mapping |
-| `v2/skills/planner/SKILL.md` | | Planner must be required to fill the new metadata |
-| `v2/skills/planner/planning.md` | | planning flow must classify the round before locking the contract |
-| `v2/skills/planner/revision.md` | | revisions may need to update classification if the round shape changes |
-| `v2/skills/dispatch/SKILL.md` | | Dispatcher must consume, not invent, classification |
-| `v2/skills/dispatch/routing.md` | | routing rules must derive execution mode from classification |
-| `v2/tools/validate-live-state.sh` | | live-state validation must require the new metadata fields |
-| `v2/tests/contracts/02-artifact-contracts.sh` | | artifact contract tests must pin the new metadata fields and protocol section |
-| `v2/tools/check-consistency.sh` | | consistency checks must project the classification model into templates and README |
-| `README.md` | | English projection layer must explain classification, forecast, verifier mode, and execution mode |
-| `README.zh-CN.md` | | Chinese projection layer must explain the same model |
-| `CLAUDE.md` | | root quick reference must project the new classification layer |
-| `v2/CLAUDE.md` | | v2 quick reference must project the new classification layer |
-| `.harness/plan.md` | | live plan must carry the new metadata and Round 12 contract |
-| `.harness/review.md` | | live review must evaluate the classification change and stay round-aligned |
-| | `v2/skills/builder/*` | builder delegation is already on `slice`; this round is about classification, not implementation-unit naming |
-| | `v2/tools/external-review.sh` | provider-neutral review adapter is unaffected by classification fields |
+| `v2/protocol.md` | | confirm design-stage review add-ons and triage are already recognized at protocol level |
+| `v2/templates/review.template.md` | | add canonical pre-flight fields and routing rows |
+| `v2/skills/dispatch/checkpoints.md` | | add auto-revise vs human-checkpoint admission routing |
+| `v2/skills/dispatch/routing.md` | | keep routing mechanical from `review.md § Routing Signals` |
+| `v2/skills/dispatch/SKILL.md` | | project the new Dispatcher responsibility boundary |
+| `v2/skills/verifier/SKILL.md` | | confirm pre-flight execution order already expects design-review triage |
+| `v2/skills/verifier/preflight.md` | | confirm design-review stage already sits between core challenge and verify-pass add-on selection |
+| `v2/skills/verifier/design-review.md` | | use it as the canonical triage contract |
+| `v2/skills/verifier/adversarial.md` | | extend to pre-flight design challenge |
+| `v2/skills/verifier/cross-model.md` | | extend to pre-flight design challenge and triage classification |
+| `v2/tools/validate-live-state.sh` | | require new review sections and routing rows |
+| `v2/tools/validate-round-contract.sh` | | lint triage routing invariants |
+| `v2/tools/check-consistency.sh` | | project the new template rows and verifier guide |
+| `v2/tests/contracts/02-artifact-contracts.sh` | | pin the review-template artifact contract |
+| `README.md`; `README.zh-CN.md`; `CLAUDE.md`; `v2/CLAUDE.md` | | sync the new design-stage review layer into projection docs |
+| `.harness/design.md`; `.harness/plan.md`; `.harness/review.md` | | keep live artifacts aligned with Round 14 |
+| | `v2/tools/external-review.sh` | adapter implementation is not changing this round |
+| | `v2/skills/builder/*` | Builder behavior does not change in this round |
 
 ### Metrics Baseline
 
 | Metric | Value | Verification command |
 |--------|-------|---------------------|
-| Archived review snapshots before Round 12 | 11 | `ls .harness/review-round-*.md | wc -l` |
-| Classification metadata rows required by the new plan template | 4 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md | wc -l` |
+| Archived active reviews before Round 14 | 13 | `Get-ChildItem .harness\\review-round-*.md | Measure-Object | Select-Object -ExpandProperty Count` |
+| New pre-flight routing fields expected in review template | 2 | `Select-String -Path v2\\templates\\review.template.md -Pattern 'Design Review Add-ons|Pre-flight Triage' | Measure-Object | Select-Object -ExpandProperty Count` |
 
 ## Scope Breakdown
 
 | # | Feature | Clarity | Round |
 |---|---------|---------|-------|
 | F1 | Protocol boundary hardening | Complete | 1 |
-| F2 | Verifier read-only cleanup | Complete | 1 |
-| F3 | Live state validation scripts | Complete | 1 |
-| F4 | Public skill modularization | Complete | 2 |
-| F5 | Governance / projection sync for moduleized skills | Complete | 2 |
-| F6 | Structured control-plane fields (`Open Decisions`, `Routing Signals`) | Complete | 3 |
-| F7 | Dispatcher / Planner human-interaction cleanup | Complete | 3 |
-| F8 | Historical docs cleanup | Complete | 4 |
-| F9 | Lifecycle terminology normalization | Complete | 5 |
-| F10 | Active file-name cleanup for modules / tools | Complete | 6 |
-| F11 | Remove redundant `module-` prefix from skill-local files | Complete | 7 |
-| F12 | Artifact contract rename: `brief/eval` → `plan/review` | Complete | 8 |
-| F13 | Active section-label cleanup after the artifact rename | Complete | 9 |
-| F14 | Router role-name cleanup to `Dispatcher` in prose | Complete | 10 |
-| F15 | Task hierarchy normalization to `round -> round contract -> slice` | Complete | 11 |
-| F16 | Explicit task classification and forecasting in `plan.md § Metadata` | Clear | 12 |
+| F3 | Artifact rename to `plan/review` | Complete | 8 |
+| F5 | Plan quality / deepen / confidence / round-load guard | Complete | 12 |
+| F6 | Dual-artifact planning (`design.md` + projected `plan.md`) | Complete | 13 |
+| F7 | Default Planner engine selection + Superpowers companion adapters | Complete | 13 |
+| F8 | Design-stage review add-ons + pre-flight triage | Clear | 14 |
 
 ## Round History
 
 ### Round 1: Boundary hardening + live validators ✅
-- Decisions: fix role-boundary violations before deeper refactors; validate live state as first-class control-plane state
-- Open: the router and planner entrypoints remained monolithic and projection layers still lagged the repo structure
-
-### Round 2: Moduleized public skill entrypoints ✅
-- Decisions: keep public entrypoints thin and push procedure into role-local files; synchronize governance and projection layers in the same round
-- Open: control-plane routing still depended on prose rather than explicit artifact fields
+- Decisions: fix role-boundary violations before deeper refactors; treat validators as first-class control-plane code
+- Open: artifact state still lived in monolithic files and prose-heavy routing
 
 ### Round 3: Structured control-plane fields ✅
 - Decisions: add `Open Decisions` and `Routing Signals` as the minimum structured control-plane fields; keep Dispatcher as the only human-facing role
-- Open: stale historical docs still described removed v1/spec/hook architecture and risked misleading future analysis
-
-### Round 4: Historical docs removed ✅
-- Decisions: delete stale analysis docs instead of preserving a knowingly wrong in-repo history layer
-- Open: lifecycle branches still mixed old labels with the newer control-plane model
-
-### Round 5: Lifecycle terminology normalized ✅
-- Decisions: adopt `Task Recovery`, `Scope Change`, and `Task Closeout` as the canonical lifecycle terms; treat archive as the last step of closeout
-- Open: some active file names still described old responsibilities or implementation detail rather than current semantics
-
-### Round 6: Active file names clarified ✅
-- Decisions: rename the most misleading active files first without reopening artifact naming wholesale
-- Open: the shared `module-` prefix still felt redundant once each file already lived inside a role directory
-
-### Round 7: Role-local files dropped the `module-` prefix ✅
-- Decisions: let the directory provide the namespace and let each file name describe only its responsibility
-- Open: the live control-plane artifacts still used the older `brief/eval` names
+- Open: planning quality and artifact clarity still depended too much on prose
 
 ### Round 8: Artifact contract renamed to `plan/review` ✅
-- Decisions: adopt `plan.md` and `review.md` as the active control-plane artifacts; rename round history to `review-round-{N}.md`
-- Open: some active section labels and companion wording still reflected the older naming layer
-
-### Round 9: Active section labels cleaned up ✅
-- Decisions: normalize the active contract around `Metadata`, `Scope Breakdown`, `Round History`, `Human Judgment`, and `Needs your judgment`
-- Open: the router role still used the older label in active prose even though the command stayed `/dispatch`
-
-### Round 10: Dispatcher naming cleanup ✅
-- Decisions: align the router role name on `Dispatcher` in active prose while preserving `/dispatch`, `dispatch/`, and `name: dispatch`
-- Open: Builder-internal `batch` terminology still blurred control-plane and implementation-layer concepts
+- Decisions: adopt `plan.md` and `review.md` as the active control-plane artifacts
+- Open: `plan.md` still had to act as both the design doc and the control plane
 
 ### Round 11: Round contract and slice terminology finalized ✅
-- Decisions: keep `Round` as the top-level delivery cycle, make `Round Contract` explicit, rename Builder-internal `batch` to `slice`, and avoid compatibility shims
-- Open: Baton still lacked explicit scope/risk classification and round forecasts in the active control plane
+- Decisions: keep `Round` as the top-level delivery cycle, make `Round Contract` explicit, and rename Builder-internal `batch` to `slice`
+- Open: Baton still needed stronger planning-quality control
 
-## Round 12
+### Round 12: Plan-quality and round-load gates ✅
+- Decisions: add `Planning Depth`, `Recommendation Confidence`, `Confidence Calibration`, and the round-load guard so Baton can reject coherent-but-under-searched or overloaded rounds before Builder starts
+- Open: `plan.md` still mixed human-readable design narrative with machine-readable control-plane state, and default planner-engine policy was still implicit
+
+### Round 13: Dual artifacts + default planner engines ✅
+- Decisions: add `.harness/design.md`, keep `plan.md` as the execution/routing control plane, and make Superpowers semantics the default Planner engine policy
+- Open: design-stage adversarial / cross-model review still lacked a formal pre-flight gate and triage path
+
+## Round 14
 
 ### Acceptance Criteria
 
-**AC-12.1: Baton records classification and forecast fields in the active control plane**
-- Given: `plan.md § Metadata` is the canonical summary for the current round
+**AC-14.1: `review.md` explicitly distinguishes design-stage review from verify-pass review**
+- Given: design-stage add-ons and verify-pass add-ons are different control-plane decisions
 - When: this round is complete
-- Then: the active plan and the plan template both include `Scope Class`, `Risk Class`, `Expected Rounds`, and `Expected Slices This Round`
+- Then: `v2/templates/review.template.md`, validators, and live `review.md` contain `Design Review Add-ons` and `Pre-flight Triage` separately from `Verification Add-ons`
 
-**AC-12.2: Baton distinguishes classification, forecast, evidence mode, and execution mode**
-- Given: the harness already has `Verifier Mode` and `Execution Mode`
+**AC-14.2: Dispatcher routes design-stage triage mechanically before Builder admission**
+- Given: some pre-flight findings are structural and should auto-revise, while others need human judgment
 - When: this round is complete
-- Then: protocol, Planner guidance, and Dispatcher guidance clearly explain that `Scope/Risk` classify the round, forecasts predict shape, `Verifier Mode` describes evidence capability, and `Execution Mode` is the orchestration decision
+- Then: Dispatcher guidance auto-routes Planner for `auto-revise`, blocks Builder while triage is non-`none`, and surfaces `human-checkpoint` as a distinct checkpoint
 
-**AC-12.3: Validators and projection docs enforce the new classification model**
-- Given: Baton depends on projection sync and live validators
+**AC-14.3: Verifier add-on guides support pre-flight design challenge semantics**
+- Given: design-stage adversarial and cross-model review must classify findings differently from post-build review
 - When: this round is complete
-- Then: consistency checks, artifact contract tests, live-state validation, README projections, and quick references all include the new classification layer
+- Then: `adversarial.md` and `cross-model.md` both describe pre-flight design review, classify findings into auto-revise vs needs-human, and keep add-ons read-only
 
-**AC-12.4: Live artifacts advance cleanly to Round 12**
-- Given: Round 11 is already complete
+**AC-14.4: Mechanical checks enforce the new control-plane fields**
+- Given: Baton cannot rely on prose discipline
 - When: this round is complete
-- Then: `.harness/review-round-11.md` preserves the previous review, `.harness/plan.md` and `.harness/review.md` align on Round 12, and all validators pass
+- Then: live-state validation, round-contract lint, consistency checks, and artifact contract tests all require the new review fields and triage invariants
+
+**AC-14.5: Live artifacts advance cleanly to Round 14**
+- Given: Round 13 is already complete
+- When: this round is complete
+- Then: `.harness/review-round-13.md` preserves the prior review, and active `design.md`, `plan.md`, and `review.md` all reflect Round 14
 
 ### Plan Quality
 
 | Key | Value |
 |-----|-------|
 | Planning Depth | deepen |
-| Problem Statement | Baton could produce coherent, testable plans without proving that the search behind those plans was deep enough, which let first-viable solutions pass as if they were best-known solutions. |
-| Load-Bearing Assumptions | A compact control-plane section is enough to carry higher-quality search; Verifier can judge under-searched plans without becoming a second planner; Dispatcher can route deepen without adding a new public role. |
-| Constraints vs Conventions | True constraints: `plan.md` must stay artifact-first and compact, Dispatcher remains the only human-facing role, Builder still starts only after approval. Conventions: `revise` currently bundles coherence fixes and deeper thinking, and approach evaluation is only weakly enforced. |
-| Alternatives Considered | A) strengthen `revise` only and keep plan quality implicit; B) add explicit `deepen` route plus a small `Plan Quality` block and pre-flight search-adequacy check. Recommendation: B because it creates a mechanical state for under-searched plans instead of hiding them in prose. |
-| Failure Mode | Humans may continue pressing `approve`, which would leave `deepen` underused even though the new path exists. |
+| Recommendation Confidence | medium |
+| Confidence Basis | The change is conceptually narrow and follows the protocol direction already chosen in Round 13, but it touches Builder admission, Dispatcher routing, Verifier guidance, validators, docs, and live artifacts together, so integration risk is still medium. |
+| Problem Statement | Baton already had richer design artifacts and full-mode add-ons, but it still lacked a formal design-stage gate between "plan challenge succeeded" and "Builder may start", so structural design findings could not be auto-fixed mechanically and semantic findings could not stop at a distinct pre-build checkpoint. |
+| Load-Bearing Assumptions | `review.md` is still the right place to carry all Verifier-to-Dispatcher routing state; Dispatcher can safely auto-route bounded Planner revisions if the triage contract is narrow; design-stage add-ons can share the same add-on files as verification-phase review as long as the guide distinguishes the phase semantics clearly. |
+| Constraints vs Conventions | True constraints: Dispatcher must stay artifact-driven, Builder admission must remain mechanical, add-ons stay read-only, and `plan.md` remains the single execution/routing truth. Conventions: pre-flight used to record only verify-pass add-ons, and design-stage review lived as future intent rather than canonical control-plane behavior. |
+| Alternatives Considered | A) leave design-stage review informal in prose; B) overload `Verification Add-ons` to mean both pre-flight and post-build review; C) add distinct `Design Review Add-ons` and `Pre-flight Triage`, then route them mechanically. Recommendation: C because it preserves clear control-plane semantics. |
+| Failure Mode | `auto-revise` could silently widen scope or semantic direction, or Dispatcher could still behave like the old approval flow even after the new rows exist. |
+
+### Decisions
+
+| Decision | Chose | Rejected | Why |
+|----------|-------|----------|-----|
+| Pre-flight review fields | separate `Design Review Add-ons` + `Pre-flight Triage` | reuse `Verification Add-ons` | pre-flight and verify-pass decisions have different meanings |
+| Dispatcher response to structural design issues | auto-route bounded Planner revision | force all design issues through human approval | structural fixes should be mechanical to reduce friction |
+| Triage boundary | structural only for `auto-revise`; semantic/scope/policy goes to human | broad auto-fix authority | Baton must not silently change product direction |
+| Add-on guide strategy | extend existing `adversarial.md` / `cross-model.md` | add separate duplicate files | keeps add-on semantics centralized while preserving phase distinctions |
 
 ### Open Decisions
 
 | ID | Question | Options | Status | Blocking |
 |----|----------|---------|--------|----------|
-| OD-12.1 | None. The decision is to keep multi-axis classification instead of collapsing Baton to a single task level. | — | resolved | no |
+| OD-14.1 | None. This round already decided the design-stage triage contract and its routing boundary. | — | resolved | no |
 
 ### Round Contract
 
 | Key | Value |
 |-----|-------|
-| Scope In | Add scope/risk classification plus round forecasts to Baton's control plane, protocol, planner/dispatcher guidance, validators, projection docs, and live artifacts |
-| Key Entry Points | `v2/protocol.md`; `v2/tools/check-consistency.sh`; `v2/tools/validate-live-state.sh`; `.harness/plan.md` |
-| Scope Out | Renaming `Round`, creating a single total task level, or revisiting Builder slice terminology |
-| Done Criteria | Templates, protocol, Planner, Dispatcher, validators, README, CLAUDE, and live artifacts all use the same classification model and validate cleanly |
-| Verification Plan | Run contract tests, consistency checks, live-state validation, round-contract lint, and round-sync validation after updating the live plan/review pair |
-| Budget Note | None. |
+| Scope In | Add canonical pre-flight design-review fields and triage routing, extend verifier add-on guides for design-stage review semantics, update validators/docs, archive Round 13 review, and refresh live Round 14 artifacts |
+| Key Entry Points | `v2/templates/review.template.md`; `v2/skills/dispatch/checkpoints.md`; `v2/skills/dispatch/routing.md`; `v2/skills/dispatch/SKILL.md`; `v2/skills/verifier/adversarial.md`; `v2/skills/verifier/cross-model.md`; `v2/tools/validate-live-state.sh`; `v2/tools/validate-round-contract.sh`; `v2/tools/check-consistency.sh`; `v2/tests/contracts/02-artifact-contracts.sh` |
+| Scope Out | Changing Builder execution, changing the external-review adapter runtime, or making Dispatcher read `design.md` directly |
+| Done Criteria | `review.md` template and live review explicitly record design-stage add-ons and triage, Dispatcher guidance blocks Builder while triage is unresolved, verifier add-on guides support pre-flight design challenge semantics, validators enforce the new fields, and Round 13 review is archived before Round 14 becomes active |
+| Verification Plan | Run targeted PowerShell spot checks for the changed guidance plus bash validators where the host still permits them: contract tests, live-state validation, round-contract lint, and round-sync; if Git Bash wrappers still fail on this host, document the degraded evidence explicitly in `review.md` |
+| Budget Note | This round changes admission control, review templates, add-on guidance, validators, projection docs, and live artifacts together. Splitting it would leave Baton in a half-upgraded state where pre-flight triage exists in some layers but not others. |
 | Overload Override | none |
-| Exit Threshold | `v2/tests/run.sh`, `check-consistency.sh`, `validate-live-state.sh`, `validate-round-contract.sh`, and `validate-round-sync.sh` all pass with the live task on Round 12 |
-| Deferred Items | Consider richer review-sidecar classification only if the new plan metadata still leaves routing ambiguity |
+| Exit Threshold | The changed docs and templates are internally consistent, active artifacts align on Round 14, and the available validators / spot checks pass or any host failure is explicitly recorded as residual risk |
+| Deferred Items | Runtime hardening of `external-review.sh`; future Builder-side worker strategy changes |
 
 ### Approach
 
-Keep Baton's task structure unchanged: `task -> round -> round contract -> slice`. Add classification only at the `plan.md § Metadata` layer so Planner defines the round, Dispatcher consumes it, and Verifier can challenge whether the contract matches the declared scope/risk. Avoid a single total level, because Baton needs to express small-but-risky and large-but-low-risk work without flattening that nuance.
+Use `review.md` as the canonical bridge between richer pre-flight design review and Builder admission:
 
-**This round:** add explicit `Scope Class`, `Risk Class`, and forecast fields, then wire them through protocol, planners, routing, validators, and live artifacts.
-**Not this round:** invent a new top-level lifecycle term or replace `Verifier Mode` with a new evidence taxonomy.
+- pre-flight records which design-stage add-ons ran
+- pre-flight classifies the result into `none / auto-revise / human-checkpoint`
+- Dispatcher reads those rows literally
+- `auto-revise` re-enters Planner revision without a human checkpoint
+- `human-checkpoint` stops the flow before Builder starts
+- verify-pass add-ons remain a separate decision for post-build verification
 
 ### Implementation Slices
 
 ```text
-Slice 1: classify the protocol
-  Files: v2/templates/plan.template.md, v2/protocol.md, v2/skills/planner/SKILL.md, v2/skills/planner/planning.md, v2/skills/planner/revision.md, v2/skills/dispatch/SKILL.md, v2/skills/dispatch/routing.md
-  Check: rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round|Task Classification' v2/templates/plan.template.md v2/protocol.md v2/skills/planner v2/skills/dispatch
-  Commit: "round-12 slice 1: add task classification model"
+Slice 1: add control-plane rows and Dispatcher triage routing
+  Files: v2/templates/review.template.md, v2/skills/dispatch/checkpoints.md, v2/skills/dispatch/routing.md, v2/skills/dispatch/SKILL.md
+  Check: Select-String -Path v2\templates\review.template.md,v2\skills\dispatch\checkpoints.md,v2\skills\dispatch\routing.md,v2\skills\dispatch\SKILL.md -Pattern 'Design Review Add-ons|Pre-flight Triage|auto-revise|human-checkpoint'
+  Commit: "round-14 slice 1: add preflight triage control plane"
 
-Slice 2: enforce classification through validators and projections
-  Files: v2/tools/validate-live-state.sh, v2/tests/contracts/02-artifact-contracts.sh, v2/tools/check-consistency.sh, README.md, README.zh-CN.md, CLAUDE.md, v2/CLAUDE.md
-  Check: rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round|Task Classification' v2/tools/validate-live-state.sh v2/tests/contracts/02-artifact-contracts.sh v2/tools/check-consistency.sh README.md README.zh-CN.md CLAUDE.md v2/CLAUDE.md
-  Commit: "round-12 slice 2: project classification model"
+Slice 2: extend verifier add-on guides and validators
+  Files: v2/skills/verifier/adversarial.md, v2/skills/verifier/cross-model.md, v2/tools/validate-live-state.sh, v2/tools/validate-round-contract.sh, v2/tools/check-consistency.sh, v2/tests/contracts/02-artifact-contracts.sh
+  Check: Select-String -Path v2\skills\verifier\adversarial.md,v2\skills\verifier\cross-model.md,v2\tools\validate-live-state.sh,v2\tools\validate-round-contract.sh,v2\tools\check-consistency.sh,v2\tests\contracts\02-artifact-contracts.sh -Pattern 'auto-revise|human-checkpoint|Design Review Add-ons|Pre-flight Triage'
+  Commit: "round-14 slice 2: wire design-stage add-on triage"
 
-Slice 3: advance the live control plane
-  Files: .harness/plan.md, .harness/review.md, .harness/review-round-11.md
-  Check: bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-sync.sh
-  Commit: "round-12 slice 3: refresh live control plane"
+Slice 3: sync docs and live artifacts
+  Files: README.md, README.zh-CN.md, CLAUDE.md, v2/CLAUDE.md, .harness/design.md, .harness/plan.md, .harness/review.md, .harness/review-round-13.md
+  Check: bash v2/tools/validate-live-state.sh --repo-root . && bash v2/tools/validate-round-contract.sh --repo-root . && bash v2/tools/validate-round-sync.sh --repo-root .
+  Commit: "round-14 slice 3: project design-stage review gate"
 ```
 
 ### AC → Test Mapping
 
 | AC | Test identifier | Status |
 |----|----------------|--------|
-| AC-12.1 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md .harness/plan.md` | ✅ |
-| AC-12.2 | `rg -n 'Task Classification|Execution Mode.*orchestration|Scope Class|Risk Class' v2/protocol.md v2/skills/planner v2/skills/dispatch` | ✅ |
-| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-contract.sh` | ✅ |
-| AC-12.4 | `bash v2/tools/validate-round-sync.sh && test -f .harness/review-round-11.md` | ✅ |
+| AC-14.1 | `Select-String -Path v2\templates\review.template.md,v2\tools\validate-live-state.sh,v2\tests\contracts\02-artifact-contracts.sh -Pattern 'Design Review Add-ons|Pre-flight Triage'` | ✅ |
+| AC-14.2 | `Select-String -Path v2\skills\dispatch\checkpoints.md,v2\skills\dispatch\routing.md,v2\skills\dispatch\SKILL.md -Pattern 'auto-revise|human-checkpoint|Design Review Add-ons|Pre-flight Triage'` | ✅ |
+| AC-14.3 | `Select-String -Path v2\skills\verifier\adversarial.md,v2\skills\verifier\cross-model.md -Pattern 'Pre-flight|auto-revise|needs-human|read-only'` | ✅ |
+| AC-14.4 | `bash v2/tools/validate-live-state.sh --repo-root .` plus `bash v2/tools/validate-round-contract.sh --repo-root .` or targeted PowerShell spot checks if wrappers are blocked | ✅ |
+| AC-14.5 | `Test-Path .harness\review-round-13.md` plus active artifact inspection | ✅ |
 
 ### Commit Checkpoints
 
 | Slice | Files | Suggested message | Compile | Tests |
 |-------|-------|-------------------|---------|-------|
-| 1 | `v2/templates/plan.template.md`, `v2/protocol.md`, `v2/skills/planner/*`, `v2/skills/dispatch/*` | round-12 slice 1: add task classification model | ✅ | ✅ |
-| 2 | `v2/tools/validate-live-state.sh`, `v2/tests/contracts/02-artifact-contracts.sh`, `v2/tools/check-consistency.sh`, `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `v2/CLAUDE.md` | round-12 slice 2: project classification model | ✅ | ✅ |
-| 3 | `.harness/plan.md`, `.harness/review.md`, `.harness/review-round-11.md` | round-12 slice 3: refresh live control plane | ✅ | ✅ |
+| 1 | `v2/templates/review.template.md`, `v2/skills/dispatch/*` | round-14 slice 1: add preflight triage control plane | ✅ | ✅ |
+| 2 | `v2/skills/verifier/*`, `v2/tools/*`, `v2/tests/contracts/02-artifact-contracts.sh` | round-14 slice 2: wire design-stage add-on triage | ✅ | ✅ |
+| 3 | `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `v2/CLAUDE.md`, `.harness/*` | round-14 slice 3: project design-stage review gate | ✅ | ✅ |
 
 ### Discoveries
 
-- Baton's missing piece was not a new lifecycle unit. It was explicit classification of the current round's size, risk, and likely shape.
-- `Expected Rounds` and `Expected Slices This Round` must stay forecasts; if treated as gates, Baton would duplicate `Execution Mode` and confuse planning with orchestration.
-- Dispatcher should consume Planner's classification rather than recompute it, otherwise Baton would split ownership of the round shape across roles.
-- The coarse forecast enum is working as intended: `3+` prevents false precision in live planning even when the current round happens to use three concrete slices.
+- Baton needed one more admission-control layer after dual artifacts: a formal design-stage review gate before Builder starts.
+- `Design Review Add-ons` and `Verification Add-ons` must remain separate or the control plane becomes ambiguous.
+- `auto-revise` only works if Dispatcher reads it literally and the revision boundary is narrow.
+- Validator coverage matters even more here because the new fields gate Builder admission rather than just documenting review nuance.
 
 ### Risks
 
-- Live-state validation is now stricter; any stale plan metadata will fail immediately once Round 12 is written.
-- Projection docs can drift on this topic because classification touches README, CLAUDE, protocol, and role-local guidance at once.
+- The live host still has intermittent Git Bash startup failures, so end-to-end wrapper validation may remain partially degraded.
+- Future users may overuse `auto-revise`; the protocol text must keep the semantic boundary narrow.
+- Cross-model pre-flight will still depend on external reviewer availability in real environments.
 
 ## Future Rounds (tentative)
 
-- Round 13: deepen task-recovery / scope-change / closeout semantics if the classification model exposes new routing ambiguity
-- Round 14: consider whether review findings need structured severity or ownership fields beyond `Routing Signals`
+- Round 15: harden real external-review availability checks and cross-model fallback behavior
+- Round 16: integrate Builder-side worker strategy improvements after the planning / review control plane is stable

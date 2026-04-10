@@ -23,6 +23,14 @@
 ### Recommendation
 {ready / revise / blocked}
 
+### Design Review Add-ons
+- Used: `{none / adversarial / cross-model / adversarial,cross-model}`
+- Why: `{brief reason, or "None."}`
+
+### Pre-flight Triage
+- Action: `{none / auto-revise / human-checkpoint}`
+- Why: `{brief reason, or "None."}`
+
 ### Verification Add-ons (for verify pass)
 - Recommended: `{none / adversarial / cross-model / adversarial,cross-model}`
 - Why: `{brief reason, or "None."}`
@@ -30,6 +38,8 @@
 ### Plan Quality
 - Depth: `{normal / deepen}`
 - Search Adequacy: `{adequate / under-searched}`
+- Recommendation Confidence: `{high / medium / low}`
+- Confidence Calibration: `{calibrated / overstated / understated}`
 - Why: `{brief reason}`
 
 ### Round Load
@@ -92,8 +102,11 @@ Verifier ran in Mode {A / B / C / C+}. Confidence: {high / medium / low}.
 | Next Route | {builder / planner / human / closeout} |
 | Human Review Needed | {yes / no} |
 | Blocking | {none / code-bug / design-issue / requirement-gap / environment / assumption / overload} |
+| Design Review Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Pre-flight Triage | {none / auto-revise / human-checkpoint} |
 | Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
 | Plan Quality | {adequate / under-searched} |
+| Confidence Calibration | {calibrated / overstated / understated} |
 | Round Load | {normal / heavy / overloaded} |
 
 ## Verdict

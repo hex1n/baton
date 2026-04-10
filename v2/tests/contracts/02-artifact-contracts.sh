@@ -43,8 +43,10 @@ forbid_pattern() {
 
 echo "  Artifact contracts"
 
-require_pattern "$REPO_ROOT/v2/protocol.md" "plan\\.md is the single source of truth" \
-  "protocol declares plan.md as control plane" "plan.md single-source rule missing"
+require_pattern "$REPO_ROOT/v2/protocol.md" "plan\\.md is the single source of truth for Baton execution and routing" \
+  "protocol declares plan.md as control plane" "plan.md control-plane rule missing"
+require_pattern "$REPO_ROOT/v2/protocol.md" "\.harness/design\\.md — task level, planning narrative" \
+  "protocol declares design.md artifact" "design.md artifact section missing"
 require_pattern "$REPO_ROOT/v2/protocol.md" '`\§ Open Decisions` is the only place Planner records unresolved human choices' \
   "protocol pins Open Decisions field" "Open Decisions uniqueness rule missing"
 require_pattern "$REPO_ROOT/v2/protocol.md" '`\§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next' \
@@ -59,6 +61,10 @@ require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^### Plan Quality$" 
   "plan template includes Plan Quality section" "Plan Quality section missing from plan template"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Planning Depth \\|" \
   "plan template includes Planning Depth row" "Planning Depth row missing from Plan Quality"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Recommendation Confidence \\|" \
+  "plan template includes Recommendation Confidence row" "Recommendation Confidence row missing from Plan Quality"
+require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Confidence Basis \\|" \
+  "plan template includes Confidence Basis row" "Confidence Basis row missing from Plan Quality"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Key Entry Points \\|" \
   "plan template includes Key Entry Points row" "Key Entry Points row missing from Round Contract"
 require_pattern "$REPO_ROOT/v2/templates/plan.template.md" "^\\| Budget Note \\|" \
@@ -87,8 +93,16 @@ require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Findings Side
   "review template includes findings sidecar section" "Findings Sidecar section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Verification Add-ons \\(for verify pass\\)$" \
   "review template includes pre-flight verification add-ons section" "Verification Add-ons section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Design Review Add-ons$" \
+  "review template includes design review add-ons section" "Design Review Add-ons section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Pre-flight Triage$" \
+  "review template includes pre-flight triage section" "Pre-flight Triage section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Plan Quality$" \
   "review template includes plan quality section" "Plan Quality section missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^- Recommendation Confidence: " \
+  "review template includes recommendation confidence line" "Recommendation Confidence line missing from review template"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^- Confidence Calibration: " \
+  "review template includes confidence calibration line" "Confidence Calibration line missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Round Load$" \
   "review template includes round load section" "Round Load section missing from review template"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^### Activated Add-ons$" \
@@ -99,14 +113,22 @@ require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Human Review 
   "review template includes human-review row" "Human Review Needed row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Blocking \\|" \
   "review template includes blocking row" "Blocking row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Design Review Add-ons \\|" \
+  "review template includes design review add-ons row" "Design Review Add-ons row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Pre-flight Triage \\|" \
+  "review template includes pre-flight triage row" "Pre-flight Triage row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Verification Add-ons \\|" \
   "review template includes verification add-ons row" "Verification Add-ons row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Plan Quality \\|" \
   "review template includes plan quality row" "Plan Quality row missing"
+require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Confidence Calibration \\|" \
+  "review template includes confidence calibration row" "Confidence Calibration row missing"
 require_pattern "$REPO_ROOT/v2/templates/review.template.md" "^\\| Round Load \\|" \
   "review template includes round load row" "Round Load row missing"
 require_pattern "$REPO_ROOT/CLAUDE.md" "plan\\.md" \
   "root CLAUDE projects plan.md" "root CLAUDE still points at legacy artifact names"
+require_pattern "$REPO_ROOT/CLAUDE.md" "design\\.md" \
+  "root CLAUDE projects design.md" "root CLAUDE missing design.md artifact"
 require_pattern "$REPO_ROOT/CLAUDE.md" "review\\.md" \
   "root CLAUDE projects review.md" "root CLAUDE still points at legacy review artifact"
 forbid_pattern "$REPO_ROOT/CLAUDE.md" "brief\\.md|eval\\.md|brief\\.template\\.md" \

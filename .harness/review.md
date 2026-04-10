@@ -1,24 +1,25 @@
-# Review: Round 12
+# Review: Round 14
 
 ## Pre-flight
 
 ### AC Testability
-- AC-12.1: ✅ Testable
-- AC-12.2: ✅ Testable
-- AC-12.3: ✅ Testable
-- AC-12.4: ✅ Testable
+- AC-14.1: ✅ Testable
+- AC-14.2: ✅ Testable
+- AC-14.3: ✅ Testable
+- AC-14.4: ✅ Testable
+- AC-14.5: ✅ Testable
 
 ### Test Baseline
-Active Baton contract before implementation: task hierarchy was already explicit (`task -> round -> round contract -> slice`), but live `plan.md` metadata and projection docs still lacked scope/risk classification and round forecasts.
+Round 13 already established the dual-artifact model and default planner engines. Round 14 extends the admission-control layer so design-stage review can happen before Builder starts and route either to bounded Planner revision or to a human checkpoint.
 
 ### Environment
 - Mode: C
 - Tier 2: unavailable
 
 ### Plan Challenges
-1. Classification must stay multi-axis. A single total task level would erase the difference between small-but-risky and large-but-low-risk rounds.
-2. `Expected Rounds` and `Expected Slices This Round` must remain forecasts, not gates, or Baton will duplicate `Execution Mode`.
-3. Dispatcher must consume Planner's classification rather than invent it, or ownership of the round shape becomes ambiguous.
+1. Design-stage add-ons had to be distinct from verify-pass add-ons, or Dispatcher would not know whether a row described pre-build admission state or post-build verification depth.
+2. `auto-revise` had to stay strictly structural. If it could change semantics, scope, or policy, Baton would silently bypass the human checkpoint.
+3. Dispatcher had to route from `review.md § Routing Signals` only; it still could not infer triage from narrative findings.
 
 ### Contract Status
 - Status: agreed
@@ -28,29 +29,36 @@ Active Baton contract before implementation: task hierarchy was already explicit
 ### Recommendation
 Ready for implementation.
 
+### Design Review Add-ons
+- Used: `adversarial`
+- Why: `This round changes Builder admission and control-plane behavior. Pre-flight adversarial review is the right default design-stage stress test. Cross-model review remains conditional on external reviewer availability and was not assumed on this host.`
+
+### Pre-flight Triage
+- Action: `none`
+- Why: `The design-stage review found no semantics-changing gaps after the control-plane rows, Dispatcher routing, add-on guidance, and validators were aligned.`
+
 ### Verification Add-ons (for verify pass)
 - Recommended: `none`
-- Why: `Round 12 focused on protocol/template alignment and did not require extra add-on pressure beyond core verification.`
+- Why: `Round 14 is protocol, template, validator, and documentation work. Core verification pressure is sufficient after the design-stage challenge.`
 
 ### Plan Quality
 - Depth: `deepen`
 - Search Adequacy: `adequate`
-- Why: `This round now states the root problem, assumptions, alternatives, and failure mode explicitly, so the plan is no longer just the first coherent path.`
+- Recommendation Confidence: `medium`
+- Confidence Calibration: `calibrated`
+- Why: `The round defines the exact gap, keeps the auto-revise boundary narrow, compares the main alternatives, and projects the routing semantics into validators and live artifacts.`
 
 ### Round Load
-- Load: `normal`
-- Why: `This round was documentation and validator alignment work, with no elevated runtime or multi-slice pressure.`
-- Action: `proceed`
+- Load: `heavy`
+- Why: `This is a full-mode, control-plane-changing round with 3+ slices and protocol-wide projection work, but the admitted design direction is coherent and does not require an overload override.`
+- Action: `warn`
 
 ## Verification
 
 ### Tier 1: Deterministic
-- Compile / check: `bash v2/tools/check-consistency.sh` ✅ (98 pass, 0 fail, 0 warn)
-- Tests:
-  - `bash v2/tests/run.sh` ✅ (7 pass, 0 fail)
-  - `bash v2/tools/validate-live-state.sh` ✅ (78 pass, 0 fail, 0 warn)
-  - `bash v2/tools/validate-round-contract.sh` ✅ (15 pass, 0 fail, 0 warn)
-  - `bash v2/tools/validate-round-sync.sh` ✅ (plan/review aligned on Round 12)
+- PowerShell spot checks: ✅ confirmed `Design Review Add-ons`, `Pre-flight Triage`, `auto-revise`, and `human-checkpoint` now appear in the review template, Dispatcher guidance, verifier add-on guides, validator scripts, and projection docs.
+- Active artifact refresh: ✅ `.harness/review-round-13.md` exists and active `.harness/design.md`, `.harness/plan.md`, and `.harness/review.md` now align on Round 14.
+- Residual shell-wrapper risk: Git Bash on this Windows host has previously failed to spawn some wrapper scripts with Win32 error 5 (`CreateFileMapping` / `signal pipe`). Because of that known host issue, final validation confidence still depends partly on spot checks rather than a full fresh bash sweep.
 
 ### Tier 2: Runtime
 Skipped — Mode C/C+.
@@ -58,14 +66,15 @@ Skipped — Mode C/C+.
 ### Tier 3a: AC Coverage
 | AC | Test | Exists | Passes | Verifies AC |
 |----|------|--------|--------|-------------|
-| AC-12.1 | `rg -n 'Scope Class|Risk Class|Expected Rounds|Expected Slices This Round' v2/templates/plan.template.md .harness/plan.md` | ✅ | ✅ | ✅ |
-| AC-12.2 | `rg -n 'Task Classification|Execution Mode.*orchestration|Scope Class|Risk Class' v2/protocol.md v2/skills/planner v2/skills/dispatch` | ✅ | ✅ | ✅ |
-| AC-12.3 | `bash v2/tests/run.sh && bash v2/tools/check-consistency.sh && bash v2/tools/validate-live-state.sh && bash v2/tools/validate-round-contract.sh` | ✅ | ✅ | ✅ |
-| AC-12.4 | `bash v2/tools/validate-round-sync.sh && test -f .harness/review-round-11.md` | ✅ | ✅ | ✅ |
+| AC-14.1 | `Select-String -Path v2\templates\review.template.md,v2\tools\validate-live-state.sh,v2\tests\contracts\02-artifact-contracts.sh -Pattern 'Design Review Add-ons|Pre-flight Triage'` | ✅ | ✅ | ✅ |
+| AC-14.2 | `Select-String -Path v2\skills\dispatch\checkpoints.md,v2\skills\dispatch\routing.md,v2\skills\dispatch\SKILL.md -Pattern 'auto-revise|human-checkpoint|Design Review Add-ons|Pre-flight Triage'` | ✅ | ✅ | ✅ |
+| AC-14.3 | `Select-String -Path v2\skills\verifier\adversarial.md,v2\skills\verifier\cross-model.md -Pattern 'Pre-flight|auto-revise|needs-human|read-only'` | ✅ | ✅ | ✅ |
+| AC-14.4 | `Select-String -Path v2\tools\validate-live-state.sh,v2\tools\validate-round-contract.sh,v2\tools\check-consistency.sh,v2\tests\contracts\02-artifact-contracts.sh -Pattern 'Design Review Add-ons|Pre-flight Triage|auto-revise|human-checkpoint'` | ✅ | ✅ | ✅ |
+| AC-14.5 | `Test-Path .harness\review-round-13.md` plus active artifact inspection | ✅ | ✅ | ✅ |
 
 ### Activated Add-ons
 - Used: `none`
-- Notes: `None.`
+- Notes: `No verify-pass add-ons were needed after the pre-flight design-stage challenge.`
 
 ## Findings
 
@@ -86,28 +95,34 @@ None.
 ## Human Judgment
 
 ### Already verified
-- `plan.md § Metadata` now carries `Scope Class`, `Risk Class`, `Expected Rounds`, and `Expected Slices This Round` in both the template and the active live plan.
-- Protocol, Planner, and Dispatcher now distinguish round classification, round forecasts, verifier capability, and execution mode instead of collapsing them into one label.
-- `Round Contract` now exposes `Key Entry Points`, and the new round-contract lint mechanically checks for scope contradictions and overload-control mismatches.
-- Baton now has an explicit `Plan Quality` control-plane section plus a `deepen` path, so complex rounds can be marked coherent-but-under-searched before Builder starts.
-- Projection docs and quick references now expose the same classification model in both English and Chinese.
-- Round 11 is preserved separately in `.harness/review-round-11.md`, and the active control plane has moved to Round 12.
+- `review.md` now records design-stage add-ons and pre-flight triage separately from verify-pass add-ons.
+- Dispatcher guidance now auto-routes Planner for `auto-revise` and blocks Builder while triage is unresolved.
+- Verifier add-on guides now cover pre-flight design challenge semantics, not only post-build review.
+- Validator / contract checks now require the new review fields and triage routing invariants.
+- Round 13 review is archived and Round 14 artifacts are active.
 
 ### Needs your judgment
-1. None.
+1. Final shell-wrapper confidence is still partially degraded by the Windows host's intermittent Git Bash startup failure mode. The protocol and artifact state are aligned, but a fresh end-to-end bash sweep may still need a healthier shell environment.
 
 ### Risk note
-Verifier ran in Mode C. Confidence: medium-high for protocol and artifact-governance scope, but runtime independence remains degraded because this repository has no live application environment.
+Verifier ran in Mode C. Confidence: medium. The control-plane change is coherent and live artifacts are aligned, but shell-wrapper evidence remains partially degraded on this host.
+
+### Independence note
+⚠️ Verification independence: degraded — Mode C plus intermittent Git Bash wrapper failures on this host reduce evidence strength.
 
 ## Routing Signals
+
 | Key | Value |
 |-----|-------|
 | Next Route | human |
-| Human Review Needed | no |
+| Human Review Needed | yes |
 | Blocking | none |
+| Design Review Add-ons | adversarial |
+| Pre-flight Triage | none |
 | Verification Add-ons | none |
 | Plan Quality | adequate |
-| Round Load | normal |
+| Confidence Calibration | calibrated |
+| Round Load | heavy |
 
 ## Verdict
 PASS

@@ -6,6 +6,7 @@
 
 ```text
 Read: project-profile.md
+Read: .harness/design.md (required for planning rounds)
 Read: .harness/plan.md (current round only)
 Read: relevant source files referenced in plan.md § Context
       (pre-flight CAN read source code — this is plan review, not code review)
@@ -68,9 +69,9 @@ Record in review.md and suggest updating project-profile.md if capability change
 
 If capability was already established in earlier rounds and nothing changed, trust `project-profile.md`.
 
-## Step 5: Plan Quality Challenge
+## Step 5: Design / Plan Challenge
 
-Read `plan.md § Plan Quality`, `§ Approach`, and `§ Round Contract`, then challenge the plan on six dimensions:
+Read `.harness/design.md`, `plan.md § Plan Quality`, `§ Approach`, and `§ Round Contract`, then challenge the round on eight dimensions:
 
 **a) Consistency with existing code**
 
@@ -122,13 +123,26 @@ Check whether:
 - Exit Threshold is strict enough for the round"
 ```
 
-**f) Search adequacy**
+**f) Design / plan projection coherence**
+
+```text
+Check whether the Baton control plane actually reflects the design:
+- `design.md` exists and contains the minimum required sections for this round
+- load-bearing human questions from `Need Confirmation` were projected into `plan.md § Open Decisions`
+- the recommended approach in the design matches `plan.md § Round Contract` and `§ Implementation Slices`
+- plan-level scope does not silently drop design-level invariants, compatibility constraints, or rollout concerns that still matter this round
+- `plan.md` stays concise instead of becoming a second copy of `design.md`
+If projection is missing or drifts materially, block the round and send it back to Planner.
+```
+
+**g) Search adequacy**
 
 ```text
 "This plan may be coherent but still under-searched.
 Check whether:
 - the plan solves the real problem, not just the user's stated solution
 - `Planning Depth` is appropriate for the round
+- `Recommendation Confidence` is not stronger than the evidence actually supports
 - deepen rounds actually list load-bearing assumptions
 - constraints are separated from conventions
 - alternatives are meaningfully different, or the single-path justification is credible
@@ -136,11 +150,43 @@ Check whether:
 - a clearly smaller / simpler approach was skipped without explanation"
 ```
 
+**h) Confidence calibration**
+
+```text
+"Check whether the declared `Recommendation Confidence` matches the evidence:
+- `high` requires a narrow solution space, strong alignment with existing patterns, and no unresolved load-bearing assumptions
+- `medium` fits viable plans with trade-offs or some unverified assumptions
+- `low` fits plans with heavy unknowns, pattern mismatch, or evidence gaps
+If the declared confidence is stronger than the evidence, mark it overstated.
+If it is materially weaker than the evidence, mark it understated."
+```
+
 Challenge rules:
 - be specific and cite file paths + line numbers
 - propose alternatives, not just criticism
 - max 5 challenges per pre-flight
 - if the plan is solid, say so explicitly
+
+## Step 5b: Design-Stage Review Add-ons & Triage
+
+Read `v2/skills/verifier/design-review.md`.
+
+If the round and execution mode warrant it:
+
+```text
+- run the selected design-stage add-ons
+- merge their findings with the core plan challenge
+- classify the result as:
+    none
+    auto-revise
+    human-checkpoint
+```
+
+This triage determines whether Dispatcher should:
+
+- continue to the normal approval checkpoint
+- auto-route Planner for a bounded design revision
+- stop for a human design checkpoint before Builder starts
 
 ## Step 6: Plan Quality Assessment
 
@@ -154,6 +200,7 @@ adequate:
 under-searched:
   - deepen-triggered round still uses `Planning Depth = normal`
   - or the problem statement still describes a solution rather than an outcome
+  - or the plan claims `Recommendation Confidence = high` despite unresolved load-bearing assumptions, exploration gaps, or unproven mechanisms
   - or alternatives are missing / trivial when real alternatives exist
   - or the plan clearly skipped a simpler path without explaining why
   - or the failure mode / assumptions block is missing or non-informative
@@ -166,6 +213,32 @@ If the plan is coherent but under-searched:
 - set `Plan Quality = under-searched`
 - recommend a deepen pass before Builder starts
 - keep `Next Route = human` so Dispatcher can offer `deepen`
+```
+
+## Step 6b: Confidence Calibration Assessment
+
+Assess whether `plan.md § Plan Quality → Recommendation Confidence` is justified:
+
+```text
+calibrated:
+  - the declared confidence matches the observed evidence strength
+
+overstated:
+  - the plan claims more certainty than the evidence supports
+  - especially when unresolved assumptions, exploration gaps, or mechanism changes remain
+
+understated:
+  - the plan is better grounded than the declared confidence admits
+  - rare; note it, but do not block on it
+```
+
+If confidence is overstated:
+
+```text
+- keep `Next Route = human`
+- keep `Blocking = none` unless another blocker already exists
+- recommend revise or deepen before Builder starts
+- write `Confidence Calibration = overstated`
 ```
 
 ## Step 7: Verification Add-on Recommendation
@@ -268,6 +341,14 @@ If Round Load = overloaded and Overload Override = human-approved:
 ### Recommendation
 {Specific action items before proceeding, or "Plan is ready for implementation."}
 
+### Design Review Add-ons
+- Used: {none / adversarial / cross-model / adversarial,cross-model}
+- Why: {brief reason}
+
+### Pre-flight Triage
+- Action: {none / auto-revise / human-checkpoint}
+- Why: {brief reason}
+
 ### Verification Add-ons (for verify pass)
 - Recommended: {none / adversarial / cross-model / adversarial,cross-model}
 - Why: {brief reason}
@@ -275,6 +356,8 @@ If Round Load = overloaded and Overload Override = human-approved:
 ### Plan Quality
 - Depth: {normal / deepen}
 - Search Adequacy: {adequate / under-searched}
+- Recommendation Confidence: {high / medium / low}
+- Confidence Calibration: {calibrated / overstated / understated}
 - Why: {brief reason}
 
 ### Round Load
@@ -287,9 +370,12 @@ If Round Load = overloaded and Overload Override = human-approved:
 |-----|-------|
 | Next Route | human |
 | Human Review Needed | yes |
-| Blocking | {none / assumption / environment / overload} |
+| Blocking | {none / design-issue / requirement-gap / assumption / environment / overload} |
+| Design Review Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Pre-flight Triage | {none / auto-revise / human-checkpoint} |
 | Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
 | Plan Quality | {adequate / under-searched} |
+| Confidence Calibration | {calibrated / overstated / understated} |
 | Round Load | {normal / heavy / overloaded} |
 ```
 
@@ -304,10 +390,26 @@ ACs: {N} total, all testable ✅
 Baseline: {test count or N/A}
 Mode: {A/B/C}
 Challenges: {none / 1-2 bullet points}
+Design Review Add-ons: {none / adversarial / cross-model / adversarial,cross-model}
+Pre-flight Triage: {none / auto-revise / human-checkpoint}
 Plan Quality: {adequate / under-searched}
+Confidence Calibration: {calibrated / overstated / understated}
 Round Load: {normal / heavy / overloaded}
 Contract Status: {agreed / revise}
 Recommendation: Ready for implementation.
+
+## Routing Signals
+| Key | Value |
+|-----|-------|
+| Next Route | human |
+| Human Review Needed | yes |
+| Blocking | none |
+| Design Review Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Pre-flight Triage | {none / auto-revise / human-checkpoint} |
+| Verification Add-ons | none |
+| Plan Quality | {adequate / under-searched} |
+| Confidence Calibration | {calibrated / overstated / understated} |
+| Round Load | {normal / heavy / overloaded} |
 ```
 
 Lightweight mode still must write `review.md`, because Dispatcher depends on the file for recovery and state detection.

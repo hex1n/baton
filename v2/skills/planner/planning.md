@@ -11,6 +11,19 @@ Read: project-profile.md (mandatory — refuse to proceed without it)
 Read: user's task description
 ```
 
+### Step 1b: Select the planning engine
+
+Read `v2/skills/planner/engine-selection.md`.
+
+Classify the task before drafting `design.md`:
+
+```text
+- feature / design / change / migration -> default engine: brainstorming -> writing-plans
+- bug / incident / regression -> default engine: systematic-debugging
+```
+
+If the matching companion adapter is unavailable, emulate the same workflow natively and record the fallback in `.harness/design.md`.
+
 ### Step 2: Targeted exploration
 
 Don't scan the whole codebase. Read only what the task needs:
@@ -121,6 +134,11 @@ deepen:
   - or multiple viable approaches obviously exist
 ```
 
+Always write these fields in `§ Plan Quality`:
+
+- `Recommendation Confidence` — `high / medium / low` for the chosen path
+- `Confidence Basis` — why that confidence level is warranted
+
 If `Planning Depth = deepen`, write a compact first-principles block in `§ Plan Quality`:
 
 - `Problem Statement` — state the outcome problem without solution wording where possible
@@ -129,7 +147,35 @@ If `Planning Depth = deepen`, write a compact first-principles block in `§ Plan
 - `Alternatives Considered` — compare at least two meaningfully different approaches, or explain why only one path is viable
 - `Failure Mode` — state how the recommendation is most likely to fail
 
-### Step 6: Design candidate approaches
+### Step 6: Draft or revise `design.md`
+
+Before finalizing `plan.md`, write `.harness/design.md` as the primary planning narrative for the round.
+
+Rules:
+
+```text
+- Baton does not require a rigid prose template for design.md
+- Keep the planning engine's native structure when possible
+- But ensure the minimum Baton-compatible sections exist:
+    Problem
+    Goals
+    Non-goals
+    Recommended Approach
+    Implementation Plan / Implementation Slices
+    Risks
+    Self-Check
+- Add conditionally-required sections when the round needs them:
+    Alternatives
+    Need Confirmation
+    Semantic Invariants
+    Compatibility / Caller Impact
+    Rollout / Rollback
+    Data / API / Schema Changes
+```
+
+`design.md` is where the full reasoning lives. `plan.md` should only carry the Baton control-plane subset.
+
+### Step 7: Design candidate approaches
 
 Take the clearest feature block(s) for the current round. Do not over-plan what is still fuzzy.
 
@@ -144,7 +190,7 @@ For each candidate approach, evaluate:
 
 ```markdown
 ### Approach A: {name}
-Confidence: {高/中/低} — {why}
+Confidence: {high / medium / low} — {why}
 Description: {what it does}
 Pros: {specific advantages}
 Cons: {specific disadvantages}
@@ -152,19 +198,23 @@ Complexity: {estimated slices, files, risk}
 ```
 
 Confidence criteria:
-- **高** — aligns with existing patterns, low risk, feasibility already confirmed in code
-- **中** — viable but involves trade-offs or unverified assumptions
-- **低** — technically possible but heavy unknowns or pattern mismatch
+- **high** — aligns with existing patterns, low risk, feasibility already confirmed in code
+- **medium** — viable but involves trade-offs or unverified assumptions
+- **low** — technically possible but heavy unknowns or pattern mismatch
 
-### Step 7: Record approach decisions for Dispatcher
+Use the same scale for `§ Plan Quality → Recommendation Confidence`. This field is mandatory even when there is only one viable approach.
+
+Record the chosen approach and any meaningfully different alternatives in `design.md` first, then project the control-plane summary into `plan.md`.
+
+### Step 8: Record approach decisions for Dispatcher
 
 If multiple approaches exist, write the comparison in `§ Approach Evaluation` and add an open decision row for Dispatcher:
 
 ```markdown
 | # | Approach | Confidence | Key trade-off |
 |---|----------|------------|---------------|
-| 1 | {name} | 高 | {one-line trade-off} |
-| 2 | {name} | 中 | {one-line trade-off} |
+| 1 | {name} | high | {one-line trade-off} |
+| 2 | {name} | medium | {one-line trade-off} |
 
 Recommendation: Approach {N} — {brief why}
 ```
@@ -176,11 +226,11 @@ OD-{N}.X | Which approach should this round take? |
          | {Approach A / Approach B / different direction} | open | yes
 ```
 
-If only one viable approach exists, record `None.` as resolved in `§ Open Decisions`.
+If only one viable approach exists, record `None.` as resolved in `§ Open Decisions` and still write `Recommendation Confidence` plus `Confidence Basis` in `§ Plan Quality`.
 
 If `Planning Depth = deepen` and only one approach is viable, record why the alternatives are not viable in `§ Plan Quality → Alternatives Considered`.
 
-### Step 8: Write ACs, round contract, and implementation slices
+### Step 9: Write ACs, round contract, and implementation slices
 
 For the chosen approach, write:
 
@@ -216,7 +266,7 @@ AC writing rules:
 - annotate unverified assumptions as `⚠️ LOW CONFIDENCE: {assumption}`
 - avoid brittle absolute line-count ACs unless you first verify the baseline with commands
 
-### Step 9: Declare round scope boundaries
+### Step 10: Declare round scope boundaries
 
 If the task naturally decomposes into layers or distinct concerns, state explicitly in `plan.md § Round N → Approach`:
 
@@ -225,7 +275,21 @@ This round: {what is in scope}
 Not this round: {what is explicitly deferred}
 ```
 
-### Step 10: Write `plan.md`
+### Step 11: Project `design.md` into `plan.md`
+
+Read `v2/skills/planner/project-from-design.md` and project:
+
+```text
+- design problem framing -> plan.md § Plan Quality
+- design open questions -> plan.md § Open Decisions
+- design scope / invariants / verification intent -> plan.md § Round Contract
+- design implementation plan -> plan.md § Implementation Slices
+- design risk / rollback notes -> plan.md § Risks
+```
+
+Keep `plan.md` concise. Do not paste the full design narrative into the control plane.
+
+### Step 12: Write `plan.md`
 
 Use the plan template exactly, including `§ Open Decisions`, `§ Round Contract`, and `§ Implementation Slices`. When the round depends on a facade, controller, orchestrator, adapter, or other load-bearing entry point, list it explicitly in `Key Entry Points` instead of leaving that constraint implicit in prose.
 
@@ -240,7 +304,7 @@ For later rounds:
    - Builder discoveries
    - any `[boundary update]` discoveries
    - anything that changes remaining feature clarity
-3. Repeat Round 1 Steps 5-9 for the next slice of work
+3. Repeat Round 1 Steps 5-11 for the next slice of work
 4. Update plan.md:
    - compress round history
    - trim stale context

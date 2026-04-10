@@ -58,6 +58,12 @@ else
   check "plan.template.md open decisions" "fail" "missing structured Open Decisions section"
 fi
 
+if grep -q 'control-plane projection of `.harness/design.md`' "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md design projection note" "pass"
+else
+  check "plan.template.md design projection note" "fail" "plan template missing design projection note"
+fi
+
 if grep -q "^### Round Contract$" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
   check "plan.template.md round contract" "pass"
 else
@@ -74,6 +80,18 @@ if grep -q "^| Planning Depth |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/d
   check "plan.template.md planning depth row" "pass"
 else
   check "plan.template.md planning depth row" "fail" "missing Planning Depth row in Plan Quality"
+fi
+
+if grep -q "^| Recommendation Confidence |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md recommendation confidence row" "pass"
+else
+  check "plan.template.md recommendation confidence row" "fail" "missing Recommendation Confidence row in Plan Quality"
+fi
+
+if grep -q "^| Confidence Basis |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
+  check "plan.template.md confidence basis row" "pass"
+else
+  check "plan.template.md confidence basis row" "fail" "missing Confidence Basis row in Plan Quality"
 fi
 
 if grep -q "^| Key Entry Points |" "$REPO_ROOT/v2/templates/plan.template.md" 2>/dev/null; then
@@ -199,10 +217,34 @@ else
   check "review.template.md verification add-ons" "fail" "missing Verification Add-ons section"
 fi
 
+if grep -q "^### Design Review Add-ons$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md design review add-ons" "pass"
+else
+  check "review.template.md design review add-ons" "fail" "missing Design Review Add-ons section"
+fi
+
+if grep -q "^### Pre-flight Triage$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md pre-flight triage" "pass"
+else
+  check "review.template.md pre-flight triage" "fail" "missing Pre-flight Triage section"
+fi
+
 if grep -q "^### Plan Quality$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
   check "review.template.md plan quality" "pass"
 else
   check "review.template.md plan quality" "fail" "missing Plan Quality section"
+fi
+
+if grep -q "^- Recommendation Confidence: " "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md recommendation confidence" "pass"
+else
+  check "review.template.md recommendation confidence" "fail" "missing Recommendation Confidence line"
+fi
+
+if grep -q "^- Confidence Calibration: " "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md confidence calibration" "pass"
+else
+  check "review.template.md confidence calibration" "fail" "missing Confidence Calibration line"
 fi
 
 if grep -q "^### Round Load$" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
@@ -223,10 +265,28 @@ else
   check "review.template.md verification add-ons routing row" "fail" "missing Verification Add-ons row in Routing Signals"
 fi
 
+if grep -q "^| Design Review Add-ons |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md design review add-ons routing row" "pass"
+else
+  check "review.template.md design review add-ons routing row" "fail" "missing Design Review Add-ons row in Routing Signals"
+fi
+
+if grep -q "^| Pre-flight Triage |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md pre-flight triage routing row" "pass"
+else
+  check "review.template.md pre-flight triage routing row" "fail" "missing Pre-flight Triage row in Routing Signals"
+fi
+
 if grep -q "^| Plan Quality |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
   check "review.template.md plan quality routing row" "pass"
 else
   check "review.template.md plan quality routing row" "fail" "missing Plan Quality row in Routing Signals"
+fi
+
+if grep -q "^| Confidence Calibration |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
+  check "review.template.md confidence calibration routing row" "pass"
+else
+  check "review.template.md confidence calibration routing row" "fail" "missing Confidence Calibration row in Routing Signals"
 fi
 
 if grep -q "^| Round Load |" "$REPO_ROOT/v2/templates/review.template.md" 2>/dev/null; then
@@ -253,10 +313,40 @@ else
   check "protocol.md planning depth wording" "fail" "protocol missing planning depth section"
 fi
 
+if grep -q "Recommendation Confidence" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md recommendation confidence wording" "pass"
+else
+  check "protocol.md recommendation confidence wording" "fail" "protocol missing recommendation confidence section"
+fi
+
+if grep -q "^### Default Planner Engines$" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md planner engine selection wording" "pass"
+else
+  check "protocol.md planner engine selection wording" "fail" "protocol missing default planner engines section"
+fi
+
+if grep -q "^### Design-First Planning$" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md design-first planning wording" "pass"
+else
+  check "protocol.md design-first planning wording" "fail" "protocol missing design-first planning section"
+fi
+
+if grep -q "\.harness/design.md" "$REPO_ROOT/v2/protocol.md" 2>/dev/null; then
+  check "protocol.md design artifact references" "pass"
+else
+  check "protocol.md design artifact references" "fail" "protocol missing design.md artifact references"
+fi
+
 if [[ -f "$REPO_ROOT/v2/tools/validate-round-contract.sh" ]]; then
   check "validate-round-contract.sh exists" "pass"
 else
   check "validate-round-contract.sh exists" "fail" "missing round-contract lint tool"
+fi
+
+if [[ -f "$REPO_ROOT/v2/tools/validate-design-projection.sh" ]]; then
+  check "validate-design-projection.sh exists" "pass"
+else
+  check "validate-design-projection.sh exists" "fail" "missing design projection lint tool"
 fi
 
 echo ""
@@ -280,6 +370,30 @@ if [[ -f "$REPO_ROOT/v2/skills/dispatch/checkpoints.md" ]]; then
   check "dispatch/checkpoints.md exists" "pass"
 else
   check "dispatch/checkpoints.md exists" "fail" "dispatch checkpoints file missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/project-from-design.md" ]]; then
+  check "planner/project-from-design.md exists" "pass"
+else
+  check "planner/project-from-design.md exists" "fail" "projection guide missing"
+fi
+
+if [[ -f "$REPO_ROOT/v2/skills/planner/engine-selection.md" ]]; then
+  check "planner/engine-selection.md exists" "pass"
+else
+  check "planner/engine-selection.md exists" "fail" "engine selection guide missing"
+fi
+
+if [[ -f "$REPO_ROOT/skills/superpowers-planning-engine/SKILL.md" ]]; then
+  check "superpowers planning companion exists" "pass"
+else
+  check "superpowers planning companion exists" "fail" "missing superpowers planning companion skill"
+fi
+
+if [[ -f "$REPO_ROOT/skills/superpowers-debugging-engine/SKILL.md" ]]; then
+  check "superpowers debugging companion exists" "pass"
+else
+  check "superpowers debugging companion exists" "fail" "missing superpowers debugging companion skill"
 fi
 
 if grep -q "routing.md" "$REPO_ROOT/v2/skills/dispatch/SKILL.md" 2>/dev/null; then
@@ -410,6 +524,12 @@ else
   check "verifier/preflight.md exists" "fail" "pre-flight file missing"
 fi
 
+if [[ -f "$REPO_ROOT/v2/skills/verifier/design-review.md" ]]; then
+  check "verifier/design-review.md exists" "pass"
+else
+  check "verifier/design-review.md exists" "fail" "design-stage review guide missing"
+fi
+
 if [[ -f "$REPO_ROOT/v2/skills/verifier/verification.md" ]]; then
   check "verifier/verification.md exists" "pass"
 else
@@ -451,6 +571,12 @@ if grep -q "verification.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/nul
   check "verifier references verification.md" "pass"
 else
   check "verifier references verification.md" "fail" "verifier entrypoint doesn't reference verification file"
+fi
+
+if grep -q "design-review.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then
+  check "verifier references design-review.md" "pass"
+else
+  check "verifier references design-review.md" "fail" "verifier entrypoint doesn't reference design-review file"
 fi
 
 if grep -q "cross-model.md" "$REPO_ROOT/v2/skills/verifier/SKILL.md" 2>/dev/null; then

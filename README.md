@@ -1,6 +1,6 @@
 # Baton
 
-A lightweight harness for AI-assisted software development. Three public roles, three artifacts, round-based progressive elaboration.
+A lightweight harness for AI-assisted software development. Three public roles, four artifacts, round-based progressive elaboration.
 
 Based on [Anthropic's harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Generator-Evaluator GAN pattern).
 
@@ -31,6 +31,7 @@ v2/
 │   │   ├── SKILL.md                   Public entrypoint — planning contract
 │   │   ├── profile.md                 Project-profile generation
 │   │   ├── planning.md                Round 1 / Round N planning
+│   │   ├── project-from-design.md     Projection from design.md to plan.md
 │   │   └── revision.md                Verifier-driven design revision
 │   ├── builder/
 │   │   ├── SKILL.md                   Public entrypoint — implementation contract
@@ -40,6 +41,7 @@ v2/
 │   └── verifier/
 │       ├── SKILL.md                   Public entrypoint — verification contract
 │       ├── preflight.md               Pre-flight round-contract challenge
+│       ├── design-review.md           Design-stage add-on selection and triage
 │       ├── verification.md            Tier 1 / 2 / 3a verification
 │       ├── cross-model.md             Cross-model review add-on
 │       └── adversarial.md             Adversarial testing (security/boundary)
@@ -55,6 +57,7 @@ v2/
     ├── builder-slice.sh              Host-neutral Builder delegation helper
     ├── check-consistency.sh           Verify protocol-to-downstream sync
     ├── external-review.sh             Provider-neutral C+ review adapter
+    ├── validate-design-projection.sh  Validate design.md minimum contract and plan projection
     ├── validate-live-state.sh         Validate current project-profile / plan / review shape
     └── validate-round-sync.sh         Validate plan/review round alignment
 
@@ -78,9 +81,9 @@ If a behavior only helps one host, tool, team, or domain, it should not go into 
 
 | Role | Reads | Writes | Key rule |
 |------|-------|--------|----------|
-| **Planner** | project-profile.md, plan.md, source code | plan.md (ACs, round contract, implementation slices) | Clarifying questions scale with complexity |
+| **Planner** | project-profile.md, design.md, plan.md, source code | design.md + plan.md | design.md is the planning narrative; plan.md is the control-plane projection |
 | **Builder** | project-profile.md, plan.md (current round) | Source code, tests, plan.md § Discoveries | Only canonical mutator; optional internal workers stay behind Builder |
-| **Verifier** | project-profile.md, plan.md (ACs), test results | review.md | Never reads Builder's source code (Mode A/B) |
+| **Verifier** | project-profile.md, design.md during pre-flight, plan.md, test results | review.md | Never reads Builder's source code (Mode A/B) |
 
 **Dispatcher** is the thin router — detects state from artifacts, routes to the right role. Makes no technical decisions.
 
@@ -122,9 +125,10 @@ flowchart TD
 
 | Artifact | Location | Lifecycle |
 |----------|----------|-----------|
+| `.harness/design.md` | `.harness/` | Per task — primary human-readable planning artifact. It may follow the planning engine's native structure as long as Baton's minimum section contract is preserved |
 | `project-profile.md` | Project root | Persistent across tasks — project conventions, traps, build commands |
-| `.harness/plan.md` | `.harness/` | Per task — round classification, forecasts, optional `Plan Quality`, ACs, `Round Contract`, approach, `Open Decisions`, discoveries. Archived on completion |
-| `.harness/review.md` | `.harness/` | Per round — verification findings, human judgment, `Routing Signals`, verify-pass add-on selection, plan-quality assessment, round-load assessment, optional findings-sidecar pointer |
+| `.harness/plan.md` | `.harness/` | Per task — Baton control-plane projection of `design.md`: round classification, forecasts, `Plan Quality`, ACs, `Round Contract`, `Open Decisions`, implementation slices, discoveries. Archived on completion |
+| `.harness/review.md` | `.harness/` | Per round — pre-flight design-review add-on selection, pre-flight triage, verification findings, human judgment, `Routing Signals`, verify-pass add-on selection, plan-quality assessment, confidence calibration, round-load assessment, optional findings-sidecar pointer |
 | `.context/baton/active/` | `.context/` | Scratch only — raw external-review state, findings JSON, temporary exploration notes, Builder slice packets, worker reports |
 
 ## Task Classification
@@ -154,7 +158,16 @@ Keep the layers distinct:
 
 First time on a project? Dispatcher will invoke Planner to generate `project-profile.md` by scanning build files, test infrastructure, conventions, and traps.
 
-Planner then writes the round classification, forecasts, and `Round Contract` before Dispatcher confirms `Execution Mode`.
+Planner now writes `.harness/design.md` first, then projects the round classification, forecasts, and `Round Contract` into `.harness/plan.md` before Dispatcher confirms `Execution Mode`.
+
+Default planner-engine policy:
+
+- feature / design / change / migration rounds -> `brainstorming` then `writing-plans`
+- bug / incident / regression rounds -> `systematic-debugging`
+
+Baton keeps this as an internal Planner policy. Companion adapters in root `skills/` can implement the engine directly without changing Baton role boundaries.
+
+In `full` mode, Verifier pre-flight may also run selected design-stage review add-ons before human approval. Structural findings can auto-route Planner for bounded revision; semantic or policy-changing findings stop at a human checkpoint.
 
 The public commands stay stable (`/dispatch`, `/planner`, `/builder`, `/verifier`). Detailed procedures live in sibling role files under each role directory.
 
@@ -210,6 +223,8 @@ Detected during pre-flight. Adapts to what the environment supports:
 | `using-baton` | Thin bootstrap for Baton-enabled repos: enter via `/dispatch`, prefer canonical artifacts, run validators before closing core changes |
 | `deep-research` | Systematic investigation of code, APIs, docs |
 | `first-principles-planner` | Strategic planning from first principles |
+| `superpowers-planning-engine` | Companion adapter for the default feature/design planning path: `brainstorming -> writing-plans -> design.md` |
+| `superpowers-debugging-engine` | Companion adapter for the default bug/incident planning path: `systematic-debugging -> design.md` |
 
 These are companion skills. Baton core must keep working without them.
 
@@ -218,5 +233,6 @@ These are companion skills. Baton core must keep working without them.
 - Treat protocol, role files, templates, validators, and projection docs as behavior-shaping code.
 - Update `v2/protocol.md` first when a rule changes.
 - Keep host-specific details out of the protocol core and public role entrypoints.
+- `design.md` may follow a planning engine's native template, but Dispatcher must still route only from `plan.md` and `review.md`.
 - Keep Builder delegation behind Builder. Internal workers must not become public roles or gain control-plane authority.
 - Run `bash v2/tools/check-consistency.sh` after core changes.

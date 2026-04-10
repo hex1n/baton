@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Understand codebase, clarify requirements, design approach. Creates or updates plan.md for the current round. Also generates project-profile.md on first use.
+description: Understand codebase, clarify requirements, design approach. Creates or updates design.md and plan.md for the current round. Also generates project-profile.md on first use.
 argument-hint: "[task description, human feedback, or Verifier escalation context]"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "[task description, human feedback, or Verifier escalation contex
 
 # Planner
 
-Planner owns understanding + requirements + architecture. It writes or revises `plan.md`, and on first use it can generate `project-profile.md`. The public entrypoint stays stable; detailed procedures live in companion files.
+Planner owns understanding + requirements + architecture. It writes or revises `.harness/design.md`, then projects the Baton control plane into `.harness/plan.md`. On first use it can also generate `project-profile.md`. The public entrypoint stays stable; detailed procedures live in companion files.
 
 ## Determine Mode
 
@@ -25,22 +25,27 @@ Read `.harness/plan.md` and the invocation context:
 
 | File | When to read | Owns |
 |------|--------------|------|
+| `v2/skills/planner/engine-selection.md` | Every planning round before drafting `design.md` | Select the default planning engine from task type |
 | `v2/skills/planner/profile.md` | Profile generation mode | Build/test/convention scan and `project-profile.md` draft |
 | `v2/skills/planner/planning.md` | Round 1 and Round N planning | Context read, exploration, clarification, decomposition, approach design, ACs, round contract, implementation slices |
+| `v2/skills/planner/project-from-design.md` | Every planning round after `design.md` is drafted or revised | Projection from `design.md` into Baton control-plane fields in `plan.md` |
 | `v2/skills/planner/revision.md` | Verifier escalation | Diagnose design issues and revise the current round without rewriting history |
 
 ## Execution Order
 
 ```
 1. Determine the mode from plan.md + invocation context.
-2. Read the matching companion file.
-3. Write .harness/exploration.md whenever targeted exploration happens.
-4. Write or revise .harness/plan.md using the plan template.
+2. Read `engine-selection.md` for any planning round.
+3. Read the matching companion file.
+4. Write .harness/exploration.md whenever targeted exploration happens.
+5. Write or revise .harness/design.md for the round.
+6. Read `project-from-design.md`.
+7. Write or revise .harness/plan.md using the plan template.
 ```
 
 ## Output Contract
 
-Use `v2/templates/plan.template.md` exactly. Always fill:
+Use `v2/templates/plan.template.md` exactly for `.harness/plan.md`. For `.harness/design.md`, keep the planning engine's native structure but preserve Baton's minimum section contract. Always fill:
 
 - `§ Metadata` — task identity, verifier/execution modes, scope/risk classification, and round forecasts
 - `§ Context` — what you read, with file paths and line numbers
@@ -58,10 +63,13 @@ Use `v2/templates/plan.template.md` exactly. Always fill:
 5. Fill `Scope Class` and `Risk Class` before locking the round contract. They explain the round; they do not replace `Execution Mode`.
 6. Forecast `Expected Rounds` and `Expected Slices This Round` honestly. They are planning aids, not promises.
 7. Choose `Planning Depth` honestly. Use `deepen` when the round needs better search quality, not just more prose.
-8. If `Planning Depth = deepen`, fill `§ Plan Quality` with a problem statement, assumptions, constraints vs conventions, alternatives, and failure mode.
-9. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
-10. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
-11. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
-12. Verify numeric claims with commands. Never estimate counts or sizes by eye.
-13. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
-14. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.
+8. Always record `Recommendation Confidence` and `Confidence Basis` in `§ Plan Quality`, even when only one viable approach exists.
+9. If `Planning Depth = deepen`, fill `§ Plan Quality` with a problem statement, assumptions, constraints vs conventions, alternatives, and failure mode.
+10. `§ Round Contract` is mandatory. Baton must state what counts as done before Builder starts.
+11. `§ Implementation Slices` is mandatory. Builder needs explicit file groupings and validation checkpoints.
+12. Checkpoint exploration to `.harness/exploration.md` so a broken session can resume without re-reading the codebase.
+13. Verify numeric claims with commands. Never estimate counts or sizes by eye.
+14. Respect human choices. If you diverge from a chosen direction, tag it explicitly and explain why.
+15. Planner never asks the human directly. Record unresolved choices in `plan.md § Open Decisions`; Dispatcher owns the actual question flow.
+16. `design.md` is the primary planning artifact. `plan.md` is the Baton control-plane projection. Never let the two drift.
+17. Use the default planner-engine mapping unless the human explicitly overrides it: feature/design/change -> `brainstorming + writing-plans`; bug/incident/regression -> `systematic-debugging`.

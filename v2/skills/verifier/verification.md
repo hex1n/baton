@@ -186,6 +186,8 @@ Verifier ran in Mode {A/B/C}. Confidence: {high/medium/low}.
 | Human Review Needed | {yes / no} |
 | Blocking | {none / code-bug / design-issue / requirement-gap / environment / overload} |
 | Verification Add-ons | {none / adversarial / cross-model / adversarial,cross-model} |
+| Plan Quality | {adequate / under-searched} |
+| Confidence Calibration | {calibrated / overstated / understated} |
 | Round Load | {normal / heavy / overloaded} |
 ```
 

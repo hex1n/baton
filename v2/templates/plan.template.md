@@ -1,5 +1,7 @@
 # Plan: {task name}
 
+> Baton control-plane projection of `.harness/design.md`. Keep this file concise and structured for routing, approval, and recovery.
+
 ## Metadata
 
 | Key | Value |
@@ -76,11 +78,13 @@
 
 ### Plan Quality
 
-> Required on `Planning Depth = deepen`. On normal rounds, keep this section brief but explicit.
+> Required every round. On `Planning Depth = normal`, keep this section brief but explicit.
 
 | Key | Value |
 |-----|-------|
 | Planning Depth | {`normal` / `deepen`} |
+| Recommendation Confidence | {`high` / `medium` / `low`} |
+| Confidence Basis | {why this confidence level is warranted} |
 | Problem Statement | {outcome-focused problem, or `Normal-depth round.`} |
 | Load-Bearing Assumptions | {1-3 assumptions, or `None.`} |
 | Constraints vs Conventions | {true constraints vs inherited conventions, or `None.`} |
@@ -89,21 +93,21 @@
 
 ### Approach Evaluation
 
-> If only one viable approach, skip this section and write directly in § Approach.
+> If only one viable approach, skip this section and write directly in § Approach. Still fill `§ Plan Quality → Recommendation Confidence` and `Confidence Basis`.
 
 | # | Approach | Confidence | Key trade-off |
 |---|----------|------------|---------------|
-| A | {name} | {高/中/低} | {one-line} |
-| B | {name} | {高/中/低} | {one-line} |
+| A | {name} | {high / medium / low} | {one-line} |
+| B | {name} | {high / medium / low} | {one-line} |
 
 **Approach A: {name}**
-- Confidence: {高/中/低} — {why}
+- Confidence: {high / medium / low} — {why}
 - Pros: {specific advantages}
 - Cons: {specific disadvantages}
 - Complexity: {slices, files, risk}
 
 **Approach B: {name}**
-- Confidence: {高/中/低} — {why}
+- Confidence: {high / medium / low} — {why}
 - Pros: {specific advantages}
 - Cons: {specific disadvantages}
 - Complexity: {slices, files, risk}

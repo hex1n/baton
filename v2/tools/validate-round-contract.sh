@@ -167,6 +167,8 @@ budget_note="$(extract_round_contract_value "$PLAN" "$round" "Budget Note")"
 overload_override="$(extract_round_contract_value "$PLAN" "$round" "Overload Override")"
 key_entry_points="$(extract_round_contract_value "$PLAN" "$round" "Key Entry Points")"
 planning_depth="$(extract_plan_quality_value "$PLAN" "$round" "Planning Depth")"
+recommendation_confidence="$(extract_plan_quality_value "$PLAN" "$round" "Recommendation Confidence")"
+confidence_basis="$(extract_plan_quality_value "$PLAN" "$round" "Confidence Basis")"
 problem_statement="$(extract_plan_quality_value "$PLAN" "$round" "Problem Statement")"
 assumptions="$(extract_plan_quality_value "$PLAN" "$round" "Load-Bearing Assumptions")"
 constraints_vs_conventions="$(extract_plan_quality_value "$PLAN" "$round" "Constraints vs Conventions")"
@@ -186,6 +188,18 @@ if [[ "$planning_depth" == "normal" || "$planning_depth" == "deepen" ]]; then
   check "planning depth value" "pass"
 else
   check "planning depth value" "fail" "Planning Depth must be normal or deepen"
+fi
+
+if [[ "$recommendation_confidence" == "high" || "$recommendation_confidence" == "medium" || "$recommendation_confidence" == "low" ]]; then
+  check "recommendation confidence value" "pass"
+else
+  check "recommendation confidence value" "fail" "Recommendation Confidence must be high, medium, or low"
+fi
+
+if [[ -n "$confidence_basis" && "$confidence_basis" != "None." ]]; then
+  check "confidence basis present" "pass"
+else
+  check "confidence basis present" "fail" "Plan Quality must explain Confidence Basis"
 fi
 
 deepen_trigger="no"
@@ -308,9 +322,36 @@ if [[ -f "$REVIEW" ]]; then
   review_round="$(extract_review_round "$REVIEW")"
   if [[ "$review_round" == "$round" ]]; then
     review_addons="$(extract_review_signal "$REVIEW" "Verification Add-ons")"
+    review_design_addons="$(extract_review_signal "$REVIEW" "Design Review Add-ons")"
+    review_preflight_triage="$(extract_review_signal "$REVIEW" "Pre-flight Triage")"
     review_plan_quality="$(extract_review_signal "$REVIEW" "Plan Quality")"
+    review_confidence_calibration="$(extract_review_signal "$REVIEW" "Confidence Calibration")"
     review_load="$(extract_review_signal "$REVIEW" "Round Load")"
     review_blocking="$(extract_review_signal "$REVIEW" "Blocking")"
+    review_next_route="$(extract_review_signal "$REVIEW" "Next Route")"
+    review_human_needed="$(extract_review_signal "$REVIEW" "Human Review Needed")"
+
+    if [[ "$review_design_addons" == "none" || "$review_design_addons" == "adversarial" || "$review_design_addons" == "cross-model" || "$review_design_addons" == "adversarial,cross-model" ]]; then
+      check "review design review add-ons signal" "pass"
+    else
+      check "review design review add-ons signal" "fail" "review Design Review Add-ons must be none, adversarial, cross-model, or adversarial,cross-model"
+    fi
+
+    if [[ "$review_preflight_triage" == "none" || "$review_preflight_triage" == "auto-revise" || "$review_preflight_triage" == "human-checkpoint" ]]; then
+      check "review pre-flight triage signal" "pass"
+    else
+      check "review pre-flight triage signal" "fail" "review Pre-flight Triage must be none, auto-revise, or human-checkpoint"
+    fi
+
+    if [[ -n "$review_design_addons" && "$review_design_addons" != "none" ]]; then
+      if [[ "$execution_mode" == "full" ]]; then
+        check "design review add-ons only in full mode" "pass"
+      else
+        check "design review add-ons only in full mode" "fail" "Design Review Add-ons require Execution Mode = full"
+      fi
+    else
+      check "design review add-ons only in full mode" "pass"
+    fi
 
     if [[ -n "$review_addons" && "$review_addons" != "none" ]]; then
       if [[ "$execution_mode" == "full" ]]; then
@@ -322,10 +363,38 @@ if [[ -f "$REVIEW" ]]; then
       check "review add-ons only in full mode" "pass"
     fi
 
+    if [[ "$review_preflight_triage" == "auto-revise" ]]; then
+      if [[ "$review_next_route" == "planner" && "$review_human_needed" == "no" && "$review_blocking" == "design-issue" ]]; then
+        check "auto-revise triage routing" "pass"
+      else
+        check "auto-revise triage routing" "fail" "auto-revise triage must route planner / no human / blocking=design-issue"
+      fi
+    elif [[ "$review_preflight_triage" == "human-checkpoint" ]]; then
+      if [[ "$review_next_route" == "human" && "$review_human_needed" == "yes" && ( "$review_blocking" == "design-issue" || "$review_blocking" == "requirement-gap" ) ]]; then
+        check "human-checkpoint triage routing" "pass"
+      else
+        check "human-checkpoint triage routing" "fail" "human-checkpoint triage must route human / yes / blocking=design-issue or requirement-gap"
+      fi
+    else
+      check "pre-flight triage routing" "pass"
+    fi
+
     if [[ "$review_plan_quality" == "adequate" || "$review_plan_quality" == "under-searched" ]]; then
       check "review plan quality signal" "pass"
     else
       check "review plan quality signal" "fail" "review Plan Quality must be adequate or under-searched"
+    fi
+
+    if [[ "$review_confidence_calibration" == "calibrated" || "$review_confidence_calibration" == "overstated" || "$review_confidence_calibration" == "understated" ]]; then
+      check "review confidence calibration signal" "pass"
+    else
+      check "review confidence calibration signal" "fail" "review Confidence Calibration must be calibrated, overstated, or understated"
+    fi
+
+    if [[ "$review_plan_quality" == "under-searched" && "$recommendation_confidence" == "high" ]]; then
+      check "under-searched rounds avoid high confidence" "fail" "under-searched plan cannot still claim Recommendation Confidence = high"
+    else
+      check "under-searched rounds avoid high confidence" "pass"
     fi
 
     if [[ "$review_load" == "overloaded" ]]; then

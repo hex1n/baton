@@ -36,11 +36,27 @@ require_heading() {
   fi
 }
 
+require_pattern_in_section() {
+  local file="$1" start_pattern="$2" end_pattern="$3" pattern="$4" label="$5" detail="$6"
+  if awk -v start="$start_pattern" -v end="$end_pattern" -v pat="$pattern" '
+    BEGIN { in_section=0 }
+    $0 ~ start { in_section=1; next }
+    in_section && $0 ~ end { exit }
+    in_section && $0 ~ pat { found=1; exit }
+    END { exit(found ? 0 : 1) }
+  ' "$file" 2>/dev/null; then
+    check "$label" "pass"
+  else
+    check "$label" "fail" "$detail"
+  fi
+}
+
 echo "Baton v2 Live State Validation"
 echo "================================"
 echo ""
 
 PROJECT_PROFILE="$REPO_ROOT/project-profile.md"
+DESIGN="$REPO_ROOT/.harness/design.md"
 PLAN="$REPO_ROOT/.harness/plan.md"
 REVIEW="$REPO_ROOT/.harness/review.md"
 
@@ -66,7 +82,25 @@ else
 fi
 
 echo ""
-echo "2. .harness/plan.md"
+echo "2. .harness/design.md"
+if [[ -f "$PLAN" || -f "$REVIEW" ]]; then
+  if [[ -f "$DESIGN" ]]; then
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Problem|Problem Definition)[[:space:]]*$' "design problem section" "missing Problem / Problem Definition heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Goals|Objectives)[[:space:]]*$' "design goals section" "missing Goals / Objectives heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Non-goals|Out of Scope|Non Goals)[[:space:]]*$' "design non-goals section" "missing Non-goals / Out of Scope heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Recommended Approach|Recommendation|Proposed Approach)[[:space:]]*$' "design recommended approach section" "missing Recommended Approach / Recommendation heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Implementation Plan|Implementation Slices|Execution Plan)[[:space:]]*$' "design implementation plan section" "missing Implementation Plan / Implementation Slices heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Risks|Risk Analysis)[[:space:]]*$' "design risks section" "missing Risks heading"
+    require_heading "$DESIGN" '^#{1,6}[[:space:]]+(Self-Check|Failure Modes|Self Check)[[:space:]]*$' "design self-check section" "missing Self-Check / Failure Modes heading"
+  else
+    check "design.md present for active task" "fail" "design.md is required when plan.md or review.md exists"
+  fi
+else
+  check "design.md present for active task" "warn" "no active task artifacts found"
+fi
+
+echo ""
+echo "3. .harness/plan.md"
 if [[ -f "$PLAN" ]]; then
   plan_open_decisions_count=$(grep -c '^### Open Decisions$' "$PLAN" 2>/dev/null || true)
   require_heading "$PLAN" '^# Plan:' "plan title" "missing '# Plan:'"
@@ -84,6 +118,8 @@ if [[ -f "$PLAN" ]]; then
   require_heading "$PLAN" '^### Acceptance Criteria$' "plan AC section" "missing '### Acceptance Criteria'"
   require_heading "$PLAN" '^### Plan Quality$' "plan plan quality section" "missing '### Plan Quality'"
   require_heading "$PLAN" '^\| Planning Depth \|' "plan planning depth row" "missing Planning Depth row in Plan Quality"
+  require_heading "$PLAN" '^\| Recommendation Confidence \|' "plan recommendation confidence row" "missing Recommendation Confidence row in Plan Quality"
+  require_heading "$PLAN" '^\| Confidence Basis \|' "plan confidence basis row" "missing Confidence Basis row in Plan Quality"
   require_heading "$PLAN" '^### Open Decisions$' "plan open decisions" "missing '### Open Decisions'"
   require_heading "$PLAN" '^\| ID \| Question \| Options \| Status \| Blocking \|' "plan open decisions table" "missing Open Decisions table header"
   require_heading "$PLAN" '^### Round Contract$' "plan round contract" "missing '### Round Contract'"
@@ -153,39 +189,54 @@ if [[ -f "$PLAN" ]]; then
   else
     check "plan planning depth value" "fail" "Planning Depth must be normal or deepen"
   fi
+
+  if grep -qE '^\| Recommendation Confidence \| (high|medium|low) \|$' "$PLAN" 2>/dev/null; then
+    check "plan recommendation confidence value" "pass"
+  else
+    check "plan recommendation confidence value" "fail" "Recommendation Confidence must be high, medium, or low"
+  fi
 else
   check "plan.md present" "warn" "no active task plan found"
 fi
 
 echo ""
-echo "3. .harness/review.md"
+echo "4. .harness/review.md"
 if [[ -f "$REVIEW" ]]; then
   review_routing_signals_count=$(grep -c '^## Routing Signals$' "$REVIEW" 2>/dev/null || true)
   require_heading "$REVIEW" '^# Review: Round [0-9]+$' "review title" "missing '# Review: Round {N}'"
   require_heading "$REVIEW" '^## Pre-flight' "review pre-flight section" "missing '## Pre-flight'"
   require_heading "$REVIEW" '^### Contract Status$' "review contract status" "missing '### Contract Status'"
-  require_heading "$REVIEW" '^- Status: ' "review contract status value" "missing contract status line"
+  require_pattern_in_section "$REVIEW" '^### Contract Status$' '^### |^## ' '^- Status: ' "review contract status value" "missing contract status line in Contract Status"
+  require_heading "$REVIEW" '^### Design Review Add-ons$' "review design review add-ons section" "missing '### Design Review Add-ons'"
+  require_pattern_in_section "$REVIEW" '^### Design Review Add-ons$' '^### |^## ' '^- Used: ' "review design review add-ons value" "missing design review add-ons used line"
+  require_heading "$REVIEW" '^### Pre-flight Triage$' "review pre-flight triage section" "missing '### Pre-flight Triage'"
+  require_pattern_in_section "$REVIEW" '^### Pre-flight Triage$' '^### |^## ' '^- Action: ' "review pre-flight triage value" "missing pre-flight triage action line"
   require_heading "$REVIEW" '^### Verification Add-ons \(for verify pass\)$' "review verification add-ons section" "missing '### Verification Add-ons (for verify pass)'"
-  require_heading "$REVIEW" '^- Recommended: ' "review verification add-ons value" "missing verification add-ons recommendation line"
+  require_pattern_in_section "$REVIEW" '^### Verification Add-ons \(for verify pass\)$' '^### |^## ' '^- Recommended: ' "review verification add-ons value" "missing verification add-ons recommendation line"
   require_heading "$REVIEW" '^### Plan Quality$' "review plan quality section" "missing '### Plan Quality'"
   require_heading "$REVIEW" '^- Depth: ' "review plan quality depth" "missing plan quality depth line"
   require_heading "$REVIEW" '^- Search Adequacy: ' "review plan quality adequacy" "missing search adequacy line"
+  require_heading "$REVIEW" '^- Recommendation Confidence: ' "review plan quality confidence" "missing recommendation confidence line"
+  require_heading "$REVIEW" '^- Confidence Calibration: ' "review confidence calibration" "missing confidence calibration line"
   require_heading "$REVIEW" '^### Round Load$' "review round load section" "missing '### Round Load'"
   require_heading "$REVIEW" '^- Load: ' "review round load value" "missing round load line"
   require_heading "$REVIEW" '^## Verification$' "review verification section" "missing '## Verification'"
   require_heading "$REVIEW" '^### Activated Add-ons$' "review activated add-ons" "missing '### Activated Add-ons'"
-  require_heading "$REVIEW" '^- Used: ' "review activated add-ons value" "missing activated add-ons used line"
+  require_pattern_in_section "$REVIEW" '^### Activated Add-ons$' '^### |^## ' '^- Used: ' "review activated add-ons value" "missing activated add-ons used line"
   require_heading "$REVIEW" '^## Findings$' "review findings section" "missing '## Findings'"
   require_heading "$REVIEW" '^### Findings Sidecar$' "review findings sidecar" "missing '### Findings Sidecar'"
-  require_heading "$REVIEW" '^- Path: ' "review findings sidecar path" "missing findings sidecar path line"
-  require_heading "$REVIEW" '^- Status: ' "review findings sidecar status" "missing findings sidecar status line"
+  require_pattern_in_section "$REVIEW" '^### Findings Sidecar$' '^### |^## ' '^- Path: ' "review findings sidecar path" "missing findings sidecar path line"
+  require_pattern_in_section "$REVIEW" '^### Findings Sidecar$' '^### |^## ' '^- Status: ' "review findings sidecar status" "missing findings sidecar status line"
   require_heading "$REVIEW" '^## Human Judgment$' "review human judgment" "missing '## Human Judgment'"
   require_heading "$REVIEW" '^## Routing Signals$' "review routing signals" "missing '## Routing Signals'"
   require_heading "$REVIEW" '^\| Next Route \|' "review next route row" "missing Next Route row"
   require_heading "$REVIEW" '^\| Human Review Needed \|' "review human review row" "missing Human Review Needed row"
   require_heading "$REVIEW" '^\| Blocking \|' "review blocking row" "missing Blocking row"
+  require_heading "$REVIEW" '^\| Design Review Add-ons \|' "review design review add-ons row" "missing Design Review Add-ons row"
+  require_heading "$REVIEW" '^\| Pre-flight Triage \|' "review pre-flight triage row" "missing Pre-flight Triage row"
   require_heading "$REVIEW" '^\| Verification Add-ons \|' "review verification add-ons row" "missing Verification Add-ons row"
   require_heading "$REVIEW" '^\| Plan Quality \|' "review plan quality row" "missing Plan Quality row"
+  require_heading "$REVIEW" '^\| Confidence Calibration \|' "review confidence calibration row" "missing Confidence Calibration row"
   require_heading "$REVIEW" '^\| Round Load \|' "review round load row" "missing Round Load row"
   require_heading "$REVIEW" '^## Verdict' "review verdict" "missing '## Verdict'"
 

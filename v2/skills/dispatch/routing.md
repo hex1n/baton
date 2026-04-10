@@ -8,10 +8,10 @@ Structured control-plane fields:
 
 ```text
 plan.md § Metadata         → Scope Class + Risk Class + round forecasts + Verifier/Execution modes
-plan.md § Plan Quality     → planning depth + problem framing + alternatives for the current round
+plan.md § Plan Quality     → planning depth + recommendation confidence + problem framing + alternatives for the current round
 plan.md § Open Decisions   → explicit human questions + blocking status
 plan.md § Round Contract   → agreed in-scope work + done threshold for the round + overload override
-review.md § Routing Signals   → next route + human-review requirement + blocking reason + verify-pass add-ons + plan-quality assessment + round-load assessment
+review.md § Routing Signals   → next route + human-review requirement + blocking reason + design-review add-ons + pre-flight triage + verify-pass add-ons + plan-quality assessment + confidence calibration + round-load assessment
 ```
 
 Scratch files under `.context/baton/active/` are optional tooling aids. Dispatcher never routes from them.
@@ -54,6 +54,7 @@ For a new task or a new round pending:
    → Ask the human if classification and constraints still leave doubt: "compact / standard / full"
 4. Invoke Verifier pre-flight
 5. Read `review.md § Routing Signals`
+   → If `Pre-flight Triage != none`, hand off to `checkpoints.md` before Builder can start
    → If `Blocking = overload`, hand off to `checkpoints.md` before Builder can start
 ```
 
@@ -96,7 +97,8 @@ Standard mode:
 Full mode:
   Verifier pre-flight:
     - invoke with "execution mode: full"
-    - pre-flight records `Verification Add-ons` in review.md
+    - pre-flight may run selected design-review add-on files before Builder starts
+    - pre-flight records `Design Review Add-ons`, `Pre-flight Triage`, and `Verification Add-ons` in review.md
   Verifier verification:
     - read `review.md § Routing Signals` → `Verification Add-ons`
     - activate only the listed add-on files
@@ -116,7 +118,9 @@ Compact mode:
 Each role starts fresh. Pass context through arguments and artifacts, never through conversation history.
 
 Dispatcher reads `Verification Add-ons` literally from `review.md § Routing Signals`. It does not infer add-ons from prose.
+Dispatcher reads `Design Review Add-ons` and `Pre-flight Triage` literally from `review.md § Routing Signals`. It does not infer pre-flight routing from prose.
 Dispatcher reads `Plan Quality` literally from `review.md § Routing Signals`. It does not infer "under-searched" from narrative text.
+Dispatcher reads `Confidence Calibration` literally from `review.md § Routing Signals`. It does not infer overconfidence from narrative text.
 Dispatcher reads `Round Load` and `Blocking = overload` literally from `review.md § Routing Signals`. It does not infer overload from narrative text.
 
 ## Micro-fix Fast Path

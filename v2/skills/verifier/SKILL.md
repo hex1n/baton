@@ -19,6 +19,7 @@ You have two jobs:
 | File | When to read | Owns |
 |------|--------------|------|
 | `v2/skills/verifier/preflight.md` | `preflight` mode | AC testability, baseline, environment capability, round-contract challenge, pre-flight review output |
+| `v2/skills/verifier/design-review.md` | `preflight` mode after the core challenge | Design-stage add-on selection and triage before Builder starts |
 | `v2/skills/verifier/verification.md` | `verify` mode | Tier 1 / 2 / 3a verification, escalation criteria, final review output |
 | `v2/skills/verifier/cross-model.md` | Full mode when Dispatcher explicitly activates it for the round | Read-only cross-model pressure testing |
 | `v2/skills/verifier/adversarial.md` | Full mode when Dispatcher explicitly activates it for the round | Read-only adversarial checks |
@@ -30,12 +31,16 @@ You have two jobs:
 ```
 If argument is "preflight":
   1. Read `preflight.md`
-  2. In full mode, also read any optional pre-flight add-on files Dispatcher named
-  3. Decide which verify-pass add-ons this round should activate
-  4. Classify the round load as `normal / heavy / overloaded`
-  5. Assess plan quality (`adequate / under-searched`) for the current planning depth
-  6. Write / refresh the pre-flight section in review.md
-  7. Write `§ Routing Signals` for Dispatcher, including `Verification Add-ons`, `Plan Quality`, and `Round Load`
+  2. Read `.harness/design.md` alongside `.harness/plan.md`
+  3. Read `design-review.md`
+  4. In full mode, run any selected design-review add-on files for the round
+  5. Classify the pre-flight triage as `none / auto-revise / human-checkpoint`
+  6. Decide which verify-pass add-ons this round should activate
+  7. Classify the round load as `normal / heavy / overloaded`
+  8. Assess plan quality (`adequate / under-searched`) for the current planning depth
+  9. Assess recommendation-confidence calibration (`calibrated / overstated / understated`)
+  10. Write / refresh the pre-flight section in review.md
+  11. Write `§ Routing Signals` for Dispatcher, including `Design Review Add-ons`, `Pre-flight Triage`, `Verification Add-ons`, `Plan Quality`, `Confidence Calibration`, and `Round Load`
 
 If argument is "verify":
   1. Read `verification.md`
@@ -61,4 +66,6 @@ If argument is "verify":
 5. Credit what works. Human review guidance should separate verified areas from judgment calls.
 6. Optional add-on files stay read-only and additive. They can surface more evidence, never apply fixes.
 7. Every review.md must include `§ Routing Signals`. Dispatcher routes from that section, not from prose inference.
-8. Pre-flight must record the verify-pass add-ons, plan-quality judgment, and round-load judgment in `§ Routing Signals` before Builder starts.
+8. Pre-flight must record the verify-pass add-ons, plan-quality judgment, recommendation-confidence calibration, and round-load judgment in `§ Routing Signals` before Builder starts.
+9. Pre-flight reviews both `.harness/design.md` and `.harness/plan.md`. If the control-plane projection is missing or materially drifts from the design, block the round before Builder starts.
+10. In Full mode, pre-flight may run design-stage add-ons before Builder starts. It must classify whether the result is `none`, `auto-revise`, or `human-checkpoint`.

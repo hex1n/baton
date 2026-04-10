@@ -1,6 +1,6 @@
 # Baton
 
-一个轻量级的 AI 辅助软件开发 harness。三个公共角色，三个制品，基于轮次的渐进式需求细化。
+一个轻量级的 AI 辅助软件开发 harness。三个公共角色，四个制品，基于轮次的渐进式需求细化。
 
 设计参考 [Anthropic 关于长时间运行应用的 harness 设计](https://www.anthropic.com/engineering/harness-design-long-running-apps)（Generator-Evaluator GAN 模式）。
 
@@ -31,6 +31,7 @@ v2/
 │   │   ├── SKILL.md                   公共入口 — 规划契约
 │   │   ├── profile.md                 project-profile 生成
 │   │   ├── planning.md                Round 1 / Round N 规划
+│   │   ├── project-from-design.md     从 design.md 投影到 plan.md
 │   │   └── revision.md                Verifier 触发的设计修订
 │   ├── builder/
 │   │   ├── SKILL.md                   公共入口 — 实现契约
@@ -40,6 +41,7 @@ v2/
 │   └── verifier/
 │       ├── SKILL.md                   公共入口 — 验证契约
 │       ├── preflight.md               预检与方案挑战
+│       ├── design-review.md           设计阶段 add-on 选择与 triage
 │       ├── verification.md            Tier 1 / 2 / 3a 验证
 │       ├── cross-model.md             跨模型审查附加层
 │       └── adversarial.md             对抗测试（安全/边界）
@@ -55,6 +57,7 @@ v2/
     ├── builder-slice.sh              host-neutral 的 Builder delegation helper
     ├── check-consistency.sh           验证协议到下游文件的一致性
     ├── external-review.sh             provider-neutral 的 C+ 审查适配层
+    ├── validate-design-projection.sh  验证 design.md 最小契约与 plan 投影
     ├── validate-live-state.sh         验证当前 project-profile / plan / review 结构
     └── validate-round-sync.sh         验证 plan/review 轮次对齐
 
@@ -78,9 +81,9 @@ v2/
 
 | 角色 | 读取 | 写入 | 核心规则 |
 |------|------|------|----------|
-| **Planner** | project-profile.md, plan.md, 源代码 | plan.md（AC、Round Contract、Implementation Slices） | 澄清问题数量随复杂度缩放 |
+| **Planner** | project-profile.md、design.md、plan.md、源代码 | design.md + plan.md | design.md 是规划主文档，plan.md 是控制面投影 |
 | **Builder** | project-profile.md, plan.md（当前轮次） | 源代码、测试、plan.md § Discoveries | 唯一的 canonical mutator；可选内部 worker 仍受 Builder 边界约束 |
-| **Verifier** | project-profile.md, plan.md（AC）、测试结果 | review.md | 验证时不读 Builder 的源代码（Mode A/B） |
+| **Verifier** | project-profile.md、pre-flight 阶段的 design.md、plan.md、测试结果 | review.md | 验证时不读 Builder 的源代码（Mode A/B） |
 
 **Dispatcher** 是薄路由 — 从制品检测状态，路由到正确角色。不做技术决策。
 
@@ -122,9 +125,10 @@ flowchart TD
 
 | 制品 | 位置 | 生命周期 |
 |------|------|----------|
+| `.harness/design.md` | `.harness/` | 每任务 — 面向人的主 planning artifact。可沿用 planning engine 原生结构，只要满足 Baton 的最小契约 |
 | `project-profile.md` | 项目根目录 | 跨任务持久 — 项目约定、陷阱、构建命令 |
-| `.harness/plan.md` | `.harness/` | 每任务 — 轮次分类、预测、可选的 `Plan Quality`、AC、`Round Contract`、方案、`Open Decisions`、发现。完成后归档 |
-| `.harness/review.md` | `.harness/` | 每轮次 — 验证发现、人工判断、`Routing Signals`、verify-pass add-on 选择、plan-quality 评估、round-load 评估，以及可选的 findings-sidecar 指针 |
+| `.harness/plan.md` | `.harness/` | 每任务 — `design.md` 的 Baton 控制面投影：轮次分类、预测、`Plan Quality`、AC、`Round Contract`、`Open Decisions`、Implementation Slices、发现。完成后归档 |
+| `.harness/review.md` | `.harness/` | 每轮次 — pre-flight 设计审查 add-on 选择、pre-flight triage、验证发现、人工判断、`Routing Signals`、verify-pass add-on 选择、plan-quality 评估、confidence calibration、round-load 评估，以及可选的 findings-sidecar 指针 |
 | `.context/baton/active/` | `.context/` | scratch only — 原始 external-review 状态、findings JSON、临时探索笔记、Builder slice packet、worker report |
 
 ## 任务分类
@@ -154,7 +158,16 @@ flowchart TD
 
 首次使用？Dispatcher 会调用 Planner 扫描项目，生成 `project-profile.md`（构建配置、测试基础设施、编码约定、已知陷阱）。
 
-然后 Planner 会先写出当前轮次的分类、预测和 `Round Contract`，Dispatcher 再据此确认 `Execution Mode`。
+然后 Planner 会先写 `.harness/design.md`，再把当前轮次的分类、预测和 `Round Contract` 投影到 `plan.md`，Dispatcher 再据此确认 `Execution Mode`。
+
+默认的 planner-engine 策略是：
+
+- feature / design / change / migration round -> `brainstorming` 再 `writing-plans`
+- bug / incident / regression round -> `systematic-debugging`
+
+这仍然属于 Planner 的内部策略，不会改变 Baton 的公共角色边界。root `skills/` 里的 companion adapter 只是把这套 engine 接进来。
+
+在 `full` mode 下，Verifier pre-flight 还可以在人工审批前运行选中的设计阶段审查 add-on。纯结构性问题可自动回到 Planner 做有界修订；涉及语义或策略的发现则必须停在 human checkpoint。
 
 公共命令保持不变（`/dispatch`、`/planner`、`/builder`、`/verifier`），细节步骤下沉到各角色目录里的同级职责文件。
 
@@ -210,6 +223,8 @@ flowchart LR
 | `using-baton` | Baton 仓库的薄启动守门：从 `/dispatch` 进入、优先读 canonical artifacts、收口前跑 validator |
 | `deep-research` | 系统化调查代码、API、文档 |
 | `first-principles-planner` | 基于第一性原理的策略规划 |
+| `superpowers-planning-engine` | 默认 feature/design 规划路径的 companion adapter：`brainstorming -> writing-plans -> design.md` |
+| `superpowers-debugging-engine` | 默认 bug/incident 规划路径的 companion adapter：`systematic-debugging -> design.md` |
 
 这些都属于 companion skills；Baton core 不应依赖它们才能运转。
 
@@ -218,5 +233,6 @@ flowchart LR
 - protocol、角色文件、模板、验证器和投影文档都应视为“塑造行为的代码”。
 - 规则变化先改 `v2/protocol.md`，再同步下游投影。
 - 宿主特定细节不要写进协议核心和公共角色入口。
+- `design.md` 可以保留 planning engine 的原生模板，但 Dispatcher 仍然只能从 `plan.md` / `review.md` 读状态。
 - Builder delegation 必须留在 Builder 内部。内部 worker 不能变成公共角色，也不能获得控制面权限。
 - 改 core 后运行 `bash v2/tools/check-consistency.sh`。

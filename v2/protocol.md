@@ -105,6 +105,94 @@ Default deepen triggers:
 
 `Planning Depth` is not an execution mode. It controls how much search Baton requires before Builder starts. On deepen rounds, Planner must fill `plan.md § Plan Quality`, Verifier must assess search adequacy during pre-flight, and Dispatcher must support a `deepen` route before Builder starts.
 
+### Design-First Planning
+
+Planner must write `.harness/design.md` before finalizing `.harness/plan.md` for a new round.
+
+- `design.md` is the primary human-readable planning artifact. It may follow the native structure of the planning engine in use.
+- Baton does **not** define a rigid design template. Instead, it requires a minimum compatible section contract so projection and validation stay mechanical.
+- `plan.md` is the Baton control-plane projection of `design.md`. It stays concise and structured for Dispatcher, validators, and recovery.
+- Dispatcher never routes directly from `design.md`. Human checkpoints and role routing still use `plan.md` and `review.md`.
+
+Minimum required sections in `.harness/design.md`:
+
+- `Problem`
+- `Goals`
+- `Non-goals`
+- `Recommended Approach`
+- `Implementation Plan` or `Implementation Slices`
+- `Risks`
+- `Self-Check`
+
+Conditionally required sections in `.harness/design.md`:
+
+- `Alternatives` when multiple viable approaches exist or when Planner claims only one path is viable
+- `Need Confirmation` when a human decision is load-bearing
+- `Semantic Invariants` when the round changes state semantics, replace semantics, business rules, or other load-bearing behavior
+- `Compatibility / Caller Impact` when callers, interfaces, or downstream consumers are affected
+- `Rollout / Rollback` when rollout sequencing, migration safety, or reversibility matters
+- `Data / API / Schema Changes` when contracts or stored data change
+
+### Default Planner Engines
+
+Baton keeps one public `planner` role, but its default internal planning engine depends on task type.
+
+Default mapping:
+
+- feature / design / change / migration rounds -> `brainstorming` then `writing-plans`
+- bug / incident / regression rounds -> `systematic-debugging`
+
+These engine names describe the planning workflow Baton expects. Companion adapters in root `skills/` may implement them directly, but Baton core may also emulate the same workflow when those companions are unavailable.
+
+Rules:
+
+- Planner must select the engine before drafting `.harness/design.md`
+- feature / design rounds should default to the Superpowers planning path unless the human explicitly asks for a different engine
+- bug / incident rounds should default to the Superpowers debugging path unless the human explicitly asks for a different engine
+- Baton core must still work without companion adapters; if a companion is unavailable, Planner follows the same semantics natively and notes the fallback in `.harness/design.md`
+- changing the internal planning engine does not change artifact ownership, Dispatcher routing, or Builder / Verifier boundaries
+
+### Design-Stage Review Add-ons & Triage
+
+Before Builder starts, Verifier pre-flight may run selected design-stage add-ons against `.harness/design.md` + `.harness/plan.md`.
+
+Available design-stage add-ons:
+
+- `adversarial` — stress-test the proposed design against failure modes before code exists
+- `cross-model` — use an external reviewer to challenge the design from different blind spots before code exists
+
+Default design-stage add-on selection:
+
+- recommend `adversarial` if `Planning Depth = deepen` and the round is complex, high-risk, degraded-evidence, or touches shared-state mutation, transaction boundaries, concurrency, idempotency, replace/rebuild semantics, irreversible side effects, or Baton control-plane behavior
+- recommend `cross-model` only if an external reviewer is available and the round is high-risk, design-heavy, explicitly requested by the human, or still confidence-degraded after the core challenge
+
+After the core challenge and any selected design-stage add-ons, Verifier pre-flight must classify the action as:
+
+| Triage | Meaning |
+|--------|---------|
+| `none` | No design-stage finding requires replanning before the normal human approval checkpoint |
+| `auto-revise` | Findings require structural planning fixes, but stay inside the current task direction and do not require a human semantic choice |
+| `human-checkpoint` | Findings would change semantics, scope, contract direction, rollout policy, or require a new human decision |
+
+Routing rule:
+
+- `auto-revise` → Dispatcher routes Planner automatically, Planner revises `design.md` + `plan.md`, then pre-flight re-runs before human approval
+- `human-checkpoint` → Dispatcher stops at the approval checkpoint and surfaces the design-stage findings to the human before Builder can start
+- `none` → continue to the normal approval checkpoint
+
+### Recommendation Confidence
+
+Planner must always declare how confident Baton is in the chosen path for the current round, even when only one viable approach exists.
+
+| Confidence | Meaning |
+|------------|---------|
+| `high` | The recommended path is strongly grounded in repo patterns or already-confirmed evidence, and no unresolved load-bearing assumptions remain |
+| `medium` | The path is viable, but trade-offs or some unverified assumptions remain |
+| `low` | The path may work, but key unknowns, pattern mismatch, or evidence gaps remain |
+
+`plan.md § Plan Quality` must always include both `Recommendation Confidence` and `Confidence Basis`.
+Verifier pre-flight must assess whether that confidence is calibrated and record `Confidence Calibration = calibrated / overstated / understated` in `review.md § Pre-flight` and `review.md § Routing Signals`.
+
 ### Round Load Guard
 
 Verifier pre-flight must classify each round as `normal`, `heavy`, or `overloaded` and record the result in `review.md § Pre-flight` and `review.md § Routing Signals`.
@@ -173,7 +261,7 @@ Each role runs as an independent subagent. Verifier runs **core steps only** —
 
 ```
 Dispatcher (main conversation)
-  → spawn Agent: Planner → writes plan.md
+  → spawn Agent: Planner → writes design.md + plan.md
   → spawn Agent: Verifier pre-flight (core) → writes review.md
   → human approves
   → spawn Agent: Builder → writes code + tests
@@ -184,7 +272,7 @@ Dispatcher (main conversation)
 
 Same as Standard, but Dispatcher may activate **selected add-on files** for the round — cross-model review, adversarial testing, or other protocol-defined Verifier add-ons. Use when: task is security-sensitive, multi-round, or operates in Mode C/C+.
 - **Full context isolation** — same as Standard
-- **Verifier runs selected add-on files** — deeper verification when the round warrants it
+- **Verifier runs selected add-on files** — deeper design review during pre-flight and deeper verification after build when the round warrants it
 - **Higher cost** — Verifier reads full SKILL.md, may invoke external reviewer
 - **Verifier add-ons:** `[core]` + selected add-on steps
 
@@ -206,10 +294,10 @@ Three public roles. No more.
 
 Understands the codebase, identifies load-bearing requirement questions, designs the technical approach, and records human decisions for Dispatcher to ask.
 
-- **Reads:** project-profile.md, plan.md (all rounds), relevant source code
-- **Writes:** plan.md (creates Round 1 or appends Round N)
+- **Reads:** project-profile.md, design.md (if present), plan.md (all rounds), relevant source code
+- **Writes:** design.md (planning narrative), plan.md (control-plane projection; creates Round 1 or appends Round N)
 - **Runs:** once per round; re-invoked if Verifier escalates a design issue
-- **Context:** fresh subagent per invocation; plan.md carries continuity
+- **Context:** fresh subagent per invocation; design.md + plan.md carry continuity
 
 ### Builder
 
@@ -225,7 +313,7 @@ Implements code and writes tests. The only role that modifies source code.
 
 Independently verifies implementation quality. Challenges plan quality before build.
 
-- **Reads:** project-profile.md, plan.md (current round ACs), test results, runtime signals
+- **Reads:** project-profile.md, plan.md (current round ACs), design.md during pre-flight, test results, runtime signals
 - **Does NOT read:** Builder's source code during verification mode
 - **Writes:** review.md only
 - **Runs:** twice per round (pre-flight before build, verification after build)
@@ -257,8 +345,9 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
 
 - **Location:** .harness/
 - **Maintained by:** Planner (structure, ACs, approach); Builder (§ Discoveries only)
-- **Contains:** task metadata, round classification + forecasts, round-by-round acceptance criteria, `§ Plan Quality`, `§ Round Contract` (including budget rationale and any overload override), approach, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
+- **Contains:** the Baton control-plane projection of `design.md`: task metadata, round classification + forecasts, round-by-round acceptance criteria, `§ Plan Quality` (including recommendation confidence), `§ Round Contract` (including budget rationale and any overload override), approach summary, decisions, `§ Open Decisions`, implementation slices, checkpoints, discoveries
 - **Lifecycle:** created at Round 1, appended each round, archived to .harness/archive/ at task end
+- **Single source of truth:** `plan.md` is the single source of truth for what Baton is executing and routing in the current task. `design.md` may contain more detail, but Dispatcher and validators treat `plan.md` as the canonical control plane.
 - **Structured control-plane field:** `§ Open Decisions` is the only place Planner records unresolved human choices. Dispatcher reads this section literally instead of inferring questions from narrative text.
 - **Structured round field:** `§ Round Contract` is the explicit agreement for what this round delivers, what stays out of scope, which key entry points must remain in scope, how Verifier should check it, and what threshold counts as done.
 - **Compression:** Planner compresses at the START of each new round (not end of previous), so Verifier has full info during verification. Compression rules per section:
@@ -273,14 +362,23 @@ Builder may optionally use internal workers in Standard/Full mode. This is an im
   - The reason an approach was rejected (not just which was chosen)
   - If unsure whether to keep or compress an item, keep it
 
+### .harness/design.md — task level, planning narrative
+
+- **Location:** .harness/
+- **Maintained by:** Planner
+- **Contains:** the primary planning narrative for the task: problem framing, goals, non-goals, approach comparison, recommended approach, implementation plan, risks, and self-checks; additional sections are allowed as long as the minimum contract above is preserved
+- **Lifecycle:** created in Round 1, revised in later planning rounds, archived with the task
+- **Template policy:** Baton requires the section contract above but does not require a Baton-owned prose template. Planning engines may keep their native structure if the required sections remain recognizable.
+- **Projection rule:** anything that affects routing, approval, or Builder execution must be projected into `.harness/plan.md`
+
 ### .harness/review.md — round level, archived per round
 
 - **Location:** .harness/
 - **Maintained by:** Verifier (writes), Dispatcher (archives)
-- **Contains:** pre-flight results, verification findings, human judgment, `§ Routing Signals` (including verify-pass add-on selection, plan-quality assessment, and round-load assessment), and an optional findings-sidecar pointer
+- **Contains:** pre-flight results, design-stage review add-on selection, pre-flight triage, verification findings, human judgment, `§ Routing Signals` (including design-review add-on selection, verify-pass add-on selection, plan-quality assessment, confidence calibration, and round-load assessment), and an optional findings-sidecar pointer
 - **Lifecycle:** Verifier writes review.md for current round. Before starting a new round, Dispatcher copies review.md → review-round-{N}.md to preserve history. Previous rounds' reviews are always available in .harness/ without needing git.
 - **Round tag:** review.md header must include `# Review: Round {N}` so Dispatcher can compare against plan.md's current round
-- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`), whether human review is required, which verify-pass add-ons to activate, whether the plan is `adequate / under-searched`, and whether the round is `normal / heavy / overloaded`.
+- **Structured control-plane field:** `§ Routing Signals` is the only place Verifier tells Dispatcher what should happen next (`builder / planner / human / closeout`), whether human review is required, which design-review add-ons and verify-pass add-ons apply, whether pre-flight triage is `none / auto-revise / human-checkpoint`, whether the plan is `adequate / under-searched`, whether the declared confidence is `calibrated / overstated / understated`, and whether the round is `normal / heavy / overloaded`.
 
 ### .context/baton/ — scratch state, non-canonical
 
@@ -297,14 +395,17 @@ Every task is a sequence of rounds. Simple tasks complete in one round. Complex 
 
 ```
 Round N:
-  1. Planner    → writes/updates plan.md with this round's metadata classification,
-                    forecasts, ACs, and planning depth
-                    + `§ Plan Quality` when the round needs deeper search
+  1. Planner    → writes/updates design.md, then projects plan.md with this round's
+                    metadata classification, forecasts, ACs, planning depth, and
+                    recommendation confidence
+                    + `§ Plan Quality` (brief on normal rounds, fuller on deepen rounds)
                     + `§ Open Decisions`
                     + `§ Round Contract`
                     + `§ Implementation Slices`
   2. Verifier   → pre-flight (testability + baseline + round-contract challenge)
+                    + design-stage add-on pass + triage
                     + plan-quality / search-adequacy assessment
+                    + recommendation-confidence calibration assessment
                     + verify-pass add-on recommendation
                     + round-load assessment (`normal / heavy / overloaded`)
                     + contract agreement / revision
@@ -341,7 +442,7 @@ Only at decision points. Never for status updates. Planner and Verifier write st
 
 | When | What human sees | AskUserQuestion options |
 |------|----------------|------------------------|
-| After Planner + Verifier pre-flight | plan.md § Open Decisions + § Plan Quality + § Round Contract + pre-flight challenges + verify-pass add-ons + plan-quality assessment + round-load assessment | resolve decisions, then approve / deepen / split / override / revise / reject |
+| After Planner + Verifier pre-flight | plan.md § Open Decisions + § Plan Quality + § Round Contract + pre-flight challenges + verify-pass add-ons + plan-quality assessment + confidence calibration + round-load assessment | resolve decisions, then approve / deepen / split / override / revise / reject |
 | After Round completion | review.md § Human Judgment + § Routing Signals | continue / change scope / close out |
 | Migration generated | Migration / schema change script | approve / reject |
 | 3x Builder ⇄ Verifier without resolution | Failure history | change approach / change scope / abandon task |
@@ -486,7 +587,7 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 
 ### Core Rules (all modes)
 
-1. plan.md is the single source of truth for what's being built
+1. plan.md is the single source of truth for Baton execution and routing in the active task
 2. Builder is the only public role that modifies source code or tests. Planner, Dispatcher, Verifier, and Verifier add-on files are read-only with respect to the codebase. Internal Builder workers may assist only under Builder control and never own canonical writes.
 3. Verifier verification never reads Builder's source code in Mode A/B (see § Independence Rule for Mode C/C+)
 4. Human approval required before Builder starts each round. If pre-flight marks the round `overloaded`, Builder stays blocked until Planner revises the round or records a human-approved overload override in `plan.md`
@@ -512,3 +613,4 @@ All three roles share the same AI model. Shared blind spots are a systemic risk.
 18. Changes to protocol, public role files, templates, validators, or projection-layer docs are behavior-shaping changes. They require an eval note and must update affected projections/tests in the same change.
 19. `.harness/` stores canonical control-plane artifacts. `.context/baton/` stores scratch state only. Dispatcher and recovery flows must never depend on scratch-only data.
 20. Builder delegation must remain internal to Builder. It cannot create a new public role, bypass `.harness/*`, or grant scratch artifacts control-plane authority.
+21. `.harness/design.md` is required for planning rounds, but Dispatcher still routes only from `.harness/plan.md` and `.harness/review.md`.

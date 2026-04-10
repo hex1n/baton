@@ -13,16 +13,51 @@ After Planner completes and Verifier pre-flight finishes:
      and mark the row resolved.
    → If any row still has `Blocking = yes`, do NOT ask for round-contract approval yet.
 
-2. Present plan.md § Round Contract + pre-flight summary + recommended `Verification Add-ons` + `Plan Quality` + `Round Load` to the human once blocking open decisions are resolved.
+2. Read review.md § Routing Signals:
+   - `Design Review Add-ons`
+   - `Pre-flight Triage`
+   - `Verification Add-ons`
+   - `Plan Quality`
+   - `Confidence Calibration`
+   - `Round Load`
 
-3. Decision tag check:
+3. If `Pre-flight Triage = auto-revise`:
+   → do NOT ask for human approval yet
+   → allow this only once per round in the same approval flow
+   → invoke Planner in Revision mode with a bounded design-fix request:
+     "Apply the pre-flight design-review findings without changing product semantics, scope,
+      or policy. Fix design/plan projection drift, missing sections, weak confidence basis,
+      or coarse slices. If the fix would change semantics, stop and surface that as a
+      human-required issue instead.
+      This is the one automatic design-revision pass for the round; if pre-flight still
+      returns `auto-revise`, escalate to `human-checkpoint` instead of looping."
+   → re-run Verifier pre-flight with a note that the automatic design-revision pass has already been used for this round
+   → return to this checkpoint
+
+4. Present plan.md § Round Contract + pre-flight summary + `Design Review Add-ons` + `Pre-flight Triage` + recommended `Verification Add-ons` + `Plan Quality` + `Confidence Calibration` + `Round Load` to the human once blocking open decisions are resolved and no auto-revise is pending.
+
+5. Decision tag check:
    → Scan plan.md § Decisions for `[diverges from human choice]`
    → If found, prepend:
      "⚠️ Planner diverged from your choice on: {decision list}.
       See plan.md § Decisions for rationale."
 
-4. Ask:
-   If `Blocking = overload`:
+6. Ask:
+   If `Pre-flight Triage = human-checkpoint`:
+     "Pre-flight design review found issues that should not be auto-revised before Builder starts.
+
+     The current plan is not rejected on implementation grounds.
+     It is blocked because the findings would change semantics, scope, policy, or require a
+     real human decision:
+     - Review `design.md` and `review.md § Findings`
+     - Decide whether Planner should revise direction before approval
+     - Reject the direction if the task should stop instead
+
+     [See .harness/design.md and review.md § Findings]
+
+     revise / reject"
+
+   Else if `Blocking = overload`:
      "Round contract is technically coherent, but Verifier classified it as overloaded.
 
      Pre-flight confirms ACs are testable and approach is consistent.
@@ -45,6 +80,20 @@ After Planner completes and Verifier pre-flight finishes:
      - Were the real alternatives explored enough?
      - Do you want a deepen pass before Builder starts?
      - Or do you want to proceed with this plan anyway?
+
+     [See plan.md § Round N → Plan Quality]
+
+     approve / deepen / revise / reject"
+
+   Else if `Confidence Calibration = overstated`:
+     "Round contract may be workable, but Verifier thinks the plan claims more confidence than the evidence supports.
+
+     Pre-flight did not reject the contract itself.
+     It is warning that the current confidence claim is too strong:
+     - Are the assumptions really verified?
+     - Do you want a deepen pass before Builder starts?
+     - Do you want Planner to revise the confidence declaration?
+     - Or do you want to proceed knowing the plan should be treated with lower confidence?
 
      [See plan.md § Round N → Plan Quality]
 
@@ -82,8 +131,17 @@ Before routing on the human response, check protocol-defined triggers:
 - review.md has [cross-model] findings
   → append: "⚠️ Cross-model review raised additional concerns: {summary}."
 
+- `Pre-flight Triage = auto-revise`
+  → append: "⛔ Design-stage review found structural issues Baton should fix before human approval. Dispatcher will auto-route Planner revision first."
+
+- `Pre-flight Triage = human-checkpoint`
+  → append: "⛔ Design-stage review surfaced issues that would change semantics, scope, or policy. Human checkpoint required before Builder can start."
+
 - `Plan Quality = under-searched`
   → append: "⚠️ Verifier thinks this plan is coherent but under-searched. Consider a deepen pass before approval."
+
+- `Confidence Calibration = overstated`
+  → append: "⚠️ Verifier thinks the plan is more confident than the evidence supports. Consider revise or deepen before approval."
 
 - `Round Load = heavy`
   → append: "⚠️ Planner forecasted a heavy full-mode round. Review `plan.md § Round Contract → Budget Note` before approving."
@@ -97,7 +155,7 @@ Before routing on the human response, check protocol-defined triggers:
   → append: "⚠️ Human-approved overload override is already recorded. Builder may proceed, but this round is still above Baton's default load guard."
 ```
 
-**Routing rule:** triggers inform, not block, except `[assumed — verify]`, `§ Open Decisions` rows with `Blocking = yes`, and `Round Load = overloaded` without a recorded override. Those block Builder until they are resolved.
+**Routing rule:** triggers inform, not block, except `[assumed — verify]`, `§ Open Decisions` rows with `Blocking = yes`, `Pre-flight Triage != none`, and `Round Load = overloaded` without a recorded override. Those block Builder until they are resolved.
 
 ## Approval Routing
 
@@ -106,11 +164,12 @@ Route based on the human response:
 ```
 approve:
   → only valid if no blocking trigger or blocking open decision remains
+  → invalid if `Pre-flight Triage != none`
   → invoke Builder
 
 deepen:
   → invoke Planner in Revision mode with a deepen request:
-      improve problem framing, assumptions, alternatives, and failure mode
+      improve problem framing, assumptions, alternatives, failure mode, and confidence basis
       without changing the task unless the deeper search proves the framing itself is wrong
   → re-run Verifier pre-flight
   → return to the approval checkpoint
@@ -128,8 +187,8 @@ override:
   → return to the approval checkpoint
 
 revise:
-  → if the revision only changes verify-pass add-ons:
-      re-run Verifier pre-flight with the human add-on note
+  → if the revision only changes verify-pass add-ons, design-review notes, or the confidence declaration:
+      re-run Verifier pre-flight with the human revision note
       return to the approval checkpoint
   → otherwise:
       invoke Planner in Revision mode
